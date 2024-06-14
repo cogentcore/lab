@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package plotview
+package plotcore
 
 import (
 	"log/slog"
@@ -18,13 +18,13 @@ type Data struct {
 	Area       float32
 }
 
-func TestTablePlotView(t *testing.T) {
+func TestTablePlotEditor(t *testing.T) {
 	b := core.NewBody("Plot View")
 
 	epc := table.NewTable("epc")
 	epc.OpenCSV("testdata/ra25epoch.tsv", table.Tab)
 
-	pl := NewPlotView(b)
+	pl := NewPlotEditor(b)
 	pl.Params.Title = "RA25 Epoch Train"
 	pl.Params.XAxisColumn = "Epoch"
 	// pl.Params.Scale = 2
@@ -32,10 +32,10 @@ func TestTablePlotView(t *testing.T) {
 	pl.SetTable(epc)
 	pl.ColumnParams("UnitErr").On = true
 	b.AddAppBar(pl.MakeToolbar)
-	b.AssertRender(t, "plotview_table")
+	b.AssertRender(t, "plotcore_table")
 }
 
-func TestSlicePlotView(t *testing.T) {
+func TestSlicePlotEditor(t *testing.T) {
 	data := []Data{
 		{"Davis", 62000, 500},
 		{"Boulder", 85000, 800},
@@ -47,7 +47,7 @@ func TestSlicePlotView(t *testing.T) {
 		slog.Error(err.Error())
 	}
 
-	pl := NewPlotView(b)
+	pl := NewPlotEditor(b)
 	pl.Params.Title = "Slice Data"
 	pl.Params.XAxisColumn = "City"
 	pl.Params.Points = true
@@ -55,5 +55,5 @@ func TestSlicePlotView(t *testing.T) {
 	pl.ColumnParams("Population").On = true
 	b.AddAppBar(pl.MakeToolbar)
 
-	b.AssertRender(t, "plotview_slice")
+	b.AssertRender(t, "plotcore_slice")
 }

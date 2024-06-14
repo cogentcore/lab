@@ -3,10 +3,10 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package tensorview provides GUI Views of table Table and Tensor structures
+Package tensorcore provides GUI Views of table Table and Tensor structures
 using the Cogent Core views framework.
 
-* TableView provides a row-and-column tabular GUI interface, similar to
+* Table provides a row-and-column tabular GUI interface, similar to
 a spreadsheet, for viewing and editing Table data.  Any higher-dimensional
 tensor columns are shown as TensorGrid elements that can be clicked to
 open a TensorView editor with actual numeric values in a similar spreadsheet-
@@ -16,7 +16,7 @@ like GUI.
 tensor data.
 
 * TensorGrid provides a 2D colored grid display of tensor data, collapsing
-any higher dimensions down to 2D.  Different views.ColorMaps can be used
+any higher dimensions down to 2D.  Different core.ColorMaps can be used
 to translate values into colors.
 */
-package tensorview
+package tensorcore
