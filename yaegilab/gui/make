@@ -1,0 +1,10 @@
+#!/usr/bin/env cosh
+
+command extract {
+    for _, pkg := range args {
+        yaegi extract {"cogentcore.org/lab/"+pkg}
+    }
+}
+
+extract plotcore tensorcore lab
+
