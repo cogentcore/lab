@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"cogentcore.org/core/base/metadata"
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/table"
 	"cogentcore.org/lab/tensorfs"
 )
 

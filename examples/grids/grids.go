@@ -10,8 +10,8 @@ import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/core"
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/table"
 	"cogentcore.org/lab/tensorcore"
 )
 

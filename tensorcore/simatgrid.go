@@ -12,7 +12,7 @@ import (
 	"cogentcore.org/core/paint"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/stats/simat"
+	"cogentcore.org/lab/stats/simat"
 )
 
 const LabelSpace = float32(8)

@@ -7,8 +7,8 @@ package stats
 import (
 	"testing"
 
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/table"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/stretchr/testify/assert"
 )

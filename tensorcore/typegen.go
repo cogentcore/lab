@@ -8,8 +8,8 @@ import (
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/core/types"
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/table"
 )
 
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/tensorcore.Layout", IDName: "layout", Doc: "Layout are layout options for displaying tensors.", Directives: []types.Directive{{Tool: "types", Directive: "add", Args: []string{"--setters"}}}, Fields: []types.Field{{Name: "OddRow", Doc: "OddRow means that even-numbered dimensions are displayed as Y*X rectangles.\nThis determines along which dimension to display any remaining\nodd dimension: OddRow = true = organize vertically along row\ndimension, false = organize horizontally across column dimension."}, {Name: "TopZero", Doc: "TopZero means that the Y=0 coordinate is displayed from the top-down;\notherwise the Y=0 coordinate is displayed from the bottom up,\nwhich is typical for emergent network patterns."}, {Name: "Image", Doc: "Image will display the data as a bitmap image. If a 2D tensor, then it will\nbe a greyscale image. If a 3D tensor with size of either the first\nor last dim = either 3 or 4, then it is a RGB(A) color image."}}})

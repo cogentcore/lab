@@ -7,7 +7,7 @@ package main
 
 import (
 	"cogentcore.org/core/cli"
-	"cogentcore.org/core/goal/interpreter"
+	"cogentcore.org/lab/goal/interpreter"
 )
 
 func main() { //types:skip

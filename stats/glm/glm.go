@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"math"
 
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/table"
 )
 
 // todo: add tests

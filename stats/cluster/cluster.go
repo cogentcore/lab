@@ -12,8 +12,8 @@ import (
 	"math/rand"
 
 	"cogentcore.org/core/base/indent"
+	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/stats/stats"
 )
 
 // todo: all of this data goes into the tensorfs

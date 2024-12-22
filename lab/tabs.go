@@ -12,8 +12,8 @@ import (
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/texteditor"
 	"cogentcore.org/lab/plotcore"
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/table"
 	"cogentcore.org/lab/tensorcore"
 	"cogentcore.org/lab/tensorfs"
 )

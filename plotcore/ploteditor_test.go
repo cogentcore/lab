@@ -10,8 +10,8 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/plot/plots"
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/table"
 )
 
 type data struct {

@@ -16,9 +16,9 @@ import (
 	"cogentcore.org/core/yaegicore/symbols"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/lab"
+	"cogentcore.org/lab/stats/stats"
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/stats/stats"
-	"cogentcore.org/lab/tensor/table"
 	"cogentcore.org/lab/tensorfs"
 )
 

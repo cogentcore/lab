@@ -12,9 +12,9 @@ import (
 	"sort"
 
 	"cogentcore.org/core/core"
+	"cogentcore.org/lab/stats/stats"
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/stats/stats"
-	"cogentcore.org/lab/tensor/table"
 	"cogentcore.org/lab/tensorfs"
 )
 

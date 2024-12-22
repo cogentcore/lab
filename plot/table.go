@@ -10,7 +10,7 @@ import (
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/reflectx"
-	"cogentcore.org/lab/tensor/table"
+	"cogentcore.org/lab/table"
 	"golang.org/x/exp/maps"
 )
 

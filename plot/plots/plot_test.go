@@ -19,8 +19,8 @@ import (
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/paint"
 	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/table"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
 )

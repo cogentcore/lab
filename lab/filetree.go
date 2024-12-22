@@ -20,8 +20,8 @@ import (
 	"cogentcore.org/core/texteditor/diffbrowser"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/core/types"
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/table"
 	"cogentcore.org/lab/tensorfs"
 )
 

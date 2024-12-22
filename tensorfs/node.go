@@ -12,8 +12,8 @@ import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/base/metadata"
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/table"
 )
 
 // Node is the element type for the filesystem, which can represent either

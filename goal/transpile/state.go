@@ -117,8 +117,8 @@ import (
 	"cogentcore.org/lab/goal/goalib"
 	"cogentcore.org/lab/tensor"
 	_ "cogentcore.org/lab/tensor/tmath"
-	_ "cogentcore.org/lab/tensor/stats/stats"
-	_ "cogentcore.org/lab/tensor/stats/metric"
+	_ "cogentcore.org/lab/stats/stats"
+	_ "cogentcore.org/lab/stats/metric"
 )
 
 func main() {

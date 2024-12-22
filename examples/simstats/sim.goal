@@ -12,8 +12,8 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/lab/lab"
 	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/stats/stats"
 	"cogentcore.org/lab/tensorfs"
 )
 

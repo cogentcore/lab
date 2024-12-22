@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/vector"
+	"cogentcore.org/lab/vector"
 	"github.com/stretchr/testify/assert"
 )
 

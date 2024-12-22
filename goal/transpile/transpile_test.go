@@ -7,8 +7,8 @@ package transpile
 import (
 	"testing"
 
-	_ "cogentcore.org/lab/tensor/stats/metric"
-	_ "cogentcore.org/lab/tensor/stats/stats"
+	_ "cogentcore.org/lab/stats/metric"
+	_ "cogentcore.org/lab/stats/stats"
 	_ "cogentcore.org/lab/tensor/tmath"
 	"github.com/stretchr/testify/assert"
 )

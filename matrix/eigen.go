@@ -6,8 +6,8 @@ package matrix
 
 import (
 	"cogentcore.org/core/base/errors"
+	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/stats/stats"
 	"cogentcore.org/lab/tensor/tmath"
 	"gonum.org/v1/gonum/mat"
 )

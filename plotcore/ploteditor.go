@@ -31,8 +31,8 @@ import (
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/plot/plots"
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensor/table"
 	"cogentcore.org/lab/tensorcore"
 	"golang.org/x/exp/maps"
 )
