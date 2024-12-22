@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"math"
 
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 // Metrics are standard clustering distance metric functions,

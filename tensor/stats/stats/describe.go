@@ -8,9 +8,9 @@ import (
 	"strconv"
 
 	"cogentcore.org/core/base/metadata"
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/table"
-	"cogentcore.org/core/tensor/tensorfs"
+	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensor/table"
+	"cogentcore.org/lab/tensorfs"
 )
 
 // DescriptiveStats are the standard descriptive stats used in Describe function.

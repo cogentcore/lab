@@ -10,8 +10,8 @@ package vector
 import (
 	"math"
 
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/tmath"
+	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensor/tmath"
 )
 
 // Mul multiplies two vectors element-wise, using a 1D vector

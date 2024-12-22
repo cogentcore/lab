@@ -5,8 +5,8 @@
 package cluster
 
 import (
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensor/table"
 )
 
 // Plot sets the rows of given data table to trace out lines with labels that

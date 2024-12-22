@@ -8,7 +8,7 @@ import (
 	"slices"
 
 	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 	"gonum.org/v1/gonum/mat"
 )
 

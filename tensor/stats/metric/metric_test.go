@@ -9,8 +9,8 @@ import (
 	"math"
 	"testing"
 
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensor/table"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -180,7 +180,7 @@ var fns = []int{10, 20, 50, 100, 500, 1000, 10000}
 // after 12/2/2024 optimizations
 // goos: darwin
 // goarch: arm64
-// pkg: cogentcore.org/core/tensor/stats/metric
+// pkg: cogentcore.org/lab/tensor/stats/metric
 //                  │    Funcs    │
 //                  │   sec/op    │
 // L2Norm             1.853µ ± 1%

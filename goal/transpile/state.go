@@ -113,12 +113,12 @@ func (st *State) TranspileFile(in string, out string) error {
 
 	hdr := `package main
 import (
-	"cogentcore.org/core/goal"
-	"cogentcore.org/core/goal/goalib"
-	"cogentcore.org/core/tensor"
-	_ "cogentcore.org/core/tensor/tmath"
-	_ "cogentcore.org/core/tensor/stats/stats"
-	_ "cogentcore.org/core/tensor/stats/metric"
+	"cogentcore.org/lab/goal"
+	"cogentcore.org/lab/goal/goalib"
+	"cogentcore.org/lab/tensor"
+	_ "cogentcore.org/lab/tensor/tmath"
+	_ "cogentcore.org/lab/tensor/stats/stats"
+	_ "cogentcore.org/lab/tensor/stats/metric"
 )
 
 func main() {

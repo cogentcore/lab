@@ -8,8 +8,8 @@ import (
 	"math"
 
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/stats/stats"
+	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensor/stats/stats"
 )
 
 // MetricFunc is the function signature for a metric function,

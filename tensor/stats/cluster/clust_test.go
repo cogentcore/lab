@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"cogentcore.org/core/base/tolassert"
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/stats/metric"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensor/stats/metric"
+	"cogentcore.org/lab/tensor/table"
 )
 
 var clustres = `

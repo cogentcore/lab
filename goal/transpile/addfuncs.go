@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"strings"
 
-	"cogentcore.org/core/tensor"
 	"cogentcore.org/core/yaegicore/nogui"
+	"cogentcore.org/lab/tensor"
 )
 
 func init() {

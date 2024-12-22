@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 	"github.com/stretchr/testify/assert"
 )
 

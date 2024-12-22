@@ -9,7 +9,7 @@ import (
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/metadata"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 func setLogRow(dt *Table, row int) {

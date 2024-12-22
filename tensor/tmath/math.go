@@ -7,7 +7,7 @@ package tmath
 import (
 	"math"
 
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 func Abs(in tensor.Tensor) tensor.Values {

@@ -9,8 +9,8 @@ package histogram
 import (
 	"cogentcore.org/core/base/slicesx"
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensor/table"
 )
 
 // F64 generates a histogram of counts of values within given

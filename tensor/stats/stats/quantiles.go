@@ -8,7 +8,7 @@ import (
 	"math"
 
 	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 // Quantiles returns the given quantile(s) of non-NaN elements in given

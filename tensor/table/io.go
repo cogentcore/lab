@@ -20,7 +20,7 @@ import (
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fsx"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 const (

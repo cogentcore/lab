@@ -12,10 +12,10 @@ import (
 	"sort"
 
 	"cogentcore.org/core/core"
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/stats/stats"
-	"cogentcore.org/core/tensor/table"
-	"cogentcore.org/core/tensor/tensorfs"
+	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensor/stats/stats"
+	"cogentcore.org/lab/tensor/table"
+	"cogentcore.org/lab/tensorfs"
 )
 
 var (

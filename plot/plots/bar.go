@@ -16,7 +16,7 @@ import (
 
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
-	"cogentcore.org/core/plot"
+	"cogentcore.org/lab/plot"
 )
 
 // BarType is be used for specifying the type name.

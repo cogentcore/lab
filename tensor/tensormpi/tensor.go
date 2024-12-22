@@ -8,7 +8,7 @@ import (
 	"reflect"
 
 	"cogentcore.org/core/base/mpi"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 // GatherTensorRows does an MPI AllGather on given src tensor data, gathering into dest,

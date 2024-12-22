@@ -7,8 +7,8 @@ package matrix
 import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/num"
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/vector"
+	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensor/vector"
 )
 
 // offCols is a helper function to process the optional offset_cols args

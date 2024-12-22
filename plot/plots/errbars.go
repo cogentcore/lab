@@ -8,7 +8,7 @@ import (
 	"math"
 
 	"cogentcore.org/core/math32/minmax"
-	"cogentcore.org/core/plot"
+	"cogentcore.org/lab/plot"
 )
 
 const (

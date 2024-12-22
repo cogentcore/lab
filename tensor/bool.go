@@ -12,7 +12,7 @@ import (
 	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/base/slicesx"
-	"cogentcore.org/core/tensor/bitslice"
+	"cogentcore.org/lab/tensor/bitslice"
 )
 
 // Bool is a tensor of bits backed by a [bitslice.Slice] for efficient storage

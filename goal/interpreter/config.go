@@ -15,7 +15,7 @@ import (
 	"cogentcore.org/core/base/exec"
 	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/base/logx"
-	"cogentcore.org/core/goal"
+	"cogentcore.org/lab/goal"
 	"github.com/cogentcore/yaegi/interp"
 )
 

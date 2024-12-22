@@ -18,9 +18,9 @@ import (
 	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/paint"
-	"cogentcore.org/core/plot"
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensor/table"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
 )

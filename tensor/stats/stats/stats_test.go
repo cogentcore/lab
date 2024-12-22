@@ -9,7 +9,7 @@ import (
 	"math"
 	"testing"
 
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -228,7 +228,7 @@ func TestNorm(t *testing.T) {
 // go test -bench BenchmarkFuncs -count=1
 // goos: darwin
 // goarch: arm64
-// pkg: cogentcore.org/core/tensor/stats/stats
+// pkg: cogentcore.org/lab/tensor/stats/stats
 // stat=Count-16         	  677764	      1789 ns/op
 // stat=Sum-16           	  668791	      1809 ns/op
 // stat=L1Norm-16        	  821071	      1484 ns/op

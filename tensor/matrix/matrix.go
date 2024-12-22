@@ -7,7 +7,7 @@ package matrix
 import (
 	"errors"
 
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 	"gonum.org/v1/gonum/mat"
 )
 

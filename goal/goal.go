@@ -23,7 +23,7 @@ import (
 	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/base/sshclient"
 	"cogentcore.org/core/base/stack"
-	"cogentcore.org/core/goal/transpile"
+	"cogentcore.org/lab/goal/transpile"
 	"github.com/mitchellh/go-homedir"
 )
 

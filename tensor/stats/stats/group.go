@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"cogentcore.org/core/base/metadata"
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/table"
-	"cogentcore.org/core/tensor/tensorfs"
+	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensor/table"
+	"cogentcore.org/lab/tensorfs"
 )
 
 // Groups generates indexes for each unique value in each of the given tensors.

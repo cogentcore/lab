@@ -9,7 +9,7 @@ import (
 	"slices"
 	"sort"
 
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 // RowIndex returns the actual index into underlying tensor row based on given

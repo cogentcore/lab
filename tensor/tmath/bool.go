@@ -6,7 +6,7 @@ package tmath
 
 import (
 	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 // Equal stores in the output the bool value a == b.

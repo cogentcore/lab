@@ -7,7 +7,7 @@ package goal
 import (
 	"testing"
 
-	"cogentcore.org/core/goal/goalib"
+	"cogentcore.org/lab/goal/goalib"
 	"github.com/stretchr/testify/assert"
 )
 

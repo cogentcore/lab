@@ -7,7 +7,7 @@ package table
 import (
 	"cogentcore.org/core/base/keylist"
 	"cogentcore.org/core/base/metadata"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 // Columns is the underlying column list and number of rows for Table.

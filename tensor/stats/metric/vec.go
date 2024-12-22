@@ -5,7 +5,7 @@
 package metric
 
 import (
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 // VectorizeOut64 is the general compute function for metric.

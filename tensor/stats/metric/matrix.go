@@ -5,8 +5,8 @@
 package metric
 
 import (
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/matrix"
+	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensor/matrix"
 )
 
 // MatrixOut computes the rows x rows square distance / similarity matrix

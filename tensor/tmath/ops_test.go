@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -188,7 +188,7 @@ func runBenchMult(b *testing.B, n int, thread bool) {
 
 // goos: darwin
 // goarch: arm64
-// pkg: cogentcore.org/core/tensor/tmath
+// pkg: cogentcore.org/lab/tensor/tmath
 //         │ MultThreaded │              MultSingle              │
 //         │    sec/op    │   sec/op     vs base                 │
 // 10        3656.5n ± 0%   699.8n ± 0%   -80.86% (p=0.000 n=10)

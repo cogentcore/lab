@@ -7,8 +7,8 @@ package matrix
 import (
 	"testing"
 
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/vector"
+	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensor/vector"
 	"github.com/stretchr/testify/assert"
 )
 

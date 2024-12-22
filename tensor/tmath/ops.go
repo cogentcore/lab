@@ -7,7 +7,7 @@ package tmath
 import (
 	"math"
 
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 // Assign assigns values from b into a.

@@ -6,7 +6,7 @@ package tensormpi
 
 import (
 	"cogentcore.org/core/base/mpi"
-	"cogentcore.org/core/tensor/table"
+	"cogentcore.org/lab/tensor/table"
 )
 
 // GatherTableRows does an MPI AllGather on given src table data, gathering into dest.

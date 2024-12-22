@@ -12,7 +12,7 @@ import (
 	"slices"
 
 	"cogentcore.org/core/base/metadata"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 // Table is a table of Tensor columns aligned by a common outermost row dimension.

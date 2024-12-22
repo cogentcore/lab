@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"cogentcore.org/core/base/tolassert"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 	"github.com/stretchr/testify/assert"
 )
 

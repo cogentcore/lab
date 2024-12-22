@@ -8,7 +8,7 @@ package metric
 
 import (
 	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 func init() {

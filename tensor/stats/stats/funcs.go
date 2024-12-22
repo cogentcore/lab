@@ -7,7 +7,7 @@ package stats
 import (
 	"math"
 
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 // StatsFunc is the function signature for a stats function that

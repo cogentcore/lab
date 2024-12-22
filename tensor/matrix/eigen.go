@@ -6,9 +6,9 @@ package matrix
 
 import (
 	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/tensor"
-	"cogentcore.org/core/tensor/stats/stats"
-	"cogentcore.org/core/tensor/tmath"
+	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensor/stats/stats"
+	"cogentcore.org/lab/tensor/tmath"
 	"gonum.org/v1/gonum/mat"
 )
 

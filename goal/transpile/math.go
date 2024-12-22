@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"cogentcore.org/core/base/stack"
-	"cogentcore.org/core/tensor"
+	"cogentcore.org/lab/tensor"
 )
 
 // TranspileMath does math mode transpiling. fullLine indicates code should be
