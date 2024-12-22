@@ -5,7 +5,7 @@
 package tensormpi
 
 import (
-	"cogentcore.org/core/base/mpi"
+	"cogentcore.org/lab/base/mpi"
 	"cogentcore.org/lab/table"
 )
 

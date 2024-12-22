@@ -6,5 +6,5 @@ command extract {
     }
 }
 
-extract plotcore tensorcore lab
+extract plot plot/plots plotcore tensorcore lab
 

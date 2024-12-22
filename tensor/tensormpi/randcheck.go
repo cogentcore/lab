@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"cogentcore.org/core/base/mpi"
+	"cogentcore.org/lab/base/mpi"
 )
 
 // RandCheck checks that the current random numbers generated across each

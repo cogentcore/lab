@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"log"
 
-	"cogentcore.org/core/base/mpi"
+	"cogentcore.org/lab/base/mpi"
 )
 
 // Alloc allocates n items to current mpi proc based on WorldSize and WorldRank.

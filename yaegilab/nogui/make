@@ -6,5 +6,5 @@ command extract {
     }
 }
 
-extract tensor tensor/tmath table vector matrix stats/cluster stats/convolve stats/glm stats/histogram stats/metric stats/stats tensorfs
+extract tensor tensor/tmath table vector matrix stats/cluster stats/convolve stats/glm stats/histogram stats/metric stats/stats tensorfs goal/goalib 
 
