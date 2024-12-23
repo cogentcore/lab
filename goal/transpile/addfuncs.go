@@ -17,13 +17,22 @@ func init() {
 	AddYaegiTensorFuncs()
 }
 
+var yaegiTensorPackages = []string{"/lab/tensor", "/lab/stats", "/lab/vector", "/lab/matrix"}
+
 // AddYaegiTensorFuncs grabs all tensor* package functions registered
 // in yaegicore and adds them to the `tensor.Funcs` map so we can
 // properly convert symbols to either tensors or basic literals,
 // depending on the arg types for the current function.
 func AddYaegiTensorFuncs() {
 	for pth, symap := range nogui.Symbols {
-		if !strings.Contains(pth, "/core/tensor/") {
+		has := false
+		for _, p := range yaegiTensorPackages {
+			if strings.Contains(pth, p) {
+				has = true
+				break
+			}
+		}
+		if !has {
 			continue
 		}
 		_, pkg := path.Split(pth)

@@ -228,7 +228,7 @@ Label: "Reset RunLog",
 func TestCur(t *testing.T) {
 	// logx.UserLevel = slog.LevelDebug
 	tests := []exIn{
-		{`Label: "Reset RunLog",`, `Label: "Reset RunLog",`},
+		{"# x := 1", `x := tensor.Tensor(tensor.NewIntScalar(1))`},
 	}
 	st := NewState()
 	st.MathRecord = false
