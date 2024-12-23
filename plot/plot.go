@@ -398,6 +398,9 @@ func (pt *Plot) ClosestDataToPixel(px, py int) (plt Plotter, plotterIndex, point
 	dist = float32(math32.MaxFloat32)
 	for pi, pl := range pt.Plotters {
 		dts, pxX, pxY := pl.Data()
+		if len(pxY) != len(pxX) {
+			continue
+		}
 		for i, ptx := range pxX {
 			pty := pxY[i]
 			pxy := math32.Vec2(ptx, pty)

@@ -17,13 +17,13 @@ import (
 	"syscall"
 
 	"cogentcore.org/core/base/errors"
-	ycore "cogentcore.org/core/yaegicore/nogui"
+	"cogentcore.org/core/yaegicore/basesymbols"
 	"cogentcore.org/lab/goal"
 	_ "cogentcore.org/lab/stats/metric"
 	_ "cogentcore.org/lab/stats/stats"
 	_ "cogentcore.org/lab/tensor/tmath"
 	"cogentcore.org/lab/tensorfs"
-	ylab "cogentcore.org/lab/yaegilab/nogui"
+	"cogentcore.org/lab/yaegilab/nogui"
 	"github.com/cogentcore/yaegi/interp"
 	"github.com/cogentcore/yaegi/stdlib"
 	"github.com/ergochat/readline"
@@ -68,8 +68,8 @@ func NewInterpreter(options interp.Options) *Interpreter {
 	options.Stderr = in.Goal.StdIOWrappers.Err
 	options.Stdin = in.Goal.StdIOWrappers.In
 	in.Interp = interp.New(options)
-	errors.Log(in.Interp.Use(ycore.Symbols))
-	errors.Log(in.Interp.Use(ylab.Symbols))
+	errors.Log(in.Interp.Use(basesymbols.Symbols))
+	errors.Log(in.Interp.Use(nogui.Symbols))
 	in.ImportGoal()
 	go in.MonitorSignals()
 	return in
