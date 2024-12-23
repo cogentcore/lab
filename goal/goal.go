@@ -63,8 +63,11 @@ type Goal struct {
 	// Both can be nil.
 	Cancel func()
 
-	// Errors is a stack of runtime errors
+	// Errors is a stack of runtime errors.
 	Errors []error
+
+	// CliArgs are input arguments from the command line.
+	CliArgs []any
 
 	// Ctx is the context used for cancelling current shell running
 	// a single chunk of code, typically from the interpreter.
@@ -304,7 +307,12 @@ func (gl *Goal) OpenHistory(file string) error {
 	return nil
 }
 
-// AddCommand adds given command to list of available commands
+// Args returns the command line arguments.
+func (gl *Goal) Args() []any {
+	return gl.CliArgs
+}
+
+// AddCommand adds given command to list of available commands.
 func (gl *Goal) AddCommand(name string, cmd func(args ...string)) {
 	gl.Commands[name] = cmd
 }

@@ -2,9 +2,9 @@
 
 The use of massively parallel _Graphical Processsing Unit_ (_GPU_) hardware has revolutionized machine learning and other fields, producing many factors of speedup relative to traditional _CPU_ (_Central Processing Unit_) computation. However, there are numerous challenges for supporting GPU-based computation, relative to the more flexible CPU coding.
 
-The Goal framework provides a solution to these challenges that enables the same Go-based code to work efficiently and reasonably naturally on both the GPU and CPU (i.e., standard Go execution), via the [gosl](gosl) package. Debugging code on the GPU is notoriously difficult because the usual tools are not directly available (not even print statements), so the ability to run exactly the same code on the CPU is invaluable, in addition to the benefits in portability across platforms without GPU hardware.
+The Goal framework provides a solution to these challenges that enables the same Go-based code to work efficiently and reasonably naturally on both the GPU and CPU (i.e., standard Go execution), via the [gosl](../gosl) package. Debugging code on the GPU is notoriously difficult because the usual tools are not directly available (not even print statements), so the ability to run exactly the same code on the CPU is invaluable, in addition to the benefits in portability across platforms without GPU hardware.
 
-See the [gosl](gosl) documentation for the details on how to write code that works on the GPU. The remainder of this document provides an overview of the overall approach in relation to other related tools.
+See the [gosl](../gosl) documentation for the details on how to write code that works on the GPU. The remainder of this document provides an overview of the overall approach in relation to other related tools.
 
 The two most important challenges are:
 
@@ -49,7 +49,7 @@ We assume that multiple kernels will in general be required, and that there is l
 
 Even though the GPU kernels must each be compiled separately into a single distinct WGSL _shader_ file that is run under WebGPU, they can `import` a shared codebase of files, and thus replicate the same overall shared code structure as the CPU versions.
 
-The GPU code can only handle a highly restricted _subset_ of Go code, with data structures having strict alignment requirements, and no `string` or other composite variable-length data structures (maps, slices etc). Thus, the [gosl](gosl) package recognizes `//gosl:start` and `//gosl:end` comment directives surrounding the GPU-safe (and relevant) portions of the overall code. Any `.go` or `.goal` file can contribute GPU relevant code, including in other packages, and the gosl system automatically builds a shadow package-based set of `.wgsl` files accordingly.
+The GPU code can only handle a highly restricted _subset_ of Go code, with data structures having strict alignment requirements, and no `string` or other composite variable-length data structures (maps, slices etc). Thus, the [gosl](../gosl) package recognizes `//gosl:start` and `//gosl:end` comment directives surrounding the GPU-safe (and relevant) portions of the overall code. Any `.go` or `.goal` file can contribute GPU relevant code, including in other packages, and the gosl system automatically builds a shadow package-based set of `.wgsl` files accordingly.
 
 > Each kernel function is marked with a `//gosl:kernel` directive, and the name of the function is used to create the name of the GPU shader file.
 

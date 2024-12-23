@@ -198,21 +198,29 @@ func TestTranspile(t *testing.T) {
 func TestCommand(t *testing.T) {
 	// logx.UserLevel = slog.LevelDebug
 	tests := []exIn{
+		/*		{
+							`command list {
+								ls -la args...
+								}`,
+							`goal.AddCommand("list", func(args ...string) {
+				goal.Run("ls", "-la", "args...")
+				})`},
+						{
+							`	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
+						Label: "Reset RunLog",
+					})
+				`,
+							`ss.GUI.AddToolbarItem(p, egui.ToolbarItem {
+				Label: "Reset RunLog",
+				} )
+				`},
+		*/
 		{
-			`command list {
-				ls -la args...
-				}`,
-			`goal.AddCommand("list", func(args ...string) {
-goal.Run("ls", "-la", "args...")
-})`},
-		{
-			`	ss.GUI.AddToolbarItem(p, egui.ToolbarItem{
-		Label: "Reset RunLog",
-	})
+			`#!/usr/bin/env goal
+command build {
 `,
-			`ss.GUI.AddToolbarItem(p, egui.ToolbarItem {
-Label: "Reset RunLog",
-} )
+			`
+goal.AddCommand("build", func(args ...string) {
 `},
 	}
 
@@ -228,7 +236,7 @@ Label: "Reset RunLog",
 func TestCur(t *testing.T) {
 	// logx.UserLevel = slog.LevelDebug
 	tests := []exIn{
-		{"# x := 1", `x := tensor.Tensor(tensor.NewIntScalar(1))`},
+		{"#!/usr/bin/env goal", ``},
 	}
 	st := NewState()
 	st.MathRecord = false

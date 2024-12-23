@@ -23,6 +23,7 @@ func (in *Interpreter) ImportGoal() {
 			"Start":       reflect.ValueOf(in.Goal.Start),
 			"AddCommand":  reflect.ValueOf(in.Goal.AddCommand),
 			"RunCommands": reflect.ValueOf(in.Goal.RunCommands),
+			"Args":        reflect.ValueOf(in.Goal.Args),
 		},
 	})
 }

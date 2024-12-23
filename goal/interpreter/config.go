@@ -16,6 +16,7 @@ import (
 	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/base/logx"
 	"cogentcore.org/lab/goal"
+	"cogentcore.org/lab/goal/goalib"
 	"github.com/cogentcore/yaegi/interp"
 )
 
@@ -57,12 +58,13 @@ type Config struct {
 func Run(c *Config) error { //cli:cmd -root
 	in := NewInterpreter(interp.Options{})
 	if len(c.Args) > 0 {
-		in.Eval("args := goalib.StringsToAnys(" + fmt.Sprintf("%#v)", c.Args))
+		in.Goal.CliArgs = goalib.StringsToAnys(c.Args)
 	}
 
 	if c.Input == "" {
 		return c.InteractiveFunc(c, in)
 	}
+	in.Config()
 	code := ""
 	if errors.Log1(fsx.FileExists(c.Input)) {
 		b, err := os.ReadFile(c.Input)
@@ -77,7 +79,6 @@ func Run(c *Config) error { //cli:cmd -root
 		}
 		code += c.Expr + "\n"
 	}
-
 	_, _, err := in.Eval(code)
 	if err == nil {
 		err = in.Goal.TrState.DepthError()
