@@ -144,12 +144,12 @@ func (fn *FileNode) OpenFile() error {
 	case fn.IsDir():
 		d := TensorFS(ofn)
 		dt := tensorfs.DirTable(d, nil)
-		ts.TensorTable(df, dt)
+		ts.AsLab().TensorTable(df, dt)
 	case fn.Info.Cat == fileinfo.Data:
 		switch fn.Info.Known {
 		case fileinfo.Tensor:
 			d := TensorFS(ofn)
-			ts.TensorEditor(df, d.Tensor)
+			ts.AsLab().TensorEditor(df, d.Tensor)
 		case fileinfo.Number:
 			dv := TensorFS(ofn)
 			v := dv.Tensor.Float1D(0)
@@ -183,7 +183,7 @@ func (fn *FileNode) OpenFile() error {
 			if err != nil {
 				core.ErrorSnackbar(fn, err)
 			} else {
-				ts.TensorTable(df, dt)
+				ts.AsLab().TensorTable(df, dt)
 			}
 		}
 	case fn.IsExec(): // todo: use exec?
@@ -203,7 +203,7 @@ func (fn *FileNode) OpenFile() error {
 	case fn.Info.Cat == fileinfo.Archive || fn.Info.Cat == fileinfo.Backup: // don't edit
 		fn.OpenFilesDefault()
 	default:
-		ts.EditorString(df, string(fn.Filepath))
+		ts.AsLab().EditorString(df, string(fn.Filepath))
 	}
 	return nil
 }
@@ -230,7 +230,7 @@ func (fn *FileNode) EditFile() {
 		return
 	}
 	df := fsx.DirAndFile(string(fn.Filepath))
-	ts.EditorString(df, string(fn.Filepath))
+	ts.AsLab().EditorString(df, string(fn.Filepath))
 }
 
 // PlotFiles calls PlotFile on selected files
@@ -250,7 +250,7 @@ func (fn *FileNode) PlotFile() {
 	}
 	d := TensorFS(fn.AsNode())
 	if d != nil {
-		ts.PlotTensorFS(d)
+		ts.AsLab().PlotTensorFS(d)
 		return
 	}
 	if fn.Info.Cat != fileinfo.Data {
@@ -264,7 +264,7 @@ func (fn *FileNode) PlotFile() {
 		core.ErrorSnackbar(fn, err)
 		return
 	}
-	ts.PlotTable(ptab, dt)
+	ts.AsLab().PlotTable(ptab, dt)
 }
 
 // DiffDirs displays a browser with differences between two selected directories

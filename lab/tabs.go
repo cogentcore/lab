@@ -27,47 +27,8 @@ var CurTabber Tabber
 type Tabber interface {
 	core.Tabber
 
-	// AsDataTabs returns the underlying [databrowser.Tabs] widget.
-	AsDataTabs() *Tabs
-
-	// TensorTable recycles a tab with a [tensorcore.Table] widget
-	// to view given [table.Table], using its own table.Table.
-	TensorTable(label string, dt *table.Table) *tensorcore.Table
-
-	// TensorEditor recycles a tab with a [tensorcore.TensorEditor] widget
-	// to view given Tensor.
-	TensorEditor(label string, tsr tensor.Tensor) *tensorcore.TensorEditor
-
-	// TensorGrid recycles a tab with a [tensorcore.TensorGrid] widget
-	// to view given Tensor.
-	TensorGrid(label string, tsr tensor.Tensor) *tensorcore.TensorGrid
-
-	// PlotTable recycles a tab with a Plot of given [table.Table].
-	PlotTable(label string, dt *table.Table) *plotcore.PlotEditor
-
-	// PlotTensorFS recycles a tab with a Plot of given [tensorfs.Node],
-	// automatically using the Dir/File name of the data node for the label.
-	PlotTensorFS(dfs *tensorfs.Node) *plotcore.PlotEditor
-
-	// GoUpdatePlot calls GoUpdatePlot on plot at tab with given name.
-	// Does nothing if tab name doesn't exist (returns nil).
-	GoUpdatePlot(label string) *plotcore.PlotEditor
-
-	// UpdatePlot calls UpdatePlot on plot at tab with given name.
-	// Does nothing if tab name doesn't exist (returns nil).
-	UpdatePlot(label string) *plotcore.PlotEditor
-
-	// todo: PlotData of plot.Node
-
-	// SliceTable recycles a tab with a [core.Table] widget
-	// to view the given slice of structs.
-	SliceTable(label string, slc any) *core.Table
-
-	// EditorString recycles a [texteditor.Editor] tab, displaying given string.
-	EditorString(label, content string) *texteditor.Editor
-
-	// EditorFile opens an editor tab for given file.
-	EditorFile(label, filename string) *texteditor.Editor
+	// AsLab returns the [lab.Tabs] widget with all the tabs methods.
+	AsLab() *Tabs
 }
 
 // NewTab recycles a tab with given label, or returns the existing one
@@ -76,7 +37,7 @@ type Tabber interface {
 // mkfun function is called to create and configure a new widget
 // if not already existing.
 func NewTab[T any](tb Tabber, label string, mkfun func(tab *core.Frame) T) T {
-	tab := tb.RecycleTab(label)
+	tab := tb.AsLab().RecycleTab(label)
 	var zv T
 	if tab.HasChildren() {
 		nc := tab.NumChildren()
@@ -85,7 +46,7 @@ func NewTab[T any](tb Tabber, label string, mkfun func(tab *core.Frame) T) T {
 			return tt
 		}
 		err := fmt.Errorf("Name / Type conflict: tab %q does not have the expected type of content: is %T", label, lc)
-		core.ErrorSnackbar(tb.AsDataTabs(), err)
+		core.ErrorSnackbar(tb.AsLab(), err)
 		return zv
 	}
 	w := mkfun(tab)
@@ -95,7 +56,7 @@ func NewTab[T any](tb Tabber, label string, mkfun func(tab *core.Frame) T) T {
 // TabAt returns widget of given type at tab of given name, nil if tab not found.
 func TabAt[T any](tb Tabber, label string) T {
 	var zv T
-	tab := tb.TabByName(label)
+	tab := tb.AsLab().TabByName(label)
 	if tab == nil {
 		return zv
 	}
@@ -109,7 +70,7 @@ func TabAt[T any](tb Tabber, label string) T {
 	}
 
 	err := fmt.Errorf("Name / Type conflict: tab %q does not have the expected type of content: %T", label, lc)
-	core.ErrorSnackbar(tb.AsDataTabs(), err)
+	core.ErrorSnackbar(tb.AsLab(), err)
 	return zv
 }
 
@@ -123,7 +84,7 @@ func (ts *Tabs) Init() {
 	ts.Type = core.FunctionalTabs
 }
 
-func (ts *Tabs) AsDataTabs() *Tabs {
+func (ts *Tabs) AsLab() *Tabs {
 	return ts
 }
 

@@ -84,7 +84,7 @@ func (gl *Goal) Set(cmdIO *exec.CmdIO, args ...string) error {
 	}
 	val := args[1]
 	if strings.Count(val, ":") > 1 || strings.Contains(val, "~") {
-		vl := stringsx.DedupeList(strings.Split(val, ":"))
+		vl := stringsx.UniqueList(strings.Split(val, ":"))
 		vl = AddHomeExpand([]string{}, vl...)
 		val = strings.Join(vl, ":")
 	}
@@ -175,7 +175,7 @@ func (gl *Goal) AddPath(cmdIO *exec.CmdIO, args ...string) error {
 	}
 	path := os.Getenv("PATH")
 	ps := strings.Split(path, ":")
-	ps = stringsx.DedupeList(ps)
+	ps = stringsx.UniqueList(ps)
 	ps = AddHomeExpand(ps, args...)
 	path = strings.Join(ps, ":")
 	err := os.Setenv("PATH", path)
