@@ -15,6 +15,7 @@ import (
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/tree"
+	"cogentcore.org/core/yaegicore/coresymbols"
 )
 
 // Basic is a basic data browser with the files as the left panel,
@@ -31,6 +32,7 @@ func (br *Basic) Init() {
 		s.Grow.Set(1, 1)
 	})
 	br.InitInterp()
+	br.Interpreter.Interp.Use(coresymbols.Symbols) // gui imports
 
 	br.OnShow(func(e events.Event) {
 		br.UpdateFiles()

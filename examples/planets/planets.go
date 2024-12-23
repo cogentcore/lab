@@ -13,7 +13,7 @@ import (
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/tree"
-	"cogentcore.org/core/yaegicore/symbols"
+	"cogentcore.org/core/yaegicore/coresymbols"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/lab"
 	"cogentcore.org/lab/stats/stats"
@@ -94,7 +94,7 @@ func main() {
 }
 
 func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
-	in.Interp.Use(symbols.Symbols) // gui imports
+	in.Interp.Use(coresymbols.Symbols) // gui imports
 	in.Config()
 	b, _ := lab.NewBasicWindow(tensorfs.CurRoot, "Planets")
 	b.AddTopBar(func(bar *core.Frame) {
