@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Core. All rights reserved.
+// Copyright (c) 2024, Cogent Lab. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -7,6 +7,7 @@ package tensor
 import (
 	"fmt"
 	"reflect"
+	"slices"
 
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/num"
@@ -85,8 +86,8 @@ func (tsr *Bool) Bytes() []byte { return slicesx.ToBytes(tsr.Values) }
 func (tsr *Bool) Shape() *Shape { return &tsr.shape }
 
 // ShapeSizes returns the sizes of each dimension as a slice of ints.
-// This is the preferred access for Go code.
-func (tsr *Bool) ShapeSizes() []int { return tsr.shape.Sizes }
+// The returned slice is a copy and can be modified without side effects.
+func (tsr *Bool) ShapeSizes() []int { return slices.Clone(tsr.shape.Sizes) }
 
 // Metadata returns the metadata for this tensor, which can be used
 // to encode plotting options, etc.

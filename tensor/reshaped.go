@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Core. All rights reserved.
+// Copyright (c) 2024, Cogent Lab. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -157,7 +157,7 @@ func (rs *Reshaped) String() string           { return Sprintf("", rs, 0) }
 func (rs *Reshaped) Metadata() *metadata.Data { return rs.Tensor.Metadata() }
 func (rs *Reshaped) IsString() bool           { return rs.Tensor.IsString() }
 func (rs *Reshaped) DataType() reflect.Kind   { return rs.Tensor.DataType() }
-func (rs *Reshaped) ShapeSizes() []int        { return rs.Reshape.Sizes }
+func (rs *Reshaped) ShapeSizes() []int        { return slices.Clone(rs.Reshape.Sizes) }
 func (rs *Reshaped) Shape() *Shape            { return &rs.Reshape }
 func (rs *Reshaped) Len() int                 { return rs.Reshape.Len() }
 func (rs *Reshaped) NumDims() int             { return rs.Reshape.NumDims() }

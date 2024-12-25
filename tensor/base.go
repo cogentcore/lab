@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Core. All rights reserved.
+// Copyright (c) 2024, Cogent Lab. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -28,7 +28,7 @@ func (tsr *Base[T]) Metadata() *metadata.Data { return &tsr.Meta }
 func (tsr *Base[T]) Shape() *Shape { return &tsr.shape }
 
 // ShapeSizes returns the sizes of each dimension as a slice of ints.
-// This is the preferred access for Go code.
+// The returned slice is a copy and can be modified without side effects.
 func (tsr *Base[T]) ShapeSizes() []int { return slices.Clone(tsr.shape.Sizes) }
 
 // SetShapeSizes sets the dimension sizes of the tensor, and resizes
