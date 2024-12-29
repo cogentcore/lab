@@ -29,16 +29,26 @@ func PctActInTensor(trow tensor.Values) float32 {
 
 // Note: AppendFrom can be used to concatenate tensors.
 
+// Shuffle returns a [tensor.Rows] view of the given source tensor
+// with the outer row-wise dimension randomly shuffled (permuted).
+func Shuffle(src tensor.Values) *tensor.Rows {
+	idx := RandSource.Perm(src.DimSize(0))
+	return tensor.NewRows(src, idx...)
+}
+
 // ReplicateRows adds nCopies rows of the source tensor pattern into
 // the destination tensor. The destination shape is set to ensure
 // it can contain the results, preserving any existing rows of data.
 func ReplicateRows(dest, src tensor.Values, nCopies int) {
-	curRows := dest.DimSize(0)
+	curRows := 0
+	if dest.NumDims() > 0 {
+		curRows = dest.DimSize(0)
+	}
 	totRows := curRows + nCopies
 	dshp := append([]int{totRows}, src.Shape().Sizes...)
 	dest.SetShapeSizes(dshp...)
-	for range nCopies {
-		dest.AppendRow(src)
+	for rw := range nCopies {
+		dest.SetRowTensor(src, curRows+rw)
 	}
 }
 
@@ -48,11 +58,11 @@ func ReplicateRows(dest, src tensor.Values, nCopies int) {
 // the source name + incrementing counter will be used.
 func SplitRows(dir *tensorfs.Node, src tensor.Values, names []string, rows ...int) error {
 	hasNames := len(names) != 0
-	if hasNames && len(names)+1 != len(rows) {
+	if hasNames && len(names) != len(rows)+1 {
 		err := errors.Log(fmt.Errorf("patterns.SplitRows: must pass one more name than number of rows to split on"))
 		return err
 	}
-	all := append(rows, src.Len()) // final row
+	all := append(rows, src.DimSize(0)) // final row
 	srcName := metadata.Name(src)
 	srcShape := src.ShapeSizes()
 
@@ -78,6 +88,7 @@ func SplitRows(dir *tensorfs.Node, src tensor.Values, names []string, rows ...in
 		for rw := range nrows {
 			spl.SubSpace(rw).CopyFrom(src.SubSpace(prev + rw))
 		}
+		prev = cur
 	}
 	return nil
 }
