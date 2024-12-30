@@ -5,7 +5,7 @@
 // Package random plots histograms of random distributions.
 package main
 
-//go:generate core generate -add-types
+//go:generate core generate
 
 import (
 	"cogentcore.org/core/base/metadata"
@@ -25,7 +25,7 @@ import (
 )
 
 // Random is the random distribution plotter widget.
-type Random struct { //types:add
+type Random struct {
 	core.Frame
 	Data
 }
