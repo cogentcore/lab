@@ -272,3 +272,16 @@ func TestABAC(t *testing.T) {
 	// fmt.Println(mix)
 	assert.Equal(t, exmix, mix.String())
 }
+
+func TestNameRows(t *testing.T) {
+	dir, _ := tensorfs.NewDir("test")
+	nr := dir.StringValue("Name", 12)
+	NameRows(nr, "AB_", 2)
+	// fmt.Println(nr)
+
+	exnm := `Name [12] AB_00 AB_01 AB_02 AB_03 AB_04 AB_05 AB_06 AB_07 AB_08 AB_09 AB_10 
+          AB_11 
+`
+
+	assert.Equal(t, exnm, nr.String())
+}

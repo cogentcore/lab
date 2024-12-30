@@ -361,7 +361,7 @@ func (W _cogentcore_org_lab_tensor_Tensor) StringValue(i ...int) string { return
 // _cogentcore_org_lab_tensor_Values is an interface wrapper for Values type
 type _cogentcore_org_lab_tensor_Values struct {
 	IValue           interface{}
-	WAppendFrom      func(from tensor.Values) error
+	WAppendFrom      func(from tensor.Values) tensor.Values
 	WAppendRow       func(val tensor.Values)
 	WAppendRowFloat  func(val ...float64)
 	WAppendRowInt    func(val ...int)
@@ -408,7 +408,7 @@ type _cogentcore_org_lab_tensor_Values struct {
 	WSubSpace        func(offs ...int) tensor.Values
 }
 
-func (W _cogentcore_org_lab_tensor_Values) AppendFrom(from tensor.Values) error {
+func (W _cogentcore_org_lab_tensor_Values) AppendFrom(from tensor.Values) tensor.Values {
 	return W.WAppendFrom(from)
 }
 func (W _cogentcore_org_lab_tensor_Values) AppendRow(val tensor.Values)   { W.WAppendRow(val) }

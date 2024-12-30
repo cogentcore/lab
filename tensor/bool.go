@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"slices"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/base/reflectx"
@@ -306,23 +307,24 @@ func (tsr *Bool) CopyFrom(frm Values) {
 // It uses and optimized implementation if the other tensor
 // is of the same type, and otherwise it goes through
 // appropriate standard type.
-func (tsr *Bool) AppendFrom(frm Values) error {
+func (tsr *Bool) AppendFrom(frm Values) Values {
 	rows, cell := tsr.shape.RowCellSize()
 	frows, fcell := frm.Shape().RowCellSize()
 	if cell != fcell {
-		return fmt.Errorf("tensor.AppendFrom: cell sizes do not match: %d != %d", cell, fcell)
+		errors.Log(fmt.Errorf("tensor.AppendFrom: cell sizes do not match: %d != %d", cell, fcell))
+		return tsr
 	}
 	tsr.SetNumRows(rows + frows)
 	st := rows * cell
 	fsz := frows * fcell
 	if fsm, ok := frm.(*Bool); ok {
 		copy(tsr.Values[st:st+fsz], fsm.Values)
-		return nil
+		return tsr
 	}
 	for i := 0; i < fsz; i++ {
 		tsr.Values.Set(Float64ToBool(frm.Float1D(i)), st+i)
 	}
-	return nil
+	return tsr
 }
 
 // CopyCellsFrom copies given range of values from other tensor into this tensor,

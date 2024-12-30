@@ -60,7 +60,7 @@ type Values interface {
 	// AppendFrom appends all values from other tensor into this tensor, with an
 	// optimized implementation if the other tensor is of the same type, and
 	// otherwise it goes through the appropriate standard type (Float, Int, String).
-	AppendFrom(from Values) error
+	AppendFrom(from Values) Values
 }
 
 // New returns a new n-dimensional tensor of given value type

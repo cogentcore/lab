@@ -242,7 +242,7 @@ func (fn *FileNode) PlotFiles() { //types:add
 	})
 }
 
-// PlotFile pulls up this file in a texteditor.
+// PlotFile creates a plot of data.
 func (fn *FileNode) PlotFile() {
 	ts := fn.Tabber()
 	if ts == nil {
@@ -265,6 +265,30 @@ func (fn *FileNode) PlotFile() {
 		return
 	}
 	ts.AsLab().PlotTable(ptab, dt)
+}
+
+// todo: this is too redundant -- need a better soln
+
+// GridFiles calls GridFile on selected files
+func (fn *FileNode) GridFiles() { //types:add
+	fn.SelectedFunc(func(sn *filetree.Node) {
+		if sfn, ok := sn.This.(*FileNode); ok {
+			sfn.GridFile()
+		}
+	})
+}
+
+// GridFile creates a grid view of data.
+func (fn *FileNode) GridFile() {
+	ts := fn.Tabber()
+	if ts == nil {
+		return
+	}
+	d := TensorFS(fn.AsNode())
+	if d != nil {
+		ts.AsLab().GridTensorFS(d)
+		return
+	}
 }
 
 // DiffDirs displays a browser with differences between two selected directories
@@ -312,6 +336,10 @@ func (fn *FileNode) ContextMenu(m *core.Scene) {
 			s.SetState(!fn.HasSelection(), states.Disabled)
 		})
 	core.NewFuncButton(m).SetFunc(fn.PlotFiles).SetText("Plot").SetIcon(icons.Edit).
+		Styler(func(s *styles.Style) {
+			s.SetState(!fn.HasSelection() || fn.Info.Cat != fileinfo.Data, states.Disabled)
+		})
+	core.NewFuncButton(m).SetFunc(fn.GridFiles).SetText("Grid").SetIcon(icons.Edit).
 		Styler(func(s *styles.Style) {
 			s.SetState(!fn.HasSelection() || fn.Info.Cat != fileinfo.Data, states.Disabled)
 		})

@@ -4,13 +4,7 @@ package gui
 
 import (
 	"cogentcore.org/core/core"
-	"cogentcore.org/core/texteditor"
 	"cogentcore.org/lab/lab"
-	"cogentcore.org/lab/plotcore"
-	"cogentcore.org/lab/table"
-	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/tensorcore"
-	"cogentcore.org/lab/tensorfs"
 	"reflect"
 )
 
@@ -51,69 +45,13 @@ func init() {
 
 // _cogentcore_org_lab_lab_Tabber is an interface wrapper for Tabber type
 type _cogentcore_org_lab_lab_Tabber struct {
-	IValue           interface{}
-	WAsCoreTabs      func() *core.Tabs
-	WAsDataTabs      func() *lab.Tabs
-	WCurrentTab      func() (core.Widget, int)
-	WEditorFile      func(label string, filename string) *texteditor.Editor
-	WEditorString    func(label string, content string) *texteditor.Editor
-	WGoUpdatePlot    func(label string) *plotcore.PlotEditor
-	WPlotTable       func(label string, dt *table.Table) *plotcore.PlotEditor
-	WPlotTensorFS    func(dfs *tensorfs.Node) *plotcore.PlotEditor
-	WRecycleTab      func(name string) *core.Frame
-	WSelectTabByName func(name string) *core.Frame
-	WSelectTabIndex  func(idx int) *core.Frame
-	WSliceTable      func(label string, slc any) *core.Table
-	WTabByName       func(name string) *core.Frame
-	WTensorEditor    func(label string, tsr tensor.Tensor) *tensorcore.TensorEditor
-	WTensorGrid      func(label string, tsr tensor.Tensor) *tensorcore.TensorGrid
-	WTensorTable     func(label string, dt *table.Table) *tensorcore.Table
-	WUpdatePlot      func(label string) *plotcore.PlotEditor
+	IValue      interface{}
+	WAsCoreTabs func() *core.Tabs
+	WAsLab      func() *lab.Tabs
 }
 
-func (W _cogentcore_org_lab_lab_Tabber) AsCoreTabs() *core.Tabs         { return W.WAsCoreTabs() }
-func (W _cogentcore_org_lab_lab_Tabber) AsDataTabs() *lab.Tabs          { return W.WAsDataTabs() }
-func (W _cogentcore_org_lab_lab_Tabber) CurrentTab() (core.Widget, int) { return W.WCurrentTab() }
-func (W _cogentcore_org_lab_lab_Tabber) EditorFile(label string, filename string) *texteditor.Editor {
-	return W.WEditorFile(label, filename)
-}
-func (W _cogentcore_org_lab_lab_Tabber) EditorString(label string, content string) *texteditor.Editor {
-	return W.WEditorString(label, content)
-}
-func (W _cogentcore_org_lab_lab_Tabber) GoUpdatePlot(label string) *plotcore.PlotEditor {
-	return W.WGoUpdatePlot(label)
-}
-func (W _cogentcore_org_lab_lab_Tabber) PlotTable(label string, dt *table.Table) *plotcore.PlotEditor {
-	return W.WPlotTable(label, dt)
-}
-func (W _cogentcore_org_lab_lab_Tabber) PlotTensorFS(dfs *tensorfs.Node) *plotcore.PlotEditor {
-	return W.WPlotTensorFS(dfs)
-}
-func (W _cogentcore_org_lab_lab_Tabber) RecycleTab(name string) *core.Frame {
-	return W.WRecycleTab(name)
-}
-func (W _cogentcore_org_lab_lab_Tabber) SelectTabByName(name string) *core.Frame {
-	return W.WSelectTabByName(name)
-}
-func (W _cogentcore_org_lab_lab_Tabber) SelectTabIndex(idx int) *core.Frame {
-	return W.WSelectTabIndex(idx)
-}
-func (W _cogentcore_org_lab_lab_Tabber) SliceTable(label string, slc any) *core.Table {
-	return W.WSliceTable(label, slc)
-}
-func (W _cogentcore_org_lab_lab_Tabber) TabByName(name string) *core.Frame { return W.WTabByName(name) }
-func (W _cogentcore_org_lab_lab_Tabber) TensorEditor(label string, tsr tensor.Tensor) *tensorcore.TensorEditor {
-	return W.WTensorEditor(label, tsr)
-}
-func (W _cogentcore_org_lab_lab_Tabber) TensorGrid(label string, tsr tensor.Tensor) *tensorcore.TensorGrid {
-	return W.WTensorGrid(label, tsr)
-}
-func (W _cogentcore_org_lab_lab_Tabber) TensorTable(label string, dt *table.Table) *tensorcore.Table {
-	return W.WTensorTable(label, dt)
-}
-func (W _cogentcore_org_lab_lab_Tabber) UpdatePlot(label string) *plotcore.PlotEditor {
-	return W.WUpdatePlot(label)
-}
+func (W _cogentcore_org_lab_lab_Tabber) AsCoreTabs() *core.Tabs { return W.WAsCoreTabs() }
+func (W _cogentcore_org_lab_lab_Tabber) AsLab() *lab.Tabs       { return W.WAsLab() }
 
 // _cogentcore_org_lab_lab_Treer is an interface wrapper for Treer type
 type _cogentcore_org_lab_lab_Treer struct {

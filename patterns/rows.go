@@ -29,6 +29,16 @@ func PctActInTensor(trow tensor.Values) float32 {
 
 // Note: AppendFrom can be used to concatenate tensors.
 
+// NameRows sets strings as prefix + row number with given number
+// of leading zeros.
+func NameRows(tsr tensor.Values, prefix string, nzeros int) {
+	ft := fmt.Sprintf("%s%%0%dd", prefix, nzeros)
+	rows := tsr.DimSize(0)
+	for i := range rows {
+		tsr.SetString1D(fmt.Sprintf(ft, i), i)
+	}
+}
+
 // Shuffle returns a [tensor.Rows] view of the given source tensor
 // with the outer row-wise dimension randomly shuffled (permuted).
 func Shuffle(src tensor.Values) *tensor.Rows {

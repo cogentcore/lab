@@ -106,7 +106,7 @@ func PermutedBinaryMinDiff(tsr tensor.Values, nOn int, onVal, offVal float64, mi
 			r1v := tsr.SubSpace(r1)
 			for r2 := r1 + 1; r2 < rows; r2++ {
 				r2v := tsr.SubSpace(r2)
-				dst := metric.Hamming(r1v, r2v).Float1D(0)
+				dst := metric.Hamming(tensor.As1D(r1v), tensor.As1D(r2v)).Float1D(0)
 				df := int(math.Round(float64(.5 * dst)))
 				if df < minDiff {
 					nunder[r1]++

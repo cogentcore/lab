@@ -21,12 +21,12 @@ func init() {
 		"Long":         reflect.ValueOf(tensorfs.Long),
 		"Mkdir":        reflect.ValueOf(tensorfs.Mkdir),
 		"NewDir":       reflect.ValueOf(tensorfs.NewDir),
-		"NewForTensor": reflect.ValueOf(tensorfs.NewForTensor),
 		"Overwrite":    reflect.ValueOf(tensorfs.Overwrite),
 		"Preserve":     reflect.ValueOf(tensorfs.Preserve),
 		"Record":       reflect.ValueOf(tensorfs.Record),
 		"Recursive":    reflect.ValueOf(tensorfs.Recursive),
 		"Set":          reflect.ValueOf(tensorfs.Set),
+		"SetTensor":    reflect.ValueOf(tensorfs.SetTensor),
 		"Short":        reflect.ValueOf(tensorfs.Short),
 		"ValueType":    reflect.ValueOf(tensorfs.ValueType),
 

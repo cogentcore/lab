@@ -133,6 +133,17 @@ func (ts *Tabs) TensorGrid(label string, tsr tensor.Tensor) *tensorcore.TensorGr
 	return tv
 }
 
+// GridTensorFS recycles a tab with a Grid of given [tensorfs.Node].
+func (ts *Tabs) GridTensorFS(dfs *tensorfs.Node) *tensorcore.TensorGrid {
+	label := fsx.DirAndFile(dfs.Path()) + " Grid"
+	if dfs.IsDir() {
+		core.MessageSnackbar(ts, "Use Edit instead of Grid to view a directory")
+		return nil
+	}
+	tsr := dfs.Tensor
+	return ts.TensorGrid(label, tsr)
+}
+
 // PlotTable recycles a tab with a Plot of given table.Table.
 func (ts *Tabs) PlotTable(label string, dt *table.Table) *plotcore.PlotEditor {
 	pl := NewTab(ts, label, func(tab *core.Frame) *plotcore.PlotEditor {
