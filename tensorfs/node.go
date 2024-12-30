@@ -128,15 +128,22 @@ func ValueType(dir *Node, name string, typ reflect.Kind, sizes ...int) tensor.Va
 	return tsr
 }
 
-// NewForTensor creates a new Node node for given existing tensor with given name.
-// If the name already exists, that Node is returned with [fs.ErrExists] error.
-func NewForTensor(dir *Node, tsr tensor.Tensor, name string) (*Node, error) {
-	nd, err := newNode(dir, name)
-	if err != nil {
-		return nd, err
+// SetTensor creates / recycles a node and sets to given existing tensor with given name.
+func SetTensor(dir *Node, tsr tensor.Tensor, name string) *Node {
+	nd := dir.Node(name)
+	if nd != nil {
+		nd.Tensor = tsr
+	} else {
+		nd, _ = newNode(dir, name)
 	}
 	nd.Tensor = tsr
-	return nd, nil
+	return nd
+}
+
+// Set creates / returns a Node with given name setting value to given Tensor,
+// in given directory [Node]. Calls [SetTensor].
+func (dir *Node) Set(name string, tsr tensor.Tensor) *Node {
+	return SetTensor(dir, tsr, name)
 }
 
 // DirTable returns a [table.Table] with all of the tensor values under

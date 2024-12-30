@@ -14,7 +14,7 @@ The hierarchical structure of a filesystem naturally supports various kinds of f
 
 # Usage
 
-There are two main APIs, one for direct usage within Go, and another that is used by the `goal` framework for interactive shell-based access, which always operates relative to a current working directory.
+There are two main APIs, one for direct usage within Go, and another that is used by the [goal](../goal) framework for interactive shell-based access, which always operates relative to a current working directory.
 
 ## Go API
 
@@ -40,7 +40,7 @@ There are also a few other variants of the `Value` functionality:
 * `Scalar` calls `Value` with a size of 1.
 * `Values` makes multiple tensor values of the same shape, with a final variadic list of names.
 * `ValueType` takes a `reflect.Kind` arg for the data type, which can then be a variable.
-* `NewForTensor` creates a node for an existing tensor.
+* `SetTensor` sets a tensor to a node of given name, creating the node if needed. This is also available as the `Set` method on a directory node.
 
 `DirTable` returns a `table.Table` with all the tensors under a given directory node, which can then be used for making plots or doing other forms of data analysis. This works best when each tensor has the same outer-most row dimension. The table is persistent and very efficient, using direct pointers to the underlying tensor values.
 

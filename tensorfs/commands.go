@@ -29,9 +29,11 @@ func init() {
 }
 
 // Record saves given tensor to current directory with given name.
-func Record(tsr tensor.Tensor, name string) error {
-	_, err := NewForTensor(CurDir, tsr, name)
-	return err // todo: could prompt about conficts, or always overwrite existing?
+func Record(tsr tensor.Tensor, name string) {
+	if CurDir == nil {
+		CurDir = CurRoot
+	}
+	SetTensor(CurDir, tsr, name)
 }
 
 // Chdir changes the current working tensorfs directory to the named directory.
@@ -151,6 +153,6 @@ func Set(name string, tsr tensor.Tensor) error {
 		}
 		cd = d
 	}
-	_, err = NewForTensor(cd, tsr, name)
-	return errors.Log(err)
+	SetTensor(cd, tsr, name)
+	return nil
 }
