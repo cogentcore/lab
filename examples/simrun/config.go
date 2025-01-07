@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"cogentcore.org/lab/lab"
 	"cogentcore.org/lab/table"
 )
 
@@ -181,4 +182,9 @@ type Result struct {
 
 	// result data
 	Table *table.Table
+}
+
+// EditConfig edits the configuration
+func (br *SimRun) EditConfig() { //types:add
+	lab.PromptStruct(br, &br.Config, "Configuration parameters", nil)
 }

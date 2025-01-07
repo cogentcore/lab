@@ -64,8 +64,8 @@ type SimRun struct {
 	// ResultsTableView has the results table.
 	ResultsTableView *core.Table
 
-	// Results is the list of result records.
-	Results []*Result
+	// ResultsList is the list of result records.
+	ResultsList []*Result
 }
 
 // important: must be run from an interactive terminal.
@@ -166,10 +166,43 @@ func (br *SimRun) Init() {
 
 func (br *SimRun) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.FuncButton) {
-		w.SetFunc(br.UpdateFiles).SetText("").SetIcon(icons.Refresh).SetShortcut("Command+U")
+		w.SetFunc(br.UpdateFiles).SetText("").SetIcon(icons.Refresh)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
-		w.SetFunc(br.Jobs).SetText("Jobs").SetIcon(icons.Refresh).SetShortcut("Command+U")
+		w.SetFunc(br.Jobs).SetIcon(icons.ViewList).SetShortcut("Command+U")
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(br.Queue).SetIcon(icons.List)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(br.Status).SetIcon(icons.Sync)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(br.Fetch).SetIcon(icons.Download)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(br.Submit).SetIcon(icons.Add)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(br.Results).SetIcon(icons.Refresh)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(br.Diff).SetIcon(icons.Difference)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(br.Plot).SetIcon(icons.ShowChart)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(br.Cancel).SetIcon(icons.Refresh)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(br.Delete).SetIcon(icons.Delete)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(br.Archive).SetIcon(icons.Archive)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(br.EditConfig).SetIcon(icons.Edit)
 	})
 	tree.Add(p, func(w *core.Button) {
 		w.SetText("README").SetIcon(icons.FileMarkdown).
