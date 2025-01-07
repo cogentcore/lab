@@ -106,7 +106,7 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 	case t0.Tok == token.IDENT && t0.Str == "command":
 		st.lastCommand = toks[1].Str // 1 is the name -- triggers AddCommand
 		toks = toks[2:]              // get rid of first
-		toks.Insert(0, token.IDENT, "goal.AddCommand")
+		toks.Insert(0, token.IDENT, "goalrun.AddCommand")
 		toks.Insert(1, token.LPAREN)
 		toks.Insert(2, token.STRING, `"`+st.lastCommand+`"`)
 		toks.Insert(3, token.COMMA)
@@ -266,7 +266,7 @@ func (st *State) TranspileExec(ewords []string, output bool) Tokens {
 	}
 	startExec := func() {
 		bgJob = false
-		etoks.Add(token.IDENT, "goal")
+		etoks.Add(token.IDENT, "goalrun")
 		etoks.Add(token.PERIOD)
 		switch {
 		case output && noStop:

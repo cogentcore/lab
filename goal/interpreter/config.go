@@ -127,19 +127,28 @@ func Build(c *Config) error {
 		}
 	}
 
-	// cfg := &gotosl.Config{}
-	// cfg.Debug = verbose
-	// err := gotosl.Run(cfg)
-	// if err != nil {
-	// 	errs = append(errs, err)
-	// }
 	args := []string{"build"}
 	if verbose {
 		args = append(args, "-v")
 	}
-	err := exec.Verbose().Run("go", args...)
+
+	inCmd := false
+	output := ""
+	fi, err := os.Stat("cmd")
+	if err == nil && fi.IsDir() {
+		output = filepath.Base(errors.Log1(os.Getwd()))
+		inCmd = true
+		args = append(args, "-o", output)
+		os.Chdir("cmd")
+	}
+
+	err = exec.Verbose().Run("go", args...)
 	if err != nil {
 		errs = append(errs, err)
+	}
+	if inCmd {
+		os.Rename(output, filepath.Join("..", output))
+		os.Chdir("../")
 	}
 
 	return errors.Join(errs...)

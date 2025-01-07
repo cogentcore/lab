@@ -12,10 +12,10 @@ import (
 
 var Symbols = map[string]map[string]reflect.Value{}
 
-// ImportGoal imports special symbols from the goal package.
+// ImportGoal makes the methods of goal object available in goalrun package.
 func (in *Interpreter) ImportGoal() {
 	in.Interp.Use(interp.Exports{
-		"cogentcore.org/lab/goal/goal": map[string]reflect.Value{
+		"cogentcore.org/lab/goalrun/goalrun": map[string]reflect.Value{
 			"Run":         reflect.ValueOf(in.Goal.Run),
 			"RunErrOK":    reflect.ValueOf(in.Goal.RunErrOK),
 			"Output":      reflect.ValueOf(in.Goal.Output),

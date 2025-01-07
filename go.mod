@@ -3,7 +3,7 @@ module cogentcore.org/lab
 go 1.22
 
 require (
-	cogentcore.org/core v0.3.8-0.20241223205351-d797b66be415
+	cogentcore.org/core v0.3.8-0.20241225201506-0a17ddfaddf6
 	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56
 	github.com/ergochat/readline v0.1.2
 	github.com/mitchellh/go-homedir v1.1.0

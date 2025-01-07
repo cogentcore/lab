@@ -122,8 +122,8 @@ import (
 )
 
 func main() {
-	goal := goal.NewGoal()
-	_ = goal
+	goalrun := goal.NewGoal()
+	_ = goalrun
 `
 
 	src := st.Code()
