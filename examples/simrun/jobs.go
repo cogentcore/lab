@@ -15,6 +15,7 @@ import (
 	"cogentcore.org/core/base/elide"
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fsx"
+	"cogentcore.org/core/base/iox/tomlx"
 	"cogentcore.org/core/base/strcase"
 	"cogentcore.org/core/core"
 	"cogentcore.org/lab/goal/goalib"
@@ -38,9 +39,9 @@ func (br *SimRun) Jobs() { //types:add
 		dbfmt := filepath.Join(br.DataRoot, "dbformat.csv")
 		fdt := table.New()
 		if errors.Log1(fsx.FileExists(dbfmt)) {
-			fdt.OpenCSV(fsx.Filename(dbfmt), tensor.Tab)
+			fdt.OpenCSV(fsx.Filename(dbfmt), tensor.Comma)
 		} else {
-			fdt.ReadCSV(bytes.NewBuffer([]byte(defaultJobFormat)), tensor.Tab)
+			fdt.ReadCSV(bytes.NewBuffer([]byte(defaultJobFormat)), tensor.Comma)
 		}
 		dt.ConfigFromTable(fdt)
 	}
@@ -52,11 +53,16 @@ func (br *SimRun) Jobs() { //types:add
 		dp := filepath.Join(dpath, d)
 		meta := filepath.Join(dp, "dbmeta.toml")
 		if goalib.FileExists(meta) {
-			// md := br.OpenTOML(meta)
-			//
-			//	for k, v := range md {
-			//		dt.Column(k).SetString(v, i)
-			//	}
+			md := make(map[string]string)
+			tomlx.Open(&md, meta)
+			for k, v := range md {
+				dc := dt.Column(k)
+				if dc != nil {
+					dc.SetString(v, i)
+					//	} else {
+					//		fmt.Println("warning: job column named:", k, "not found")
+				}
+			}
 		}
 	}
 	tv.Table.Sequential()
@@ -138,11 +144,11 @@ func (br *SimRun) JobStatus(jid string, force bool) {
 	}
 	goalrun.Run("@1", "cd", spath)
 	goalrun.Run("@0")
-	sj := `@1 cat job.job`
+	sj := goalrun.Output("@1", "cat", "job.job")
 	// fmt.Println("server job:", sj)
 	if sstat != "Done" && !force {
 		goalrun.RunErrOK("@1", "squeue", "-j", sj, "-o", "%T", ">&", "job.squeue")
-		stat := `@1 cat job.squeue`
+		stat := goalrun.Output("@1", "cat", "job.squeue")
 		// fmt.Println("server status:", stat)
 		switch {
 		case strings.Contains(stat, "Invalid job id"):
@@ -162,7 +168,7 @@ func (br *SimRun) JobStatus(jid string, force bool) {
 	goalrun.Run("@1", "/bin/ls", "-1", ">", "job.files")
 	goalrun.Run("@0")
 	core.MessageSnackbar(br, "Retrieving job files for: "+jid)
-	jfiles := `@1 /bin/ls -1 job.*`
+	jfiles := goalrun.Output("@1", "/bin/ls", "-1", "job.*")
 	for _, jf := range goalib.SplitLines(jfiles) {
 		// fmt.Println(jf)
 		rfn := "@1:" + jf
@@ -176,7 +182,7 @@ func (br *SimRun) JobStatus(jid string, force bool) {
 		goalib.WriteFile("job.status", sstat)
 		goalrun.RunErrOK("/bin/rm", "job.*.out")
 	}
-	jfiles = `/bin/ls -1 job.*` // local
+	jfiles = goalrun.Output("/bin/ls", "-1", "job.*") // local
 	meta := fmt.Sprintf("%s = %q\n", "Version", br.Config.Version) + fmt.Sprintf("%s = %q\n", "Server", br.Config.ServerName)
 	for _, jf := range goalib.SplitLines(jfiles) {
 		if strings.Contains(jf, "sbatch") || strings.HasSuffix(jf, ".out") {

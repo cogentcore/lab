@@ -142,7 +142,7 @@ Any number of active SSH connections can be maintained and used dynamically with
 
 Each host maintains its own working directory and environment variables, which can be configured and re-used by default whenever using a given host.
 
-* `cossh hostname.org [name]`  establishes a connection, using given optional name to refer to this connection.  If the name is not provided, a sequential number will be used, starting with 1, with 0 referring always to the local host.
+* `gossh hostname.org [name]`  establishes a connection, using given optional name to refer to this connection.  If the name is not provided, a sequential number will be used, starting with 1, with 0 referring always to the local host.
 
 * `@name` then refers to the given host in all subsequent commands, with `@0` referring to the local host where the goal script is running.
 
@@ -156,10 +156,10 @@ Each host maintains its own working directory and environment variables, which c
 
 ```sh
 @name // or:
-cossh @name
+gossh @name
 ```
 
-uses the given host for all subsequent commands (unless explicitly specified), until the default is changed.  Use `cossh @0` to return to localhost.
+uses the given host for all subsequent commands (unless explicitly specified), until the default is changed.  Use `gossh @0` to return to localhost.
 
 ### Redirect input / output among hosts
 
@@ -176,7 +176,7 @@ ls *.tsv | @host cat > files.txt
 
 ### scp to copy files easily
 
-The builtin `scp` function allows easy copying of files across hosts, using the persistent connections established with `cossh` instead of creating new connections as in the standard scp command.
+The builtin `scp` function allows easy copying of files across hosts, using the persistent connections established with `gossh` instead of creating new connections as in the standard scp command.
 
 `scp` is _always_ run from the local host, with the remote host filename specified as `@name:remotefile`
 
@@ -194,7 +194,7 @@ and entire directories can be copied, as in `cp -a` or `cp -r` (this behavior is
 ### Close connections
 
 ```sh
-cossh close
+gossh close
 ```
 
 Will close all active connections and return the default host to @0.  All active connections are also automatically closed when the shell terminates.

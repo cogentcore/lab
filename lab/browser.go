@@ -79,6 +79,8 @@ func (br *Browser) UpdateFiles() { //types:add
 	}
 }
 
+// MakeToolbar makes a default toolbar for the browser, with update files
+// and update scripts buttons, followed by MakeScriptsToolbar for the scripts.
 func (br *Browser) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(br.UpdateFiles).SetText("").SetIcon(icons.Refresh).SetShortcut("Command+U")
@@ -86,6 +88,12 @@ func (br *Browser) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(br.UpdateScripts).SetText("").SetIcon(icons.Code)
 	})
+	br.MakeScriptsToolbar(p)
+}
+
+// MakeScriptsToolbar is a maker for adding buttons for each uppercase script
+// to the toolbar.
+func (br *Browser) MakeScriptsToolbar(p *tree.Plan) {
 	scr := maps.Keys(br.Scripts)
 	slices.Sort(scr)
 	for _, s := range scr {

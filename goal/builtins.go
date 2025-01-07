@@ -34,7 +34,7 @@ func (gl *Goal) InstallBuiltins() {
 	gl.Builtins["add-path"] = gl.AddPath
 	gl.Builtins["which"] = gl.Which
 	gl.Builtins["source"] = gl.Source
-	gl.Builtins["cossh"] = gl.CoSSH
+	gl.Builtins["gossh"] = gl.GoSSH
 	gl.Builtins["scp"] = gl.Scp
 	gl.Builtins["debug"] = gl.Debug
 	gl.Builtins["history"] = gl.History
@@ -219,15 +219,15 @@ func (gl *Goal) Source(cmdIO *exec.CmdIO, args ...string) error {
 	return nil
 }
 
-// CoSSH manages SSH connections, which are referenced by the @name
+// GoSSH manages SSH connections, which are referenced by the @name
 // identifier.  It handles the following cases:
 //   - @name -- switches to using given host for all subsequent commands
 //   - host [name] -- connects to a server specified in first arg and switches
 //     to using it, with optional name instead of default sequential number.
 //   - close -- closes all open connections, or the specified one
-func (gl *Goal) CoSSH(cmdIO *exec.CmdIO, args ...string) error {
+func (gl *Goal) GoSSH(cmdIO *exec.CmdIO, args ...string) error {
 	if len(args) < 1 {
-		return fmt.Errorf("cossh: requires at least one argument")
+		return fmt.Errorf("gossh: requires at least one argument")
 	}
 	cmd := args[0]
 	var err error

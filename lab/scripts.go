@@ -24,8 +24,9 @@ import (
 )
 
 func (br *Browser) InitInterp() {
-	br.Interpreter = interpreter.NewInterpreter(interp.Options{})
-	br.Interpreter.Config()
+	if br.Interpreter == nil {
+		br.Interpreter = interpreter.NewInterpreter(interp.Options{})
+	}
 	// logx.UserLevel = slog.LevelDebug // for debugging of init loading
 }
 

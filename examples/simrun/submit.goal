@@ -182,7 +182,7 @@ func (br *SimRun) GoModulePath(dir string) (modpath, fullpath string) {
 	@0
 	os.Chdir(dir)
 	cd {dir}
-	gg := goalib.SplitLines(`go mod graph`)
+	gg := goalib.SplitLines($go mod graph$)
 	gg = strings.Fields(gg[0])
 	modpath = gg[0]
 

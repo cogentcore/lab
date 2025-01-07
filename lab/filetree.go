@@ -176,6 +176,8 @@ func (fn *FileNode) OpenFile() error {
 				})
 			})
 			d.RunDialog(fn)
+		case fileinfo.Toml:
+			ts.AsLab().EditorFile(df, string(fn.Filepath))
 
 		default:
 			dt := table.New()
@@ -203,7 +205,7 @@ func (fn *FileNode) OpenFile() error {
 	case fn.Info.Cat == fileinfo.Archive || fn.Info.Cat == fileinfo.Backup: // don't edit
 		fn.OpenFilesDefault()
 	default:
-		ts.AsLab().EditorString(df, string(fn.Filepath))
+		ts.AsLab().EditorFile(df, string(fn.Filepath))
 	}
 	return nil
 }
@@ -230,7 +232,7 @@ func (fn *FileNode) EditFile() {
 		return
 	}
 	df := fsx.DirAndFile(string(fn.Filepath))
-	ts.AsLab().EditorString(df, string(fn.Filepath))
+	ts.AsLab().EditorFile(df, string(fn.Filepath))
 }
 
 // PlotFiles calls PlotFile on selected files

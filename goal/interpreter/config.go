@@ -134,15 +134,14 @@ func Build(c *Config) error {
 
 	inCmd := false
 	output := ""
-	fi, err := os.Stat("cmd")
-	if err == nil && fi.IsDir() {
+	if goalib.FileExists("cmd/main.go") {
 		output = filepath.Base(errors.Log1(os.Getwd()))
 		inCmd = true
 		args = append(args, "-o", output)
 		os.Chdir("cmd")
 	}
 
-	err = exec.Verbose().Run("go", args...)
+	err := exec.Verbose().Run("go", args...)
 	if err != nil {
 		errs = append(errs, err)
 	}

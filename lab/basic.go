@@ -33,6 +33,7 @@ func (br *Basic) Init() {
 	})
 	br.InitInterp()
 	br.Interpreter.Interp.Use(coresymbols.Symbols) // gui imports
+	br.Interpreter.Config()                        // call after all Use calls
 
 	br.OnShow(func(e events.Event) {
 		br.UpdateFiles()

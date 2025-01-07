@@ -7,9 +7,9 @@ package main
 //go:generate core generate -add-types -add-funcs
 
 import (
-	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fsx"
@@ -25,7 +25,8 @@ import (
 	"cogentcore.org/lab/lab"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensorcore"
-	"cogentcore.org/lab/tensorfs"
+	"cogentcore.org/lab/yaegilab/gui"
+	"github.com/cogentcore/yaegi/interp"
 )
 
 // goalrun is needed for running goal commands.
@@ -46,8 +47,9 @@ Start, string
 End, string
 `
 
-// SimRun is a data browser with the files as the left panel,
-// and the Tabber as the right panel.
+// SimRun manages the running and data analysis of results from simulations
+// that are run on remote server(s), within a Cogent Lab browser environment,
+// with the files as the left panel, and the Tabber as the right panel.
 type SimRun struct {
 	core.Frame
 	lab.Browser
@@ -77,14 +79,9 @@ func main() {
 	cli.Run(opts, cfg, interpreter.Run, interpreter.Build)
 }
 
+// Interactive is the cli function that gets called by default at gui startup.
 func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
-	in.Interp.Use(coresymbols.Symbols) // gui imports
-	in.Config()
-	b, br := NewSimRunWindow(tensorfs.CurRoot, "SimRun")
-	b.AddTopBar(func(bar *core.Frame) {
-		tb := core.NewToolbar(bar)
-		tb.Maker(br.MakeToolbar)
-	})
+	b, _ := NewSimRunWindow(in)
 	b.OnShow(func(e events.Event) {
 		go func() {
 			if c.Expr != "" {
@@ -98,38 +95,57 @@ func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 	return nil
 }
 
-// NewSimRunWindow returns a new data Browser window for given
-// file system (nil for os files) and data directory.
+// NewSimRunWindow returns a new SimRun window using given interpreter.
 // do RunWindow on resulting [core.Body] to open the window.
-func NewSimRunWindow(fsys fs.FS, dataDir string) (*core.Body, *SimRun) {
+func NewSimRunWindow(in *interpreter.Interpreter) (*core.Body, *SimRun) {
 	startDir, _ := os.Getwd()
 	startDir = errors.Log1(filepath.Abs(startDir))
 	b := core.NewBody("SimRun: " + fsx.DirAndFile(startDir))
 	br := NewSimRun(b)
-	br.FS = fsys
-	ddr := dataDir
-	if fsys == nil {
-		ddr = errors.Log1(filepath.Abs(dataDir))
-	}
-	br.SetDataRoot(ddr)
-	br.InitSimRun()
+	br.Interpreter = in
+	b.AddTopBar(func(bar *core.Frame) {
+		tb := core.NewToolbar(bar)
+		br.Toolbar = tb
+		tb.Maker(br.MakeToolbar)
+	})
+	br.InitSimRun(startDir)
 	return b, br
 }
 
-func (br *SimRun) InitSimRun() {
-	br.InitInterp()
-	br.Interpreter.Interp.Use(coresymbols.Symbols) // gui imports
-	ddr := br.DataRoot
-	br.SetScriptsDir(filepath.Join(ddr, "simscripts"))
+// InitSimRun initializes the simrun configuration and data
+// for given starting directory, which should be the main github
+// current working directory for the simulation being run.
+// All the simrun data is contained within a "simdata" directory
+// under the startDir: this dir is typically a symbolic link
+// to a common collection of such simdata directories for all
+// the different simulations being run.
+// The goal Interpreter is typically already set by this point
+// but will be created if not.
+func (br *SimRun) InitSimRun(startDir string) {
+	br.StartDir = startDir
+	ddr := errors.Log1(filepath.Abs("simdata"))
+	br.SetDataRoot(ddr)
+	if br.Interpreter == nil {
+		br.InitInterp()
+	}
+	in := br.Interpreter
+	in.Interp.Use(coresymbols.Symbols) // gui imports
+	in.Interp.Use(gui.Symbols)         // gui imports
+	in.Interp.Use(interp.Exports{
+		"cogentcore.org/lab/simrun/simrun": map[string]reflect.Value{
+			"SimRun": reflect.ValueOf(br), // our SimRun is available as simrun.SimRun
+		},
+	})
+	in.Config()
+	br.SetScriptsDir(filepath.Join(br.DataRoot, "simscripts"))
 	lab.TheBrowser = &br.Browser
 	lab.CurTabber = br.Browser.Tabs
-	goalrun = br.Interpreter.Goal
-	br.Interpreter.Eval("br := databrowser.TheBrowser") // grab it
+	goalrun = in.Goal
 	br.Config.StartDir = br.StartDir
 	br.Config.DataRoot = br.DataRoot
 	br.Config.Defaults()
 	br.JobsTable = table.New()
-	br.UpdateScripts()
+	br.UpdateScripts() // automatically runs lowercase init scripts
 }
 
 func (br *SimRun) Init() {
