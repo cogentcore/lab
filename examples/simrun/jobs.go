@@ -59,8 +59,6 @@ func (br *SimRun) Jobs() { //types:add
 				dc := dt.Column(k)
 				if dc != nil {
 					dc.SetString(v, i)
-					//	} else {
-					//		fmt.Println("warning: job column named:", k, "not found")
 				}
 			}
 		}

@@ -22,7 +22,7 @@ type FilterResults struct {
 }
 
 func (fp *FilterResults) Defaults() {
-	fp.FileContains = "_avgepc"
+	fp.FileContains = "_epc"
 	fp.Ext = ".tsv"
 }
 
@@ -86,56 +86,64 @@ type Configuration struct {
 	// StartDir is the starting directory, where the app was originally started.
 	StartDir string
 
-	// User id as in system login name (i.e., user@system)
+	// User id as in system login name (i.e., user@system).
 	User string
 
-	// first 3 letters of User, for naming jobs (auto-set from User)
+	// UserShort is the first 3 letters of User,
+	// for naming jobs (auto-set from User).
 	UserShort string
 
-	// name of simulation project, lowercase (should be name of source dir)
+	// Project is the name of simulation project, lowercase
+	// (should be name of source dir).
 	Project string
 
-	// current git version string, from git describe --tags
+	// Package is the parent package: e.g., github.com/emer/axon/v2
+	// This is used to update the go.mod, along with the Version.
+	Package string
+
+	// Version is the current git version string, from git describe --tags.
 	Version string
 
-	// parameters for job resources etc
+	// Job has the parameters for job resources etc.
 	Job JobParams `display:"inline"`
 
-	// glob expression for files to fetch from server, for Fetch command,
-	// is *.tsv by default
+	// FetchFiles is a glob expression for files to fetch from server,
+	// for Fetch command. Is *.tsv by default.
 	FetchFiles string
 
-	// nodes to exclude from job, based on what is slow
+	// ExcludeNodes are nodes to exclude from job, based on what is slow.
 	ExcludeNodes string
 
-	//	extra files to upload with job submit, from same dir
+	//	ExtraFiles has extra files to upload with job submit, from same dir.
 	ExtraFiles []string
 
-	// subdirs with other files to upload with job submit (non-code -- see CodeDirs)
+	// ExtraDirs has subdirs with other files to upload with job submit
+	// (non-code -- see CodeDirs).
 	ExtraDirs []string
 
-	// subdirs with code to upload with job submit; go.mod auto-updated to use
+	// CodeDirs has subdirs with code to upload with job submit;
+	// go.mod auto-updated to use.
 	CodeDirs []string
 
-	// name of current server using to run jobs; gets recorded with each job
+	// ServerName is the name of current server using to run jobs;
+	// gets recorded with each job.
 	ServerName string
 
 	// ExtraGoGet is an extra package to do "go get" with, for launching the job.
-	// Typically set this to the parent packge if running within a larger package
-	// upon which this simulation depends, e.g., "github.com/emer/axon/v2@main"
 	ExtraGoGet string
 	
-	// root path from user home dir on server.
+	// ServerRoot is the root path from user home dir on server.
 	// is auto-set to: filepath.Join("simdata", Project, User)
 	ServerRoot string
 
-	// format for timestamps, defaults to "2006-01-02 15:04:05 MST"
-	TimeFormat string
+	// TimeFormat is the format for timestamps,
+	// defaults to "2006-01-02 15:04:05 MST"
+	TimeFormat string `default:"2006-01-02 15:04:05 MST"`
 
-	// parameters for filtering results
+	// Filter has parameters for filtering results.
 	Filter FilterResults
 
-	// parameters for submitting jobs; set from last job run
+	// Submit has parameters for submitting jobs; set from last job run.
 	Submit SubmitParams
 }
 

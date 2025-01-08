@@ -1,0 +1,135 @@
+// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package main
+
+import (
+	"fmt"
+	"io"
+	"os"
+	"strings"
+)
+
+// WriteSBatchHeader writes the header of a SLURM SBatch script
+// that is common across all three scripts.
+// IMPORTANT: set the job parameters here!
+func (br *SimRun) WriteSBatchHeader(w io.Writer, jid string) {
+	fmt.Fprintf(w, "#SBATCH --job-name=%s_%s\n", br.Config.Project, jid)
+	fmt.Fprintf(w, "#SBATCH --mem-per-cpu=%dG\n", br.Config.Job.Memory)
+	fmt.Fprintf(w, "#SBATCH --time=%d:00:00\n", br.Config.Job.Hours)
+	fmt.Fprintf(w, "#SBATCH --ntasks=%d\n", br.Config.Job.Tasks)
+	fmt.Fprintf(w, "#SBATCH --cpus-per-task=%d\n", br.Config.Job.CPUsPerTask)
+	fmt.Fprintf(w, "#SBATCH --ntasks-per-node=%d\n", br.Config.Job.TasksPerNode)
+	if br.Config.ExcludeNodes != "" {
+		fmt.Fprintf(w, "#SBATCH --exclude=%s\n", br.Config.ExcludeNodes)
+	}
+	// fmt.Fprint(w, "#SBATCH --nodelist=agate-[2,19]\n")
+	// fmt.Fprintf(w, "#SBATCH --qos=%s\n", qos)
+	// fmt.Fprintf(w, "#SBATCH --partition=%s\n", qosShort)
+	fmt.Fprintf(w, "#SBATCH --mail-type=FAIL\n")
+	fmt.Fprintf(w, "#SBATCH --mail-user=%s\n", br.Config.User)
+	// these might be needed depending on environment in head node vs. compute nodes
+	// fmt.Fprintf(w, "#SBATCH --export=NONE\n")
+	// fmt.Fprintf(w, "unset SLURM_EXPORT_ENV\n")
+}
+
+func (br *SimRun) WriteSBatchSetup(w io.Writer, jid string) {
+	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
+	fmt.Fprint(w, "#SBATCH --output=job.setup.out\n")
+	fmt.Fprint(w, "#SBATCH --error=job.setup.err\n")
+	br.WriteSBatchHeader(w, jid)
+
+	//////////////////////////////////////////////////////////
+	// now we do all the setup, like building the executable
+	
+	fmt.Fprintf(w, "\n\n")
+	// fmt.Fprintf(w, "go build -mod=mod -tags mpi\n")
+	fmt.Fprintf(w, "go build -mod=mod\n")
+	// fmt.Fprintf(w, "/bin/rm images\n")
+	// fmt.Fprintf(w, "ln -s $HOME/ccn_images/CU3D100_20obj8inst_8tick4sac images\n")
+	fmt.Fprintln(w, "date '+%Y-%m-%d %T %Z' > job.start")
+}
+
+func (br *SimRun) WriteSBatchArray(w io.Writer, jid, setup_id, args string) {
+	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
+	fmt.Fprintf(w, "#SBATCH --array=0-%d\n", br.Config.Job.NRuns-1)
+	fmt.Fprint(w, "#SBATCH --output=job.%A_%a.out\n")
+	// fmt.Fprint(w, "#SBATCH --error=job.%A_%a.err\n")
+ 	fmt.Fprintf(w, "#SBATCH --dependency=afterany:%s\n", setup_id)
+	br.WriteSBatchHeader(w, jid)
+
+	//////////////////////////////////////////////////////////
+	// now we run the job
+	
+	fmt.Fprintf(w, "echo $SLURM_ARRAY_JOB_ID\n")
+	fmt.Fprintf(w, "\n\n")
+	// note: could use srun to run job; -runs = 1 is number to run from run start
+	fmt.Fprintf(w, "./%s -nogui -cfg config_job.toml -run $SLURM_ARRAY_TASK_ID -runs 1 %s\n", br.Config.Project, args)
+}
+
+func (br *SimRun) WriteSBatchCleanup(w io.Writer, jid, array_id string) {
+	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
+	fmt.Fprint(w, "#SBATCH --output=job.cleanup.out\n")
+	// fmt.Fprint(w, "#SBATCH --error=job.cleanup.err")
+ 	fmt.Fprintf(w, "#SBATCH --dependency=afterany:%s\n", array_id)
+	br.WriteSBatchHeader(w, jid)
+	fmt.Fprintf(w, "\n\n")
+
+	//////////////////////////////////////////////////////////
+	// now we cleanup after all the jobs have run
+	//	can cat results files etc.
+
+ 	fmt.Fprintf(w, "cat job.*.out > job.out\n")
+ 	fmt.Fprintf(w, "/bin/rm job.*.out\n")
+
+ 	fmt.Fprintf(w, "cat *_train_run.tsv > all_run.tsv\n")
+ 	fmt.Fprintf(w, "/bin/rm *_train_run.tsv\n")
+
+ 	fmt.Fprintf(w, "cat *_train_epoch.tsv > all_epc.tsv\n")
+ 	fmt.Fprintf(w, "/bin/rm *_train_epoch.tsv\n")
+
+	fmt.Fprintln(w, "date '+%Y-%m-%d %T %Z' > job.end")
+}
+
+func (br *SimRun) SubmitSBatch(jid, args string) string {
+	@0
+	f, _ := os.Create("job.setup.sbatch")
+	br.WriteSBatchSetup(f, jid)
+	f.Close()
+	scp job.setup.sbatch @1:job.setup.sbatch
+	sid := br.RunSBatch("job.setup.sbatch")
+
+	f, _ = os.Create("job.sbatch")
+	br.WriteSBatchArray(f, jid, sid, args)
+	f.Close()
+	scp job.sbatch @1:job.sbatch
+	aid := br.RunSBatch("job.sbatch")
+	
+	f, _ = os.Create("job.cleanup.sbatch")
+	br.WriteSBatchCleanup(f, jid, aid)
+	f.Close()
+	scp job.cleanup.sbatch @1:job.cleanup.sbatch
+	br.RunSBatch("job.cleanup.sbatch")
+
+	return aid
+}
+
+// RunSBatch runs sbatch on the given sbatch file, 
+// returning the resulting job id.
+func (br *SimRun) RunSBatch(sbatch string) string {
+	@1
+	sbatch {sbatch} > job.slurm
+	@0
+	ss := $@1 cat job.slurm$
+	if ss == "" {
+		fmt.Println("JobStatus ERROR: no server job.slurm file to get server job id from")
+		@1	cd
+		@0
+		return ""
+	}
+	ssf := strings.Fields(ss)
+	sj := ssf[len(ssf)-1]
+	return sj
+}
+
