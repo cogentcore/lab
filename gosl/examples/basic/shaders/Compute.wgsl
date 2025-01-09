@@ -57,7 +57,7 @@ fn ParamStruct_IntegFromRaw(ps: ParamStruct, idx: i32) {
 	SubStruct_IntegFromRaw(ps.Sub, idx);
 }
 fn Compute(i: u32) { //gosl:kernel
-	let Params=Params[0]; ParamStruct_IntegFromRaw(Params, i32(i));
+	let params=Params[0]; ParamStruct_IntegFromRaw(params, i32(i));
 }
 
 //////// import: "atomic.go"

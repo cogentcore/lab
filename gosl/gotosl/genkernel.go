@@ -36,8 +36,7 @@ func (st *State) GenKernelHeader(sy *System, kn *Kernel, avars map[string]*Var) 
 		}
 		for vi, vr := range gp.Vars {
 			access := ", read_write"
-			rw := st.VarIsReadWrite(vr.Name)
-			if vr.ReadOnly && !rw {
+			if vr.ReadOnly && !vr.ReadOrWrite {
 				access = ", read"
 			}
 			if gp.Uniform {

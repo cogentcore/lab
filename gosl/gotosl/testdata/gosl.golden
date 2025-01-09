@@ -58,7 +58,6 @@ func GPUInit() {
 			vr = sgp.AddStruct("Params", int(unsafe.Sizeof(ParamStruct{})), 1, gpu.ComputeShader)
 			vr.ReadOnly = true
 			vr = sgp.AddStruct("Ctx", int(unsafe.Sizeof(Context{})), 1, gpu.ComputeShader)
-			vr.ReadOnly = true
 			sgp.SetNValues(1)
 		}
 		{

@@ -20,9 +20,10 @@ var (
 	//gosl:read-only
 	Params []ParamStruct
 
-	// Ctx provides additional context.
+	// Ctx provides additional context, and is usually read-only,
+	// but is updated in a specific kernel flagged as read-write.
 	//
-	//gosl:read-only
+	//gosl:read-or-write
 	Ctx []Context
 
 	// Data is the data on which the computation operates.

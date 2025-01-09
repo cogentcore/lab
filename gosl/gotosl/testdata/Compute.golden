@@ -7,7 +7,7 @@ var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
 var<storage, read> Params: array<ParamStruct>;
 @group(0) @binding(2)
-var<storage, read> Ctx: array<Context>;
+var<storage, read_write> Ctx: array<Context>;
 // // Data is the data on which the computation operates. // 2D: outer index is data, inner index is: Raw, Integ, Exp vars. // 
 @group(1) @binding(0)
 var<storage, read_write> Data: array<f32>;

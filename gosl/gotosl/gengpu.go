@@ -197,7 +197,7 @@ func (st *State) GenGPUSystemInit(sy *System) string {
 			} else {
 				b.WriteString(fmt.Sprintf("\t\t\tvr = sgp.AddStruct(%q, int(unsafe.Sizeof(%s{})), 1, gpu.ComputeShader)\n", vr.Name, vr.SLType()))
 			}
-			if vr.ReadOnly {
+			if vr.ReadOnly && !vr.ReadOrWrite {
 				b.WriteString("\t\t\tvr.ReadOnly = true\n")
 			}
 		}

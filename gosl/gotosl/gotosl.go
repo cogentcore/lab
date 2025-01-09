@@ -52,7 +52,7 @@ type Kernel struct {
 	// Lines is full shader code
 	Lines [][]byte
 
-	// ReadWriteVars are variables marked as read_write for current kernel.
+	// ReadWriteVars are variables marked as read-write for current kernel.
 	ReadWriteVars map[string]bool
 }
 
@@ -70,6 +70,12 @@ type Var struct {
 	// specified by the gosl:read-only property in the variable comments.
 	// It is important to optimize GPU memory usage to indicate this.
 	ReadOnly bool
+
+	// ReadOrWrite indicates that this variable defaults to ReadOnly
+	// but is also flagged as read-write in some cases. It is registered
+	// as read_write in the gpu ComputeSystem, but processed as ReadOnly
+	// by default except for kernels that declare it as read-write.
+	ReadOrWrite bool
 
 	// True if a tensor type
 	Tensor bool

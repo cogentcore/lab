@@ -2690,8 +2690,12 @@ func (p *printer) systemVars(d *ast.GenDecl, sysname string) {
 		vs := s.(*ast.ValueSpec)
 		dirs, docs := p.findDirective(vs.Doc)
 		readOnly := false
+		readOrWrite := false
 		if hasDirective(dirs, "read-only") {
 			readOnly = true
+		} else if hasDirective(dirs, "read-or-write") {
+			readOnly = true
+			readOrWrite = true
 		}
 		if gpnm, ok := directiveAfter(dirs, "group"); ok {
 			if gpnm == "" {
@@ -2754,7 +2758,7 @@ func (p *printer) systemVars(d *ast.GenDecl, sysname string) {
 			}
 			typ = sid.Name + "." + sel.Sel.Name
 		}
-		vr := &Var{Name: nm, Type: typ, ReadOnly: readOnly}
+		vr := &Var{Name: nm, Type: typ, ReadOnly: readOnly, ReadOrWrite: readOrWrite}
 		if strings.HasPrefix(typ, "tensor.") {
 			vr.Tensor = true
 			dstr, ok := directiveAfter(dirs, "dims")
