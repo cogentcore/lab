@@ -537,6 +537,14 @@ func (p *printer) goslFixArgs(args []ast.Expr, params *types.Tuple) ([]ast.Expr,
 				}
 			}
 		case *ast.UnaryExpr:
+			if x.Op == token.AND {
+				if sel, ok := x.X.(*ast.SelectorExpr); ok {
+					_, _, _, _, bt, _ := p.selectorPath(sel)
+					if bt != nil {
+						ags[i] = sel // gosl: get rid of ampersand -- todo may need further qualification?
+					}
+				}
+			}
 			if idx, ok := x.X.(*ast.IndexExpr); ok {
 				isGlobal, tmpVar, _, _, isReadOnly := p.globalVar(idx)
 				if isGlobal {
@@ -1550,12 +1558,8 @@ func (p *printer) selectorExpr(x *ast.SelectorExpr, depth int) (wasIndented bool
 	return false
 }
 
-// gosl: methodExpr needs to deal with possible multiple chains of selector exprs
-// to determine the actual type and name of the receiver.
-// a.b.c() -> sel.X = (a.b) Sel=c
-func (p *printer) methodPath(x *ast.SelectorExpr) (recvPath, recvType string, pathType types.Type, err error) {
+func (p *printer) selectorPath(x *ast.SelectorExpr) (recvPath, recvType string, pathType types.Type, paths []string, bt *types.Struct, err error) {
 	var baseRecv *ast.Ident // first receiver in path
-	var paths []string
 	cur := x
 	for {
 		paths = append(paths, cur.Sel.Name)
@@ -1571,12 +1575,6 @@ func (p *printer) methodPath(x *ast.SelectorExpr) (recvPath, recvType string, pa
 		p.userError(err)
 		return
 	}
-	// note: no pointers!
-	// if p.isPtrArg(baseRecv) {
-	// 	recvPath = "&(*" + baseRecv.Name + ")"
-	// } else {
-	// 	recvPath = "&" + baseRecv.Name
-	// }
 	recvPath = baseRecv.Name
 	var idt types.Type
 	if gvar := p.GoToSL.GetTempVar(baseRecv.Name); gvar != nil {
@@ -1589,11 +1587,21 @@ func (p *printer) methodPath(x *ast.SelectorExpr) (recvPath, recvType string, pa
 		p.userError(err)
 		return
 	}
-	bt, err := p.getStructType(idt)
+	bt, err = p.getStructType(idt)
 	if err != nil {
 		fmt.Println(baseRecv)
 		return
 	}
+	return
+}
+
+// gosl: methodExpr needs to deal with possible multiple chains of selector exprs
+// to determine the actual type and name of the receiver.
+// a.b.c() -> sel.X = (a.b) Sel=c
+func (p *printer) methodPath(x *ast.SelectorExpr) (recvPath, recvType string, pathType types.Type, err error) {
+	var paths []string
+	var bt *types.Struct
+	recvPath, recvType, pathType, paths, bt, err = p.selectorPath(x)
 	curt := bt
 	np := len(paths)
 	for pi := np - 1; pi >= 0; pi-- {
@@ -1711,9 +1719,7 @@ func (p *printer) globalVar(idx *ast.IndexExpr) (isGlobal bool, tmpVar, typName 
 		isReadOnly = false
 	}
 	tmpVar = id.Name
-	if !isReadOnly {
-		tmpVar = strings.ToLower(id.Name)
-	}
+	tmpVar = strings.ToLower(id.Name)
 	vtyp = p.getIdType(id)
 	if vtyp == nil {
 		err := fmt.Errorf("gosl globalVar ERROR: cannot find type for name: %q", id.Name)
