@@ -20,4 +20,15 @@ Overall, there are three main steps:
 
 5. `sledits.go:` Do various forms of post-processing text replacement cleanup on the generated WGSL files, in `SLEdits` function. 
 
+# Struct types and read-write vs. read-only:
+
+1. In Go, all struct args are generally pointers, including method receivers.
+
+2. In WGSL, pointers are strongly constrained, and you cannot use a pointer to a struct field within another struct. In general, structs are best used for static parameters, rather than writable data.
+
+3. For a given method, it is not possible to know in advance based just on type data whether a given struct arg is read-only or read-write -- these are properties of the variables, not the types.
+
+4. Therefore, we make the strong simplifying assumption that all struct args to a method are read-only, and thus the GPU code sets them to non-pointers. Any code that passes non-read-only struct args to such methods will generate a WGSL compilation / validation error.
+
+5. There is one exception: a given method can be explicitly marked with `//gosl:pointer-receiver` to make the method receiver argument a pointer, and thus usable with read-write pointers.
 

@@ -2,9 +2,13 @@
 // kernel: Compute
 
 @group(0) @binding(0)
-var<storage, read> Seed: array<Seeds>;
+var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
-var<storage, read_write> Data: array<Rnds>;
+var<storage, read> Seed: array<Seeds>;
+@group(0) @binding(2)
+var<storage, read_write> Floats: array<f32>;
+@group(0) @binding(3)
+var<storage, read_write> Uints: array<u32>;
 
 alias GPUVars = i32;
 
@@ -14,6 +18,10 @@ fn main(@builtin(workgroup_id) wgid: vec3<u32>, @builtin(num_workgroups) nwg: ve
 	Compute(idx);
 }
 
+fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
+	return s0 * i0 + s1 * i1;
+}
+
 
 //////// import: "rand.go"
 struct Seeds {
@@ -21,30 +29,29 @@ struct Seeds {
 	pad:  i32,
 	pad1: i32,
 }
-struct Rnds {
-	Uints: vec2<u32>,
-	pad:   i32,
-	pad1: i32,
-	Floats: vec2<f32>,
-	pad2:   i32,
-	pad3: i32,
-	Floats11: vec2<f32>,
-	pad4:     i32,
-	pad5: i32,
-	Gauss: vec2<f32>,
-	pad6:  i32,
-	pad7: i32,
-}
-fn Rnds_RndGen(r: ptr<function,Rnds>, counter: su64, idx: u32) {
-	(*r).Uints = RandUint32Vec2(counter, u32(0), idx);
-	(*r).Floats = RandFloat32Vec2(counter, u32(1), idx);
-	(*r).Floats11 = RandFloat32Range11Vec2(counter, u32(2), idx);
-	(*r).Gauss = RandFloat32NormVec2(counter, u32(3), idx);
+const  FloatX: i32 = 0;
+const  FloatY: i32 = 1;
+const  FloatR11X: i32 = 2;
+const  FloatR11Y: i32 = 3;
+const  GaussX: i32 = 4;
+const  GaussY: i32 = 5;
+const  NVars: i32 = 6;
+fn RndGen(counter: su64, idx: u32) {
+	var uints = RandUint32Vec2(counter, u32(0), idx);
+	var floats = RandFloat32Vec2(counter, u32(1), idx);
+	var floats11 = RandFloat32Range11Vec2(counter, u32(2), idx);
+	var gauss = RandFloat32NormVec2(counter, u32(3), idx);
+	Uints[idx][0] = uints.X;
+	Uints[idx][1] = uints.Y;
+	Floats[idx][FloatX] = floats.X;
+	Floats[idx][FloatY] = floats.Y;
+	Floats[idx][Float11X] = floats11.X;
+	Floats[idx][Float11Y] = floats11.Y;
+	Floats[idx][GaussX] = gauss.X;
+	Floats[idx][GaussY] = gauss.Y;
 }
 fn Compute(i: u32) { //gosl:kernel
-	var data=Data[i];
-	Rnds_RndGen(&data, Seed[0].Seed, i);
-	Data[i]=data;
+	RndGen(Seed[0].Seed, i);
 }
 
 //////// import: "slrand.wgsl"

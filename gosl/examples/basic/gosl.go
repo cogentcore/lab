@@ -275,9 +275,8 @@ func SyncFromGPU(vars ...GPUVars) {
 }
 
 // GetParams returns a pointer to the given global variable: 
-// [Params] []ParamStruct at given index.
-// To ensure that values are updated on the GPU, you must call [SetParams].
-// after all changes have been made.
+// [Params] []ParamStruct at given index. This directly processed in the GPU code,
+// so this function call is an equivalent for the CPU.
 func GetParams(idx uint32) *ParamStruct {
 	return &Params[idx]
 }

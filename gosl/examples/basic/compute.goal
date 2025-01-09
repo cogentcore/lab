@@ -38,8 +38,9 @@ const (
 	NVars
 )
 
-// ParamStruct has the test params
-type ParamStruct struct {
+// SubStruct is a sub struct within the overall param struct.
+// There are tricky rules about how to access such things.
+type SubStruct struct {
 
 	// rate constant in msec
 	Tau float32
@@ -51,18 +52,42 @@ type ParamStruct struct {
 	pad1 float32
 }
 
+// ParamStruct has the test params
+type ParamStruct struct {
+
+	// rate constant in msec
+	Tau float32
+
+	// 1/Tau
+	Dt float32
+
+	pad  float32
+	pad1 float32
+
+	Sub SubStruct
+}
+
 // IntegFromRaw computes integrated value from current raw value
-func (ps *ParamStruct) IntegFromRaw(idx int) {
+func (ps *SubStruct) IntegFromRaw(idx int) {
 	integ := Data[idx, Integ]
 	integ += ps.Dt * (Data[idx, Raw] - integ)
 	Data[idx, Integ] = integ
 	Data[idx, Exp] = math32.FastExp(-integ)
 }
 
+// IntegFromRaw computes integrated value from current raw value
+func (ps *ParamStruct) IntegFromRaw(idx int) {
+	integ := Data[idx, Integ]
+	integ += ps.Dt * (Data[idx, Raw] - integ)
+	Data[idx, Integ] = integ
+	Data[idx, Exp] = math32.FastExp(-integ)
+
+	ps.Sub.IntegFromRaw(idx)
+}
+
 // Compute does the main computation.
 func Compute(i uint32) { //gosl:kernel
-	params := GetParams(0)
-	params.IntegFromRaw(int(i))
+	Params[0].IntegFromRaw(int(i))
 }
 
 //gosl:end
@@ -72,8 +97,18 @@ func Compute(i uint32) { //gosl:kernel
 func (ps *ParamStruct) Defaults() {
 	ps.Tau = 5
 	ps.Update()
+	ps.Sub.Defaults()
 }
 
 func (ps *ParamStruct) Update() {
+	ps.Dt = 1.0 / ps.Tau
+}
+
+func (ps *SubStruct) Defaults() {
+	ps.Tau = 5
+	ps.Update()
+}
+
+func (ps *SubStruct) Update() {
 	ps.Dt = 1.0 / ps.Tau
 }

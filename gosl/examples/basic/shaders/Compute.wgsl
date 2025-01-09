@@ -30,21 +30,34 @@ const  Raw: i32   = 0;
 const  Integ: i32 = 1;
 const  Exp: i32 = 2;
 const  NVars: i32 = 3;
-struct ParamStruct {
+struct SubStruct {
 	Tau: f32,
 	Dt: f32,
 	pad:  f32,
 	pad1: f32,
 }
-fn ParamStruct_IntegFromRaw(ps: ptr<function,ParamStruct>, idx: i32) {
+struct ParamStruct {
+	Tau: f32,
+	Dt: f32,
+	pad:  f32,
+	pad1: f32,
+	Sub: SubStruct,
+}
+fn SubStruct_IntegFromRaw(ps: SubStruct, idx: i32) {
 	var integ = Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ))];
-	integ += (*ps).Dt * (Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Raw))] - integ);
+	integ += ps.Dt * (Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Raw))] - integ);
 	Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ))] = integ;
 	Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Exp))] = FastExp(-integ);
 }
+fn ParamStruct_IntegFromRaw(ps: ParamStruct, idx: i32) {
+	var integ = Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ))];
+	integ += ps.Dt * (Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Raw))] - integ);
+	Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ))] = integ;
+	Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Exp))] = FastExp(-integ);
+	SubStruct_IntegFromRaw(ps.Sub, idx);
+}
 fn Compute(i: u32) { //gosl:kernel
-	var params = Params[0];
-	ParamStruct_IntegFromRaw(&params, i32(i));
+	let Params=Params[0]; ParamStruct_IntegFromRaw(Params, i32(i));
 }
 
 //////// import: "atomic.go"

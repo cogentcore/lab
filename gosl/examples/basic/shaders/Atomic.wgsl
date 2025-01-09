@@ -30,11 +30,18 @@ const  Raw: i32   = 0;
 const  Integ: i32 = 1;
 const  Exp: i32 = 2;
 const  NVars: i32 = 3;
+struct SubStruct {
+	Tau: f32,
+	Dt: f32,
+	pad:  f32,
+	pad1: f32,
+}
 struct ParamStruct {
 	Tau: f32,
 	Dt: f32,
 	pad:  f32,
 	pad1: f32,
+	Sub: SubStruct,
 }
 
 //////// import: "atomic.go"

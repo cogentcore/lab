@@ -382,7 +382,7 @@ func (p *printer) parameters(fields *ast.FieldList, mode paramMode) {
 	if len(fields.List) > 0 {
 		prevLine := p.lineFor(fields.Opening)
 		ws := indent
-		for i, par := range fields.List {
+		for pi, par := range fields.List {
 			// determine par begin and end line (may be different
 			// if there are multiple parameter names for this par
 			// or the type is on a separate line)
@@ -390,7 +390,7 @@ func (p *printer) parameters(fields *ast.FieldList, mode paramMode) {
 			parLineEnd := p.lineFor(par.End())
 			// separating "," if needed
 			needsLinebreak := 0 < prevLine && prevLine < parLineBeg
-			if i > 0 {
+			if pi > 0 {
 				// use position of parameter following the comma as
 				// comma position for correct comma placement, but
 				// only if the next parameter is on the same line
@@ -403,7 +403,7 @@ func (p *printer) parameters(fields *ast.FieldList, mode paramMode) {
 			if needsLinebreak && p.linebreak(parLineBeg, 0, ws, true) > 0 {
 				// break line if the opening "(" or previous parameter ended on a different line
 				ws = ignore
-			} else if i > 0 {
+			} else if pi > 0 {
 				p.print(blank)
 			}
 			// parameter names
@@ -413,7 +413,7 @@ func (p *printer) parameters(fields *ast.FieldList, mode paramMode) {
 					p.print(nm.Name)
 					p.print(token.COLON)
 					p.print(blank)
-					atyp, isPtr := p.ptrType(stripParensAlways(par.Type))
+					atyp, isPtr := p.ptrParamType(stripParensAlways(par.Type))
 					p.expr(atyp)
 					if isPtr {
 						p.print(">")
@@ -433,15 +433,23 @@ func (p *printer) parameters(fields *ast.FieldList, mode paramMode) {
 				p.identList(par.Names, ws == indent)
 				p.print(token.COLON)
 				p.print(blank)
-				// parameter type -- gosl = type first, replace ptr star with `inout`
-				atyp, isPtr := p.ptrType(stripParensAlways(par.Type))
-				p.expr(atyp)
-				if isPtr {
-					p.print(">")
-					p.curPtrArgs = append(p.curPtrArgs, par.Names[0])
+				if pi == 0 { // gosl: cannot have a "real" pointer arg as the first parameter
+					// because we assume all first parameters are method receivers.
+					atyp, _ := p.methRecvPtrType(stripParensAlways(par.Type))
+					p.expr(atyp)
+					// if isPtr {
+					// 	p.curPtrArgs = append(p.curPtrArgs, par.Names[0])
+					// }
+				} else {
+					atyp, isPtr := p.ptrParamType(stripParensAlways(par.Type))
+					p.expr(atyp)
+					if isPtr {
+						p.print(">")
+						p.curPtrArgs = append(p.curPtrArgs, par.Names[0])
+					}
 				}
 			} else {
-				atyp, isPtr := p.ptrType(stripParensAlways(par.Type))
+				atyp, isPtr := p.ptrParamType(stripParensAlways(par.Type))
 				p.expr(atyp)
 				if isPtr {
 					p.print(">")
@@ -515,8 +523,10 @@ func (p *printer) goslFixArgs(args []ast.Expr, params *types.Tuple) ([]ast.Expr,
 			ags[i] = nn
 		case *ast.Ident:
 			if gvar := p.GoToSL.GetTempVar(x.Name); gvar != nil {
-				x.Name = "&" + x.Name
-				ags[i] = x
+				if !gvar.Var.ReadOnly {
+					x.Name = "&" + x.Name
+					ags[i] = x
+				}
 			}
 		case *ast.IndexExpr:
 			isGlobal, tmpVar, _, _, isReadOnly := p.globalVar(x)
@@ -674,10 +684,25 @@ func (p *printer) derefPtrArgs(x ast.Expr, prec, depth int) {
 	}
 }
 
-// gosl: mark pointer types, returns true if pointer
-func (p *printer) ptrType(x ast.Expr) (ast.Expr, bool) {
+// gosl: mark pointer param types (only for non-struct), returns true if pointer
+func (p *printer) ptrParamType(x ast.Expr) (ast.Expr, bool) {
 	if u, ok := x.(*ast.StarExpr); ok {
+		typ := p.getIdType(u.X.(*ast.Ident))
+		if typ != nil {
+			if _, ok := typ.Underlying().(*types.Struct); ok {
+				return u.X, false
+			}
+		}
 		p.print("ptr<function", token.COMMA)
+		return u.X, true
+	}
+	return x, false
+}
+
+// gosl: don't use pointers for method receivers
+func (p *printer) methRecvPtrType(x ast.Expr) (ast.Expr, bool) {
+	if u, ok := x.(*ast.StarExpr); ok {
+		// p.print("ptr<function", token.COMMA)
 		return u.X, true
 	}
 	return x, false
@@ -687,7 +712,7 @@ func (p *printer) ptrType(x ast.Expr) (ast.Expr, bool) {
 func (p *printer) printMethRecv() (isPtr bool, typnm string) {
 	if u, ok := p.curMethRecv.Type.(*ast.StarExpr); ok {
 		typnm = u.X.(*ast.Ident).Name
-		isPtr = true
+		// isPtr = true // ignoring pointer recv
 	} else {
 		typnm = p.curMethRecv.Type.(*ast.Ident).Name
 	}
@@ -1539,11 +1564,13 @@ func (p *printer) methodPath(x *ast.SelectorExpr) (recvPath, recvType string, pa
 		p.userError(err)
 		return
 	}
-	if p.isPtrArg(baseRecv) {
-		recvPath = "&(*" + baseRecv.Name + ")"
-	} else {
-		recvPath = "&" + baseRecv.Name
-	}
+	// note: no pointers!
+	// if p.isPtrArg(baseRecv) {
+	// 	recvPath = "&(*" + baseRecv.Name + ")"
+	// } else {
+	// 	recvPath = "&" + baseRecv.Name
+	// }
+	recvPath = baseRecv.Name
 	var idt types.Type
 	if gvar := p.GoToSL.GetTempVar(baseRecv.Name); gvar != nil {
 		idt = p.getTypeNameType(gvar.Var.SLType())
@@ -1672,7 +1699,8 @@ func (p *printer) globalVar(idx *ast.IndexExpr) (isGlobal bool, tmpVar, typName 
 	}
 	isGlobal = true
 	isReadOnly = gvr.ReadOnly
-	tmpVar = strings.ToLower(id.Name)
+	tmpVar = id.Name
+	// tmpVar = strings.ToLower(id.Name)
 	vtyp = p.getIdType(id)
 	if vtyp == nil {
 		err := fmt.Errorf("gosl globalVar ERROR: cannot find type for name: %q", id.Name)
@@ -1684,10 +1712,10 @@ func (p *printer) globalVar(idx *ast.IndexExpr) (isGlobal bool, tmpVar, typName 
 		vtyp = nmd
 	}
 	typName = gvr.SLType()
-	p.print("var ", tmpVar, token.ASSIGN)
+	p.print("let ", tmpVar, token.ASSIGN)
 	p.expr(idx)
 	p.print(token.SEMICOLON, blank)
-	tmpVar = "&" + tmpVar
+	// tmpVar = "&" + tmpVar
 	return
 }
 
@@ -1695,7 +1723,11 @@ func (p *printer) globalVar(idx *ast.IndexExpr) (isGlobal bool, tmpVar, typName 
 func (p *printer) getGlobalVar(ae *ast.AssignStmt, gvr *Var) {
 	tmpVar := ae.Lhs[0].(*ast.Ident).Name
 	cf := ae.Rhs[0].(*ast.CallExpr)
-	p.print("var", blank, tmpVar, blank, token.ASSIGN, blank, gvr.Name, token.LBRACK)
+	if gvr.ReadOnly {
+		p.print("let", blank, tmpVar, blank, token.ASSIGN, blank, gvr.Name, token.LBRACK)
+	} else {
+		p.print("var", blank, tmpVar, blank, token.ASSIGN, blank, gvr.Name, token.LBRACK)
+	}
 	p.expr(cf.Args[0])
 	p.print(token.RBRACK, token.SEMICOLON)
 	gvars := p.GoToSL.GetVarStack.Peek()
@@ -1829,7 +1861,9 @@ func (p *printer) methodExpr(x *ast.CallExpr, depth int) {
 			if strings.HasPrefix(recvType, "invalid") {
 				if gvar := p.GoToSL.GetTempVar(id.Name); gvar != nil {
 					recvType = gvar.Var.SLType()
-					recvPath = "&" + recvPath
+					if !gvar.Var.ReadOnly {
+						recvPath = "&" + recvPath
+					}
 					pathType = p.getTypeNameType(gvar.Var.SLType())
 				} else {
 					pathIsPackage = true

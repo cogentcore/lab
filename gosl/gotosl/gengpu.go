@@ -400,9 +400,8 @@ func %[1]sSyncFromGPU(vars ...GPUVars) {
 
 	getFun := `
 // Get%[1]s returns a pointer to the given global variable: 
-// [%[1]s] []%[2]s at given index.
-// To ensure that values are updated on the GPU, you must call [Set%[1]s].
-// after all changes have been made.
+// [%[1]s] []%[2]s at given index. This directly processed in the GPU code,
+// so this function call is an equivalent for the CPU.
 func Get%[1]s(idx uint32) *%[2]s {
 	return &%[1]s[idx]
 }

@@ -27,11 +27,12 @@ type GPUVars int32 //enums:enum
 
 const (
 	SeedVar GPUVars = 0
-	DataVar GPUVars = 1
+	FloatsVar GPUVars = 1
+	UintsVar GPUVars = 2
 )
 
-// Dummy tensor stride variable to avoid import error
-var __TensorStrides tensor.Uint32
+// Tensor stride variables
+var TensorStrides tensor.Uint32
 
 // GPUInit initializes the GPU compute system,
 // configuring system(s), variables and kernels.
@@ -51,9 +52,12 @@ func GPUInit() {
 			sgp := vars.AddGroup(gpu.Storage, "Group_0")
 			var vr *gpu.Var
 			_ = vr
+			vr = sgp.Add("TensorStrides", gpu.Uint32, 1, gpu.ComputeShader)
+			vr.ReadOnly = true
 			vr = sgp.AddStruct("Seed", int(unsafe.Sizeof(Seeds{})), 1, gpu.ComputeShader)
 			vr.ReadOnly = true
-			vr = sgp.AddStruct("Data", int(unsafe.Sizeof(Rnds{})), 1, gpu.ComputeShader)
+			vr = sgp.Add("Floats", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("Uints", gpu.Uint32, 1, gpu.ComputeShader)
 			sgp.SetNValues(1)
 		}
 		sy.Config()
@@ -144,9 +148,12 @@ func ToGPU(vars ...GPUVars) {
 		case SeedVar:
 			v, _ := syVars.ValueByIndex(0, "Seed", 0)
 			gpu.SetValueFrom(v, Seed)
-		case DataVar:
-			v, _ := syVars.ValueByIndex(0, "Data", 0)
-			gpu.SetValueFrom(v, Data)
+		case FloatsVar:
+			v, _ := syVars.ValueByIndex(0, "Floats", 0)
+			gpu.SetValueFrom(v, Floats.Values)
+		case UintsVar:
+			v, _ := syVars.ValueByIndex(0, "Uints", 0)
+			gpu.SetValueFrom(v, Uints.Values)
 		}
 	}
 }
@@ -161,6 +168,22 @@ func RunGPUSync() {
 	sy.BeginComputePass()
 }
 
+// ToGPUTensorStrides gets tensor strides and starts copying to the GPU.
+func ToGPUTensorStrides() {
+	if !UseGPU {
+		return
+	}
+	sy := GPUSystem
+	syVars := sy.Vars()
+	TensorStrides.SetShapeSizes(20)
+	TensorStrides.SetInt1D(Floats.Shape().Strides[0], 0)
+	TensorStrides.SetInt1D(Floats.Shape().Strides[1], 1)
+	TensorStrides.SetInt1D(Uints.Shape().Strides[0], 10)
+	TensorStrides.SetInt1D(Uints.Shape().Strides[1], 11)
+	v, _ := syVars.ValueByIndex(0, "TensorStrides", 0)
+	gpu.SetValueFrom(v, TensorStrides.Values)
+}
+
 // ReadFromGPU starts the process of copying vars to the GPU.
 func ReadFromGPU(vars ...GPUVars) {
 	sy := GPUSystem
@@ -170,8 +193,11 @@ func ReadFromGPU(vars ...GPUVars) {
 		case SeedVar:
 			v, _ := syVars.ValueByIndex(0, "Seed", 0)
 			v.GPUToRead(sy.CommandEncoder)
-		case DataVar:
-			v, _ := syVars.ValueByIndex(0, "Data", 0)
+		case FloatsVar:
+			v, _ := syVars.ValueByIndex(0, "Floats", 0)
+			v.GPUToRead(sy.CommandEncoder)
+		case UintsVar:
+			v, _ := syVars.ValueByIndex(0, "Uints", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		}
 	}
@@ -187,26 +213,21 @@ func SyncFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(0, "Seed", 0)
 			v.ReadSync()
 			gpu.ReadToBytes(v, Seed)
-		case DataVar:
-			v, _ := syVars.ValueByIndex(0, "Data", 0)
+		case FloatsVar:
+			v, _ := syVars.ValueByIndex(0, "Floats", 0)
 			v.ReadSync()
-			gpu.ReadToBytes(v, Data)
+			gpu.ReadToBytes(v, Floats.Values)
+		case UintsVar:
+			v, _ := syVars.ValueByIndex(0, "Uints", 0)
+			v.ReadSync()
+			gpu.ReadToBytes(v, Uints.Values)
 		}
 	}
 }
 
 // GetSeed returns a pointer to the given global variable: 
-// [Seed] []Seeds at given index.
-// To ensure that values are updated on the GPU, you must call [SetSeed].
-// after all changes have been made.
+// [Seed] []Seeds at given index. This directly processed in the GPU code,
+// so this function call is an equivalent for the CPU.
 func GetSeed(idx uint32) *Seeds {
 	return &Seed[idx]
-}
-
-// GetData returns a pointer to the given global variable: 
-// [Data] []Rnds at given index.
-// To ensure that values are updated on the GPU, you must call [SetData].
-// after all changes have been made.
-func GetData(idx uint32) *Rnds {
-	return &Data[idx]
 }

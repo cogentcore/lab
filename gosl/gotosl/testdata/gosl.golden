@@ -27,11 +27,12 @@ type GPUVars int32 //enums:enum
 
 const (
 	ParamsVar GPUVars = 0
-	DataVar GPUVars = 1
+	CtxVar GPUVars = 1
+	DataVar GPUVars = 2
 )
 
-// Dummy tensor stride variable to avoid import error
-var __TensorStrides tensor.Uint32
+// Tensor stride variables
+var TensorStrides tensor.Uint32
 
 // GPUInit initializes the GPU compute system,
 // configuring system(s), variables and kernels.
@@ -51,9 +52,19 @@ func GPUInit() {
 			sgp := vars.AddGroup(gpu.Storage, "Group_0")
 			var vr *gpu.Var
 			_ = vr
+			vr = sgp.Add("TensorStrides", gpu.Uint32, 1, gpu.ComputeShader)
+			vr.ReadOnly = true
 			vr = sgp.AddStruct("Params", int(unsafe.Sizeof(ParamStruct{})), 1, gpu.ComputeShader)
 			vr.ReadOnly = true
-			vr = sgp.AddStruct("Data", int(unsafe.Sizeof(DataStruct{})), 1, gpu.ComputeShader)
+			vr = sgp.AddStruct("Ctx", int(unsafe.Sizeof(ParamStruct{})), 1, gpu.ComputeShader)
+			vr.ReadOnly = true
+			sgp.SetNValues(1)
+		}
+		{
+			sgp := vars.AddGroup(gpu.Storage, "Data")
+			var vr *gpu.Var
+			_ = vr
+			vr = sgp.Add("Data", gpu.Float32, 1, gpu.ComputeShader)
 			sgp.SetNValues(1)
 		}
 		sy.Config()
@@ -144,9 +155,12 @@ func ToGPU(vars ...GPUVars) {
 		case ParamsVar:
 			v, _ := syVars.ValueByIndex(0, "Params", 0)
 			gpu.SetValueFrom(v, Params)
+		case CtxVar:
+			v, _ := syVars.ValueByIndex(0, "Ctx", 0)
+			gpu.SetValueFrom(v, Ctx)
 		case DataVar:
-			v, _ := syVars.ValueByIndex(0, "Data", 0)
-			gpu.SetValueFrom(v, Data)
+			v, _ := syVars.ValueByIndex(1, "Data", 0)
+			gpu.SetValueFrom(v, Data.Values)
 		}
 	}
 }
@@ -161,6 +175,20 @@ func RunGPUSync() {
 	sy.BeginComputePass()
 }
 
+// ToGPUTensorStrides gets tensor strides and starts copying to the GPU.
+func ToGPUTensorStrides() {
+	if !UseGPU {
+		return
+	}
+	sy := GPUSystem
+	syVars := sy.Vars()
+	TensorStrides.SetShapeSizes(10)
+	TensorStrides.SetInt1D(Data.Shape().Strides[0], 0)
+	TensorStrides.SetInt1D(Data.Shape().Strides[1], 1)
+	v, _ := syVars.ValueByIndex(0, "TensorStrides", 0)
+	gpu.SetValueFrom(v, TensorStrides.Values)
+}
+
 // ReadFromGPU starts the process of copying vars to the GPU.
 func ReadFromGPU(vars ...GPUVars) {
 	sy := GPUSystem
@@ -170,8 +198,11 @@ func ReadFromGPU(vars ...GPUVars) {
 		case ParamsVar:
 			v, _ := syVars.ValueByIndex(0, "Params", 0)
 			v.GPUToRead(sy.CommandEncoder)
+		case CtxVar:
+			v, _ := syVars.ValueByIndex(0, "Ctx", 0)
+			v.GPUToRead(sy.CommandEncoder)
 		case DataVar:
-			v, _ := syVars.ValueByIndex(0, "Data", 0)
+			v, _ := syVars.ValueByIndex(1, "Data", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		}
 	}
@@ -187,26 +218,28 @@ func SyncFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(0, "Params", 0)
 			v.ReadSync()
 			gpu.ReadToBytes(v, Params)
-		case DataVar:
-			v, _ := syVars.ValueByIndex(0, "Data", 0)
+		case CtxVar:
+			v, _ := syVars.ValueByIndex(0, "Ctx", 0)
 			v.ReadSync()
-			gpu.ReadToBytes(v, Data)
+			gpu.ReadToBytes(v, Ctx)
+		case DataVar:
+			v, _ := syVars.ValueByIndex(1, "Data", 0)
+			v.ReadSync()
+			gpu.ReadToBytes(v, Data.Values)
 		}
 	}
 }
 
 // GetParams returns a pointer to the given global variable: 
-// [Params] []ParamStruct at given index.
-// To ensure that values are updated on the GPU, you must call [SetParams].
-// after all changes have been made.
+// [Params] []ParamStruct at given index. This directly processed in the GPU code,
+// so this function call is an equivalent for the CPU.
 func GetParams(idx uint32) *ParamStruct {
 	return &Params[idx]
 }
 
-// GetData returns a pointer to the given global variable: 
-// [Data] []DataStruct at given index.
-// To ensure that values are updated on the GPU, you must call [SetData].
-// after all changes have been made.
-func GetData(idx uint32) *DataStruct {
-	return &Data[idx]
+// GetCtx returns a pointer to the given global variable: 
+// [Ctx] []ParamStruct at given index. This directly processed in the GPU code,
+// so this function call is an equivalent for the CPU.
+func GetCtx(idx uint32) *ParamStruct {
+	return &Ctx[idx]
 }

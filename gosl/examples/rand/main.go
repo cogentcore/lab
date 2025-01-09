@@ -11,6 +11,7 @@ import (
 	"log/slog"
 
 	"cogentcore.org/core/base/timer"
+	"cogentcore.org/lab/tensor"
 )
 
 //go:generate gosl
@@ -31,10 +32,14 @@ func main() {
 
 	Seed = make([]Seeds, 1)
 
-	dataC := make([]Rnds, n)
-	dataG := make([]Rnds, n)
+	dataCU := tensor.NewUint32(n, 2)
+	dataGU := tensor.NewUint32(n, 2)
 
-	Data = dataC
+	dataCF := tensor.NewFloat32(n, NVars)
+	dataGF := tensor.NewFloat32(n, NVars)
+
+	Uints = dataCU
+	Floats = dataCF
 
 	cpuTmr := timer.Time{}
 	cpuTmr.Start()
@@ -42,12 +47,13 @@ func main() {
 	cpuTmr.Stop()
 
 	UseGPU = true
-	Data = dataG
+	Uints = dataGU
+	Floats = dataGF
 
 	gpuFullTmr := timer.Time{}
 	gpuFullTmr.Start()
 
-	ToGPU(SeedVar, DataVar)
+	ToGPU(SeedVar, FloatsVar, UintsVar)
 
 	gpuTmr := timer.Time{}
 	gpuTmr.Start()
@@ -55,7 +61,7 @@ func main() {
 	RunCompute(n)
 	gpuTmr.Stop()
 
-	RunDone(DataVar)
+	RunDone(FloatsVar, UintsVar)
 	gpuFullTmr.Stop()
 
 	anyDiffEx := false
@@ -63,9 +69,7 @@ func main() {
 	mx := min(n, 5)
 	fmt.Printf("Index\tDif(Ex,Tol)\t   CPU   \t  then GPU\n")
 	for i := 0; i < n; i++ {
-		dc := &dataC[i]
-		dg := &dataG[i]
-		smEx, smTol := dc.IsSame(dg)
+		smEx, smTol := IsSame(dataCU, dataGU, dataCF, dataGF, i)
 		if !smEx {
 			anyDiffEx = true
 		}
@@ -83,7 +87,7 @@ func main() {
 		if !smTol {
 			tolS = "*"
 		}
-		fmt.Printf("%d\t%s %s\t%s\n\t\t%s\n", i, exS, tolS, dc.String(), dg.String())
+		fmt.Printf("%d\t%s %s\t%s\n\t\t%s\n", i, exS, tolS, String(dataCU, dataCF, i), String(dataGU, dataGF, i))
 	}
 	fmt.Printf("\n")
 
