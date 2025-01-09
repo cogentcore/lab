@@ -68,13 +68,7 @@ var Replaces = []Replace{
 	{[]byte("bools.FromFloat32("), []byte("bool(")},
 	{[]byte("num.FromBool[f32]("), []byte("f32(")},
 	{[]byte("num.ToBool("), []byte("bool(")},
-	// todo: do this conversion in nodes only for correct types
-	// {[]byte(".X"), []byte(".x")},
-	// {[]byte(".Y"), []byte(".y")},
-	// {[]byte(".Z"), []byte(".z")},
-	// {[]byte(""), []byte("")},
-	// {[]byte(""), []byte("")},
-	// {[]byte(""), []byte("")},
+	{[]byte("sltype."), []byte("")},
 }
 
 func MathReplaceAll(mat, ln []byte) []byte {
