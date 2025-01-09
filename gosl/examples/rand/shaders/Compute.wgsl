@@ -42,13 +42,13 @@ fn RndGen(counter: su64, idx: u32) {
 	var floats11 = RandFloat32Range11Vec2(counter, u32(2), idx);
 	var gauss = RandFloat32NormVec2(counter, u32(3), idx);
 	Uints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(0))] = uints.x;
-	Uints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(1))] = uints.Y;
-	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(FloatX))] = floats.X;
-	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(FloatY))] = floats.Y;
-	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Float11X))] = floats11.X;
-	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Float11Y))] = floats11.Y;
-	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(GaussX))] = gauss.X;
-	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(GaussY))] = gauss.Y;
+	Uints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(1))] = uints.y;
+	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(FloatX))] = floats.x;
+	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(FloatY))] = floats.y;
+	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Float11X))] = floats11.x;
+	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Float11Y))] = floats11.y;
+	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(GaussX))] = gauss.x;
+	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(GaussY))] = gauss.y;
 }
 fn Compute(i: u32) { //gosl:kernel
 	RndGen(Seed[0].Seed, i);

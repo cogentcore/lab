@@ -25,8 +25,8 @@ func main() {
 	GPUInit()
 
 	// n := 10
-	// n := 16_000_000 // max for macbook M*
-	n := 200_000
+	n := 16_000_000 // max for macbook M*
+	// n := 200_000
 
 	UseGPU = false
 
@@ -53,6 +53,7 @@ func main() {
 	gpuFullTmr := timer.Time{}
 	gpuFullTmr.Start()
 
+	ToGPUTensorStrides()
 	ToGPU(SeedVar, FloatsVar, UintsVar)
 
 	gpuTmr := timer.Time{}

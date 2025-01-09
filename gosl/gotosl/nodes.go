@@ -1542,7 +1542,11 @@ func (p *printer) selectorExpr(x *ast.SelectorExpr, depth int) (wasIndented bool
 		return true
 	}
 	p.setPos(x.Sel.Pos())
-	p.print(x.Sel)
+	if x.Sel.Name == "X" || x.Sel.Name == "Y" || x.Sel.Name == "Z" || x.Sel.Name == "W" {
+		p.print(strings.ToLower(x.Sel.Name))
+	} else {
+		p.print(x.Sel)
+	}
 	return false
 }
 
