@@ -56,14 +56,14 @@ func RndGen(counter uint64, idx uint32) {
 	floats := slrand.Float32Vec2(counter, uint32(1), idx)
 	floats11 := slrand.Float32Range11Vec2(counter, uint32(2), idx)
 	gauss := slrand.Float32NormVec2(counter, uint32(3), idx)
-	Uints[idx][0] = uints.X
-	Uints[idx][1] = uints.Y
-	Floats[idx][FloatX] = floats.X
-	Floats[idx][FloatY] = floats.Y
-	Floats[idx][Float11X] = floats11.X
-	Floats[idx][Float11Y] = floats11.Y
-	Floats[idx][GaussX] = gauss.X
-	Floats[idx][GaussY] = gauss.Y
+	Uints.Set(uints.X, int(idx), int(0))
+	Uints.Set(uints.Y, int(idx), int(1))
+	Floats.Set(floats.X, int(idx), int(FloatX))
+	Floats.Set(floats.Y, int(idx), int(FloatY))
+	Floats.Set(floats11.X, int(idx), int(Float11X))
+	Floats.Set(floats11.Y, int(idx), int(Float11Y))
+	Floats.Set(gauss.X, int(idx), int(GaussX))
+	Floats.Set(gauss.Y, int(idx), int(GaussY))
 }
 
 func Compute(i uint32) { //gosl:kernel
@@ -90,15 +90,15 @@ func Float32Vec2Same(ax, bx, ay, by float32) (exact, tol bool) {
 
 // IsSame compares values at two levels: exact and with Tol
 func IsSame(au, bu *tensor.Uint32, af, bf *tensor.Float32, idx int) (exact, tol bool) {
-	e1 := au[idx][0] == bu[idx][0] && au[idx][1] == bu[idx][1]
-	e2, t2 := Float32Vec2Same(af[idx][FloatX], bf[idx][FloatX], af[idx][FloatY], bf[idx][FloatY])
-	e3, t3 := Float32Vec2Same(af[idx][Float11X], bf[idx][Float11X], af[idx][Float11Y], bf[idx][Float11Y])
-	_, t4 := Float32Vec2Same(af[idx][GaussX], bf[idx][GaussX], af[idx][GaussY], bf[idx][GaussY])
+	e1 := au.Value(int(idx), int(0)) == bu.Value(int(idx), int(0)) && au.Value(int(idx), int(1)) == bu.Value(int(idx), int(1))
+	e2, t2 := Float32Vec2Same(af.Value(int(idx), int(FloatX)), bf.Value(int(idx), int(FloatX)), af.Value(int(idx), int(FloatY)), bf.Value(int(idx), int(FloatY)))
+	e3, t3 := Float32Vec2Same(af.Value(int(idx), int(Float11X)), bf.Value(int(idx), int(Float11X)), af.Value(int(idx), int(Float11Y)), bf.Value(int(idx), int(Float11Y)))
+	_, t4 := Float32Vec2Same(af.Value(int(idx), int(GaussX)), bf.Value(int(idx), int(GaussX)), af.Value(int(idx), int(GaussY)), bf.Value(int(idx), int(GaussY)))
 	exact = e1 && e2 && e3 // skip e4 -- know it isn't
 	tol = t2 && t3 && t4
 	return
 }
 
 func String(u *tensor.Uint32, f *tensor.Float32, idx int) string {
-	return fmt.Sprintf("U: %x\t%x\tF: %g\t%g\tF11: %g\t%g\tG: %g\t%g", u[idx][0], u[idx][1], f[idx][FloatX], f[idx][FloatY], f[idx][Float11X], f[idx][Float11Y], f[idx][GaussX], f[idx][GaussY])
+	return fmt.Sprintf("U: %x\t%x\tF: %g\t%g\tF11: %g\t%g\tG: %g\t%g", u.Value(int(idx), int(0)), u.Value(int(idx), int(1)), f.Value(int(idx), int(FloatX)), f.Value(int(idx), int(FloatY)), f.Value(int(idx), int(Float11X)), f.Value(int(idx), int(Float11Y)), f.Value(int(idx), int(GaussX)), f.Value(int(idx), int(GaussY)))
 }

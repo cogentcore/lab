@@ -25,6 +25,11 @@ func TestTranslate(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	exCycSh, err := os.ReadFile("CycleUpdt.golden")
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	exGosl, err := os.ReadFile("gosl.golden")
 	if err != nil {
 		t.Error(err)
@@ -36,6 +41,11 @@ func TestTranslate(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	gotCycSh, err := os.ReadFile("shaders/CycleUpdt.wgsl")
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	gotGosl, err := os.ReadFile("gosl.go")
 	if err != nil {
 		t.Error(err)
@@ -43,5 +53,6 @@ func TestTranslate(t *testing.T) {
 	}
 
 	assert.Equal(t, string(exSh), string(gotSh))
+	assert.Equal(t, string(exCycSh), string(gotCycSh))
 	assert.Equal(t, string(exGosl), string(gotGosl))
 }

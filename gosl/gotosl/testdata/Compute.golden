@@ -7,7 +7,7 @@ var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
 var<storage, read> Params: array<ParamStruct>;
 @group(0) @binding(2)
-var<storage, read> Ctx: array<ParamStruct>;
+var<storage, read> Ctx: array<Context>;
 // // Data is the data on which the computation operates. // 2D: outer index is data, inner index is: Raw, Integ, Exp vars. // 
 @group(1) @binding(0)
 var<storage, read_write> Data: array<f32>;
@@ -74,7 +74,7 @@ fn ParamStruct_IntegFromRaw(ps: ParamStruct, idx: i32) -> f32 {
 	ParamStruct_AnotherMeth(ps, ctx, idx, &a);return Data[Index2D(TensorStrides[0], TensorStrides[1],
 u32(idx), u32(Exp))];
 }
-fn ParamStruct_AnotherMeth(ps: ParamStruct, ctx: ParamStruct, idx: i32, ptrarg: ptr<function,f32>) {
+fn ParamStruct_AnotherMeth(ps: ParamStruct, ctx: Context, idx: i32, ptrarg: ptr<function,f32>) {
 	for (var i = 0; i < 10; i++) {
 		Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ))] *= 0.99;
 	}
@@ -106,6 +106,12 @@ fn ParamStruct_AnotherMeth(ps: ParamStruct, ctx: ParamStruct, idx: i32, ptrarg: 
 		Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Exp))] *= 0.99;
 	}
 	*ptrarg = f32(-1);
+}
+struct Context {
+	Cycles: f32,
+	Index:  u32,
+	Option: i32,
+	pad:    f32, // comment this out to trigger alignment warning
 }
 fn Compute(i: u32) { //gosl:kernel
 	let params = Params[0];

@@ -65,15 +65,15 @@ var (
 	// Data is the data on which the computation operates.
 	// 2D: outer index is data, inner index is: Raw, Integ, Exp vars.
 	//gosl:dims 2
-	Data tensor.Float32
+	Data *tensor.Float32
 )
 ```
 
 All such variables must be either:
-1. A `slice` of GPU-alignment compatible `struct` types, such as `ParamStruct` in the above example.
-2. A `tensor` of a GPU-compatible elemental data type (`float32`, `uint32`, or `int32`), with the number of dimensions indicated by the `//gosl:dims <n>` tag as shown above.
+1. A `slice` of GPU-alignment compatible `struct` types, such as `ParamStruct` in the above example. In general such structs should be marked as `//gosl:read-only` due to various challenges associated with writing to structs, detailed below.
+2. A `tensor` of a GPU-compatible elemental data type (`float32`, `uint32`, or `int32`), with the number of dimensions indicated by the `//gosl:dims <n>` tag as shown above. This is the preferred type for writable data.
 
-You can also just declare a slice of elemental GPU-compatible data values such as `float32`, but it is generally preferable to use the tensor instead.
+You can also just declare a slice of elemental GPU-compatible data values such as `float32`, but it is generally preferable to use the tensor instead, because it has built-in support for higher-dimensional indexing in a way that is transparent between CPU and GPU.
 
 ### Tensor data
 
@@ -207,7 +207,11 @@ In general shader code should be simple mathematical expressions and data types,
     var val float32 // ok but generally avoid
 ```    
 
-* A local variable to a global `struct` array variable (e.g., `par := &Params[i]`) can only be created as a function argument. There are special access restrictions that make it impossible to do otherwise.
+* Use the automatically-generated `GetX` methods to get a local variable to a slice of structs:
+```Go
+    ctx := GetCtx(0)
+```
+This automatically does the right thing on GPU while returning a pointer to the indexed struct on CPU.
 
 * tensor variables can only be used in `storage` (not `uniform`) memory, due to restrictions on dynamic sizing and alignment. Aside from this constraint, it is possible to designate a group of variables to use uniform memory, with the `-uniform` argument as the first item in the `//gosl:group` comment directive.
 

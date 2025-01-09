@@ -91,7 +91,23 @@ func (st *State) ExtractGosl(lines [][]byte) (outLines [][]byte, hasVars bool) {
 				}
 			}
 			if bytes.HasPrefix(ln, fnc) && bytes.Contains(ln, kernel) {
-				sysnm := strings.TrimSpace(string(ln[bytes.LastIndex(ln, kernel)+len(kernel):]))
+				opts := strings.TrimSpace(string(ln[bytes.LastIndex(ln, kernel)+len(kernel):]))
+				rw := "read-write:"
+				rwvars := make(map[string]bool)
+				flds := strings.Fields(opts)
+				nf := len(flds)
+				if nf > 0 && strings.HasPrefix(flds[nf-1], rw) {
+					rwf := flds[nf-1]
+					slices.Delete(flds, nf-1, nf)
+					varlist := strings.Split(rwf[len(rw):], ",")
+					for _, v := range varlist {
+						rwvars[v] = true
+					}
+				}
+				sysnm := ""
+				if len(flds) > 0 {
+					sysnm = flds[0]
+				}
 				sy := st.System(sysnm)
 				fcall := string(ln[5:])
 				lp := strings.Index(fcall, "(")
@@ -106,7 +122,7 @@ func (st *State) ExtractGosl(lines [][]byte) (outLines [][]byte, hasVars bool) {
 					}
 					funcode += string(kl) + "\n"
 				}
-				kn := &Kernel{Name: fnm, Args: args, FuncCode: funcode}
+				kn := &Kernel{Name: fnm, Args: args, FuncCode: funcode, ReadWriteVars: rwvars}
 				sy.Kernels[fnm] = kn
 				if st.Config.Debug {
 					fmt.Println("\tAdded kernel:", fnm, "args:", args, "system:", sy.Name)

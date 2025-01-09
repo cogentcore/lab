@@ -31,8 +31,8 @@ struct Seeds {
 }
 const  FloatX: i32 = 0;
 const  FloatY: i32 = 1;
-const  FloatR11X: i32 = 2;
-const  FloatR11Y: i32 = 3;
+const  Float11X: i32 = 2;
+const  Float11Y: i32 = 3;
 const  GaussX: i32 = 4;
 const  GaussY: i32 = 5;
 const  NVars: i32 = 6;
@@ -41,14 +41,14 @@ fn RndGen(counter: su64, idx: u32) {
 	var floats = RandFloat32Vec2(counter, u32(1), idx);
 	var floats11 = RandFloat32Range11Vec2(counter, u32(2), idx);
 	var gauss = RandFloat32NormVec2(counter, u32(3), idx);
-	Uints[idx][0] = uints.X;
-	Uints[idx][1] = uints.Y;
-	Floats[idx][FloatX] = floats.X;
-	Floats[idx][FloatY] = floats.Y;
-	Floats[idx][Float11X] = floats11.X;
-	Floats[idx][Float11Y] = floats11.Y;
-	Floats[idx][GaussX] = gauss.X;
-	Floats[idx][GaussY] = gauss.Y;
+	Uints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(0))] = uints.x;
+	Uints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(1))] = uints.Y;
+	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(FloatX))] = floats.X;
+	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(FloatY))] = floats.Y;
+	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Float11X))] = floats11.X;
+	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Float11Y))] = floats11.Y;
+	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(GaussX))] = gauss.X;
+	Floats[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(GaussY))] = gauss.Y;
 }
 fn Compute(i: u32) { //gosl:kernel
 	RndGen(Seed[0].Seed, i);

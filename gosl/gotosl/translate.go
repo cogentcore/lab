@@ -122,6 +122,7 @@ func (st *State) TranslateDir(pf string) error {
 			if st.KernelFuncs == nil {
 				continue
 			}
+			st.CurKernel = kn
 			var hasSlrand, hasSltype, hasR, hasT bool
 			avars := st.AtomicVars(st.KernelFuncs)
 			// if st.Config.Debug {

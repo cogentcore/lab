@@ -47,6 +47,7 @@ func GPUInit() {
 		sy := gpu.NewComputeSystem(gp, "Default")
 		GPUSystem = sy
 		gpu.NewComputePipelineShaderFS(shaders, "shaders/Compute.wgsl", sy)
+		gpu.NewComputePipelineShaderFS(shaders, "shaders/CycleUpdt.wgsl", sy)
 		vars := sy.Vars()
 		{
 			sgp := vars.AddGroup(gpu.Storage, "Group_0")
@@ -56,7 +57,7 @@ func GPUInit() {
 			vr.ReadOnly = true
 			vr = sgp.AddStruct("Params", int(unsafe.Sizeof(ParamStruct{})), 1, gpu.ComputeShader)
 			vr.ReadOnly = true
-			vr = sgp.AddStruct("Ctx", int(unsafe.Sizeof(ParamStruct{})), 1, gpu.ComputeShader)
+			vr = sgp.AddStruct("Ctx", int(unsafe.Sizeof(Context{})), 1, gpu.ComputeShader)
 			vr.ReadOnly = true
 			sgp.SetNValues(1)
 		}
@@ -125,6 +126,48 @@ func RunOneCompute(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunComputeCPU(n)
+	}
+}
+// RunCycleUpdt runs the CycleUpdt kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneCycleUpdt call does Run and Done for a
+// single run-and-sync case.
+func RunCycleUpdt(n int) {
+	if UseGPU {
+		RunCycleUpdtGPU(n)
+	} else {
+		RunCycleUpdtCPU(n)
+	}
+}
+
+// RunCycleUpdtGPU runs the CycleUpdt kernel on the GPU. See [RunCycleUpdt] for more info.
+func RunCycleUpdtGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["CycleUpdt"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunCycleUpdtCPU runs the CycleUpdt kernel on the CPU.
+func RunCycleUpdtCPU(n int) {
+	gpu.VectorizeFunc(0, n, CycleUpdt)
+}
+
+// RunOneCycleUpdt runs the CycleUpdt kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneCycleUpdt(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunCycleUpdtGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunCycleUpdtCPU(n)
 	}
 }
 // RunDone must be called after Run* calls to start compute kernels.
@@ -238,8 +281,8 @@ func GetParams(idx uint32) *ParamStruct {
 }
 
 // GetCtx returns a pointer to the given global variable: 
-// [Ctx] []ParamStruct at given index. This directly processed in the GPU code,
+// [Ctx] []Context at given index. This directly processed in the GPU code,
 // so this function call is an equivalent for the CPU.
-func GetCtx(idx uint32) *ParamStruct {
+func GetCtx(idx uint32) *Context {
 	return &Ctx[idx]
 }

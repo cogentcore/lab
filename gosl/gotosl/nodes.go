@@ -435,11 +435,11 @@ func (p *printer) parameters(fields *ast.FieldList, mode paramMode) {
 				p.print(blank)
 				if pi == 0 { // gosl: cannot have a "real" pointer arg as the first parameter
 					// because we assume all first parameters are method receivers.
-					atyp, _ := p.methRecvPtrType(stripParensAlways(par.Type))
+					atyp, isPtr := p.methRecvPtrType(stripParensAlways(par.Type), par.Names[0])
 					p.expr(atyp)
-					// if isPtr {
-					// 	p.curPtrArgs = append(p.curPtrArgs, par.Names[0])
-					// }
+					if isPtr {
+						p.print(">")
+					}
 				} else {
 					atyp, isPtr := p.ptrParamType(stripParensAlways(par.Type))
 					p.expr(atyp)
@@ -523,7 +523,7 @@ func (p *printer) goslFixArgs(args []ast.Expr, params *types.Tuple) ([]ast.Expr,
 			ags[i] = nn
 		case *ast.Ident:
 			if gvar := p.GoToSL.GetTempVar(x.Name); gvar != nil {
-				if !gvar.Var.ReadOnly {
+				if !(gvar.Var.ReadOnly && !gvar.ReadWrite) {
 					x.Name = "&" + x.Name
 					ags[i] = x
 				}
@@ -700,10 +700,13 @@ func (p *printer) ptrParamType(x ast.Expr) (ast.Expr, bool) {
 }
 
 // gosl: don't use pointers for method receivers
-func (p *printer) methRecvPtrType(x ast.Expr) (ast.Expr, bool) {
+func (p *printer) methRecvPtrType(x ast.Expr, recvnm *ast.Ident) (ast.Expr, bool) {
 	if u, ok := x.(*ast.StarExpr); ok {
-		// p.print("ptr<function", token.COMMA)
-		return u.X, true
+		isptr := p.isPtrArg(recvnm)
+		if isptr {
+			p.print("ptr<function", token.COMMA)
+		}
+		return u.X, isptr
 	}
 	return x, false
 }
@@ -712,7 +715,7 @@ func (p *printer) methRecvPtrType(x ast.Expr) (ast.Expr, bool) {
 func (p *printer) printMethRecv() (isPtr bool, typnm string) {
 	if u, ok := p.curMethRecv.Type.(*ast.StarExpr); ok {
 		typnm = u.X.(*ast.Ident).Name
-		// isPtr = true // ignoring pointer recv
+		isPtr = true
 	} else {
 		typnm = p.curMethRecv.Type.(*ast.Ident).Name
 	}
@@ -1693,14 +1696,20 @@ func (p *printer) globalVar(idx *ast.IndexExpr) (isGlobal bool, tmpVar, typName 
 	if !ok {
 		return
 	}
-	gvr := p.GoToSL.GlobalVar(id.Name)
+	st := p.GoToSL
+	gvr := st.GlobalVar(id.Name)
 	if gvr == nil {
 		return
 	}
 	isGlobal = true
 	isReadOnly = gvr.ReadOnly
+	if st.VarIsReadWrite(id.Name) {
+		isReadOnly = false
+	}
 	tmpVar = id.Name
-	// tmpVar = strings.ToLower(id.Name)
+	if !isReadOnly {
+		tmpVar = strings.ToLower(id.Name)
+	}
 	vtyp = p.getIdType(id)
 	if vtyp == nil {
 		err := fmt.Errorf("gosl globalVar ERROR: cannot find type for name: %q", id.Name)
@@ -1715,15 +1724,26 @@ func (p *printer) globalVar(idx *ast.IndexExpr) (isGlobal bool, tmpVar, typName 
 	p.print("let ", tmpVar, token.ASSIGN)
 	p.expr(idx)
 	p.print(token.SEMICOLON, blank)
-	// tmpVar = "&" + tmpVar
+	if !isReadOnly {
+		tmpVar = "&" + tmpVar
+	}
 	return
 }
 
 // gosl: replace GetVar function call with assignment of local var
 func (p *printer) getGlobalVar(ae *ast.AssignStmt, gvr *Var) {
+	st := p.GoToSL
 	tmpVar := ae.Lhs[0].(*ast.Ident).Name
 	cf := ae.Rhs[0].(*ast.CallExpr)
-	if gvr.ReadOnly {
+	ro := gvr.ReadOnly
+	rwoverride := false
+	if ro {
+		if st.VarIsReadWrite(gvr.Name) {
+			ro = false
+			rwoverride = true
+		}
+	}
+	if ro {
 		p.print("let", blank, tmpVar, blank, token.ASSIGN, blank, gvr.Name, token.LBRACK)
 	} else {
 		p.print("var", blank, tmpVar, blank, token.ASSIGN, blank, gvr.Name, token.LBRACK)
@@ -1731,14 +1751,14 @@ func (p *printer) getGlobalVar(ae *ast.AssignStmt, gvr *Var) {
 	p.expr(cf.Args[0])
 	p.print(token.RBRACK, token.SEMICOLON)
 	gvars := p.GoToSL.GetVarStack.Peek()
-	gvars[tmpVar] = &GetGlobalVar{Var: gvr, TmpVar: tmpVar, IdxExpr: cf.Args[0]}
+	gvars[tmpVar] = &GetGlobalVar{Var: gvr, TmpVar: tmpVar, IdxExpr: cf.Args[0], ReadWrite: rwoverride}
 	p.GoToSL.GetVarStack[len(p.GoToSL.GetVarStack)-1] = gvars
 }
 
 // gosl: set non-read-only global vars back from temp var
 func (p *printer) setGlobalVars(gvrs map[string]*GetGlobalVar) {
 	for _, gvr := range gvrs {
-		if gvr.Var.ReadOnly {
+		if gvr.Var.ReadOnly && !gvr.ReadWrite {
 			continue
 		}
 		p.print(formfeed, "\t")
@@ -1746,7 +1766,7 @@ func (p *printer) setGlobalVars(gvrs map[string]*GetGlobalVar) {
 		p.expr(gvr.IdxExpr)
 		p.print(token.RBRACK, blank, token.ASSIGN, blank)
 		p.print(gvr.TmpVar)
-		p.print(token.SEMICOLON)
+		p.print(token.SEMICOLON, blank)
 	}
 }
 
@@ -1861,7 +1881,7 @@ func (p *printer) methodExpr(x *ast.CallExpr, depth int) {
 			if strings.HasPrefix(recvType, "invalid") {
 				if gvar := p.GoToSL.GetTempVar(id.Name); gvar != nil {
 					recvType = gvar.Var.SLType()
-					if !gvar.Var.ReadOnly {
+					if !(gvar.Var.ReadOnly && !gvar.ReadWrite) {
 						recvPath = "&" + recvPath
 					}
 					pathType = p.getTypeNameType(gvar.Var.SLType())
@@ -2986,8 +3006,16 @@ func (p *printer) funcDecl(d *ast.FuncDecl) {
 			}
 		}
 		if d.Recv.List[0].Names != nil {
+			dirs, _ := p.findDirective(d.Doc)
+			pointerRecv := false
+			if hasDirective(dirs, "pointer-receiver") {
+				pointerRecv = true
+			}
 			p.curMethRecv = d.Recv.List[0]
 			isptr, typnm := p.printMethRecv()
+			if isptr && !pointerRecv {
+				isptr = false
+			}
 			if isptr {
 				p.curPtrArgs = []*ast.Ident{p.curMethRecv.Names[0]}
 			}

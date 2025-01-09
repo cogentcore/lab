@@ -23,7 +23,7 @@ var (
 	// Ctx provides additional context.
 	//
 	//gosl:read-only
-	Ctx []ParamStruct
+	Ctx []Context
 
 	// Data is the data on which the computation operates.
 	// 2D: outer index is data, inner index is: Raw, Integ, Exp vars.
@@ -140,7 +140,7 @@ func (ps *ParamStruct) IntegFromRaw(idx int) float32 {
 
 // AnotherMeth does more computation.
 // ctx arg must be converted to non-pointer.
-func (ps *ParamStruct) AnotherMeth(ctx *ParamStruct, idx int, ptrarg *float32) {
+func (ps *ParamStruct) AnotherMeth(ctx *Context, idx int, ptrarg *float32) {
 	for i := 0; i < 10; i++ {
 		Data.SetMul(0.99, int(idx), int(Integ))
 	}
@@ -174,6 +174,22 @@ func (ps *ParamStruct) AnotherMeth(ctx *ParamStruct, idx int, ptrarg *float32) {
 	*ptrarg = -1
 }
 
+// Context struct
+type Context struct {
+	Cycles float32
+	Index  uint32
+	Option slbool.Bool
+	pad    float32 // comment this out to trigger alignment warning
+}
+
+// UpdtCycle does cycle updating
+//
+//gosl:pointer-receiver
+func (ctx *Context) UpdtCycle() {
+	ctx.Cycles += 1
+	ctx.Index = 42
+}
+
 //gosl:end
 
 // note: only core compute code needs to be in shader -- all init is done CPU-side
@@ -197,6 +213,12 @@ func (ps *ParamStruct) String() string {
 func Compute(i uint32) { //gosl:kernel
 	params := GetParams(0)
 	params.IntegFromRaw(int(i))
+}
+
+// Compute does the main computation
+func CycleUpdt(i uint32) { //gosl:kernel read-write:Ctx
+	ctx := GetCtx(0)
+	ctx.UpdtCycle()
 }
 
 //gosl:end

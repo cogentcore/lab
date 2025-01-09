@@ -51,6 +51,9 @@ type Kernel struct {
 
 	// Lines is full shader code
 	Lines [][]byte
+
+	// ReadWriteVars are variables marked as read_write for current kernel.
+	ReadWriteVars map[string]bool
 }
 
 // Var represents one global system buffer variable.
@@ -147,10 +150,15 @@ type File struct {
 type GetGlobalVar struct {
 	// global variable
 	Var *Var
+
 	// name of temporary variable
 	TmpVar string
+
 	// index passed to the Get function
 	IdxExpr ast.Expr
+
+	// rw override
+	ReadWrite bool
 }
 
 // State holds the current Go -> WGSL processing state.
@@ -199,8 +207,11 @@ type State struct {
 	// that need to be set at the end.
 	GetVarStack stack.Stack[map[string]*GetGlobalVar]
 
-	// GetFuncGraph is true if getting the function graph (first pass)
+	// GetFuncGraph is true if getting the function graph (first pass).
 	GetFuncGraph bool
+
+	// CurKernel is the current Kernel for second pass processing.
+	CurKernel *Kernel
 
 	// KernelFuncs are the list of functions to include for current kernel.
 	KernelFuncs map[string]*Function
@@ -283,6 +294,18 @@ func (st *State) GlobalVar(vrnm string) *Var {
 		}
 	}
 	return nil
+}
+
+// VarIsReadWrite returns true if var of name is set as read-write
+// for current kernel.
+func (st *State) VarIsReadWrite(vrnm string) bool {
+	if st.CurKernel == nil {
+		return false
+	}
+	if _, rw := st.CurKernel.ReadWriteVars[vrnm]; rw {
+		return true
+	}
+	return false
 }
 
 // GetTempVar returns temp var for global variable of given name, if found.
