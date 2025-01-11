@@ -46,6 +46,7 @@ func (br *SimRun) OpenResultFiles(jobs []string, filter FilterResults) {
 		return
 	}
 	br.ResultsTableView = ts.SliceTable("Results", &br.ResultsList)
+	br.ResultsTableView.Update()
 	br.UpdateSims()
 }
 

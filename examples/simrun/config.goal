@@ -39,32 +39,36 @@ type SubmitParams struct {
 	//	arguments to pass on the command line.
 	// -nogui is already passed by default
 	Args string `width:"80"`
+
+	//	GPU number to run on.
+	GPU int
 }
 
 // JobParams are parameters for running the job
 type JobParams struct {
 
-	// number of parallel runs; can also set to 1 and run multiple runs per job using args
+	// NRuns is the number of parallel runs; can also set to 1
+	// and run multiple runs per job using args.
 	NRuns int
 
-	// max number of hours: slurm will terminate if longer, so be generous
-	// 2d = 48, 3d = 72, 4d = 96, 5d = 120, 6d = 144, 7d = 168
+	// Hours is the max number of hours: slurm will terminate if longer,
+	// so be generous 2d = 48, 3d = 72, 4d = 96, 5d = 120, 6d = 144, 7d = 168
 	Hours int
 
-	// memory per CPU in gigabytes
+	// Memory per CPU in gigabytes
 	Memory int
 
-	// number of mpi "tasks" (procs in MPI terminology)
+	// Tasks is the number of mpi "tasks" (procs in MPI terminology).
 	Tasks int
 
-	// number of cpu cores (threads) per task
+	// CPUsPerTask is the number of cpu cores (threads) per task.
 	CPUsPerTask int
 
-	// how to allocate tasks within compute nodes
-	// cpus_per_task * tasks_per_node <= total cores per node
+	// TasksPerNode is how to allocate tasks within compute nodes
+	// cpus_per_task * tasks_per_node <= total cores per node.
 	TasksPerNode int
 
-	// qos is the queue "quality of service" name
+	// Qos is the queue "quality of service" name.
 	Qos string
 }
 
@@ -75,6 +79,28 @@ func (jp *JobParams) Defaults() {
 	jp.Tasks = 1
 	jp.CPUsPerTask = 8
 	jp.TasksPerNode = 1
+}
+
+// ServerParams are parameters for the server.
+type ServerParams struct {
+
+	// Name is the name of current server using to run jobs;
+	// gets recorded with each job.
+	Name string
+
+	// Root is the root path from user home dir on server.
+	// is auto-set to: filepath.Join("simdata", Project, User)
+	Root string
+	
+	// Slurm uses the slurm job manager. Otherwise uses a bare job manager.
+	Slurm bool
+	
+	// GPUIDs are the list of valid GPU IDs.
+	GPUIDs []int 
+}
+
+func (sp *ServerParams) Defaults() {
+	sp.GPUIDs = []int{0,2,3,4}
 }
 
 // Configuration holds all of the user-settable parameters
@@ -107,6 +133,9 @@ type Configuration struct {
 	// Job has the parameters for job resources etc.
 	Job JobParams `display:"inline"`
 
+	// Server has server parameters.
+	Server ServerParams
+	
 	// FetchFiles is a glob expression for files to fetch from server,
 	// for Fetch command. Is *.tsv by default.
 	FetchFiles string
@@ -125,17 +154,9 @@ type Configuration struct {
 	// go.mod auto-updated to use.
 	CodeDirs []string
 
-	// ServerName is the name of current server using to run jobs;
-	// gets recorded with each job.
-	ServerName string
-
 	// ExtraGoGet is an extra package to do "go get" with, for launching the job.
 	ExtraGoGet string
 	
-	// ServerRoot is the root path from user home dir on server.
-	// is auto-set to: filepath.Join("simdata", Project, User)
-	ServerRoot string
-
 	// TimeFormat is the format for timestamps,
 	// defaults to "2006-01-02 15:04:05 MST"
 	TimeFormat string `default:"2006-01-02 15:04:05 MST"`
@@ -157,6 +178,7 @@ func (cf *Configuration) Defaults() {
 	_, pj := filepath.Split(cf.StartDir)
 	cf.Project = pj
 	cf.Job.Defaults()
+	cf.Server.Defaults()
 	cf.FetchFiles = "*.tsv"
 	cf.Filter.Defaults()
 	cf.TimeFormat = "2006-01-02 15:04:05 MST"
@@ -164,7 +186,7 @@ func (cf *Configuration) Defaults() {
 
 func (cf *Configuration) Update() {
 	cf.UserShort = cf.User[:3]
-	cf.ServerRoot = filepath.Join("simdata", cf.Project, cf.User)
+	cf.Server.Root = filepath.Join("simdata", cf.Project, cf.User)
 }
 
 // Result has info for one loaded result, as a table.Table

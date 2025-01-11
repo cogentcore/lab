@@ -37,6 +37,9 @@ type Config struct {
 	// prior to starting interactive mode if no Input is specified.
 	Expr string `flag:"e,expr"`
 
+	// Dir is a directory path to change to prior to running.
+	Dir string
+
 	// Args is an optional list of arguments to pass in the run command.
 	// These arguments will be turned into an "args" local variable in the goal.
 	// These are automatically processed from any leftover arguments passed, so
@@ -59,6 +62,9 @@ func Run(c *Config) error { //cli:cmd -root
 	in := NewInterpreter(interp.Options{})
 	if len(c.Args) > 0 {
 		in.Goal.CliArgs = goalib.StringsToAnys(c.Args)
+	}
+	if c.Dir != "" {
+		errors.Log(os.Chdir(c.Dir))
 	}
 
 	if c.Input == "" {
@@ -106,6 +112,9 @@ func Interactive(c *Config, in *Interpreter) error {
 // code to be used in interactive and Go compiled modes.
 // go build is run after this.
 func Build(c *Config) error {
+	if c.Dir != "" {
+		errors.Log(os.Chdir(c.Dir))
+	}
 	var fns []string
 	verbose := logx.UserLevel <= slog.LevelInfo
 	if c.Input != "" {

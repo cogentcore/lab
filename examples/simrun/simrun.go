@@ -83,12 +83,12 @@ func main() {
 func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 	b, _ := NewSimRunWindow(in)
 	b.OnShow(func(e events.Event) {
-		go func() {
-			if c.Expr != "" {
-				in.Eval(c.Expr)
-			}
-			in.Interactive()
-		}()
+		// go func() {
+		// 	if c.Expr != "" {
+		// 		in.Eval(c.Expr)
+		// 	}
+		// 	in.Interactive()
+		// }()
 	})
 	b.RunWindow()
 	core.Wait()
@@ -185,13 +185,16 @@ func (br *SimRun) MakeToolbar(p *tree.Plan) {
 		w.SetFunc(br.UpdateFiles).SetText("").SetIcon(icons.Refresh)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
-		w.SetFunc(br.Jobs).SetIcon(icons.ViewList).SetShortcut("Command+U")
+		w.SetFunc(br.UpdateSims).SetText("Jobs").SetIcon(icons.ViewList).SetShortcut("Command+U")
 	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(br.Queue).SetIcon(icons.List)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(br.Status).SetIcon(icons.Sync)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(br.Finalize).SetIcon(icons.Sync)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(br.Fetch).SetIcon(icons.Download)
@@ -201,6 +204,9 @@ func (br *SimRun) MakeToolbar(p *tree.Plan) {
 	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(br.Results).SetIcon(icons.Refresh)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(br.Reset).SetIcon(icons.Refresh)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(br.Diff).SetIcon(icons.Difference)

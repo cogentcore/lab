@@ -25,7 +25,7 @@ import (
 )
 
 // Jobs updates the Jobs tab with a Table showing all the Jobs
-// with their meta data.  Uses the dbmeta.toml data compiled from
+// with their meta data. Uses the dbmeta.toml data compiled from
 // the Status function.
 func (br *SimRun) Jobs() { //types:add
 	ts := br.Tabs.AsLab()
@@ -64,7 +64,6 @@ func (br *SimRun) Jobs() { //types:add
 		}
 	}
 	tv.Table.Sequential()
-	br.Update()
 	nrows := dt.NumRows()
 	if nrows > 0 && br.Config.Submit.Message == "" {
 		br.Config.Submit.Message = dt.Column("Message").String1D(nrows - 1)
@@ -73,9 +72,20 @@ func (br *SimRun) Jobs() { //types:add
 	}
 }
 
-// Default update function
-func (br *SimRun) UpdateSims() {
+// Jobs updates the Jobs tab with a Table showing all the Jobs
+// with their meta data. Uses the dbmeta.toml data compiled from
+// the Status function.
+func (br *SimRun) UpdateSims() { //types:add
 	br.Jobs()
+	br.Update()
+}
+
+// UpdateSims updates the sim status info, for async case.
+func (br *SimRun) UpdateSimsAsync() {
+	br.Jobs()
+	br.AsyncLock()
+	br.Update()
+	br.AsyncUnlock()
 }
 
 func (br *SimRun) JobPath(jid string) string {
@@ -83,7 +93,7 @@ func (br *SimRun) JobPath(jid string) string {
 }
 
 func (br *SimRun) ServerJobPath(jid string) string {
-	return filepath.Join(br.Config.ServerRoot, "jobs", jid)
+	return filepath.Join(br.Config.Server.Root, "jobs", jid)
 }
 
 func (br *SimRun) JobRow(jid string) int {
@@ -136,32 +146,39 @@ func (br *SimRun) JobStatus(jid string, force bool) {
 	goalrun.Run("cd")
 	goalrun.Run("@0")
 	goalrun.Run("cd", jpath)
+	if !goalib.FileExists("job.status") {
+		goalib.WriteFile("job.status", "Unknown")
+	}
 	sstat := goalib.ReadFile("job.status")
 	if !force && (sstat == "Finalized" || sstat == "Fetched") {
 		return
 	}
 	goalrun.Run("@1", "cd", spath)
 	goalrun.Run("@0")
-	sj := goalrun.Output("@1", "cat", "job.job")
-	// fmt.Println("server job:", sj)
-	if sstat != "Done" && !force {
-		goalrun.RunErrOK("@1", "squeue", "-j", sj, "-o", "%T", ">&", "job.squeue")
-		stat := goalrun.Output("@1", "cat", "job.squeue")
-		// fmt.Println("server status:", stat)
-		switch {
-		case strings.Contains(stat, "Invalid job id"):
-			goalrun.Run("@1", "echo", "Invalid job id", ">", "job.squeue")
-			sstat = "Done"
-		case strings.Contains(stat, "RUNNING"):
-			nrep := strings.Count(stat, "RUNNING")
-			sstat = fmt.Sprintf("Running:%d", nrep)
-		case strings.Contains(stat, "PENDING"):
-			nrep := strings.Count(stat, "PENDING")
-			sstat = fmt.Sprintf("Pending:%d", nrep)
-		case strings.Contains(stat, "STATE"): // still visible in queue but done
-			sstat = "Done"
+	if br.Config.Server.Slurm {
+		sj := goalrun.Output("@1", "cat", "job.job")
+		// fmt.Println("server job:", sj)
+		if sstat != "Done" && !force {
+			goalrun.RunErrOK("@1", "squeue", "-j", sj, "-o", "%T", ">&", "job.squeue")
+			stat := goalrun.Output("@1", "cat", "job.squeue")
+			// fmt.Println("server status:", stat)
+			switch {
+			case strings.Contains(stat, "Invalid job id"):
+				goalrun.Run("@1", "echo", "Invalid job id", ">", "job.squeue")
+				sstat = "Done"
+			case strings.Contains(stat, "RUNNING"):
+				nrep := strings.Count(stat, "RUNNING")
+				sstat = fmt.Sprintf("Running:%d", nrep)
+			case strings.Contains(stat, "PENDING"):
+				nrep := strings.Count(stat, "PENDING")
+				sstat = fmt.Sprintf("Pending:%d", nrep)
+			case strings.Contains(stat, "STATE"): // still visible in queue but done
+				sstat = "Done"
+			}
+			goalib.WriteFile("job.status", sstat)
 		}
-		goalib.WriteFile("job.status", sstat)
+	} else {
+		goalib.WriteFile("job.status", "ns")
 	}
 	goalrun.Run("@1", "/bin/ls", "-1", ">", "job.files")
 	goalrun.Run("@0")
@@ -180,8 +197,17 @@ func (br *SimRun) JobStatus(jid string, force bool) {
 		goalib.WriteFile("job.status", sstat)
 		goalrun.RunErrOK("/bin/rm", "job.*.out")
 	}
-	jfiles = goalrun.Output("/bin/ls", "-1", "job.*") // local
-	meta := fmt.Sprintf("%s = %q\n", "Version", br.Config.Version) + fmt.Sprintf("%s = %q\n", "Server", br.Config.ServerName)
+	br.GetMeta(jid)
+	core.MessageSnackbar(br, "Job: "+jid+" updated with status: "+sstat)
+}
+
+// GetMeta gets the dbmeta.toml file from all job.* files in job dir.
+func (br *SimRun) GetMeta(jid string) {
+	goalrun.Run("@0")
+	jpath := br.JobPath(jid)
+	goalrun.Run("cd", jpath)
+	jfiles := goalrun.Output("/bin/ls", "-1", "job.*") // local
+	meta := fmt.Sprintf("%s = %q\n", "Version", br.Config.Version) + fmt.Sprintf("%s = %q\n", "Server", br.Config.Server.Name)
 	for _, jf := range goalib.SplitLines(jfiles) {
 		if strings.Contains(jf, "sbatch") || strings.HasSuffix(jf, ".out") {
 			continue
@@ -202,7 +228,6 @@ func (br *SimRun) JobStatus(jid string, force bool) {
 		meta += ln
 	}
 	goalib.WriteFile("dbmeta.toml", meta)
-	core.MessageSnackbar(br, "Job: "+jid+" updated with status: "+sstat)
 }
 
 // Status gets updated job.* files from the server for any job that
@@ -247,16 +272,16 @@ func (br *SimRun) FetchJob(jid string, force bool) {
 		rfn := "@1:" + ff
 		goalrun.Run("scp", rfn, ff)
 		if (sstat == "Finalized" || sstat == "Fetched") && strings.HasSuffix(ff, ".tsv") {
-			if strings.Contains(ff, "_epc.tsv") {
+			if ff == "all_epc.tsv" {
 				table.CleanCatTSV(ff, "Run", "Epoch")
 				idx := strings.Index(ff, "_epc.tsv")
 				goalrun.Run("tablecat", "-colavg", "-col", "Epoch", "-o", ff[:idx+1]+"avg"+ff[idx+1:], ff)
-			} else if strings.Contains(ff, "_run.tsv") {
+			} else if ff == "all_run.tsv" {
 				table.CleanCatTSV(ff, "Run")
 				idx := strings.Index(ff, "_run.tsv")
 				goalrun.Run("tablecat", "-colavg", "-o", ff[:idx+1]+"avg"+ff[idx+1:], ff)
-			} else {
-				table.CleanCatTSV(ff, "Run")
+				//	} else {
+				//		table.CleanCatTSV(ff, "Run")
 			}
 		}
 	}
@@ -293,7 +318,7 @@ func (br *SimRun) Fetch() { //types:add
 func (br *SimRun) CancelJobs(jobs []string) {
 	goalrun.Run("@0")
 	filepath.Join(br.DataRoot, "jobs")
-	filepath.Join(br.Config.ServerRoot, "jobs")
+	filepath.Join(br.Config.Server.Root, "jobs")
 	goalrun.Run("@1")
 	for _, jid := range jobs {
 		sjob := br.ValueForJob(jid, "ServerJob")
@@ -326,7 +351,7 @@ func (br *SimRun) Cancel() { //types:add
 func (br *SimRun) DeleteJobs(jobs []string) {
 	goalrun.Run("@0")
 	dpath := filepath.Join(br.DataRoot, "jobs")
-	spath := filepath.Join(br.Config.ServerRoot, "jobs")
+	spath := filepath.Join(br.Config.Server.Root, "jobs")
 	for _, jid := range jobs {
 		goalrun.Run("@1")
 		goalrun.Run("cd")
@@ -362,7 +387,7 @@ func (br *SimRun) ArchiveJobs(jobs []string) {
 	dpath := filepath.Join(br.DataRoot, "jobs")
 	apath := filepath.Join(br.DataRoot, "archive", "jobs")
 	goalrun.Run("mkdir", "-p", apath)
-	spath := filepath.Join(br.Config.ServerRoot, "jobs")
+	spath := filepath.Join(br.Config.Server.Root, "jobs")
 	for _, jid := range jobs {
 		goalrun.Run("@1")
 		goalrun.Run("cd")
