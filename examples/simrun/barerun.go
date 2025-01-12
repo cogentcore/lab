@@ -18,8 +18,6 @@ import (
 
 func (br *SimRun) WriteRun(w io.Writer, jid, args string, gpuno int) {
 	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
-	// fmt.Fprint(w, "#SBATCH --output=job.setup.out\n")
-	// fmt.Fprint(w, "#SBATCH --error=job.setup.err\n")
 
 	fmt.Fprintf(w, "\n\n")
 	// fmt.Fprintf(w, "go build -mod=mod -tags mpi\n")
@@ -33,12 +31,11 @@ func (br *SimRun) WriteRun(w io.Writer, jid, args string, gpuno int) {
 
 	// for i := range br.Config.Job.NRuns {
 	// fmt.Fprintf(w, "GPU_DEVICE=%d ./%s -nogui -cfg config_job.toml -run %d -runs 1 %s &\n", gpus[gpuno], br.Config.Project, i, args)
-	// cmd := `nohup bash -c "(./%s -nogui -cfg config_job.toml -gpu-device %d %s) &> job.out" &`
-	// cmd += "\n"
-	cmd := "./%s -nogui -cfg config_job.toml -gpu-device %d %s &> job.out &"
-	fmt.Fprintf(w, cmd, br.Config.Project, gpus[gpuno], args)
+	// note: only need nohup at submission:
 	// cgpu = (cgpu + 1) % ngpu
 	// }
+	fmt.Fprintf(w, "./%s -nogui -cfg config_job.toml -gpu-device %d %s &> job.out &", br.Config.Project, gpus[gpuno], args)
+	fmt.Fprintln(w, `echo "$!" >>job.job`)
 }
 
 func (br *SimRun) SubmitRun(jid, args string, gpuno int) string {
@@ -56,27 +53,12 @@ func (br *SimRun) SubmitRun(jid, args string, gpuno int) string {
 func (br *SimRun) BareRun(sbatch string, args string, gpuno int) string {
 	goalrun.Run("@1")
 	goalrun.Run("chmod", "+x", sbatch)
-	// note: can't seem to get this to work:
+	// note: nohup here and not for the sim command is critical
 	goalrun.Run("nohup", "./"+sbatch)
-	// go build -mod=mod
-	// date '+%Y-%m-%d %T %Z' > job.start
-	// gpud := fmt.Sprintf("%d", br.Config.Server.GPUIDs[gpuno])
-	// fmt.Println("Running on GPU number:", gpud)
-	// ${"./" + br.Config.Project} -nogui -cfg config_job.toml -gpu-device {gpud} {args} >& job.out &$
+
 	goalrun.Run("@0")
-	if br.Config.Server.Slurm {
-		ss := goalrun.Output("@1", "cat", "job.slurm")
-		if ss == "" {
-			fmt.Println("JobStatus ERROR: no server job.slurm file to get server job id from")
-			goalrun.Run("@1", "cd")
-			goalrun.Run("@0")
-			return ""
-		}
-		ssf := strings.Fields(ss)
-		sj := ssf[len(ssf)-1]
-		return sj
-	}
-	return "nj"
+	pid := goalrun.Output("@1", "cat", "job.job")
+	return pid
 }
 
 // Finalize is a temporary hack to finalize the job status.

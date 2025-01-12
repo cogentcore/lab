@@ -1,0 +1,105 @@
+// Copyright (c) 2025, Cogent Lab. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package baremetal
+
+import (
+	"bytes"
+	"time"
+
+	"cogentcore.org/core/base/errors"
+)
+
+// Status are the job status values.
+type Status int32 //enums:enum
+
+const (
+	// NoStatus is the unknown status state.
+	NoStatus Status = iota
+
+	// Pending means the job has been submitted, but not yet run.
+	Pending
+
+	// Running means the job is running.
+	Running
+
+	// Completed means the job finished on its own, with no error status.
+	Completed
+
+	// Canceled means the job was canceled by the user.
+	Canceled
+
+	// Errored means the job quit with an error
+	Errored
+)
+
+// Job is one bare metal job.
+type Job struct {
+	// ID is the overall baremetal unique ID number.
+	ID int
+
+	// Status is the current status of the job.
+	Status Status
+
+	// Source is info about the source of the job, e.g., simrun sim project.
+	Source string
+
+	// Path is the path from the SSH home directory to launch the job in.
+	// This path will be
+	Path string
+
+	// Script is name of the job script to run, which must be at the top level
+	// within the given tar file.
+	Script string
+
+	// Tar is the tar file of the job blob.
+	Tar []byte
+
+	// Submit is the time submitted.
+	Submit time.Time
+
+	// Start is the time actually started.
+	Start time.Time
+
+	// End is the time stopped running.
+	End time.Time
+
+	//	ServerName is the name of the server it is running / ran on. Empty for pending.
+	ServerName string
+
+	// ServerGPU is the logical index of the GPU assigned to this job (0..N-1).
+	ServerGPU int
+
+	// pid is the process id of the job script.
+	PID int
+}
+
+// RunJob runs the given job on the given server.
+func (bm *BareMetal) RunJob(job *Job, sv *Server) error {
+	defer func() {
+		cd
+		@0
+	}()
+	sv.Use()
+	cd
+	mkdir -p {job.Path}
+	cd {job.Path}
+	sshcl, err := goalrun.SSHByHost(sv.Name)
+	if errors.Log(err) != nil {
+		return err
+	}
+	b := bytes.NewReader(job.Tar)
+	sz := int64(len(job.Tar))
+	err := sshcl.CopyLocalToHost(goalrun.Ctx, b, sz, "blob.tar")
+	if errors.Log(err) != nil {
+		return err
+	}
+	tar -xf blob.tar
+	$export 
+	$nohup {job.Script} > job.out 2>&1 &$
+	echo "$!" > job.pid
+	job.PID = $echo "$!"$
+	bm.Log("Job:", job.ID, "Submitted to Server:", sv.Name, )
+	return nil
+}

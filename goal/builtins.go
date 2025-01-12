@@ -88,6 +88,7 @@ func (gl *Goal) Set(cmdIO *exec.CmdIO, args ...string) error {
 		vl = AddHomeExpand([]string{}, vl...)
 		val = strings.Join(vl, ":")
 	}
+
 	err := os.Setenv(args[0], val)
 	if runtime.GOOS == "darwin" {
 		gl.Config.RunIO(cmdIO, "/bin/launchctl", "setenv", args[0], val)

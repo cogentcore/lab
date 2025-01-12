@@ -206,7 +206,7 @@ func (br *SimRun) NewJob(jp SubmitParams) {
 		scp job.job @1:job.job
 		core.MessageSnackbar(br, "Job: " + jid + " server job: " + sid + " successfully submitted")
 	} else {
-		sid := br.SubmitRun(jid, args, jp.GPU)
+		sid := br.SubmitBareRun(jid, args, jp.GPU)
 		goalib.WriteFile("job.job", sid)
 		fmt.Println("server job id:", sid)
 		scp job.job @1:job.job

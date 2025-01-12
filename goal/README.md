@@ -144,7 +144,13 @@ Each host maintains its own working directory and environment variables, which c
 
 * `gossh hostname.org [name]`  establishes a connection, using given optional name to refer to this connection.  If the name is not provided, a sequential number will be used, starting with 1, with 0 referring always to the local host.
 
-* `@name` then refers to the given host in all subsequent commands, with `@0` referring to the local host where the goal script is running.
+* `@name` then refers to the given host in all subsequent commands, with `@0` referring to the local host where the goal script is running. 
+
+* You can use a variable name for the server, like this (the explicit `$ $` shell mode is required because a line starting with `{` is not recognized as shell code):
+```Go
+server := "@myserver"
+${server} ls$
+```
 
 ### Explicit per-command specification of host
 
@@ -189,7 +195,7 @@ Importantly, file wildcard globbing works as expected:
 scp @name:*.tsv @0:data/
 ```
 
-and entire directories can be copied, as in `cp -a` or `cp -r` (this behavior is automatic and does not require  a flag).
+and entire directories can be copied, as in `cp -a` or `cp -r` (this behavior is automatic and does not require a flag).
 
 ### Close connections
 

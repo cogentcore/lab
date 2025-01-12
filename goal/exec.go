@@ -45,6 +45,15 @@ func (gl *Goal) Exec(errOk, start, output bool, cmd any, args ...any) string {
 	var err error
 	if cl != nil {
 		switch {
+		case scmd == "set":
+			if len(sargs) != 2 {
+				err := fmt.Errorf("expected two arguments, got %d", len(sargs))
+				if !errOk {
+					gl.AddError(err)
+				}
+				return ""
+			}
+			cl.SetEnv(sargs[0], sargs[1])
 		case start:
 			err = cl.Start(&cmdIO.StdIOState, scmd, sargs...)
 		case output:
