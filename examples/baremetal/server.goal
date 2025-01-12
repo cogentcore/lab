@@ -19,6 +19,17 @@ type Server struct {
 	Used map[int]bool `edit:"-" toml:"-"`
 }
 
+// updateServerIndexes updates the indexes in the Servers ordered map,
+// which is needed after loading new Server config.
+func (bm *BareMetal) updateServerIndexes() {
+	svs := &bm.Servers
+	svs.Keys = nil
+	for _, v := range svs.Values {
+		svs.Keys = append(svs.Keys, v.Name)
+	}
+	svs.UpdateIndexes()
+}
+
 // ServerAvail is used to report the number of available gpus per server.
 type ServerAvail struct {
 	Name string 

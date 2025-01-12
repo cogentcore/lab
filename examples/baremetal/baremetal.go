@@ -55,8 +55,10 @@ func NewBareMetal() *BareMetal {
 }
 
 // Config loads a toml format config file.
+// Use [[Servers.Values]] header for each server.
 func (bm *BareMetal) Config(filename string) {
 	errors.Log(tomlx.Open(bm, filename))
+	bm.updateServerIndexes()
 }
 
 // SaveState saves the current active state to a JSON file.
@@ -68,6 +70,11 @@ func (bm *BareMetal) SaveState(filename string) {
 // to restore to prior running state.
 func (bm *BareMetal) OpenState(filename string) {
 	errors.Log(jsonx.Open(bm, filename))
+}
+
+// InitGoal makes a new Goal transpiler system, mainly for testing.
+func (bm *BareMetal) InitGoal() {
+	goalrun = goal.NewGoal()
 }
 
 // InitServers initializes the server state, including opening SSH connections.

@@ -125,7 +125,7 @@ func (bm *BareMetal) RunJob(job *Job, sv *Server, gpu int) error {
 	job.PID = errors.Log1(strconv.Atoi(goalrun.Output("echo", "$!")))
 	job.ServerName = sv.Name
 	job.ServerGPU = gpu
-	slog.Info("Job:", job.ID, "Submitted to Server:", sv.Name)
+	slog.Info("Job submitted to server", "Job:", job.ID, "Server:", sv.Name)
 	return nil
 }
 
