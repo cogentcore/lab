@@ -10,10 +10,12 @@ Each job consumes one GPU, as key a simplification to minimize resource manageme
 
 # Environment variables
 
-* `BARE_GPU` has the GPU number.
+* `BARE_GPU` = the allocated GPU number (0..N]
 
 # job.* files
 
-* job.out contains all the output from running the job script.
-* job.pid has the pid process id of the job.
+* `job.out` contains all the output from running the job script.
+* `job.pid` has the pid process id of the job.
+* `job.files.tar.gz` has the files submitted for the job.
+* `job.results.tar.gz` has the results from the job
 

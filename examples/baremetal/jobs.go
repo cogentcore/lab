@@ -8,6 +8,10 @@ package baremetal
 
 import (
 	"bytes"
+	"fmt"
+	"log/slog"
+	"strconv"
+	"strings"
 	"time"
 
 	"cogentcore.org/core/base/errors"
@@ -55,8 +59,17 @@ type Job struct {
 	// within the given tar file.
 	Script string
 
-	// Tar is the tar file of the job blob.
-	Tar []byte
+	// Files is the gzipped tar file of the job files set at submission.
+	Files []byte
+
+	// ResultsGlob is a glob expression for the result files to get back
+	// from the server (e.g., *.tsv). job.out is automatically included as well,
+	// which has the job stdout, stederr output.
+	ResultsGlob string
+
+	// Results is the gzipped tar file of the job result files, gathered
+	// at completion or when queried for results.
+	Results []byte
 
 	// Submit is the time submitted.
 	Submit time.Time
@@ -77,8 +90,16 @@ type Job struct {
 	PID int
 }
 
-// RunJob runs the given job on the given server.
-func (bm *BareMetal) RunJob(job *Job, sv *Server) error {
+// Submit adds a new Active job with given parameters.
+func (bm *BareMetal) Submit(src, path, script, results string, files []byte) *Job {
+	job := &Job{ID: bm.NextID, Status: Pending, Source: src, Path: path, Script: script, Files: files, ResultsGlob: results, Submit: time.Now(), ServerGPU: -1}
+	bm.NextID++
+	bm.Active.Add(job.ID, job)
+	return job
+}
+
+// RunJob runs the given job on the given server on given gpu number.
+func (bm *BareMetal) RunJob(job *Job, sv *Server, gpu int) error {
 	defer func() {
 		goalrun.Run("cd")
 		goalrun.Run("@0")
@@ -91,17 +112,154 @@ func (bm *BareMetal) RunJob(job *Job, sv *Server) error {
 	if errors.Log(err) != nil {
 		return err
 	}
-	b := bytes.NewReader(job.Tar)
-	sz := int64(len(job.Tar))
-	err := sshcl.CopyLocalToHost(goalrun.Ctx, b, sz, "blob.tar")
+	b := bytes.NewReader(job.Files)
+	sz := int64(len(job.Files))
+	err = sshcl.CopyLocalToHost(goalrun.Ctx, b, sz, "job.files.tar.gz")
 	if errors.Log(err) != nil {
 		return err
 	}
-	goalrun.Run("tar", "-xf", "blob.tar")
-	goalrun.Run("export")
+	goalrun.Run("tar", "-xzf", "job.files.tar.gz")
+	goalrun.Run("set", "BARE_GPU", gpu)
 	goalrun.Start("nohup", job.Script, ">", "job.out", "2", ">&", "1")
 	goalrun.Run("echo", "$!", ">", "job.pid")
-	job.PID = goalrun.Output("echo", "$!")
-	bm.Log("Job:", job.ID, "Submitted to Server:", sv.Name)
+	job.PID = errors.Log1(strconv.Atoi(goalrun.Output("echo", "$!")))
+	job.ServerName = sv.Name
+	job.ServerGPU = gpu
+	slog.Info("Job:", job.ID, "Submitted to Server:", sv.Name)
+	return nil
+}
+
+// RunPendingJobs runs any pending jobs if there are available GPUs to run on.
+// returns number of jobs started, and any errors incurred in starting jobs.
+func (bm *BareMetal) RunPendingJobs() (int, error) {
+	avail := bm.AvailableGPUs()
+	if len(avail) == 0 {
+		return 0, nil
+	}
+	nRun := 0
+	var errs []error
+	for _, job := range bm.Active.Values {
+		if job.Status != Pending {
+			continue
+		}
+		av := avail[0]
+		sv := bm.Servers.At(av.Name)
+		next := sv.NextGPU()
+		for next < 0 {
+			if len(avail) == 1 {
+				return nRun, errors.Join(errs...)
+			}
+			avail = avail[1:]
+			av = avail[0]
+			sv = bm.Servers.At(av.Name)
+			next = sv.NextGPU()
+		}
+		err := bm.RunJob(job, sv, next)
+		if err != nil { // note: errors are server errors, not job errors, so don't affect job status
+			sv.FreeGPU(next)
+			errs = append(errs, err)
+		} else {
+			job.Status = Running
+		}
+	}
+	return nRun, errors.Join(errs...)
+}
+
+// CancelJobs cancels list of job IDs. Returns error for jobs not found.
+func (bm *BareMetal) CancelJobs(jobs ...int) error {
+	var errs []error
+	for _, jid := range jobs {
+		job, ok := bm.Active.AtTry(jid)
+		if !ok {
+			err := errors.Log(fmt.Errorf("CancelJobs: job id not found in Active job list: %d", jid))
+			errs = append(errs, err)
+		} else {
+			err := bm.CancelJob(job)
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// CancelJob cancels the running of the given job (killing process if Running).
+func (bm *BareMetal) CancelJob(job *Job) error {
+	if job.Status == Pending {
+		job.Status = Canceled
+		job.End = time.Now()
+		bm.Done.Add(job.ID, job)
+		bm.Active.DeleteByKey(job.ID)
+		return nil
+	}
+	sv, ok := bm.Servers.AtTry(job.ServerName)
+	if !ok {
+		return errors.Log(fmt.Errorf("CancelJob: ServerName %q not found", job.ServerName))
+	}
+	sv.Use()
+	goalrun.RunErrOK("kill", "-9", job.PID)
+	job.Status = Canceled
+	goalrun.Run("@0")
+	bm.JobDone(job, sv)
+	return nil
+}
+
+// PollJobs checks to see if any running jobs have finished.
+// Returns number of jobs that finished.
+func (bm *BareMetal) PollJobs() (int, error) {
+	var errs []error
+	nDone := 0
+	for _, job := range bm.Active.Values {
+		if job.Status != Running {
+			continue
+		}
+		sv, ok := bm.Servers.AtTry(job.ServerName)
+		if !ok {
+			err := errors.Log(fmt.Errorf("PollJobs: ServerName %q not found", job.ServerName))
+			errs = append(errs, err)
+			continue
+		}
+		sv.Use()
+		psout := goalrun.Output("ps", "-p", job.PID)
+		if strings.Contains(psout, "status 1") { // not found -- we can't use exit status across
+			job.Status = Completed
+			bm.GetResults(job, sv)
+			bm.JobDone(job, sv)
+		}
+	}
+	goalrun.Output("@0")
+	return nDone, errors.Join(errs...)
+}
+
+// JobDone sets job to be completed and moves to Done category.
+func (bm *BareMetal) JobDone(job *Job, sv *Server) {
+	job.End = time.Now()
+	if job.ServerGPU >= 0 {
+		sv.FreeGPU(job.ServerGPU)
+	}
+	bm.Done.Add(job.ID, job)
+	bm.Active.DeleteByKey(job.ID)
+}
+
+// GetResults gets job results back from server.
+func (bm *BareMetal) GetResults(job *Job, sv *Server) error {
+	defer func() {
+		goalrun.Run("cd")
+		goalrun.Run("@0")
+	}()
+	sv.Use()
+	goalrun.Run("cd")
+	goalrun.Run("cd", job.Path)
+	goalrun.Run("tar", "-czf", "job.results.tar.gz", job.ResultsGlob)
+	var b bytes.Buffer
+	sshcl, err := goalrun.SSHByHost(sv.Name)
+	if errors.Log(err) != nil {
+		return err
+	}
+	err = sshcl.CopyHostToLocal(goalrun.Ctx, "job.results.tar.gz", &b)
+	if errors.Log(err) != nil {
+		return err
+	}
+	job.Results = b.Bytes()
 	return nil
 }

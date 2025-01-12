@@ -7,10 +7,7 @@ package baremetal
 //go:generate core generate
 
 import (
-	"io"
-	"os"
 	"sync"
-	"time"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/iox/jsonx"
@@ -41,9 +38,6 @@ type BareMetal struct {
 	// The unique key is the bare metal job ID (int).
 	Done Jobs
 
-	// LogWriter is where a log of the job actions is written.
-	LogWriter io.Writer `json:"-" toml:"-"`
-
 	// Lock for responding to inputs.
 	// everything below top-level input processing is assumed to be locked.
 	sync.Mutex `json:"-" toml:"-"`
@@ -53,7 +47,7 @@ type BareMetal struct {
 type Jobs = keylist.List[int, *Job]
 
 // Servers is the ordered list of servers, in order of use preference.
-type Servers = keylist.List[int, *Server]
+type Servers = keylist.List[string, *Server]
 
 func NewBareMetal() *BareMetal {
 	bm := &BareMetal{}
@@ -85,26 +79,6 @@ func (bm *BareMetal) InitServers() {
 
 // OpenLog opens a log file for recording actions.
 func (bm *BareMetal) OpenLog(filename string) error {
-	f, err := os.Create(filename)
-	if errors.Log(err) != nil {
-		return err
-	}
-	bm.LogWriter = f
+	// todo: openlog file on slog
 	return nil
-}
-
-// Log records the given data in a log, using standard log formatting.
-func (bm *BareMetal) Log(args any) {
-	if bm.LogWriter == nil {
-		return
-	}
-	fmt.FPrintln(bm.LogWriter, time.Now(), args...)
-}
-
-// Submit adds a new Active job.
-func (bm *BareMetal) Submit(src, path, script string, blob []byte) *Job {
-	job := &Job{ID: bm.NextID, Status: Pending, Source: src, Path: path, Script: script, Tar: blob, Submit: time.Now()}
-	bm.NextID++
-	bm.Active.Add(job.ID, job)
-	return job
 }
