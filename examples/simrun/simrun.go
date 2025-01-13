@@ -139,12 +139,12 @@ func (sr *SimRun) InitSimRun(startDir string) {
 	in.Interp.Use(coresymbols.Symbols) // gui imports
 	in.Interp.Use(gui.Symbols)         // gui imports
 	in.Interp.Use(interp.Exports{
-		"cogentcore.org/lab/simrun/simrun": map[string]reflect.Value{
-			"SimRun": reflect.ValueOf(sr), // our SimRun is available as simrun.SimRun
+		"cogentcore.org/lab/lab/lab": map[string]reflect.Value{
+			"Lab": reflect.ValueOf(sr), // our SimRun is available as lab.Lab
 		},
 	})
 	in.Config()
-	sr.SetScriptsDir(filepath.Join(sr.DataRoot, "dbscripts"))
+	sr.SetScriptsDir(filepath.Join(sr.DataRoot, "labscripts"))
 	lab.TheBrowser = &sr.Browser
 	lab.CurTabber = sr.Browser.Tabs
 	goalrun = in.Goal
@@ -250,7 +250,7 @@ func (sr *SimRun) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.Button) {
 		w.SetText("README").SetIcon(icons.FileMarkdown).
 			SetTooltip("open README help file").OnClick(func(e events.Event) {
-			core.TheApp.OpenURL("https://github.com/cogentcore/core/blob/main/tensor/examples/planets/README.md")
+			core.TheApp.OpenURL("https://github.com/cogentcore/lab/blob/main/examples/simrun/README.md")
 		})
 	})
 }
