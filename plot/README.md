@@ -14,12 +14,18 @@ The GUI constraint requires a more systematic, factorial organization of the spa
 
 * Plot content is driven by `Plotter` elements that each consume one or more sets of data, which is provided by a `Valuer` interface that maps onto a minimal subset of the `tensor.Tensor` interface, so a tensor directly satisfies the interface.
 
-* Each `Plotter` element can generally handle multiple different data elements, that are index-aligned. For example, the basic `XY` plotter requires `X` and `Y` Valuers, and optionally `Size` or `Color` Valuers that apply to the Point elements, while `Bar` gets at least a `Y` but also optionally a `High` Valuer for an error bar.  The `plot.Data` = `map[Roles]Valuer` is used to create new Plotter elements, allowing an unordered and explicit way of specifying the `Roles` of each `Valuer` item.
+* Each `Plotter` element can generally handle multiple different data elements, that are index-aligned. For example, the basic `XY` plotter requires a `Y` Valuer, and typically an `X`, but indexes will be used if it is not present. It optionally uses `Size` or `Color` Valuers that apply to the Point elements. A `Bar` gets at least a `Y` but also optionally a `High` Valuer for an error bar.  The `plot.Data` = `map[Roles]Valuer` is used to create new Plotter elements, allowing an unordered and explicit way of specifying the `Roles` of each `Valuer` item. There are also shortcut methods for `NewXY` and `NewY`.
 
-Here is a example for how a plotter element is created with the `plot.Data` map of roles to data:
+Here is a minimal example for how a plotter XY Line element is created:
 
 ```Go
 plt := plot.NewPlot()
+plt.Add(plots.NewLine(plot.NewY(yd)))
+```
+
+And here's a more complex example setting the `plot.Data` map of roles to data:
+
+```Go
 plt.Add(plots.NewLine(plot.Data{plot.X: xd, plot.Y: yd, plot.Low: low, plot.High: high}))
 ```
 

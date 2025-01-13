@@ -11,6 +11,7 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/texteditor"
+	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/plotcore"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
@@ -181,6 +182,23 @@ func (ts *Tabs) PlotTensorFS(dfs *tensorfs.Node) *plotcore.PlotEditor {
 	}
 	dt.AddColumn(dfs.Name(), tsr.AsValues())
 	return ts.PlotTable(label, dt)
+}
+
+// Plot recycles a tab with given Plot using given label.
+func (ts *Tabs) Plot(label string, plt *plot.Plot) *plotcore.Plot {
+	pl := NewTab(ts, label, func(tab *core.Frame) *plotcore.Plot {
+		pl := plotcore.NewPlot(tab)
+		pl.Styler(func(s *styles.Style) {
+			s.Direction = styles.Column
+			s.Grow.Set(1, 1)
+		})
+		pl.SetPlot(plt)
+		return pl
+	})
+	if pl != nil {
+		ts.Update()
+	}
+	return pl
 }
 
 // GoUpdatePlot calls GoUpdatePlot on plot at tab with given name.
