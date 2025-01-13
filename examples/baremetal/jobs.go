@@ -60,16 +60,16 @@ type Job struct {
 	Script string
 
 	// Files is the gzipped tar file of the job files set at submission.
-	Files []byte
+	Files []byte `display:"-"`
 
 	// ResultsGlob is a glob expression for the result files to get back
 	// from the server (e.g., *.tsv). job.out is automatically included as well,
 	// which has the job stdout, stederr output.
-	ResultsGlob string
+	ResultsGlob string `display:"-"`
 
 	// Results is the gzipped tar file of the job result files, gathered
 	// at completion or when queried for results.
-	Results []byte
+	Results []byte `display:"-"`
 
 	// Submit is the time submitted.
 	Submit time.Time
@@ -90,11 +90,26 @@ type Job struct {
 	PID int
 }
 
+// Job returns the Job record for given job number; nil if not found
+// in Active or Done;
+func (bm *BareMetal) Job(jobno int) *Job {
+	job, ok := bm.Active.AtTry(jobno)
+	if ok {
+		return job
+	}
+	job, ok = bm.Done.AtTry(jobno)
+	if ok {
+		return job
+	}
+	return nil
+}
+
 // Submit adds a new Active job with given parameters.
 func (bm *BareMetal) Submit(src, path, script, results string, files []byte) *Job {
 	job := &Job{ID: bm.NextID, Status: Pending, Source: src, Path: path, Script: script, Files: files, ResultsGlob: results, Submit: time.Now(), ServerGPU: -1}
 	bm.NextID++
 	bm.Active.Add(job.ID, job)
+	bm.SaveState()
 	return job
 }
 
@@ -114,19 +129,43 @@ func (bm *BareMetal) RunJob(job *Job, sv *Server, gpu int) error {
 	}
 	b := bytes.NewReader(job.Files)
 	sz := int64(len(job.Files))
-	err = sshcl.CopyLocalToHost(goalrun.Ctx, b, sz, "job.files.tar.gz")
+	ctx := goalrun.StartContext()
+	err = sshcl.CopyLocalToHost(ctx, b, sz, "job.files.tar.gz")
+	goalrun.EndContext()
 	if errors.Log(err) != nil {
 		return err
 	}
 	goalrun.Run("tar", "-xzf", "job.files.tar.gz")
-	goalrun.Run("set", "BARE_GPU", gpu)
-	goalrun.Start("nohup", job.Script, ">", "job.out", "2", ">&", "1")
-	goalrun.Run("echo", "$!", ">", "job.pid")
-	job.PID = errors.Log1(strconv.Atoi(goalrun.Output("echo", "$!")))
+	// set BARE_GPU {gpu}
+	gpus := strconv.Itoa(gpu)
+	// $nohup {"./"+job.Script} > job.out 2>&1 & echo "$!" > job.pid $
+	// note: anything with an & in it just doesn't work on our ssh client, for unknown reasons.
+	// goalrun.Run("nohup", "./"+job.Script, ">&", "job.out", "&", "echo", "$!", ">", "job.pid")
+	goalrun.Run("BARE_GPU="+gpus, "nohup", "./"+job.Script)
+	for range 10 {
+		if bm.GetJobPID(job) {
+			break
+		}
+		time.Sleep(time.Second)
+	}
 	job.ServerName = sv.Name
 	job.ServerGPU = gpu
-	slog.Info("Job submitted to server", "Job:", job.ID, "Server:", sv.Name)
+	slog.Info("Job running on server", "Job:", job.ID, "Server:", sv.Name)
 	return nil
+}
+
+// GetJobPID tries to get the job PID, returning true if obtained.
+// Must already be in the ssh and directory for correct server.
+func (bm *BareMetal) GetJobPID(job *Job) bool {
+	pids := strings.TrimSpace(goalrun.Output("cat", "job.pid"))
+	if pids != "" {
+		pidn, err := strconv.Atoi(pids)
+		if err == nil {
+			job.PID = pidn
+			return true
+		}
+	}
+	return false
 }
 
 // RunPendingJobs runs any pending jobs if there are available GPUs to run on.
@@ -142,6 +181,7 @@ func (bm *BareMetal) RunPendingJobs() (int, error) {
 		if job.Status != Pending {
 			continue
 		}
+		fmt.Println("job status:", job.Status, "jobno:", job.ID)
 		av := avail[0]
 		sv := bm.Servers.At(av.Name)
 		next := sv.NextGPU()
@@ -160,7 +200,11 @@ func (bm *BareMetal) RunPendingJobs() (int, error) {
 			errs = append(errs, err)
 		} else {
 			job.Status = Running
+			nRun++
 		}
+	}
+	if nRun > 0 {
+		bm.SaveState()
 	}
 	return nRun, errors.Join(errs...)
 }
@@ -180,6 +224,7 @@ func (bm *BareMetal) CancelJobs(jobs ...int) error {
 			}
 		}
 	}
+	bm.SaveState()
 	return errors.Join(errs...)
 }
 
@@ -192,11 +237,17 @@ func (bm *BareMetal) CancelJob(job *Job) error {
 		bm.Active.DeleteByKey(job.ID)
 		return nil
 	}
-	sv, ok := bm.Servers.AtTry(job.ServerName)
-	if !ok {
-		return errors.Log(fmt.Errorf("CancelJob: ServerName %q not found", job.ServerName))
+	sv, err := bm.Server(job.ServerName)
+	if errors.Log(err) != nil {
+		return err
 	}
 	sv.Use()
+	if job.PID == 0 {
+		goalrun.Run("cd", job.Path)
+		if !bm.GetJobPID(job) {
+			return fmt.Errorf("CancelJob: Job %d PID is 0 and could not get it from job.pid file: must cancel manually", job.ID)
+		}
+	}
 	goalrun.RunErrOK("kill", "-9", job.PID)
 	job.Status = Canceled
 	goalrun.Run("@0")
@@ -210,24 +261,38 @@ func (bm *BareMetal) PollJobs() (int, error) {
 	var errs []error
 	nDone := 0
 	for _, job := range bm.Active.Values {
+		fmt.Println("job status:", job.Status, "jobno:", job.ID)
 		if job.Status != Running {
 			continue
 		}
-		sv, ok := bm.Servers.AtTry(job.ServerName)
-		if !ok {
-			err := errors.Log(fmt.Errorf("PollJobs: ServerName %q not found", job.ServerName))
+		sv, err := bm.Server(job.ServerName)
+		if errors.Log(err) != nil {
 			errs = append(errs, err)
 			continue
 		}
 		sv.Use()
-		psout := goalrun.Output("ps", "-p", job.PID)
-		if strings.Contains(psout, "status 1") { // not found -- we can't use exit status across
+		goalrun.Output("cd", job.Path)
+		if job.PID == 0 {
+			if !bm.GetJobPID(job) {
+				err := fmt.Errorf("PollJobs: Job %d PID is 0 and could not get it from job.pid file: must cancel manually", job.ID)
+				errs = append(errs, errors.Log(err))
+				continue
+			}
+		}
+		// psout := $ps -p {job.PID} >/dev/null; echo "$?"$ // todo: don't parse ; ourselves!
+		psout := strings.TrimSpace(goalrun.Output("ps", "-p", job.PID, ">", "/dev/null", ";", "echo", "$?"))
+		// fmt.Println("status:", psout)
+		if psout == "1" {
 			job.Status = Completed
 			bm.GetResults(job, sv)
 			bm.JobDone(job, sv)
+			nDone++
 		}
 	}
 	goalrun.Output("@0")
+	if nDone > 0 {
+		bm.SaveState()
+	}
 	return nDone, errors.Join(errs...)
 }
 
@@ -256,10 +321,33 @@ func (bm *BareMetal) GetResults(job *Job, sv *Server) error {
 	if errors.Log(err) != nil {
 		return err
 	}
-	err = sshcl.CopyHostToLocal(goalrun.Ctx, "job.results.tar.gz", &b)
+	ctx := goalrun.StartContext()
+	err = sshcl.CopyHostToLocal(ctx, "job.results.tar.gz", &b)
+	goalrun.EndContext()
 	if errors.Log(err) != nil {
 		return err
 	}
 	job.Results = b.Bytes()
 	return nil
+}
+
+// SetServerUsedFromJobs is called at startup to set the server Used status
+// based on the current Active jobs, loaded from State.
+func (bm *BareMetal) SetServerUsedFromJobs() error {
+	for _, sv := range bm.Servers.Values {
+		sv.Used = make(map[int]bool)
+	}
+	var errs []error
+	for _, job := range bm.Active.Values {
+		if job.Status != Running {
+			continue
+		}
+		sv, err := bm.Server(job.ServerName)
+		if errors.Log(err) != nil {
+			errs = append(errs, err)
+			continue
+		}
+		sv.Used[job.ServerGPU] = true
+	}
+	return errors.Join(errs...)
 }

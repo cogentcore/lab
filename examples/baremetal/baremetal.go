@@ -7,13 +7,18 @@ package baremetal
 //go:generate core generate
 
 import (
+	"log/slog"
+	"os"
+	"path/filepath"
 	"sync"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/iox/jsonx"
 	"cogentcore.org/core/base/iox/tomlx"
 	"cogentcore.org/core/base/keylist"
+	"cogentcore.org/core/system"
 	"cogentcore.org/lab/goal"
+	"cogentcore.org/lab/goal/goalib"
 )
 
 // goalrun is needed for running goal commands.
@@ -23,7 +28,7 @@ var goalrun *goal.Goal
 type BareMetal struct {
 
 	//	Servers is the ordered list of server machines.
-	Servers Servers
+	Servers Servers `json:"-"`
 
 	// NextID is the next job ID to assign.
 	NextID int
@@ -54,27 +59,60 @@ func NewBareMetal() *BareMetal {
 	return bm
 }
 
-// Config loads a toml format config file.
+// Init does the full initialization of the server: Config, OpenState,
+// InitServers, using given goal.Goal instance.
+func (bm *BareMetal) Init(gl *goal.Goal) {
+	goalrun = gl
+	bm.Config()
+	bm.OpenState()
+	bm.InitServers()
+}
+
+// Config loads a toml format config file from
+// TheApp.DataDir()/BareMetal/config.toml to load the servers.
 // Use [[Servers.Values]] header for each server.
-func (bm *BareMetal) Config(filename string) {
-	errors.Log(tomlx.Open(bm, filename))
+func (bm *BareMetal) Config() {
+	dir := filepath.Join(system.TheApp.DataDir(), "BareMetal")
+	os.MkdirAll(dir, 0777)
+	file := filepath.Join(dir, "config.toml")
+	if !goalib.FileExists(file) {
+		slog.Error("BareMetal config file not found: no servers will be configured", "File location:", file)
+		return
+	}
+	errors.Log(tomlx.Open(bm, file))
 	bm.updateServerIndexes()
 }
 
-// SaveState saves the current active state to a JSON file.
-func (bm *BareMetal) SaveState(filename string) {
-	errors.Log(jsonx.Save(bm, filename))
+// SaveState saves the current active state to a JSON file:
+// TheApp.DataDir()/BareMetal/state.json  A backup ~ file is
+// made of any existing prior to saving.
+func (bm *BareMetal) SaveState() {
+	dir := filepath.Join(system.TheApp.DataDir(), "BareMetal")
+	os.MkdirAll(dir, 0777)
+	file := filepath.Join(dir, "state.json")
+	bkup := filepath.Join(dir, "state.json~")
+	if goalib.FileExists(file) {
+		if goalib.FileExists(bkup) {
+			os.Remove(bkup)
+		}
+		os.Rename(file, bkup)
+	}
+	errors.Log(jsonx.Save(bm, file))
 }
 
-// OpenState opens the current active state from a JSON file,
+// OpenState opens the current active state from the file made by SaveState,
 // to restore to prior running state.
-func (bm *BareMetal) OpenState(filename string) {
-	errors.Log(jsonx.Open(bm, filename))
-}
-
-// InitGoal makes a new Goal transpiler system, mainly for testing.
-func (bm *BareMetal) InitGoal() {
-	goalrun = goal.NewGoal()
+func (bm *BareMetal) OpenState() {
+	dir := filepath.Join(system.TheApp.DataDir(), "BareMetal")
+	file := filepath.Join(dir, "state.json")
+	if !goalib.FileExists(file) {
+		return
+	}
+	errors.Log(jsonx.Open(bm, file))
+	bm.updateServerIndexes()
+	bm.Active.UpdateIndexes()
+	bm.Done.UpdateIndexes()
+	bm.SetServerUsedFromJobs()
 }
 
 // InitServers initializes the server state, including opening SSH connections.
@@ -82,10 +120,22 @@ func (bm *BareMetal) InitServers() {
 	for _, sv := range bm.Servers.Values {
 		sv.OpenSSH()
 	}
+	goalrun.Run("@0")
 }
 
 // OpenLog opens a log file for recording actions.
 func (bm *BareMetal) OpenLog(filename string) error {
 	// todo: openlog file on slog
 	return nil
+}
+
+// updateServerIndexes updates the indexes in the Servers ordered map,
+// which is needed after loading new Server config.
+func (bm *BareMetal) updateServerIndexes() {
+	svs := &bm.Servers
+	svs.Keys = make([]string, len(svs.Values))
+	for i, v := range svs.Values {
+		svs.Keys[i] = v.Name
+	}
+	svs.UpdateIndexes()
 }

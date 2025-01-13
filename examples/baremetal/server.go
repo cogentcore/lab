@@ -6,6 +6,8 @@
 
 package baremetal
 
+import "fmt"
+
 // Server specifies a bare metal Server.
 type Server struct {
 	// Name is the alias used for gossh.
@@ -19,17 +21,6 @@ type Server struct {
 
 	// Used is a map of GPUs current being used.
 	Used map[int]bool `edit:"-" toml:"-"`
-}
-
-// updateServerIndexes updates the indexes in the Servers ordered map,
-// which is needed after loading new Server config.
-func (bm *BareMetal) updateServerIndexes() {
-	svs := &bm.Servers
-	svs.Keys = nil
-	for _, v := range svs.Values {
-		svs.Keys = append(svs.Keys, v.Name)
-	}
-	svs.UpdateIndexes()
 }
 
 // ServerAvail is used to report the number of available gpus per server.
@@ -59,6 +50,15 @@ func (sv *Server) Use() {
 // Avail returns the number of servers available.
 func (sv *Server) Avail() int {
 	return sv.NGPUs - len(sv.Used)
+}
+
+// Server provides error-wrapped access to Servers by name.
+func (bm *BareMetal) Server(name string) (*Server, error) {
+	sv, ok := bm.Servers.AtTry(name)
+	if !ok {
+		return nil, fmt.Errorf("BareMetal:Server name not found: %q", name)
+	}
+	return sv, nil
 }
 
 // AvailableGPUs returns the number of GPUs available on servers.

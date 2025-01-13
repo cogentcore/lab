@@ -9,11 +9,36 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 
 	"cogentcore.org/core/base/errors"
 )
+
+// AllFiles returns all file names within given directory, including subdirectory,
+// excluding those matching given glob expressions. Files are relative to dir,
+// and do not include the full path.
+func AllFiles(dir string, exclude ...string) ([]string, error) {
+	var files []string
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.Type().IsRegular() {
+			return nil
+		}
+		fn := d.Name()
+		for _, ex := range exclude {
+			if errors.Log1(filepath.Match(ex, fn)) {
+				return nil
+			}
+		}
+		files = append(files, fn)
+		return nil
+	})
+	return files, err
+}
 
 // TarFiles writes a tar file to given writer, from given source directory.
 // Tar file names are as listed here so it will unpack directly to those files.

@@ -42,9 +42,6 @@ type SubmitParams struct {
 	//
 	// -nogui is already passed by default
 	Args string `width:"80"`
-
-	// GPU number to run on.
-	GPU int
 }
 
 // JobParams are parameters for running the job
@@ -215,6 +212,6 @@ type Result struct {
 }
 
 // EditConfig edits the configuration
-func (br *SimRun) EditConfig() { //types:add
-	lab.PromptStruct(br, &br.Config, "Configuration parameters", nil)
+func (sr *SimRun) EditConfig() { //types:add
+	lab.PromptStruct(sr, &sr.Config, "Configuration parameters", nil)
 }
