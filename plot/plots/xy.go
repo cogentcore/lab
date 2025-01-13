@@ -12,16 +12,18 @@ package plots
 //go:generate core generate
 
 import (
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/tensor"
 )
 
 // XYType is be used for specifying the type name.
 const XYType = "XY"
 
 func init() {
-	plot.RegisterPlotter(XYType, "draws lines between and / or points for X,Y data values, using optional Size and Color data for the points, for a bubble plot.", []plot.Roles{plot.X, plot.Y}, []plot.Roles{plot.Size, plot.Color}, func(data plot.Data) plot.Plotter {
+	plot.RegisterPlotter(XYType, "draws lines between and / or points for X,Y data values, using optional Size and Color data for the points, for a bubble plot.", []plot.Roles{plot.Y}, []plot.Roles{plot.X, plot.Size, plot.Color}, func(data plot.Data) plot.Plotter {
 		return NewXY(data)
 	})
 }
@@ -48,8 +50,12 @@ func NewXY(data plot.Data) *XY {
 		return nil
 	}
 	ln := &XY{}
-	ln.X = plot.MustCopyRole(data, plot.X)
 	ln.Y = plot.MustCopyRole(data, plot.Y)
+	if _, ok := data[plot.X]; !ok {
+		ln.X = errors.Log1(plot.CopyValues(tensor.NewIntRange(len(ln.Y))))
+	} else {
+		ln.X = plot.MustCopyRole(data, plot.X)
+	}
 	if ln.X == nil || ln.Y == nil {
 		return nil
 	}

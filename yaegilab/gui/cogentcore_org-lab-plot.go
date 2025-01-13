@@ -51,6 +51,8 @@ func init() {
 		"NewPlotter":         reflect.ValueOf(plot.NewPlotter),
 		"NewStyle":           reflect.ValueOf(plot.NewStyle),
 		"NewTablePlot":       reflect.ValueOf(plot.NewTablePlot),
+		"NewXY":              reflect.ValueOf(plot.NewXY),
+		"NewY":               reflect.ValueOf(plot.NewY),
 		"NoRole":             reflect.ValueOf(plot.NoRole),
 		"NoStep":             reflect.ValueOf(plot.NoStep),
 		"Off":                reflect.ValueOf(plot.Off),

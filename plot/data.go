@@ -151,6 +151,16 @@ func (dt Data) CheckLengths() error {
 	return nil
 }
 
+// NewXY returns a new Data with X, Y roles for given values.
+func NewXY(x, y Valuer) Data {
+	return Data{X: x, Y: y}
+}
+
+// NewY returns a new Data with Y role for given values.
+func NewY(y Valuer) Data {
+	return Data{Y: y}
+}
+
 // Values provides a minimal implementation of the Data interface
 // using a slice of float64.
 type Values []float64
