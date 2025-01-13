@@ -3,7 +3,7 @@ module cogentcore.org/lab
 go 1.22
 
 require (
-	cogentcore.org/core v0.3.8-0.20241225201506-0a17ddfaddf6
+	cogentcore.org/core v0.3.8-0.20250113065830-fdd04f973abf
 	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56
 	github.com/ergochat/readline v0.1.2
 	github.com/mitchellh/go-homedir v1.1.0
@@ -50,7 +50,7 @@ require (
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/image v0.18.0 // indirect
 	golang.org/x/mod v0.19.0 // indirect
-	golang.org/x/net v0.27.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
