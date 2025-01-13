@@ -19,8 +19,8 @@ import (
 	"cogentcore.org/lab/tensorfs"
 )
 
-// CurTabber is the current Tabber. Set when one is created.
-var CurTabber Tabber
+// Lab is the current Tabs, for yaegi / Go consistent access.
+var Lab *Tabs
 
 // Tabber is a [core.Tabs] based widget that has support for opening
 // tabs for [plotcore.PlotEditor] and [tensorcore.Table] editors,

@@ -8,7 +8,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"reflect"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fsx"
@@ -18,7 +17,6 @@ import (
 	"cogentcore.org/core/tree"
 	"cogentcore.org/core/yaegicore/coresymbols"
 	"cogentcore.org/lab/goal/interpreter"
-	"github.com/cogentcore/yaegi/interp"
 )
 
 // Basic is a basic data browser with the files as the left panel,
@@ -52,6 +50,7 @@ func (br *Basic) Init() {
 		})
 		tree.AddChildAt(w, "tabs", func(w *Tabs) {
 			br.Tabs = w
+			Lab = br.Tabs.AsLab()
 		})
 	})
 	br.Updater(func() {
@@ -86,14 +85,8 @@ func NewBasicWindow(fsys fs.FS, dataDir string, in *interpreter.Interpreter) (*c
 		in = br.Interpreter
 	}
 	in.Interp.Use(coresymbols.Symbols) // gui imports
-	in.Interp.Use(interp.Exports{
-		"cogentcore.org/lab/lab/lab": map[string]reflect.Value{
-			"Lab": reflect.ValueOf(br), // our lab browser is avail as lab.Lab
-		},
-	})
 	br.SetScriptsDir(filepath.Join(ddr, "labscripts"))
 
-	TheBrowser = &br.Browser
-	CurTabber = br.Browser.Tabs
+	LabBrowser = &br.Browser
 	return b, br
 }

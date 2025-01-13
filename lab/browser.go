@@ -18,10 +18,8 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-// TheBrowser is the current browser,
-// which is valid immediately after NewBrowserWindow
-// where it is used to get a local variable for subsequent use.
-var TheBrowser *Browser
+// LabBrowser is the current Lab Browser, for yaegi / Go consistent access.
+var LabBrowser *Browser
 
 // Browser holds all the elements of a data browser, for browsing data
 // either on an OS filesystem or as a tensorfs virtual data filesystem.

@@ -12,9 +12,10 @@ func init() {
 	Symbols["cogentcore.org/lab/lab/lab"] = map[string]reflect.Value{
 		// function, constant and variable definitions
 		"AsDataTree":         reflect.ValueOf(lab.AsDataTree),
-		"CurTabber":          reflect.ValueOf(&lab.CurTabber).Elem(),
 		"FirstComment":       reflect.ValueOf(lab.FirstComment),
 		"IsTableFile":        reflect.ValueOf(lab.IsTableFile),
+		"Lab":                reflect.ValueOf(&lab.Lab).Elem(),
+		"LabBrowser":         reflect.ValueOf(&lab.LabBrowser).Elem(),
 		"NewBasic":           reflect.ValueOf(lab.NewBasic),
 		"NewBasicWindow":     reflect.ValueOf(lab.NewBasicWindow),
 		"NewDataTree":        reflect.ValueOf(lab.NewDataTree),
@@ -25,7 +26,6 @@ func init() {
 		"PromptString":       reflect.ValueOf(lab.PromptString),
 		"PromptStruct":       reflect.ValueOf(lab.PromptStruct),
 		"TensorFS":           reflect.ValueOf(lab.TensorFS),
-		"TheBrowser":         reflect.ValueOf(&lab.TheBrowser).Elem(),
 		"TrimOrderPrefix":    reflect.ValueOf(lab.TrimOrderPrefix),
 
 		// type definitions
