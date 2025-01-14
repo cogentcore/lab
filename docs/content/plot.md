@@ -3,9 +3,8 @@
 You can plot a [[vector]]:
 
 ```Goal
-# x := rand(10)
 plt := lab.NewPlot(b)
-plt.Add(plots.NewLine(plot.NewY(x)))
+plt.Add(plots.NewLine(plot.NewY(#rand(10)#)))
 ```
 
 You can plot multiple vectors:
