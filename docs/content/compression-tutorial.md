@@ -44,5 +44,5 @@ Next, we can compute the vector **a**, which represents **x** in terms of the **
 # U := 2*rand(8, 8)-1
 
 # a := matrix.Inverse(U) @ x
-fmt.Println(a)
+core.NewText(b).SetText(a.String())
 ```
