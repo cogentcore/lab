@@ -37,13 +37,14 @@ type Plot struct {
 
 // SetPlot sets the plot to given Plot, and calls UpdatePlot to ensure it is
 // drawn at the current size of this widget
-func (pt *Plot) SetPlot(pl *plot.Plot) {
+func (pt *Plot) SetPlot(pl *plot.Plot) *Plot {
 	if pl != nil && pt.Plot != nil && pt.Plot.Pixels != nil {
 		pl.DPI = pt.Styles.UnitContext.DPI
 		pl.SetPixels(pt.Plot.Pixels) // re-use the image!
 	}
 	pt.Plot = pl
 	pt.updatePlot()
+	return pt
 }
 
 // updatePlot draws the current plot at the size of the current widget,

@@ -6,5 +6,5 @@ You can plot a [[vector]]:
 # x := rand(10)
 plt := plot.New()
 plt.Add(plots.NewLine(plot.NewY(x)))
-lab.Lab.Plot("plot", plt)
+plotcore.NewPlot(b).SetPlot(plt)
 ```
