@@ -20,10 +20,8 @@ plt.Add(plots.NewLine(plot.NewY(#-rand(10)#)))
 You can style a plot line:
 
 ```Goal
-# x := rand(10)
-plot.SetStylersTo(x, func(s *plot.Style) {
-    s.Line.Color = colors.Scheme.Primary.Base
-})
 plt := lab.NewPlot(b)
-plt.Add(plots.NewLine(plot.NewY(x)))
+plt.Add(plots.NewLine(plot.NewY(#rand(10)#)).Styler(func(s *plot.Style) {
+    s.Line.Color = colors.Scheme.Primary.Base
+}))
 ```
