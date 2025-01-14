@@ -163,7 +163,7 @@ func (pl *PlotEditor) SetSlice(sl any, stylers ...func(s *plot.Style)) *PlotEdit
 	}
 	mx := min(dt.NumColumns(), len(stylers))
 	for i := range mx {
-		plot.SetStylersTo(dt.Columns.Values[i], plot.Stylers{stylers[i]})
+		plot.SetStylersTo(dt.Columns.Values[i], stylers[i])
 	}
 	return pl.SetTable(dt)
 }
@@ -353,7 +353,7 @@ func (pl *PlotEditor) makeColumns(p *tree.Plan) {
 				errors.Log(reflectx.CopyFields(s, cst, mf...))
 				errors.Log(reflectx.CopyFields(&s.Plot, &pl.PlotStyle, modFields(pl.plotStyleModified)...))
 			})
-			plot.SetStylersTo(cl, stys)
+			plot.SetStylersTo(cl, stys...)
 
 			w.Styler(func(s *styles.Style) {
 				s.CenterAll()

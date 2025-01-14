@@ -62,7 +62,7 @@ func ExampleStylerMetadata() {
 		ty.SetFloat1D(50.0+40*math.Sin((float64(i)/8)*math.Pi), i)
 	}
 	// attach stylers to the Y axis data: that is where plotter looks for it
-	plot.SetStylersTo(ty, plot.Stylers{func(s *plot.Style) {
+	plot.SetStylersTo(ty, func(s *plot.Style) {
 		s.Plot.Title = "Test Line"
 		s.Plot.XAxis.Label = "X Axis"
 		s.Plot.YAxisLabel = "Y Axis"
@@ -72,7 +72,7 @@ func ExampleStylerMetadata() {
 		s.Line.Color = colors.Uniform(colors.Red)
 		s.Point.Color = colors.Uniform(colors.Blue)
 		s.Range.SetMin(0).SetMax(100)
-	}})
+	})
 
 	// somewhere else in the code:
 
@@ -102,29 +102,29 @@ func ExampleTable() {
 		s.Plot.Scale = 2
 		s.Plot.SetLinesOn(plot.On).SetPointsOn(plot.Off)
 	}
-	plot.SetStylersTo(ty, plot.Stylers{genst, func(s *plot.Style) {
+	plot.SetStylersTo(ty, genst, func(s *plot.Style) {
 		s.On = true
 		s.Plotter = "XY"
 		s.Role = plot.Y
 		s.Line.Color = colors.Uniform(colors.Red)
 		s.Range.SetMin(0).SetMax(100)
-	}})
+	})
 	// others get basic styling
-	plot.SetStylersTo(tx, plot.Stylers{func(s *plot.Style) {
+	plot.SetStylersTo(tx, func(s *plot.Style) {
 		s.Role = plot.X
-	}})
-	plot.SetStylersTo(th, plot.Stylers{func(s *plot.Style) {
+	})
+	plot.SetStylersTo(th, func(s *plot.Style) {
 		s.On = true
 		s.Plotter = "YErrorBars"
 		s.Role = plot.High
-	}})
-	plot.SetStylersTo(lbls, plot.Stylers{func(s *plot.Style) {
+	})
+	plot.SetStylersTo(lbls, func(s *plot.Style) {
 		s.On = true
 		s.Plotter = "Labels"
 		s.Role = plot.Label
 		s.Text.Offset.X.Dp(6)
 		s.Text.Offset.Y.Dp(-6)
-	}})
+	})
 	dt := table.New("Test Table") // todo: use Name by default for plot.
 	dt.AddColumn("X", tx)
 	dt.AddColumn("Y", ty)
@@ -480,7 +480,7 @@ func TestStyle(t *testing.T) {
 
 	plt = plot.New()
 	tdy := tensor.NewFloat64FromValues(data[plot.Y].(plot.Values)...)
-	plot.SetStylersTo(tdy, plot.Stylers{stf}) // set metadata for tensor
+	plot.SetStylersTo(tdy, stf) // set metadata for tensor
 	tdx := tensor.NewFloat64FromValues(data[plot.X].(plot.Values)...)
 	// NewLine auto-grabs from Y metadata
 	l1 = NewLine(plot.Data{plot.X: tdx, plot.Y: tdy})
@@ -525,38 +525,38 @@ func TestTable(t *testing.T) {
 			s.Point.Color = colors.Uniform(colors.Blue)
 			s.Range.SetMin(0).SetMax(100)
 		}
-		plot.SetStylersTo(ty, plot.Stylers{genst, func(s *plot.Style) {
+		plot.SetStylersTo(ty, genst, func(s *plot.Style) {
 			s.On = true
 			s.Role = plot.Y
 			s.Group = "Y"
-		}})
+		})
 		// others get basic styling
-		plot.SetStylersTo(tx, plot.Stylers{func(s *plot.Style) {
+		plot.SetStylersTo(tx, func(s *plot.Style) {
 			s.Role = plot.X
 			s.Group = "Y"
-		}})
-		plot.SetStylersTo(tl, plot.Stylers{func(s *plot.Style) {
+		})
+		plot.SetStylersTo(tl, func(s *plot.Style) {
 			s.Role = plot.Low
 			s.Group = "Y"
-		}})
-		plot.SetStylersTo(th, plot.Stylers{genst, func(s *plot.Style) {
+		})
+		plot.SetStylersTo(th, genst, func(s *plot.Style) {
 			s.On = true
 			s.Role = plot.High
 			s.Group = "Y"
-		}})
-		plot.SetStylersTo(ts, plot.Stylers{func(s *plot.Style) {
+		})
+		plot.SetStylersTo(ts, func(s *plot.Style) {
 			s.Role = plot.Size
 			s.Group = "Y"
-		}})
-		plot.SetStylersTo(tc, plot.Stylers{func(s *plot.Style) {
+		})
+		plot.SetStylersTo(tc, func(s *plot.Style) {
 			s.Role = plot.Color
 			s.Group = "Y"
-		}})
-		plot.SetStylersTo(lbls, plot.Stylers{genst, func(s *plot.Style) {
+		})
+		plot.SetStylersTo(lbls, genst, func(s *plot.Style) {
 			s.On = true
 			s.Role = plot.Label
 			s.Group = "Y"
-		}})
+		})
 		dt := table.New("Test Table") // todo: use Name by default for plot.
 		dt.AddColumn("X", tx)
 		dt.AddColumn("Y", ty)

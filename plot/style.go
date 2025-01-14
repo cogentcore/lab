@@ -139,8 +139,8 @@ func (st *Stylers) NewStyle(ps *PlotStyle) *Style {
 }
 
 // SetStylersTo sets the [Stylers] into given object's [metadata].
-func SetStylersTo(obj any, st Stylers) {
-	metadata.SetTo(obj, "PlotStylers", st)
+func SetStylersTo(obj any, st ...func(s *Style)) {
+	metadata.SetTo(obj, "PlotStylers", Stylers(st))
 }
 
 // GetStylersFrom returns [Stylers] from given object's [metadata].
@@ -170,7 +170,7 @@ func SetFirstStylerTo(obj any, f func(s *Style)) {
 func AddStylerTo(obj any, f func(s *Style)) {
 	st := GetStylersFrom(obj)
 	st.Add(f)
-	SetStylersTo(obj, st)
+	SetStylersTo(obj, st...)
 }
 
 // GetStylersFromData returns [Stylers] from given role

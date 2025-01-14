@@ -98,11 +98,10 @@ func (ss *Sim) ConfigStats() {
 			tsr := tensorfs.Value[int](timeDir, name)
 			if lphase == Start {
 				tsr.SetNumRows(0)
-				if ps := plot.GetStylersFrom(tsr); ps == nil {
-					ps.Add(func(s *plot.Style) {
+				if plot.GetStylersFrom(tsr) == nil {
+					plot.SetStylersTo(tsr, func(s *plot.Style) {
 						s.Range.SetMin(0)
 					})
-					plot.SetStylersTo(tsr, ps)
 				}
 				return
 			}
@@ -119,12 +118,11 @@ func (ss *Sim) ConfigStats() {
 		tsr := timeDir.Float64(name)
 		if lphase == Start {
 			tsr.SetNumRows(0)
-			if ps := plot.GetStylersFrom(tsr); ps == nil {
-				ps.Add(func(s *plot.Style) {
+			if plot.GetStylersFrom(tsr) == nil {
+				plot.SetStylersTo(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
 					s.On = true
 				})
-				plot.SetStylersTo(tsr, ps)
 			}
 			return
 		}
@@ -149,12 +147,11 @@ func (ss *Sim) ConfigStats() {
 		tsr := tensorfs.Value[float64](timeDir, name)
 		if lphase == Start {
 			tsr.SetNumRows(0)
-			if ps := plot.GetStylersFrom(tsr); ps == nil {
-				ps.Add(func(s *plot.Style) {
+			if plot.GetStylersFrom(tsr) == nil {
+				plot.SetStylersTo(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0).SetMax(1)
 					s.On = true
 				})
-				plot.SetStylersTo(tsr, ps)
 			}
 			return
 		}

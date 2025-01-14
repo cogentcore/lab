@@ -26,10 +26,10 @@ func main() {
 		s.Plot.Title = "RA25 Epoch Train"
 	}
 	perr := epc.Column("PctErr")
-	plot.SetStylersTo(perr, plot.Stylers{pst, func(s *plot.Style) {
+	plot.SetStylersTo(perr, pst, func(s *plot.Style) {
 		s.On = true
 		s.Role = plot.Y
-	}})
+	})
 
 	pl := plotcore.NewPlotEditor(b)
 	pl.SetTable(epc)
