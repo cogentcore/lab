@@ -35,15 +35,14 @@ type Plot struct {
 	SetRangesFunc func()
 }
 
-// SetPlot sets the plot to given Plot, and calls UpdatePlot to ensure it is
-// drawn at the current size of this widget
+// SetPlot sets the plot to the given [plot.Plot]. You must still call [core.WidgetBase.Update]
+// to trigger a redrawing of the plot.
 func (pt *Plot) SetPlot(pl *plot.Plot) *Plot {
 	if pl != nil && pt.Plot != nil && pt.Plot.Pixels != nil {
 		pl.DPI = pt.Styles.UnitContext.DPI
 		pl.SetPixels(pt.Plot.Pixels) // re-use the image!
 	}
 	pt.Plot = pl
-	pt.updatePlot()
 	return pt
 }
 

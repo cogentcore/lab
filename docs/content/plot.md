@@ -4,18 +4,16 @@ You can plot a [[vector]]:
 
 ```Goal
 # x := rand(10)
-plt := plot.New()
+plt := lab.NewPlot(b)
 plt.Add(plots.NewLine(plot.NewY(x)))
-plotcore.NewPlot(b).SetPlot(plt)
 ```
 
 You can plot multiple vectors:
 
 ```Goal
-plt := plot.New()
+plt := lab.NewPlot(b)
 plt.Add(plots.NewLine(plot.NewY(#rand(10)#)))
 plt.Add(plots.NewLine(plot.NewY(#-rand(10)#)))
-plotcore.NewPlot(b).SetPlot(plt)
 ```
 
 ## Styles
@@ -27,7 +25,6 @@ You can style a plot line:
 plot.SetStylersTo(x, func(s *plot.Style) {
     s.Line.Color = colors.Scheme.Primary.Base
 })
-plt := plot.New()
+plt := lab.NewPlot(b)
 plt.Add(plots.NewLine(plot.NewY(x)))
-plotcore.NewPlot(b).SetPlot(plt)
 ```
