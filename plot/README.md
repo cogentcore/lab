@@ -65,7 +65,7 @@ Here is an example of how this works:
 		ty.SetFloat1D(50.0+40*math.Sin((float64(i)/8)*math.Pi), i)
 	}
 	// attach stylers to the Y axis data: that is where plotter looks for it
-	plot.SetStylersTo(ty, plot.Stylers{func(s *plot.Style) {
+	plot.SetStylersTo(ty, func(s *plot.Style) {
 		s.Plot.Title = "Test Line"
 		s.Plot.XAxis.Label = "X Axis"
 		s.Plot.YAxisLabel = "Y Axis"
@@ -75,7 +75,7 @@ Here is an example of how this works:
 		s.Line.Color = colors.Uniform(colors.Red)
 		s.Point.Color = colors.Uniform(colors.Blue)
 		s.Range.SetMin(0).SetMax(100)
-	}})
+	})
 
 	// somewhere else in the code:
 

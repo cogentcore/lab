@@ -72,7 +72,6 @@ func init() {
 		"RolesN":             reflect.ValueOf(plot.RolesN),
 		"RolesValues":        reflect.ValueOf(plot.RolesValues),
 		"SetFirstStylerTo":   reflect.ValueOf(plot.SetFirstStylerTo),
-		"SetStylerTo":        reflect.ValueOf(plot.SetStylerTo),
 		"SetStylersTo":       reflect.ValueOf(plot.SetStylersTo),
 		"ShapesN":            reflect.ValueOf(plot.ShapesN),
 		"ShapesValues":       reflect.ValueOf(plot.ShapesValues),

@@ -111,7 +111,7 @@ func (rd *Random) ConfigTable(dt *table.Table) {
 	// metadata.SetReadOnly(dt, true)
 	tensor.SetPrecision(dt, logPrec)
 	val := dt.AddFloat64Column("Value")
-	plot.SetFirstStylerTo(val, func(s *plot.Style) {
+	plot.SetStylersTo(val, func(s *plot.Style) {
 		s.Role = plot.X
 		s.Plotter = plots.BarType
 		s.Plot.XAxis.Rotation = 45
