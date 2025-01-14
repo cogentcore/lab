@@ -9,7 +9,7 @@ import (
 
 	"cogentcore.org/core/content"
 	"cogentcore.org/core/core"
-	_ "cogentcore.org/core/yaegicore"
+	_ "cogentcore.org/lab/yaegilab"
 )
 
 //go:embed content
