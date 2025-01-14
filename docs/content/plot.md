@@ -9,6 +9,15 @@ plt.Add(plots.NewLine(plot.NewY(x)))
 plotcore.NewPlot(b).SetPlot(plt)
 ```
 
+You can plot multiple vectors:
+
+```Goal
+plt := plot.New()
+plt.Add(plots.NewLine(plot.NewY(#rand(10)#)))
+plt.Add(plots.NewLine(plot.NewY(#-rand(10)#)))
+plotcore.NewPlot(b).SetPlot(plt)
+```
+
 ## Styles
 
 You can style a plot line:
