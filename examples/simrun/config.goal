@@ -91,13 +91,9 @@ type ServerParams struct {
 	
 	// Slurm uses the slurm job manager. Otherwise uses a bare job manager.
 	Slurm bool
-	
-	// GPUIDs are the list of valid GPU IDs.
-	GPUIDs []int 
 }
 
 func (sp *ServerParams) Defaults() {
-	sp.GPUIDs = []int{0,2,3,4}
 }
 
 // Configuration holds all of the user-settable parameters

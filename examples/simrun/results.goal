@@ -11,6 +11,7 @@ import (
 
 	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/core"
+	"cogentcore.org/core/styles"
 	"cogentcore.org/lab/lab"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
@@ -43,7 +44,15 @@ func (sr *SimRun) OpenResultFiles(jobs []string, filter FilterResults) {
 		core.MessageSnackbar(sr, "No files containing: "+filter.FileContains+" with extension: "+filter.Ext)
 		return
 	}
-	sr.ResultsTableView = ts.SliceTable("Results", &sr.ResultsList)
+	tv := ts.SliceTable("Results", &sr.ResultsList)
+	if sr.ResultsTableView != tv {
+		sr.ResultsTableView = tv
+		tv.ShowIndexes = true
+		tv.ReadOnlyMultiSelect = true
+		tv.Styler(func(s *styles.Style) {
+			s.SetReadOnly(true)
+		})
+	}
 	sr.ResultsTableView.Update()
 	sr.UpdateSims()
 }
@@ -112,7 +121,6 @@ func (sr *SimRun) Plot() { //types:add
 		}
 	}
 	ts.PlotTable("Plot", AggTable)
-	sr.UpdateSims()
 }
 
 // Reset resets the Results table

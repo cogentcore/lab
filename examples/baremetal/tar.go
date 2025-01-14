@@ -40,6 +40,9 @@ func AllFiles(dir string, exclude ...string) ([]string, error) {
 	return files, err
 }
 
+// note: Tar code helped significantly by Steve Domino examples:
+// https://medium.com/@skdomino/taring-untaring-files-in-go-6b07cf56bc07
+
 // TarFiles writes a tar file to given writer, from given source directory.
 // Tar file names are as listed here so it will unpack directly to those files.
 // If gz is true, then tar is gzipped.
@@ -85,6 +88,65 @@ func TarFiles(w io.Writer, dir string, gz bool, files ...string) error {
 			break
 		}
 		f.Close()
+	}
+	return errors.Join(errs...)
+}
+
+// Untar extracts a tar file from given reader, into given source directory.
+// If gz is true, then tar is gzipped.
+func Untar(r io.Reader, dir string, gz bool) error {
+	or := r
+	if gz {
+		gzr, err := gzip.NewReader(r)
+		if err != nil {
+			return err
+		}
+		or = gzr
+		defer gzr.Close()
+	}
+	tr := tar.NewReader(or)
+	var errs []error
+	addErr := func(err error) error { // if != nil, return
+		if err == nil {
+			return nil
+		}
+		errs = append(errs, err)
+		if len(errs) > 10 {
+			return errors.Join(errs...)
+		}
+		return nil
+	}
+	for {
+		hdr, err := tr.Next()
+		switch {
+		case err == io.EOF:
+			return errors.Join(errs...)
+		case err != nil:
+			if allErr := addErr(err); allErr != nil {
+				return allErr
+			}
+			continue
+		case hdr == nil:
+			continue
+		}
+		fn := filepath.Join(dir, hdr.Name)
+		switch hdr.Typeflag {
+		case tar.TypeDir:
+			err := os.MkdirAll(fn, 0755)
+			if allErr := addErr(err); allErr != nil {
+				return allErr
+			}
+		case tar.TypeReg:
+			f, err := os.OpenFile(fn, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(hdr.Mode))
+			if allErr := addErr(err); allErr != nil {
+				return allErr
+			}
+			_, err = io.Copy(f, tr)
+			f.Close()
+			if allErr := addErr(err); allErr != nil {
+				return allErr
+			}
+		}
 	}
 	return errors.Join(errs...)
 }

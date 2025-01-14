@@ -15,6 +15,7 @@ import (
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/lab/goal/goalib"
+	"cogentcore.org/lab/table"
 )
 
 // WriteSBatchHeader writes the header of a SLURM SBatch script
@@ -117,7 +118,7 @@ func (sr *SimRun) SubmitSBatch(jid, args string) string {
 	f.Close()
 	goalrun.Run("scp", "job.cleanup.sbatch", "@1:job.cleanup.sbatch")
 	sr.RunSBatch("job.cleanup.sbatch")
-
+	sr.GetMeta(jid)
 	return aid
 }
 
@@ -157,6 +158,51 @@ func (sr *SimRun) QueueSlurm() {
 	sinfo := strings.Repeat("#", 60) + "\n" + strings.Join(sis, "\n")
 	qstr := myq + "\n" + sinfo
 	ts.EditorString("Queue", qstr)
+}
+
+func (sr *SimRun) FetchJobSlurm(jid string, force bool) {
+	spath := sr.ServerJobPath(jid)
+	jpath := sr.JobPath(jid)
+	goalrun.Run("@1")
+	goalrun.Run("cd")
+	goalrun.Run("@0")
+	goalrun.Run("cd", jpath)
+	sstat := goalib.ReadFile("job.status")
+	if !force && sstat == "Fetched" {
+		return
+	}
+	goalrun.Run("@1", "cd", spath)
+	goalrun.Run("@0")
+	ffiles := goalrun.Output("@1", "/bin/ls", "-1", sr.Config.FetchFiles)
+	if len(ffiles) > 0 {
+		core.MessageSnackbar(sr, fmt.Sprintf("Fetching %d data files for job: %s", len(ffiles), jid))
+	}
+	for _, ff := range goalib.SplitLines(ffiles) {
+		// fmt.Println(ff)
+		rfn := "@1:" + ff
+		goalrun.Run("scp", rfn, ff)
+		if (sstat == "Finalized" || sstat == "Fetched") && strings.HasSuffix(ff, ".tsv") {
+			if ff == "all_epc.tsv" {
+				table.CleanCatTSV(ff, "Run", "Epoch")
+				idx := strings.Index(ff, "_epc.tsv")
+				goalrun.Run("tablecat", "-colavg", "-col", "Epoch", "-o", ff[:idx+1]+"avg"+ff[idx+1:], ff)
+			} else if ff == "all_run.tsv" {
+				table.CleanCatTSV(ff, "Run")
+				idx := strings.Index(ff, "_run.tsv")
+				goalrun.Run("tablecat", "-colavg", "-o", ff[:idx+1]+"avg"+ff[idx+1:], ff)
+				//	} else {
+				//		table.CleanCatTSV(ff, "Run")
+			}
+		}
+	}
+	goalrun.Run("@0")
+	if sstat == "Finalized" {
+		// fmt.Println("status finalized")
+		goalib.WriteFile("job.status", "Fetched")
+		goalib.ReplaceInFile("dbmeta.toml", "\"Finalized\"", "\"Fetched\"")
+	} else {
+		fmt.Println("status:", sstat)
+	}
 }
 
 // CancelJobsSlurm cancels the given jobs, for slurm

@@ -50,7 +50,7 @@ type Job struct {
 	Source string
 
 	// Path is the path from the SSH home directory to launch the job in.
-	// This path will be
+	// This path will be created on the server when the job is run.
 	Path string
 
 	// Script is name of the job script to run, which must be at the top level
@@ -149,6 +149,7 @@ func (bm *BareMetal) RunJob(job *Job, sv *Server, gpu int) error {
 	}
 	job.ServerName = sv.Name
 	job.ServerGPU = gpu
+	job.Start = time.Now()
 	slog.Info("Job running on server", "Job:", job.ID, "Server:", sv.Name)
 	return nil
 }
@@ -241,6 +242,7 @@ func (bm *BareMetal) CancelJob(job *Job) error {
 		return err
 	}
 	sv.Use()
+	cd
 	if job.PID == 0 {
 		cd {job.Path}
 		if !bm.GetJobPID(job) {
@@ -259,8 +261,13 @@ func (bm *BareMetal) CancelJob(job *Job) error {
 func (bm *BareMetal) PollJobs() (int, error) {
 	var errs []error
 	nDone := 0
-	for _, job := range bm.Active.Values {
-		fmt.Println("job status:", job.Status, "jobno:", job.ID)
+	njobs := bm.Active.Len()
+	// todo: goal parsing error here:
+	$@0$
+	$cd$
+	for ji := njobs-1; ji >= 0; ji-- { // reverse b/c moves jobs to Done
+		job := bm.Active.Values[ji]
+		// fmt.Println("job status:", job.Status, "jobno:", job.ID)
 		if job.Status != Running {
 			continue
 		}
@@ -270,6 +277,7 @@ func (bm *BareMetal) PollJobs() (int, error) {
 			continue
 		}
 		sv.Use()
+		$cd$
 		$cd {job.Path}$
 		if job.PID == 0 {
 			if !bm.GetJobPID(job) {
@@ -280,15 +288,16 @@ func (bm *BareMetal) PollJobs() (int, error) {
 		}
 		// psout := $ps -p {job.PID} >/dev/null; echo "$?"$ // todo: don't parse ; ourselves!
 		psout := strings.TrimSpace(goalrun.Output("ps", "-p", job.PID, ">", "/dev/null", ";", "echo", "$?"))
-		// fmt.Println("status:", psout)
+		fmt.Println("status:", psout)
 		if psout == "1" {
 			job.Status = Completed
-			bm.GetResults(job, sv)
+			bm.FetchResultsJob(job, sv)
 			bm.JobDone(job, sv)
 			nDone++
 		}
 	}
 	$@0$
+	$cd$
 	if nDone > 0 {
 		bm.SaveState()
 	}
@@ -305,8 +314,22 @@ func (bm *BareMetal) JobDone(job *Job, sv *Server) {
 	bm.Active.DeleteByKey(job.ID)
 }
 
-// GetResults gets job results back from server.
-func (bm *BareMetal) GetResults(job *Job, sv *Server) error {
+// FetchResults gets job results back from server for given job id.
+// Results are available as job.Results as a compressed tar file.
+func (bm *BareMetal) FetchResults(id int) (*Job, error) {
+	job := bm.Job(id)
+	if job == nil {
+		return nil, errors.Log(fmt.Errorf("FetchResults: job id not found: %d", id))
+	}
+	sv, err := bm.Server(job.ServerName)
+	if errors.Log(err) != nil {
+		return nil, err
+	}
+	return job, bm.FetchResultsJob(job, sv)
+}
+
+// FetchResultsJob gets job results back from server.
+func (bm *BareMetal) FetchResultsJob(job *Job, sv *Server) error {
 	defer func() {
 		cd
 		@0
@@ -314,7 +337,7 @@ func (bm *BareMetal) GetResults(job *Job, sv *Server) error {
 	sv.Use()
 	cd
 	cd {job.Path}
-	tar -czf job.results.tar.gz {job.ResultsGlob} 
+	tar -czf job.results.tar.gz job.out nohup.out {job.ResultsGlob} 
 	var b bytes.Buffer
 	sshcl, err := goalrun.SSHByHost(sv.Name)
 	if errors.Log(err) != nil {

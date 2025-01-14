@@ -90,12 +90,12 @@ func main() {
 func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 	b, _ := NewSimRunWindow(in)
 	b.OnShow(func(e events.Event) {
-		// go func() {
-		// 	if c.Expr != "" {
-		// 		in.Eval(c.Expr)
-		// 	}
-		// 	in.Interactive()
-		// }()
+		go func() {
+			if c.Expr != "" {
+				in.Eval(c.Expr)
+			}
+			in.Interactive()
+		}()
 	})
 	b.RunWindow()
 	core.Wait()
@@ -140,7 +140,7 @@ func (sr *SimRun) InitSimRun(startDir string) {
 	in.Interp.Use(gui.Symbols)         // gui imports
 	in.Interp.Use(interp.Exports{
 		"cogentcore.org/lab/lab/lab": map[string]reflect.Value{
-			"Lab": reflect.ValueOf(sr), // our SimRun is available as lab.Lab
+			"LabBrowser": reflect.ValueOf(sr), // our SimRun is available as lab.Lab
 		},
 	})
 	in.Config()

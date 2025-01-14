@@ -19,6 +19,7 @@ import (
 	"cogentcore.org/core/base/iox/tomlx"
 	"cogentcore.org/core/base/strcase"
 	"cogentcore.org/core/core"
+	"cogentcore.org/core/styles"
 	"cogentcore.org/lab/goal/goalib"
 	"cogentcore.org/lab/lab"
 	"cogentcore.org/lab/table"
@@ -31,15 +32,34 @@ import (
 func (sr *SimRun) Jobs() { //types:add
 	ts := sr.Tabs.AsLab()
 	if !sr.IsSlurm() {
-		sr.BareMetalActiveTable = ts.SliceTable("Bare Active", &sr.BareMetal.Active.Values)
-		sr.BareMetalActiveTable.Update()
-		sr.BareMetalDoneTable = ts.SliceTable("Bare Done", &sr.BareMetal.Done.Values)
-		sr.BareMetalDoneTable.Update()
+		at := ts.SliceTable("Bare Active", &sr.BareMetal.Active.Values)
+		if sr.BareMetalActiveTable != at {
+			sr.BareMetalActiveTable = at
+			at.Styler(func(s *styles.Style) {
+				s.SetReadOnly(true)
+			})
+		}
+		at.Update()
+		dt := ts.SliceTable("Bare Done", &sr.BareMetal.Done.Values)
+		if sr.BareMetalDoneTable != dt {
+			sr.BareMetalDoneTable = dt
+			dt.Styler(func(s *styles.Style) {
+				s.SetReadOnly(true)
+			})
+		}
+		dt.Update()
 	}
 
 	tv := ts.TensorTable("Jobs", sr.JobsTable)
 	dt := sr.JobsTable
-	sr.JobsTableView = tv
+	if sr.JobsTableView != tv {
+		sr.JobsTableView = tv
+		tv.ShowIndexes = true
+		tv.ReadOnlyMultiSelect = true
+		tv.Styler(func(s *styles.Style) {
+			s.SetReadOnly(true)
+		})
+	}
 	dpath := filepath.Join(sr.DataRoot, "jobs")
 	// fmt.Println("opening data at:", dpath)
 
@@ -174,6 +194,20 @@ func (sr *SimRun) JobStatus(jid string, force bool) {
 			}
 			goalib.WriteFile("job.status", sstat)
 		}
+		goalrun.Run("@1", "/bin/ls", "-1", ">", "job.files")
+		goalrun.Run("@0")
+		core.MessageSnackbar(sr, "Retrieving job files for: "+jid)
+		jfiles := goalrun.Output("@1", "/bin/ls", "-1", "job.*")
+		for _, jf := range goalib.SplitLines(jfiles) {
+			if !sr.IsSlurm() && jf == "job.status" {
+				continue
+			}
+			// fmt.Println(jf)
+			rfn := "@1:" + jf
+			if !force {
+				goalrun.Run("scp", rfn, jf)
+			}
+		}
 	} else {
 		sj := errors.Log1(strconv.Atoi(strings.TrimSpace(goalrun.Output("cat", "job.job"))))
 		// fmt.Println(jid, "jobno:", sj)
@@ -184,31 +218,27 @@ func (sr *SimRun) JobStatus(jid string, force bool) {
 			sstat = job.Status.String()
 			goalib.WriteFile("job.status", sstat)
 			goalib.WriteFile("job.squeue", sstat)
+			if !job.Start.IsZero() {
+				goalib.WriteFile("job.start", job.Start.Format(sr.Config.TimeFormat))
+			}
 			if !job.End.IsZero() {
 				goalib.WriteFile("job.end", job.End.Format(sr.Config.TimeFormat))
 			}
 			// fmt.Println(jid, sstat)
 		}
-	}
-	goalrun.Run("@1", "/bin/ls", "-1", ">", "job.files")
-	goalrun.Run("@0")
-	core.MessageSnackbar(sr, "Retrieving job files for: "+jid)
-	jfiles := goalrun.Output("@1", "/bin/ls", "-1", "job.*")
-	for _, jf := range goalib.SplitLines(jfiles) {
-		if !sr.IsSlurm() && jf == "job.status" {
-			continue
-		}
-		// fmt.Println(jf)
-		rfn := "@1:" + jf
-		if !force {
-			goalrun.Run("scp", rfn, jf)
-		}
+		goalrun.Run("@0")
+		core.MessageSnackbar(sr, "Retrieving job files for: "+jid)
+		goalrun.Run("scp", "@1:job.out", "job.out")
+		goalrun.Run("scp", "@1:nohup.out", "nohup.out")
 	}
 	goalrun.Run("@0")
 	if sstat == "Done" || sstat == "Completed" {
 		sstat = "Finalized"
 		goalib.WriteFile("job.status", sstat)
-		goalrun.RunErrOK("/bin/rm", "job.*.out")
+		if sr.IsSlurm() {
+			goalrun.RunErrOK("/bin/rm", "job.*.out")
+		}
+		sr.FetchJob(jid, false)
 	}
 	sr.GetMeta(jid)
 	core.MessageSnackbar(sr, "Job: "+jid+" updated with status: "+sstat)
@@ -217,6 +247,7 @@ func (sr *SimRun) JobStatus(jid string, force bool) {
 // GetMeta gets the dbmeta.toml file from all job.* files in job dir.
 func (sr *SimRun) GetMeta(jid string) {
 	goalrun.Run("@0")
+	goalrun.Run("cd")
 	jpath := sr.JobPath(jid)
 	goalrun.Run("cd", jpath)
 	// fmt.Println("getting meta for", jid)
@@ -265,47 +296,10 @@ func (sr *SimRun) Status() { //types:add
 // if force == true then will re-get already-Fetched jobs,
 // otherwise these are skipped.
 func (sr *SimRun) FetchJob(jid string, force bool) {
-	spath := sr.ServerJobPath(jid)
-	jpath := sr.JobPath(jid)
-	goalrun.Run("@1")
-	goalrun.Run("cd")
-	goalrun.Run("@0")
-	goalrun.Run("cd", jpath)
-	sstat := goalib.ReadFile("job.status")
-	if !force && sstat == "Fetched" {
-		return
-	}
-	goalrun.Run("@1", "cd", spath)
-	goalrun.Run("@0")
-	ffiles := goalrun.Output("@1", "/bin/ls", "-1", sr.Config.FetchFiles)
-	if len(ffiles) > 0 {
-		core.MessageSnackbar(sr, fmt.Sprintf("Fetching %d data files for job: %s", len(ffiles), jid))
-	}
-	for _, ff := range goalib.SplitLines(ffiles) {
-		// fmt.Println(ff)
-		rfn := "@1:" + ff
-		goalrun.Run("scp", rfn, ff)
-		if (sstat == "Finalized" || sstat == "Fetched") && strings.HasSuffix(ff, ".tsv") {
-			if ff == "all_epc.tsv" {
-				table.CleanCatTSV(ff, "Run", "Epoch")
-				idx := strings.Index(ff, "_epc.tsv")
-				goalrun.Run("tablecat", "-colavg", "-col", "Epoch", "-o", ff[:idx+1]+"avg"+ff[idx+1:], ff)
-			} else if ff == "all_run.tsv" {
-				table.CleanCatTSV(ff, "Run")
-				idx := strings.Index(ff, "_run.tsv")
-				goalrun.Run("tablecat", "-colavg", "-o", ff[:idx+1]+"avg"+ff[idx+1:], ff)
-				//	} else {
-				//		table.CleanCatTSV(ff, "Run")
-			}
-		}
-	}
-	goalrun.Run("@0")
-	if sstat == "Finalized" {
-		// fmt.Println("status finalized")
-		goalib.WriteFile("job.status", "Fetched")
-		goalib.ReplaceInFile("dbmeta.toml", "\"Finalized\"", "\"Fetched\"")
+	if sr.IsSlurm() {
+		sr.FetchJobSlurm(jid, force)
 	} else {
-		fmt.Println("status:", sstat)
+		sr.FetchJobBare(jid, force)
 	}
 }
 

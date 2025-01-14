@@ -43,11 +43,12 @@ func (sr *SimRun) SubmitBare(jid, args string) string {
 	bm := sr.BareMetal
 
 	spath := sr.ServerJobPath(jid)
-	job := bm.Submit(sr.Config.Project, spath, script, "*.tsv", b.Bytes())
+	job := bm.Submit(sr.Config.Project, spath, script, sr.Config.FetchFiles, b.Bytes())
 	goalrun.Output("@0")
 	bid := strconv.Itoa(job.ID)
 	goalib.WriteFile("job.job", bid)
 	bm.RunPendingJobs()
+	sr.GetMeta(jid)
 	return bid
 }
 
@@ -68,6 +69,40 @@ func (sr *SimRun) QueueBare() {
 	nfin := errors.Log1(sr.BareMetal.PollJobs())
 	sr.BareMetal.SaveState()
 	core.MessageSnackbar(sr, fmt.Sprintf("BareMetal jobs run: %d finished: %d", nrun, nfin))
+
+	ts := sr.Tabs.AsLab()
+	goalrun.Run("@1")
+	goalrun.Run("cd")
+	smi := goalrun.Output("nvidia-smi")
+	goalrun.Run("@0")
+	ts.EditorString("Queue", smi)
+}
+
+// FetchJobBare downloads results files from bare metal server.
+func (sr *SimRun) FetchJobBare(jid string, force bool) {
+	jpath := sr.JobPath(jid)
+	goalrun.Run("@0")
+	goalrun.Run("cd", jpath)
+	sstat := goalib.ReadFile("job.status")
+	if !force && sstat == "Fetched" {
+		return
+	}
+	sjob := sr.ValueForJob(jid, "ServerJob")
+	sj := errors.Log1(strconv.Atoi(sjob))
+	job, err := sr.BareMetal.FetchResults(sj)
+	if err != nil {
+		core.ErrorSnackbar(sr, err)
+		return
+	}
+	baremetal.Untar(bytes.NewReader(job.Results), jpath, true) // gzip
+	// note: we don't do any post-processing here -- see slurm version for combining separate runs
+	if sstat == "Finalized" {
+		// fmt.Println("status finalized")
+		goalib.WriteFile("job.status", "Fetched")
+		goalib.ReplaceInFile("dbmeta.toml", "\"Finalized\"", "\"Fetched\"")
+	} else {
+		fmt.Println("status:", sstat)
+	}
 }
 
 func (sr *SimRun) CancelJobsBare(jobs []string) {
