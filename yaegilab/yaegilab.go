@@ -9,8 +9,11 @@ package yaegilab
 import (
 	"reflect"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/yaegicore"
 	"cogentcore.org/lab/goal/interpreter"
+	"cogentcore.org/lab/yaegilab/gui"
+	"cogentcore.org/lab/yaegilab/nogui"
 	"github.com/cogentcore/yaegi/interp"
 )
 
@@ -35,6 +38,8 @@ func (in *Interpreter) Use(values interp.Exports) error {
 }
 
 func (in *Interpreter) ImportUsed() {
+	errors.Log(in.Use(nogui.Symbols))
+	errors.Log(in.Use(gui.Symbols))
 	in.Config()
 }
 
