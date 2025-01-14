@@ -16,3 +16,5 @@ Features include:
 * The overarching `lab` API for flexibly connecting data and visualization components, providing the foundation for interactive data analysis applications integrating different Cogent Lab elements.
 
 * The [[gosl]] (Go shader language) that allows you to write Go (and [[goal]]) functions that run on either the CPU or the GPU, using the WebGPU framework that supports full GPU compute functionality through the web browser.
+
+See the [[compression tutorial]] for a good starting place.
