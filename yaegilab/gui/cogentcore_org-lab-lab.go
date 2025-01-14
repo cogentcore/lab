@@ -21,6 +21,7 @@ func init() {
 		"NewDataTree":        reflect.ValueOf(lab.NewDataTree),
 		"NewDiffBrowserDirs": reflect.ValueOf(lab.NewDiffBrowserDirs),
 		"NewFileNode":        reflect.ValueOf(lab.NewFileNode),
+		"NewPlot":            reflect.ValueOf(lab.NewPlot),
 		"NewTabs":            reflect.ValueOf(lab.NewTabs),
 		"PromptOKCancel":     reflect.ValueOf(lab.PromptOKCancel),
 		"PromptString":       reflect.ValueOf(lab.PromptString),
