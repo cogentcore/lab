@@ -27,13 +27,21 @@ We can plot each column vector of **U**:
 ```Goal
 # U := 2*rand(8, 8)-1
 
+fr := core.NewFrame(b)
+fr.Styler(func(s *styles.Style) {
+    s.Direction = styles.Column
+    s.Gap.Zero()
+})
 for i := range 8 {
     # v := U[:, i]
-    plt, pw := lab.NewPlotWidget(b)
+    plt := plot.New()
+    pw := plotcore.NewPlot(fr).SetPlot(plt)
     pw.Styler(func(s *styles.Style) {
         s.Min.Y.Dp(100)
     })
-    plt.Add(plots.NewLine(plot.NewY(v)))
+    plt.Add(plots.NewLine(plot.NewY(v)).Styler(func(s *plot.Style) {
+        s.Plot.Axis.NTicks = 2
+    }))
     plt.Add(plots.NewLine(plot.NewY(#zeros(8)#)))
 }
 ```
