@@ -14,7 +14,15 @@ import (
 // only returning the [plot.Plot] for convenient use in lab plots. See [NewPlotWidget]
 // for a version that also returns the [plotcore.Plot].
 func NewPlot(parent ...tree.Node) *plot.Plot {
-	plt := plot.New()
-	plotcore.NewPlot(parent...).SetPlot(plt)
+	plt, _ := NewPlotWidget(parent...)
 	return plt
+}
+
+// NewPlotWidget is a simple helper function that does [plot.New] and [plotcore.NewPlot],
+// returning both the [plot.Plot] and [plotcore.Plot] for convenient use in lab plots.
+// See [NewPlot] for a version that only returns the more commonly useful [plot.Plot].
+func NewPlotWidget(parent ...tree.Node) (*plot.Plot, *plotcore.Plot) {
+	plt := plot.New()
+	pw := plotcore.NewPlot(parent...).SetPlot(plt)
+	return plt, pw
 }
