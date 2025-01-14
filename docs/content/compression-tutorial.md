@@ -29,7 +29,10 @@ We can plot each column vector of **U**:
 
 for i := range 8 {
     # v := U[:, i]
-    plt := lab.NewPlot(b)
+    plt, pw := lab.NewPlotWidget(b)
+    pw.Styler(func(s *styles.Style) {
+        s.Min.Y.Dp(100)
+    })
     plt.Add(plots.NewLine(plot.NewY(v)))
     plt.Add(plots.NewLine(plot.NewY(#zeros(8)#)))
 }
