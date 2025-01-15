@@ -77,5 +77,7 @@ From **a2**, we can compute and plot **x2**, the approximation of **x** based on
 
 ```Goal
 # x2 := U @ a2
-fig1.Add(plots.NewLine(plot.NewY(x2)))
+plt := lab.NewPlot(b)
+*plt = *fig1
+plt.Add(plots.NewLine(plot.NewY(x2)))
 ```
