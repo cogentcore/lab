@@ -51,11 +51,26 @@ Next, we can compute the vector **a**, which represents **x** in terms of the **
 core.NewText(b).SetText(a.String())
 ```
 
-To compress the data, we will define a function that zeroes all but the *n* highest elements of **b**:
+To compress the data, we will define a function that zeroes all but the *n* elements of **a** with the highest absolute values:
 
 ```Goal
 // TODO: implement using sort
 compress := func(n int) tensor.Tensor {
-    return #a[{-n}:]#
+    # res := zeros(8)
+    for i := range 8 {
+        if i < n {
+            # res[i] = a[i]
+        } else {
+            # res[i] = 0
+        }
+    }
+    return res
 }
+```
+
+Then, we will make **a2**, the result of `compress(2)` (so the two most important elements are included):
+
+```Goal
+a2 := compress(2)
+core.NewText(b).SetText(a2.String())
 ```
