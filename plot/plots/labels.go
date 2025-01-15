@@ -76,7 +76,8 @@ func (lb *Labels) Styler(f func(s *plot.Style)) *Labels {
 	return lb
 }
 
-func (lb *Labels) ApplyStyle(ps *plot.PlotStyle) {
+func (lb *Labels) ApplyStyle(ps *plot.PlotStyle, idx int) {
+	lb.Style.Line.SpacedColor(idx)
 	ps.SetElementStyle(&lb.Style)
 	yst := &plot.Style{}
 	lb.ystylers.Run(yst)

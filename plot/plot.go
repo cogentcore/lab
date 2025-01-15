@@ -235,8 +235,8 @@ func (pt *Plot) applyStyle() {
 	}
 	pt.Style = st.Plot
 	// then apply to elements
-	for _, plt := range pt.Plotters {
-		plt.ApplyStyle(&pt.Style)
+	for i, plt := range pt.Plotters {
+		plt.ApplyStyle(&pt.Style, i)
 	}
 	// now style plot:
 	pt.DPI *= pt.Style.Scale

@@ -90,7 +90,8 @@ func (bc *Bar) Styler(f func(s *plot.Style)) *Bar {
 	return bc
 }
 
-func (bc *Bar) ApplyStyle(ps *plot.PlotStyle) {
+func (bc *Bar) ApplyStyle(ps *plot.PlotStyle, idx int) {
+	bc.Style.Line.SpacedFill(idx)
 	ps.SetElementStyle(&bc.Style)
 	bc.stylers.Run(&bc.Style)
 }

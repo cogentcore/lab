@@ -32,7 +32,7 @@ type Plotter interface {
 	// ApplyStyle applies any stylers to this element,
 	// first initializing from the given global plot style, which has
 	// already been styled with defaults and all the plot element stylers.
-	ApplyStyle(plotStyle *PlotStyle)
+	ApplyStyle(plotStyle *PlotStyle, idx int)
 }
 
 // PlotterType registers a Plotter so that it can be created with appropriate data.

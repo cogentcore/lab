@@ -79,7 +79,8 @@ func (eb *YErrorBars) Styler(f func(s *plot.Style)) *YErrorBars {
 	return eb
 }
 
-func (eb *YErrorBars) ApplyStyle(ps *plot.PlotStyle) {
+func (eb *YErrorBars) ApplyStyle(ps *plot.PlotStyle, idx int) {
+	eb.Style.Line.SpacedColor(idx)
 	ps.SetElementStyle(&eb.Style)
 	yst := &plot.Style{}
 	eb.ystylers.Run(yst)
@@ -197,7 +198,8 @@ func (eb *XErrorBars) Styler(f func(s *plot.Style)) *XErrorBars {
 	return eb
 }
 
-func (eb *XErrorBars) ApplyStyle(ps *plot.PlotStyle) {
+func (eb *XErrorBars) ApplyStyle(ps *plot.PlotStyle, idx int) {
+	eb.Style.Line.SpacedColor(idx)
 	ps.SetElementStyle(&eb.Style)
 	yst := &plot.Style{}
 	eb.ystylers.Run(yst)
