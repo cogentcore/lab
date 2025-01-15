@@ -140,20 +140,30 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		if !gotReq {
 			continue
 		}
-		if gotX >= 0 {
-			xidxs[gotX] = true
-		}
 		for _, rl := range pt.Optional {
-			if rl == st.Role { // should not happen
+			if rl == st.Role || (rl == X && globalX) {
 				continue
 			}
+			got := false
 			for _, gi := range gcols {
 				gst := csty[gi]
 				if gst.Role == rl {
 					data[rl] = dt.Columns.Values[gi]
-					break
+					got = true
+					if rl == X {
+						gotX = gi // fallthrough so we get the last X
+					} else {
+						break
+					}
 				}
 			}
+			if !got && rl == X && xi >= 0 {
+				gotX = xi
+				data[rl] = dt.Columns.Values[xi]
+			}
+		}
+		if gotX >= 0 {
+			xidxs[gotX] = true
 		}
 		pl := pt.New(data)
 		if reflectx.IsNil(reflect.ValueOf(pl)) {
