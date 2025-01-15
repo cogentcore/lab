@@ -90,6 +90,7 @@ func main() {
 func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 	b, _ := NewSimRunWindow(in)
 	b.OnShow(func(e events.Event) {
+		// note: comment out if not running interactively (e.g., debugger)
 		go func() {
 			if c.Expr != "" {
 				in.Eval(c.Expr)

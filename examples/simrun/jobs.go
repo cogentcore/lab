@@ -159,8 +159,6 @@ func (sr *SimRun) JobStatus(jid string, force bool) {
 	// fmt.Println("############\nStatus of Job:", jid)
 	spath := sr.ServerJobPath(jid)
 	jpath := sr.JobPath(jid)
-	goalrun.Run("@1")
-	goalrun.Run("cd")
 	goalrun.Run("@0")
 	goalrun.Run("cd", jpath)
 	if !goalib.FileExists("job.status") {
@@ -170,9 +168,10 @@ func (sr *SimRun) JobStatus(jid string, force bool) {
 	if !force && (sstat == "Finalized" || sstat == "Fetched") {
 		return
 	}
-	goalrun.Run("@1", "cd", spath)
-	goalrun.Run("@0")
 	if sr.IsSlurm() {
+		goalrun.Run("@1")
+		goalrun.Run("cd")
+		goalrun.Run("cd", spath)
 		sj := goalrun.Output("@1", "cat", "job.job")
 		// fmt.Println("server job:", sj)
 		if sstat != "Done" && !force {
@@ -209,7 +208,14 @@ func (sr *SimRun) JobStatus(jid string, force bool) {
 			}
 		}
 	} else {
-		sj := errors.Log1(strconv.Atoi(strings.TrimSpace(goalrun.Output("cat", "job.job"))))
+		jstr := strings.TrimSpace(goalrun.OutputErrOK("cat", "job.job"))
+		if jstr == "" {
+			msg := fmt.Sprintf("Status for Job: %s: job.job is empty, so can't proceed with BareMetal", jid)
+			fmt.Println(msg)
+			core.MessageSnackbar(sr, msg)
+			return
+		}
+		sj := errors.Log1(strconv.Atoi(jstr))
 		// fmt.Println(jid, "jobno:", sj)
 		job := sr.BareMetal.Job(sj)
 		if job == nil {
@@ -227,9 +233,15 @@ func (sr *SimRun) JobStatus(jid string, force bool) {
 			// fmt.Println(jid, sstat)
 		}
 		goalrun.Run("@0")
-		core.MessageSnackbar(sr, "Retrieving job files for: "+jid)
-		goalrun.Run("scp", "@1:job.out", "job.out")
-		goalrun.Run("scp", "@1:nohup.out", "nohup.out")
+		if sstat == "Running" {
+			// core.MessageSnackbar(sr, "Retrieving job files for: " + jid)
+			// @1
+			// cd
+			// todo: need more robust ways of testing for files and error recovery on remote ssh con
+			// cd {spath}
+			// scp @1:job.out job.out
+			// scp @1:nohup.out nohup.out
+		}
 	}
 	goalrun.Run("@0")
 	if sstat == "Done" || sstat == "Completed" {

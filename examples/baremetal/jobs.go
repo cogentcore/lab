@@ -52,7 +52,7 @@ type Job struct {
 	Source string
 
 	// Path is the path from the SSH home directory to launch the job in.
-	// This path will be
+	// This path will be created on the server when the job is run.
 	Path string
 
 	// Script is name of the job script to run, which must be at the top level
@@ -231,6 +231,7 @@ func (bm *BareMetal) CancelJobs(jobs ...int) error {
 
 // CancelJob cancels the running of the given job (killing process if Running).
 func (bm *BareMetal) CancelJob(job *Job) error {
+	fmt.Println("in cancel:", job.ID)
 	if job.Status == Pending {
 		job.Status = Canceled
 		job.End = time.Now()
@@ -238,34 +239,38 @@ func (bm *BareMetal) CancelJob(job *Job) error {
 		bm.Active.DeleteByKey(job.ID)
 		return nil
 	}
+	fmt.Println("in cancel 2:", job.ID)
 	sv, err := bm.Server(job.ServerName)
 	if errors.Log(err) != nil {
 		return err
 	}
+	goalrun.Run("@0")
+	job.Status = Canceled // always mark job as canceled, even if other stuff fails
+	bm.JobDone(job, sv)
+	bm.SaveState()
+	fmt.Println("cancel set status, job done:", job.ID)
 	sv.Use()
 	goalrun.Run("cd")
 	if job.PID == 0 {
-		goalrun.Run("cd", job.Path)
+		goalrun.RunErrOK("cd", job.Path)
 		if !bm.GetJobPID(job) {
-			return fmt.Errorf("CancelJob: Job %d PID is 0 and could not get it from job.pid file: must cancel manually", job.ID)
+			return errors.Log(fmt.Errorf("CancelJob: Job %d PID is 0 and could not get it from job.pid file: must cancel manually", job.ID))
 		}
 	}
 	goalrun.RunErrOK("kill", "-9", job.PID)
-	job.Status = Canceled
+	goalrun.Run("cd")
 	goalrun.Run("@0")
-	bm.JobDone(job, sv)
 	return nil
 }
 
 // PollJobs checks to see if any running jobs have finished.
 // Returns number of jobs that finished.
 func (bm *BareMetal) PollJobs() (int, error) {
-	var errs []error
 	nDone := 0
 	njobs := bm.Active.Len()
-	// todo: goal parsing error here:
-	goalrun.Output("@0")
-	goalrun.Output("cd")
+	goalrun.Run("@0")
+	// todo: this screws up parsing:
+	var errs []error
 	for ji := njobs - 1; ji >= 0; ji-- { // reverse b/c moves jobs to Done
 		job := bm.Active.Values[ji]
 		// fmt.Println("job status:", job.Status, "jobno:", job.ID)
@@ -278,15 +283,19 @@ func (bm *BareMetal) PollJobs() (int, error) {
 			continue
 		}
 		sv.Use()
-		goalrun.Output("cd")
-		goalrun.Output("cd", job.Path)
 		if job.PID == 0 {
+			continue
+			goalrun.Run("cd")
+			goalrun.RunErrOK("cd", job.Path)
 			if !bm.GetJobPID(job) {
 				err := fmt.Errorf("PollJobs: Job %d PID is 0 and could not get it from job.pid file: must cancel manually", job.ID)
-				errs = append(errs, errors.Log(err))
+				errs = append(errs, err)
+				goalrun.Run("cd")
 				continue
 			}
+			goalrun.Run("cd")
 		}
+		goalrun.Run("cd")
 		// psout := $ps -p {job.PID} >/dev/null; echo "$?"$ // todo: don't parse ; ourselves!
 		psout := strings.TrimSpace(goalrun.Output("ps", "-p", job.PID, ">", "/dev/null", ";", "echo", "$?"))
 		fmt.Println("status:", psout)
@@ -297,8 +306,7 @@ func (bm *BareMetal) PollJobs() (int, error) {
 			nDone++
 		}
 	}
-	goalrun.Output("@0")
-	goalrun.Output("cd")
+	goalrun.Run("@0")
 	if nDone > 0 {
 		bm.SaveState()
 	}
