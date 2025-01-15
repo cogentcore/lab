@@ -9,8 +9,6 @@ We start with a data vector, **x**:
 We can [[plot]] **x**:
 
 ```Goal
-# x := [0.53766714, 1.83388501, -2.25884686, 0.86217332, 0.31876524, -1.3076883, -0.43359202, 0.34262447]
-
 plt := lab.NewPlot(b)
 plt.Add(plots.NewLine(plot.NewY(x)))
 plt.Add(plots.NewLine(plot.NewY(#zeros(8)#)))
@@ -49,9 +47,6 @@ for i := range 8 {
 Next, we can compute the vector **a**, which represents **x** in terms of the **U** basis (such that $x = Ua$). This is just $a = U^{-1}x$, as computed below:
 
 ```Goal
-# x := [0.53766714, 1.83388501, -2.25884686, 0.86217332, 0.31876524, -1.3076883, -0.43359202, 0.34262447]
-# U := 2*rand(8, 8)-1
-
 # a := matrix.Inverse(U) @ x
 core.NewText(b).SetText(a.String())
 ```
