@@ -153,15 +153,15 @@ func (W _cogentcore_org_lab_plot_Normalizer) Normalize(min float64, max float64,
 // _cogentcore_org_lab_plot_Plotter is an interface wrapper for Plotter type
 type _cogentcore_org_lab_plot_Plotter struct {
 	IValue       interface{}
-	WApplyStyle  func(plotStyle *plot.PlotStyle)
+	WApplyStyle  func(plotStyle *plot.PlotStyle, idx int)
 	WData        func() (data plot.Data, pixX []float32, pixY []float32)
 	WPlot        func(pt *plot.Plot)
 	WStylers     func() *plot.Stylers
 	WUpdateRange func(plt *plot.Plot, xr *minmax.F64, yr *minmax.F64, zr *minmax.F64)
 }
 
-func (W _cogentcore_org_lab_plot_Plotter) ApplyStyle(plotStyle *plot.PlotStyle) {
-	W.WApplyStyle(plotStyle)
+func (W _cogentcore_org_lab_plot_Plotter) ApplyStyle(plotStyle *plot.PlotStyle, idx int) {
+	W.WApplyStyle(plotStyle, idx)
 }
 func (W _cogentcore_org_lab_plot_Plotter) Data() (data plot.Data, pixX []float32, pixY []float32) {
 	return W.WData()
