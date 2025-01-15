@@ -44,12 +44,8 @@ type LineStyle struct { //types:add -setters
 	Step StepKind
 }
 
-// todo: this should be in colors
-var TransparentImage = colors.Uniform(colors.Transparent)
-
 func (ls *LineStyle) Defaults() {
 	ls.Color = colors.Scheme.OnSurface
-	ls.Fill = TransparentImage
 	ls.Width.Pt(1)
 }
 
@@ -62,9 +58,9 @@ func (ls *LineStyle) SpacedColor(idx int) {
 }
 
 // SpacedFill sets the Fill to a default spaced color based on index,
-// if it still has the initial Transparent default.
+// if it still has the initial nil default.
 func (ls *LineStyle) SpacedFill(idx int) {
-	if ls.Fill == TransparentImage {
+	if ls.Fill == nil {
 		ls.Fill = colors.Uniform(colors.Spaced(idx))
 	}
 }
