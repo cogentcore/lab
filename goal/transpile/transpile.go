@@ -92,7 +92,7 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 			logx.PrintlnDebug("math #")
 			if toks[1].Tok == token.ILLEGAL && toks[1].Str == "#" {
 				st.MathMode = true
-				return nil
+				return st.TranspileMath(toks[2:], code, true)
 			}
 			return st.TranspileMath(toks[1:], code, true)
 		}
