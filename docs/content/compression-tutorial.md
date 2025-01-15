@@ -23,7 +23,7 @@ We can add in our precomputed orthogonal matrix, **U**, which will serve as our 
 We can plot each column vector of **U**:
 
 ```Goal
-# U := 2*rand(8, 8)-1
+# U := 2*rand(8, 8)-1 // TODO: remove
 
 fr := core.NewFrame(b)
 fr.Styler(func(s *styles.Style) {
@@ -49,4 +49,13 @@ Next, we can compute the vector **a**, which represents **x** in terms of the **
 ```Goal
 # a := matrix.Inverse(U) @ x
 core.NewText(b).SetText(a.String())
+```
+
+To compress the data, we will define a function that zeroes all but the *n* highest elements of **b**:
+
+```Goal
+// TODO: implement using sort
+compress := func(n int) tensor.Tensor {
+    return #a[{-n}:]#
+}
 ```
