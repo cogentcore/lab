@@ -9,9 +9,9 @@ We start with a data vector, **x**:
 We can [[plot]] **x**:
 
 ```Goal
-plt := lab.NewPlot(b)
-plt.Add(plots.NewLine(plot.NewY(x)))
-plt.Add(plots.NewLine(plot.NewY(#zeros(8)#)))
+fig1 := lab.NewPlot(b)
+fig1.Add(plots.NewLine(plot.NewY(x)))
+fig1.Add(plots.NewLine(plot.NewY(#zeros(8)#)))
 ```
 
 We can add in our precomputed orthogonal matrix, **U**, which will serve as our new basis for **x**.
@@ -32,15 +32,15 @@ fr.Styler(func(s *styles.Style) {
 })
 for i := range 8 {
     # v := U[:, i]
-    plt := plot.New()
-    pw := plotcore.NewPlot(fr).SetPlot(plt)
+    fig2 := plot.New()
+    pw := plotcore.NewPlot(fr).SetPlot(fig2)
     pw.Styler(func(s *styles.Style) {
         s.Min.Y.Dp(100)
     })
-    plt.Add(plots.NewLine(plot.NewY(v)).Styler(func(s *plot.Style) {
+    fig2.Add(plots.NewLine(plot.NewY(v)).Styler(func(s *plot.Style) {
         s.Plot.Axis.NTicks = 2
     }))
-    plt.Add(plots.NewLine(plot.NewY(#zeros(8)#)))
+    fig2.Add(plots.NewLine(plot.NewY(#zeros(8)#)))
 }
 ```
 
@@ -73,4 +73,11 @@ Then, we will make **a2**, the result of `compress(2)` (so the two most importan
 ```Goal
 a2 := compress(2)
 core.NewText(b).SetText(a2.String())
+```
+
+From **a2**, we can compute and plot **x2**, the approximation of **x** based on the two most important elements of **a**:
+
+```Goal
+# x2 := U @ a2
+fig1.Add(plots.NewLine(plot.NewY(x2)))
 ```
