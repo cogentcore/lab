@@ -5,6 +5,7 @@
 package tensor
 
 import (
+	"cmp"
 	"reflect"
 	"testing"
 
@@ -570,6 +571,16 @@ func TestSortFilter(t *testing.T) {
 	tsr.Sequential()
 	tsr.FilterString("1", FilterOptions{Exclude: true})
 	assert.Equal(t, []int{0, 2, 3, 4}, tsr.Indexes)
+
+	raw := NewFloat64FromValues(0.8, 0.2, 0.4, 0.7)
+	slc := NewSliced(raw)
+	slc.SortFunc(0, func(tsr Tensor, dim, i, j int) int {
+		return cmp.Compare(tsr.Float1D(i), tsr.Float1D(j))
+	})
+	res := `[4] 0.2 0.4 0.7 0.8 
+`
+	// fmt.Println(slc)
+	assert.Equal(t, res, slc.String())
 }
 
 func TestGrowRow(t *testing.T) {
