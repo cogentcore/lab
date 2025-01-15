@@ -23,8 +23,6 @@ We can add in our precomputed orthogonal matrix, **U**, which will serve as our 
 We can plot each column vector of **U**:
 
 ```Goal
-# U := 2*rand(8, 8)-1 // TODO: remove
-
 fr := core.NewFrame(b)
 fr.Styler(func(s *styles.Style) {
     s.Direction = styles.Column
