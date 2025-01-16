@@ -57,7 +57,8 @@ func (sr *SimRun) WriteBare(w io.Writer, jid, args string) {
 	fmt.Fprintf(w, "\n\n")
 	// fmt.Fprintf(w, "go build -mod=mod -tags mpi\n")
 	fmt.Fprintf(w, "go build -mod=mod\n")
-	fmt.Fprintln(w, "date '+%Y-%m-%d %T %Z' > job.start")
+	cmd := `date '+%Y-%m-%d %T %Z' > job.start`
+	fmt.Fprintln(w, cmd)
 
 	fmt.Fprintf(w, "./%s -nogui -cfg config_job.toml -gpu-device $BARE_GPU %s >& job.out & echo $! > job.pid", sr.Config.Project, args)
 }

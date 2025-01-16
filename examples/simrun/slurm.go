@@ -55,7 +55,8 @@ func (sr *SimRun) WriteSBatchSetup(w io.Writer, jid string) {
 	fmt.Fprintf(w, "go build -mod=mod\n")
 	// fmt.Fprintf(w, "/bin/rm images\n")
 	// fmt.Fprintf(w, "ln -s $HOME/ccn_images/CU3D100_20obj8inst_8tick4sac images\n")
-	fmt.Fprintln(w, "date '+%Y-%m-%d %T %Z' > job.start")
+	cmd := "date '+%Y-%m-%d %T %Z' > job.start"
+	fmt.Fprintln(w, cmd)
 }
 
 func (sr *SimRun) WriteSBatchArray(w io.Writer, jid, setup_id, args string) {
@@ -96,7 +97,8 @@ func (sr *SimRun) WriteSBatchCleanup(w io.Writer, jid, array_id string) {
 	fmt.Fprintf(w, "cat *_train_epoch.tsv > all_epc.tsv\n")
 	fmt.Fprintf(w, "/bin/rm *_train_epoch.tsv\n")
 
-	fmt.Fprintln(w, "date '+%Y-%m-%d %T %Z' > job.end")
+	cmd := "date '+%Y-%m-%d %T %Z' > job.end"
+	fmt.Fprintln(w, cmd)
 }
 
 func (sr *SimRun) SubmitSBatch(jid, args string) string {
