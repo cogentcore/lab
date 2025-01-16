@@ -19,6 +19,3 @@ var VarCategories = []MyStru{
 	{"Act", "basic activation variables, including conductances, current, Vm, spiking"},
 	{"Learn", "calcium-based learning variables and other related learning factors"},
 }
-
-_ = VarCategories
-
