@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"time"
 	
-	"cogentcore.org/core/core"
 	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/lab/goal/goalib"
 	"cogentcore.org/lab/lab"
@@ -20,7 +19,7 @@ import (
 
 // NextJobNumber returns the next sequential job number to use,
 // incrementing value saved in last_job.number file
-func (br *SimRun) NextJobNumber() int {
+func (sr *SimRun) NextJobNumber() int {
 	jf := "last_job.number"
 	jnf := goalib.ReadFile(jf)
 	jn := 0
@@ -32,14 +31,14 @@ func (br *SimRun) NextJobNumber() int {
 	return jn
 }
 
-func (br *SimRun) NextJobID() string {
-	jn := br.NextJobNumber()
-	jstr := fmt.Sprintf("%s%05d", br.Config.UserShort, jn)
+func (sr *SimRun) NextJobID() string {
+	jn := sr.NextJobNumber()
+	jstr := fmt.Sprintf("%s%05d", sr.Config.UserShort, jn)
 	return jstr
 }
 
 // FindGoMod finds the go.mod file starting from the given directory
-func (br *SimRun) FindGoMod(dir string) string {
+func (sr *SimRun) FindGoMod(dir string) string {
 	for {
 		if goalib.FileExists(filepath.Join(dir, "go.mod")) {
 			return dir
@@ -55,12 +54,16 @@ func (br *SimRun) FindGoMod(dir string) string {
 // GoModulePath returns the overall module path for project
 // in given directory, and the full module path to the current
 // project, which is a subdirectory within the module.
-func (br *SimRun) GoModulePath(dir string) (modpath, fullpath string) {
+func (sr *SimRun) GoModulePath(dir string) (modpath, fullpath string) {
 	@0
 	os.Chdir(dir)
 	cd {dir}
 	gg := goalib.SplitLines($go mod graph$)
 	gg = strings.Fields(gg[0])
+	if len(gg) == 0 {
+		fmt.Println("GoModulePath: unexpected error: system seems to be out of whack")
+		return 
+	}
 	modpath = gg[0]
 
 	// strategy: go up the dir until the dir name matches the last element of modpath
@@ -79,8 +82,11 @@ func (br *SimRun) GoModulePath(dir string) (modpath, fullpath string) {
 // CopyFilesToJob copies files with given extensions (none for all),
 // from localSrc to localJob and remote hostJob (@1).
 // Ensures directories are made in the job locations
-func (br *SimRun) CopyFilesToJob(localSrc, localJob, hostJob string, exts ...string) {
+func (sr *SimRun) CopyFilesToJob(localSrc, localJob, hostJob string, exts ...string) {
 	@0
+	if !sr.IsSlurm() { // baremetal does it separately
+		return
+	}
 	mkdir -p {localJob}
 	cd {localJob}
 	@1
@@ -98,134 +104,145 @@ func (br *SimRun) CopyFilesToJob(localSrc, localJob, hostJob string, exts ...str
 
 // NewJob runs a new job with given parameters.
 // This is run as a separate goroutine!
-func (br *SimRun) NewJob(jp SubmitParams) {
+func (sr *SimRun) NewJob(jp SubmitParams) {
 	message := jp.Message
 	args := jp.Args
 	label := jp.Label
+	@0
 
-	os.Chdir(br.DataRoot)
-	jid := br.NextJobID()
-	spath := br.ServerJobPath(jid)
-	jpath := br.JobPath(jid)
-	// this might cause crashing:
-	br.AsyncLock()
-	core.MessageSnackbar(br, "Submitting Job: " + jid)
-	br.AsyncUnlock()
+	os.Chdir(sr.DataRoot)
+	jid := sr.NextJobID()
+	spath := sr.ServerJobPath(jid)
+	jpath := sr.JobPath(jid)
+	sr.AsyncMessageSnackbar("Submitting Job: " + jid)
+	
+	isSlurm := sr.IsSlurm()
 
-	gomodDir := br.FindGoMod(br.StartDir)
-	_, fullPath := br.GoModulePath(br.StartDir)
-	projPath := filepath.Join("emer", br.Config.Project)
+	gomodDir := sr.FindGoMod(sr.StartDir)
+	_, fullPath := sr.GoModulePath(sr.StartDir)
+	projPath := filepath.Join("emer", sr.Config.Project)
 	
 	// fmt.Println("go.mod:", gomodDir, "\nmodule:", modulePath, "\nfull path:", fullPath, "\njob proj:", projPath)
 	
-	@0
 	// fmt.Println(jpath)
 	os.MkdirAll(jpath, 0750)
 	os.Chdir(jpath)
 	goalib.WriteFile("job.message", message)
 	goalib.WriteFile("job.args", args)
 	goalib.WriteFile("job.label", label)
-	goalib.WriteFile("job.submit", time.Now().Format(br.Config.TimeFormat))
+	goalib.WriteFile("job.submit", time.Now().Format(sr.Config.TimeFormat))
 	goalib.WriteFile("job.status", "Submitted")
 
 	//	need to do sub-code first and update paths in copied files
-	codepaths := make([]string, len(br.Config.CodeDirs))
-	for i, ed := range br.Config.CodeDirs {
+	codepaths := make([]string, len(sr.Config.CodeDirs))
+	for i, ed := range sr.Config.CodeDirs {
 		@0
-		loce := filepath.Join(br.StartDir, ed)
+		loce := filepath.Join(sr.StartDir, ed)
 		codepaths[i] = filepath.Join(fullPath, ed)
 		jpathe := filepath.Join(jpath, ed)
 		spathe := filepath.Join(spath, ed)
-		br.CopyFilesToJob(loce, jpathe, spathe, ".go")
+		sr.CopyFilesToJob(loce, jpathe, spathe, ".go")
 	}
 	// copy local files:
-	@1
-	cd
-	mkdir -p {spath}
-	cd {spath}
+	if isSlurm {
+		@1
+		cd
+		mkdir -p {spath}
+		cd {spath}
+	}
 	@0
 	cd {jpath}
-	fls := fsx.Filenames(br.StartDir, ".go")
+	fls := fsx.Filenames(sr.StartDir, ".go")
 	for _, f := range fls {
-		sfn := filepath.Join(br.StartDir, f)
+		sfn := filepath.Join(sr.StartDir, f)
 		/bin/cp {sfn} {f}
-		for i, ed := range br.Config.CodeDirs {
+		for i, ed := range sr.Config.CodeDirs {
 			subpath := filepath.Join(projPath, ed)
 			// fmt.Println("replace in:", f, codepaths[i], "->", subpath)
 			goalib.ReplaceInFile(f, codepaths[i], subpath)
 		}
-		scp {f} {"@1:"+f}
+		if isSlurm {
+			scp {f} {"@1:"+f}
+		}
 	}
-	for _, f := range br.Config.ExtraFiles {
-		sfn := filepath.Join(br.StartDir, f)
+	for _, f := range sr.Config.ExtraFiles {
+		sfn := filepath.Join(sr.StartDir, f)
 		/bin/cp {sfn} {f}
-		scp {sfn} {"@1:"+f}
+		if isSlurm {
+			scp {sfn} {"@1:"+f}
+		}
 	}
-	for _, ed := range br.Config.ExtraDirs {
+	for _, ed := range sr.Config.ExtraDirs {
 		jpathe := filepath.Join(jpath, ed)
 		spathe := filepath.Join(spath, ed)
-		loce := filepath.Join(br.StartDir, ed)
-		br.CopyFilesToJob(loce, jpathe, spathe)
+		loce := filepath.Join(sr.StartDir, ed)
+		sr.CopyFilesToJob(loce, jpathe, spathe)
 	}
-	@1
-	cd
-	cd {spath}
+	if isSlurm {
+		@1
+		cd
+		cd {spath}
+	}
 	@0
 	cd {jpath}
 	
-	br.AsyncLock()
-	core.MessageSnackbar(br, "Job: " + jid + " files copied")
-	br.AsyncUnlock()
+	sr.AsyncMessageSnackbar("Job: " + jid + " files copied")
 
 	if gomodDir != "" {
 		sfn := filepath.Join(gomodDir, "go.mod")
 		// fmt.Println("go.mod dir:", gomodDir, sfn)
-		scp {sfn} "@1:go.mod"
-		sfn = filepath.Join(gomodDir, "go.sum")		
-		scp {sfn} "@1:go.sum"
-		@1
-		go mod edit -module {projPath}
-		if br.Config.Package != "" {
-			go get {br.Config.Package + "@" + br.Config.Version}
+		if isSlurm {
+			scp {sfn} "@1:go.mod"
+			sfn = filepath.Join(gomodDir, "go.sum")		
+			scp {sfn} "@1:go.sum"
+			@1
+		} else {
+			cp {sfn} "go.mod"
+			sfn = filepath.Join(gomodDir, "go.sum")		
+			cp {sfn} "go.sum"
 		}
-		if br.Config.ExtraGoGet != "" {
-			go get {br.Config.ExtraGoGet}
+		// note: using local go here for baremetal
+		go mod edit -module {projPath}
+		if sr.Config.Package != "" {
+			go get {sr.Config.Package + "@" + sr.Config.Version}
+		}
+		if sr.Config.ExtraGoGet != "" {
+			go get {sr.Config.ExtraGoGet}
 		}
 		go mod tidy
-		@0
-		scp "@1:go.mod" "go.mod"
-		scp "@1:go.sum" "go.sum"
+		if isSlurm {
+			@0
+			scp "@1:go.mod" "go.mod"
+			scp "@1:go.sum" "go.sum"
+		}
 	} else {
 		fmt.Println("go.mod file not found!")
 	}
 
-	if br.Config.Server.Slurm {
-		sid := br.SubmitSBatch(jid, args)
+	if isSlurm {
+		sid := sr.SubmitSBatch(jid, args)
 		goalib.WriteFile("job.job", sid)
 		fmt.Println("server job id:", sid)
 		scp job.job @1:job.job
-		core.MessageSnackbar(br, "Job: " + jid + " server job: " + sid + " successfully submitted")
+		sr.AsyncMessageSnackbar("Job: " + jid + " server job: " + sid + " successfully submitted")
+		@1 cd
 	} else {
-		sid := br.SubmitBareRun(jid, args, jp.GPU)
+		sid := sr.SubmitBare(jid, args)
 		goalib.WriteFile("job.job", sid)
 		fmt.Println("server job id:", sid)
-		scp job.job @1:job.job
-		br.AsyncLock()
-		core.MessageSnackbar(br, "Job: " + jid + " server job: " + sid + " successfully submitted")
-		br.AsyncUnlock()
+		sr.AsyncMessageSnackbar("Job: " + jid + " server job: " + sid + " successfully submitted")
 	}
-	@1 cd
 	@0
-	br.UpdateSimsAsync()
+	sr.UpdateSimsAsync()
 }
 
 // Submit submits a job to SLURM on the server, using an array
 // structure, with an outer startup job that calls the main array
 // jobs and a final cleanup job.  Creates a new job dir based on
 // incrementing counter, synchronizing the job files.
-func (br *SimRun) Submit() { //types:add
-	lab.PromptStruct(br, &br.Config.Submit, "Submit a new job", func() {
-		{go br.NewJob(br.Config.Submit)}
+func (sr *SimRun) Submit() { //types:add
+	lab.PromptStruct(sr, &sr.Config.Submit, "Submit a new job", func() {
+		{go sr.NewJob(sr.Config.Submit)}
 	})
 }
 

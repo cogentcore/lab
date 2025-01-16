@@ -236,8 +236,8 @@ goalrun.AddCommand("build", func(args ...string) {
 func TestCur(t *testing.T) {
 	// logx.UserLevel = slog.LevelDebug
 	tests := []exIn{
-		{"type Servers keylist.List[int, *Server]", `type Servers keylist.List[int, *Server]`},
-		{"`string literal over lines todo add \n`", `todo`},
+		// {"type Servers keylist.List[int, *Server]", `type Servers keylist.List[int, *Server]`},
+		// {"`string literal over lines todo add \n`", `todo`},
 	}
 	st := NewState()
 	st.MathRecord = false

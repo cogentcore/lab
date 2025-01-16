@@ -42,9 +42,6 @@ type SubmitParams struct {
 	//
 	// -nogui is already passed by default
 	Args string `width:"80"`
-
-	// GPU number to run on.
-	GPU int
 }
 
 // JobParams are parameters for running the job
@@ -97,13 +94,9 @@ type ServerParams struct {
 
 	// Slurm uses the slurm job manager. Otherwise uses a bare job manager.
 	Slurm bool
-
-	// GPUIDs are the list of valid GPU IDs.
-	GPUIDs []int
 }
 
 func (sp *ServerParams) Defaults() {
-	sp.GPUIDs = []int{0, 2, 3, 4}
 }
 
 // Configuration holds all of the user-settable parameters
@@ -215,6 +208,6 @@ type Result struct {
 }
 
 // EditConfig edits the configuration
-func (br *SimRun) EditConfig() { //types:add
-	lab.PromptStruct(br, &br.Config, "Configuration parameters", nil)
+func (sr *SimRun) EditConfig() { //types:add
+	lab.PromptStruct(sr, &sr.Config, "Configuration parameters", nil)
 }
