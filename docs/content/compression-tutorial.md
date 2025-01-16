@@ -35,8 +35,9 @@ for i := range 8 {
     pw.Styler(func(s *styles.Style) {
         s.Min.Y.Dp(100)
     })
+    fig2.Y.Range.Set(-0.5, 0.5)
     fig2.Add(plots.NewLine(plot.NewY(v)).Styler(func(s *plot.Style) {
-        s.Plot.Axis.NTicks = 2
+        s.Plot.Axis.NTicks = 0
     }))
     fig2.Add(plots.NewLine(plot.NewY(#zeros(8)#)))
 }
