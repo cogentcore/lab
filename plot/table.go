@@ -40,7 +40,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 	for ci, cl := range dt.Columns.Values {
 		st := &Style{}
 		st.Defaults()
-		stl := GetStylersFrom(cl)
+		stl := GetStyle(cl)
 		if stl != nil {
 			stl.Run(st)
 		}

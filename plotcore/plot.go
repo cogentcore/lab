@@ -23,7 +23,7 @@ import (
 
 // Plot is a widget that renders a [plot.Plot] object.
 // If it is not [states.ReadOnly], the user can pan and zoom the graph.
-// See [PlotEditor] for an interactive interface for selecting columns to view.
+// See [Editor] for an interactive interface for selecting columns to view.
 type Plot struct {
 	core.WidgetBase
 

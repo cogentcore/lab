@@ -98,7 +98,7 @@ func (ss *Sim) ConfigStats() {
 			tsr := tensorfs.Value[int](timeDir, name)
 			if lphase == Start {
 				tsr.SetNumRows(0)
-				plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+				plot.SetFirstStyle(tsr, func(s *plot.Style) {
 					s.Range.SetMin(0)
 				})
 				return
@@ -116,7 +116,7 @@ func (ss *Sim) ConfigStats() {
 		tsr := timeDir.Float64(name)
 		if lphase == Start {
 			tsr.SetNumRows(0)
-			plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+			plot.SetFirstStyle(tsr, func(s *plot.Style) {
 				s.Range.SetMin(0).SetMax(1)
 				s.On = true
 			})
@@ -143,7 +143,7 @@ func (ss *Sim) ConfigStats() {
 		tsr := tensorfs.Value[float64](timeDir, name)
 		if lphase == Start {
 			tsr.SetNumRows(0)
-			plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+			plot.SetFirstStyle(tsr, func(s *plot.Style) {
 				s.Range.SetMin(0).SetMax(1)
 				s.On = true
 			})

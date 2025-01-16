@@ -37,11 +37,11 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-// PlotEditor is a widget that provides an interactive 2D plot
+// Editor is a widget that provides an interactive 2D plot
 // of selected columns of tabular data, represented by a [table.Table] into
 // a [table.Table]. Other types of tabular data can be converted into this format.
 // The user can change various options for the plot and also modify the underlying data.
-type PlotEditor struct { //types:add
+type Editor struct { //types:add
 	core.Frame
 
 	// table is the table of data being plotted.
@@ -67,19 +67,19 @@ type PlotEditor struct { //types:add
 	plotStyleModified map[string]bool
 }
 
-func (pl *PlotEditor) CopyFieldsFrom(frm tree.Node) {
-	fr := frm.(*PlotEditor)
+func (pl *Editor) CopyFieldsFrom(frm tree.Node) {
+	fr := frm.(*Editor)
 	pl.Frame.CopyFieldsFrom(&fr.Frame)
 	pl.PlotStyle = fr.PlotStyle
 	pl.setTable(fr.table)
 }
 
-// NewSubPlot returns a [PlotEditor] with its own separate [core.Toolbar],
+// NewSubPlot returns a [Editor] with its own separate [core.Toolbar],
 // suitable for a tab or other element that is not the main plot.
-func NewSubPlot(parent ...tree.Node) *PlotEditor {
+func NewSubPlot(parent ...tree.Node) *Editor {
 	fr := core.NewFrame(parent...)
 	tb := core.NewToolbar(fr)
-	pl := NewPlotEditor(fr)
+	pl := NewEditor(fr)
 	fr.Styler(func(s *styles.Style) {
 		s.Direction = styles.Column
 		s.Grow.Set(1, 1)
@@ -88,7 +88,7 @@ func NewSubPlot(parent ...tree.Node) *PlotEditor {
 	return pl
 }
 
-func (pl *PlotEditor) Init() {
+func (pl *Editor) Init() {
 	pl.Frame.Init()
 
 	pl.PlotStyle.Defaults()
@@ -136,7 +136,7 @@ func (pl *PlotEditor) Init() {
 // to update the Column list, which will also trigger a Layout
 // and updating of the plot on next render pass.
 // This is safe to call from a different goroutine.
-func (pl *PlotEditor) setTable(tab *table.Table) *PlotEditor {
+func (pl *Editor) setTable(tab *table.Table) *Editor {
 	pl.table = tab
 	pl.Update()
 	return pl
@@ -146,7 +146,7 @@ func (pl *PlotEditor) setTable(tab *table.Table) *PlotEditor {
 // to update the Column list, which will also trigger a Layout
 // and updating of the plot on next render pass.
 // This is safe to call from a different goroutine.
-func (pl *PlotEditor) SetTable(tab *table.Table) *PlotEditor {
+func (pl *Editor) SetTable(tab *table.Table) *Editor {
 	pl.table = table.NewView(tab)
 	pl.Update()
 	return pl
@@ -155,7 +155,7 @@ func (pl *PlotEditor) SetTable(tab *table.Table) *PlotEditor {
 // SetSlice sets the table to a [table.NewSliceTable] from the given slice.
 // Optional styler functions are used for each struct field in sequence,
 // and any can contain global plot style.
-func (pl *PlotEditor) SetSlice(sl any, stylers ...func(s *plot.Style)) *PlotEditor {
+func (pl *Editor) SetSlice(sl any, stylers ...func(s *plot.Style)) *Editor {
 	dt, err := table.NewSliceTable(sl)
 	errors.Log(err)
 	if dt == nil {
@@ -163,13 +163,13 @@ func (pl *PlotEditor) SetSlice(sl any, stylers ...func(s *plot.Style)) *PlotEdit
 	}
 	mx := min(dt.NumColumns(), len(stylers))
 	for i := range mx {
-		plot.SetStylersTo(dt.Columns.Values[i], stylers[i])
+		plot.SetStyle(dt.Columns.Values[i], stylers[i])
 	}
 	return pl.SetTable(dt)
 }
 
 // SaveSVG saves the plot to an svg -- first updates to ensure that plot is current
-func (pl *PlotEditor) SaveSVG(fname core.Filename) { //types:add
+func (pl *Editor) SaveSVG(fname core.Filename) { //types:add
 	pl.UpdatePlot()
 	// TODO: get plot svg saving working
 	// pc := pl.PlotChild()
@@ -178,20 +178,20 @@ func (pl *PlotEditor) SaveSVG(fname core.Filename) { //types:add
 }
 
 // SavePNG saves the current plot to a png, capturing current render
-func (pl *PlotEditor) SavePNG(fname core.Filename) { //types:add
+func (pl *Editor) SavePNG(fname core.Filename) { //types:add
 	pl.UpdatePlot()
 	imagex.Save(pl.plot.Pixels, string(fname))
 }
 
 // SaveCSV saves the Table data to a csv (comma-separated values) file with headers (any delim)
-func (pl *PlotEditor) SaveCSV(fname core.Filename, delim tensor.Delims) { //types:add
+func (pl *Editor) SaveCSV(fname core.Filename, delim tensor.Delims) { //types:add
 	pl.table.SaveCSV(fsx.Filename(fname), delim, table.Headers)
 	pl.dataFile = fname
 }
 
 // SaveAll saves the current plot to a png, svg, and the data to a tsv -- full save
 // Any extension is removed and appropriate extensions are added
-func (pl *PlotEditor) SaveAll(fname core.Filename) { //types:add
+func (pl *Editor) SaveAll(fname core.Filename) { //types:add
 	fn := string(fname)
 	fn = strings.TrimSuffix(fn, filepath.Ext(fn))
 	pl.SaveCSV(core.Filename(fn+".tsv"), tensor.Tab)
@@ -200,7 +200,7 @@ func (pl *PlotEditor) SaveAll(fname core.Filename) { //types:add
 }
 
 // OpenCSV opens the Table data from a csv (comma-separated values) file (or any delim)
-func (pl *PlotEditor) OpenCSV(filename core.Filename, delim tensor.Delims) { //types:add
+func (pl *Editor) OpenCSV(filename core.Filename, delim tensor.Delims) { //types:add
 	pl.table.OpenCSV(fsx.Filename(filename), delim)
 	pl.dataFile = filename
 	pl.UpdatePlot()
@@ -208,7 +208,7 @@ func (pl *PlotEditor) OpenCSV(filename core.Filename, delim tensor.Delims) { //t
 
 // OpenFS opens the Table data from a csv (comma-separated values) file (or any delim)
 // from the given filesystem.
-func (pl *PlotEditor) OpenFS(fsys fs.FS, filename core.Filename, delim tensor.Delims) {
+func (pl *Editor) OpenFS(fsys fs.FS, filename core.Filename, delim tensor.Delims) {
 	pl.table.OpenFS(fsys, string(filename), delim)
 	pl.dataFile = filename
 	pl.UpdatePlot()
@@ -218,7 +218,7 @@ func (pl *PlotEditor) OpenFS(fsys fs.FS, filename core.Filename, delim tensor.De
 // This version can be called from goroutines. It does Sequential() on
 // the [table.Table], under the assumption that it is used for tracking a
 // the latest updates of a running process.
-func (pl *PlotEditor) GoUpdatePlot() {
+func (pl *Editor) GoUpdatePlot() {
 	if pl == nil || pl.This == nil {
 		return
 	}
@@ -238,7 +238,7 @@ func (pl *PlotEditor) GoUpdatePlot() {
 // UpdatePlot updates the display based on current Indexed view into table.
 // It does not automatically update the [table.Table] unless it is
 // nil or out date.
-func (pl *PlotEditor) UpdatePlot() {
+func (pl *Editor) UpdatePlot() {
 	if pl == nil || pl.This == nil {
 		return
 	}
@@ -256,7 +256,7 @@ func (pl *PlotEditor) UpdatePlot() {
 
 // genPlot generates the plot and renders it to SVG
 // It surrounds operation with InPlot true / false to prevent multiple updates
-func (pl *PlotEditor) genPlot() {
+func (pl *Editor) genPlot() {
 	if pl.inPlot {
 		slog.Error("plot: in plot already") // note: this never seems to happen -- could probably nuke
 		return
@@ -287,7 +287,7 @@ func (pl *PlotEditor) genPlot() {
 const plotColumnsHeaderN = 3
 
 // allColumnsOff turns all columns off.
-func (pl *PlotEditor) allColumnsOff() {
+func (pl *Editor) allColumnsOff() {
 	fr := pl.columnsFrame
 	for i, cli := range fr.Children {
 		if i < plotColumnsHeaderN {
@@ -303,7 +303,7 @@ func (pl *PlotEditor) allColumnsOff() {
 
 // setColumnsByName turns columns on or off if their name contains
 // the given string.
-func (pl *PlotEditor) setColumnsByName(nameContains string, on bool) { //types:add
+func (pl *Editor) setColumnsByName(nameContains string, on bool) { //types:add
 	fr := pl.columnsFrame
 	for i, cli := range fr.Children {
 		if i < plotColumnsHeaderN {
@@ -321,7 +321,7 @@ func (pl *PlotEditor) setColumnsByName(nameContains string, on bool) { //types:a
 }
 
 // makeColumns makes the Plans for columns
-func (pl *PlotEditor) makeColumns(p *tree.Plan) {
+func (pl *Editor) makeColumns(p *tree.Plan) {
 	tree.Add(p, func(w *core.Frame) {
 		tree.AddChild(w, func(w *core.Button) {
 			w.SetText("Clear").SetIcon(icons.ClearAll).SetType(core.ButtonAction)
@@ -346,7 +346,7 @@ func (pl *PlotEditor) makeColumns(p *tree.Plan) {
 	for ci, cl := range pl.table.Columns.Values {
 		cnm := pl.table.Columns.Keys[ci]
 		tree.AddAt(p, cnm, func(w *core.Frame) {
-			psty := plot.GetStylersFrom(cl)
+			psty := plot.GetStyle(cl)
 			cst, mods := pl.defaultColumnStyle(cl, ci, &colorIdx, psty)
 			stys := psty
 			stys.Add(func(s *plot.Style) {
@@ -354,7 +354,7 @@ func (pl *PlotEditor) makeColumns(p *tree.Plan) {
 				errors.Log(reflectx.CopyFields(s, cst, mf...))
 				errors.Log(reflectx.CopyFields(&s.Plot, &pl.PlotStyle, modFields(pl.plotStyleModified)...))
 			})
-			plot.SetStylersTo(cl, stys...)
+			plot.SetStyle(cl, stys...)
 
 			w.Styler(func(s *styles.Style) {
 				s.CenterAll()
@@ -437,7 +437,7 @@ func (pl *PlotEditor) makeColumns(p *tree.Plan) {
 
 // defaultColumnStyle initializes the column style with any existing stylers
 // plus additional general defaults, returning the initially modified field names.
-func (pl *PlotEditor) defaultColumnStyle(cl tensor.Values, ci int, colorIdx *int, psty plot.Stylers) (*plot.Style, map[string]bool) {
+func (pl *Editor) defaultColumnStyle(cl tensor.Values, ci int, colorIdx *int, psty plot.Stylers) (*plot.Style, map[string]bool) {
 	cst := &plot.Style{}
 	cst.Defaults()
 	if psty != nil {
@@ -481,7 +481,7 @@ func (pl *PlotEditor) defaultColumnStyle(cl tensor.Values, ci int, colorIdx *int
 	return cst, mods
 }
 
-func (pl *PlotEditor) plotStyleFromTable(dt *table.Table) {
+func (pl *Editor) plotStyleFromTable(dt *table.Table) {
 	if pl.plotStyleModified != nil { // already set
 		return
 	}
@@ -492,7 +492,7 @@ func (pl *PlotEditor) plotStyleFromTable(dt *table.Table) {
 	tst.Defaults()
 	tst.Plot.Defaults()
 	for _, cl := range pl.table.Columns.Values {
-		stl := plot.GetStylersFrom(cl)
+		stl := plot.GetStyle(cl)
 		if stl == nil {
 			continue
 		}
@@ -526,7 +526,7 @@ func modFields(mods map[string]bool) []string {
 	return rf
 }
 
-func (pl *PlotEditor) MakeToolbar(p *tree.Plan) {
+func (pl *Editor) MakeToolbar(p *tree.Plan) {
 	if pl.table == nil {
 		return
 	}
@@ -605,7 +605,7 @@ func (pl *PlotEditor) MakeToolbar(p *tree.Plan) {
 	})
 }
 
-func (pt *PlotEditor) SizeFinal() {
+func (pt *Editor) SizeFinal() {
 	pt.Frame.SizeFinal()
 	pt.UpdatePlot()
 }

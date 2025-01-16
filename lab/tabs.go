@@ -23,7 +23,7 @@ import (
 var Lab *Tabs
 
 // Tabber is a [core.Tabs] based widget that has support for opening
-// tabs for [plotcore.PlotEditor] and [tensorcore.Table] editors,
+// tabs for [plotcore.Editor] and [tensorcore.Table] editors,
 // among others.
 type Tabber interface {
 	core.Tabber
@@ -146,10 +146,10 @@ func (ts *Tabs) GridTensorFS(dfs *tensorfs.Node) *tensorcore.TensorGrid {
 }
 
 // PlotTable recycles a tab with a Plot of given table.Table.
-func (ts *Tabs) PlotTable(label string, dt *table.Table) *plotcore.PlotEditor {
-	pl := NewTab(ts, label, func(tab *core.Frame) *plotcore.PlotEditor {
+func (ts *Tabs) PlotTable(label string, dt *table.Table) *plotcore.Editor {
+	pl := NewTab(ts, label, func(tab *core.Frame) *plotcore.Editor {
 		tb := core.NewToolbar(tab)
-		pl := plotcore.NewPlotEditor(tab)
+		pl := plotcore.NewEditor(tab)
 		tab.Styler(func(s *styles.Style) {
 			s.Direction = styles.Column
 			s.Grow.Set(1, 1)
@@ -165,7 +165,7 @@ func (ts *Tabs) PlotTable(label string, dt *table.Table) *plotcore.PlotEditor {
 }
 
 // PlotTensorFS recycles a tab with a Plot of given [tensorfs.Node].
-func (ts *Tabs) PlotTensorFS(dfs *tensorfs.Node) *plotcore.PlotEditor {
+func (ts *Tabs) PlotTensorFS(dfs *tensorfs.Node) *plotcore.Editor {
 	label := fsx.DirAndFile(dfs.Path()) + " Plot"
 	if dfs.IsDir() {
 		return ts.PlotTable(label, tensorfs.DirTable(dfs, nil))
@@ -203,8 +203,8 @@ func (ts *Tabs) Plot(label string, plt *plot.Plot) *plotcore.Plot {
 
 // GoUpdatePlot calls GoUpdatePlot on plot at tab with given name.
 // Does nothing if tab name doesn't exist (returns nil).
-func (ts *Tabs) GoUpdatePlot(label string) *plotcore.PlotEditor {
-	pl := TabAt[*plotcore.PlotEditor](ts, label)
+func (ts *Tabs) GoUpdatePlot(label string) *plotcore.Editor {
+	pl := TabAt[*plotcore.Editor](ts, label)
 	if pl != nil {
 		pl.GoUpdatePlot()
 	}
@@ -213,8 +213,8 @@ func (ts *Tabs) GoUpdatePlot(label string) *plotcore.PlotEditor {
 
 // UpdatePlot calls UpdatePlot on plot at tab with given name.
 // Does nothing if tab name doesn't exist (returns nil).
-func (ts *Tabs) UpdatePlot(label string) *plotcore.PlotEditor {
-	pl := TabAt[*plotcore.PlotEditor](ts, label)
+func (ts *Tabs) UpdatePlot(label string) *plotcore.Editor {
+	pl := TabAt[*plotcore.Editor](ts, label)
 	if pl != nil {
 		pl.UpdatePlot()
 	}

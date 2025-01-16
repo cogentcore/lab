@@ -2,11 +2,11 @@
 
 The `plot` package generates 2D plots of data using the Cogent Core `paint` rendering system.  The `plotcore` sub-package has Cogent Core Widgets that can be used in applications.  
 * `Plot` is just a wrapper around a `plot.Plot`, for code-generated plots.
-* `PlotEditor` is an interactive plot viewer that supports selection of which data to plot, and GUI configuration of plot parameters.
+* `Editor` is an interactive plot viewer that supports selection of which data to plot, and GUI configuration of plot parameters.
 
 `plot` is designed to work in two potentially-conflicting ways:
 * Code-based creation of a specific plot with specific data.
-* GUI-based configuration of plots based on a `tensor.Table` of data columns (via `PlotEditor`).
+* GUI-based configuration of plots based on a `tensor.Table` of data columns (via `Editor`).
 
 The GUI constraint requires a more systematic, factorial organization of the space of possible plot data and how it is organized to create a plot, so that it can be configured with a relatively simple set of GUI settings. The overall logic is as follows:
 
@@ -65,7 +65,7 @@ Here is an example of how this works:
 		ty.SetFloat1D(50.0+40*math.Sin((float64(i)/8)*math.Pi), i)
 	}
 	// attach stylers to the Y axis data: that is where plotter looks for it
-	plot.SetStylersTo(ty, func(s *plot.Style) {
+	plot.SetStyle(ty, func(s *plot.Style) {
 		s.Plot.Title = "Test Line"
 		s.Plot.XAxis.Label = "X Axis"
 		s.Plot.YAxisLabel = "Y Axis"

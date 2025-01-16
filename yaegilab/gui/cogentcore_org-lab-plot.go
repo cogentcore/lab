@@ -11,7 +11,7 @@ import (
 func init() {
 	Symbols["cogentcore.org/lab/plot/plot"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"AddStylerTo":        reflect.ValueOf(plot.AddStylerTo),
+		"AddStyle":           reflect.ValueOf(plot.AddStyle),
 		"AxisScalesN":        reflect.ValueOf(plot.AxisScalesN),
 		"AxisScalesValues":   reflect.ValueOf(plot.AxisScalesValues),
 		"Box":                reflect.ValueOf(plot.Box),
@@ -36,7 +36,7 @@ func init() {
 		"DrawTriangle":       reflect.ValueOf(plot.DrawTriangle),
 		"ErrInfinity":        reflect.ValueOf(&plot.ErrInfinity).Elem(),
 		"ErrNoData":          reflect.ValueOf(&plot.ErrNoData).Elem(),
-		"GetStylersFrom":     reflect.ValueOf(plot.GetStylersFrom),
+		"GetStyle":           reflect.ValueOf(plot.GetStyle),
 		"GetStylersFromData": reflect.ValueOf(plot.GetStylersFromData),
 		"High":               reflect.ValueOf(plot.High),
 		"InverseLinear":      reflect.ValueOf(plot.InverseLinear),
@@ -71,8 +71,8 @@ func init() {
 		"Ring":               reflect.ValueOf(plot.Ring),
 		"RolesN":             reflect.ValueOf(plot.RolesN),
 		"RolesValues":        reflect.ValueOf(plot.RolesValues),
-		"SetFirstStylerTo":   reflect.ValueOf(plot.SetFirstStylerTo),
-		"SetStylersTo":       reflect.ValueOf(plot.SetStylersTo),
+		"SetFirstStyle":      reflect.ValueOf(plot.SetFirstStyle),
+		"SetStyle":           reflect.ValueOf(plot.SetStyle),
 		"ShapesN":            reflect.ValueOf(plot.ShapesN),
 		"ShapesValues":       reflect.ValueOf(plot.ShapesValues),
 		"Size":               reflect.ValueOf(plot.Size),

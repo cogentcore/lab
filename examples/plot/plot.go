@@ -26,12 +26,12 @@ func main() {
 		s.Plot.Title = "RA25 Epoch Train"
 	}
 	perr := epc.Column("PctErr")
-	plot.SetStylersTo(perr, pst, func(s *plot.Style) {
+	plot.SetStyle(perr, pst, func(s *plot.Style) {
 		s.On = true
 		s.Role = plot.Y
 	})
 
-	pl := plotcore.NewPlotEditor(b)
+	pl := plotcore.NewEditor(b)
 	pl.SetTable(epc)
 	b.AddTopBar(func(bar *core.Frame) {
 		core.NewToolbar(bar).Maker(pl.MakeToolbar)

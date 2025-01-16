@@ -10,14 +10,14 @@ import (
 func init() {
 	Symbols["cogentcore.org/lab/plotcore/plotcore"] = map[string]reflect.Value{
 		// function, constant and variable definitions
+		"NewEditor":         reflect.ValueOf(plotcore.NewEditor),
 		"NewPlot":           reflect.ValueOf(plotcore.NewPlot),
-		"NewPlotEditor":     reflect.ValueOf(plotcore.NewPlotEditor),
 		"NewPlotterChooser": reflect.ValueOf(plotcore.NewPlotterChooser),
 		"NewSubPlot":        reflect.ValueOf(plotcore.NewSubPlot),
 
 		// type definitions
+		"Editor":         reflect.ValueOf((*plotcore.Editor)(nil)),
 		"Plot":           reflect.ValueOf((*plotcore.Plot)(nil)),
-		"PlotEditor":     reflect.ValueOf((*plotcore.PlotEditor)(nil)),
 		"PlotterChooser": reflect.ValueOf((*plotcore.PlotterChooser)(nil)),
 	}
 }

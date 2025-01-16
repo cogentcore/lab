@@ -138,43 +138,49 @@ func (st *Stylers) NewStyle(ps *PlotStyle) *Style {
 	return s
 }
 
-// SetStylersTo sets the [Stylers] into given object's [metadata].
-func SetStylersTo(obj any, st ...func(s *Style)) {
-	metadata.SetTo(obj, "PlotStylers", Stylers(st))
+// SetStyle sets the [Stylers] function(s) into given object's [metadata].
+// This overwrites any existing styler functions. The [plotcore.Editor]
+// depends on adding a styler function on top of any existing ones,
+// so it is better to use [SetFirstStyle] if that is being used.
+func SetStyle(obj any, st ...func(s *Style)) {
+	metadata.Set(obj, "PlotStylers", Stylers(st))
 }
 
-// GetStylersFrom returns [Stylers] from given object's [metadata].
+// GetStyle returns [Stylers] functions from given object's [metadata].
 // Returns nil if none or no metadata.
-func GetStylersFrom(obj any) Stylers {
-	st, _ := metadata.GetFrom[Stylers](obj, "PlotStylers")
+func GetStyle(obj any) Stylers {
+	st, _ := metadata.Get[Stylers](obj, "PlotStylers")
 	return st
 }
 
-// SetFirstStylerTo sets the [Styler] function into given object's [metadata],
-// only if there are no other stylers present.
-func SetFirstStylerTo(obj any, f func(s *Style)) {
-	st := GetStylersFrom(obj)
+// SetFirstStyle sets the [Styler] function into given object's [metadata],
+// only if there are no other stylers present. This is important for cases
+// where code may be run multiple times on the same object, and you don't want
+// to add multiple redundant style functions (and [plotcore.Editor] is being used).
+func SetFirstStyle(obj any, f func(s *Style)) {
+	st := GetStyle(obj)
 	if len(st) > 0 {
 		return
 	}
-	metadata.SetTo(obj, "PlotStylers", Stylers{f})
+	metadata.Set(obj, "PlotStylers", Stylers{f})
 }
 
-// AddStylerTo adds the given [Styler] function into given object's [metadata].
-func AddStylerTo(obj any, f func(s *Style)) {
-	st := GetStylersFrom(obj)
+// AddStyle adds the given [Styler] function into given object's [metadata].
+func AddStyle(obj any, f func(s *Style)) {
+	st := GetStyle(obj)
 	st.Add(f)
-	SetStylersTo(obj, st...)
+	SetStyle(obj, st...)
 }
 
 // GetStylersFromData returns [Stylers] from given role
-// in given [Data]. nil if not present.
+// in given [Data]. nil if not present. Mostly used internally
+// for Plotters implementations.
 func GetStylersFromData(data Data, role Roles) Stylers {
 	vr, ok := data[role]
 	if !ok {
 		return nil
 	}
-	return GetStylersFrom(vr)
+	return GetStyle(vr)
 }
 
 ////////
