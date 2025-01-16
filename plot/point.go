@@ -46,6 +46,17 @@ func (ps *PointStyle) Defaults() {
 	ps.Size.Pt(4)
 }
 
+// SpacedColor sets the Color to a default spaced color based on index,
+// if it still has the initial OnSurface default.
+func (ps *PointStyle) SpacedColor(idx int) {
+	if ps.Color == colors.Scheme.OnSurface {
+		ps.Color = colors.Uniform(colors.Spaced(idx))
+	}
+	if ps.Fill == colors.Scheme.OnSurface {
+		ps.Fill = colors.Uniform(colors.Spaced(idx))
+	}
+}
+
 // SetStroke sets the stroke style in plot paint to current line style.
 // returns false if either the Width = 0 or Color is nil
 func (ps *PointStyle) SetStroke(pt *Plot) bool {

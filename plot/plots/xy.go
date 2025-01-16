@@ -102,6 +102,7 @@ func (ln *XY) Stylers() *plot.Stylers { return &ln.stylers }
 
 func (ln *XY) ApplyStyle(ps *plot.PlotStyle, idx int) {
 	ln.Style.Line.SpacedColor(idx)
+	ln.Style.Point.SpacedColor(idx)
 	ps.SetElementStyle(&ln.Style)
 	ln.stylers.Run(&ln.Style)
 }
