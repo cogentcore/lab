@@ -98,11 +98,9 @@ func (ss *Sim) ConfigStats() {
 			tsr := tensorfs.Value[int](timeDir, name)
 			if lphase == Start {
 				tsr.SetNumRows(0)
-				if plot.GetStylersFrom(tsr) == nil {
-					plot.SetStylersTo(tsr, func(s *plot.Style) {
-						s.Range.SetMin(0)
-					})
-				}
+				plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+					s.Range.SetMin(0)
+				})
 				return
 			}
 			ctv := ss.Counters[ctr]
@@ -118,12 +116,10 @@ func (ss *Sim) ConfigStats() {
 		tsr := timeDir.Float64(name)
 		if lphase == Start {
 			tsr.SetNumRows(0)
-			if plot.GetStylersFrom(tsr) == nil {
-				plot.SetStylersTo(tsr, func(s *plot.Style) {
-					s.Range.SetMin(0).SetMax(1)
-					s.On = true
-				})
-			}
+			plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+				s.Range.SetMin(0).SetMax(1)
+				s.On = true
+			})
 			return
 		}
 		switch ltime {
@@ -147,12 +143,10 @@ func (ss *Sim) ConfigStats() {
 		tsr := tensorfs.Value[float64](timeDir, name)
 		if lphase == Start {
 			tsr.SetNumRows(0)
-			if plot.GetStylersFrom(tsr) == nil {
-				plot.SetStylersTo(tsr, func(s *plot.Style) {
-					s.Range.SetMin(0).SetMax(1)
-					s.On = true
-				})
-			}
+			plot.SetFirstStylerTo(tsr, func(s *plot.Style) {
+				s.Range.SetMin(0).SetMax(1)
+				s.On = true
+			})
 			return
 		}
 		switch ltime {
@@ -210,7 +204,7 @@ func main() {
 	ss.ConfigAll()
 	ss.Run()
 
-	b, _ := lab.NewBasicWindow(ss.Root, "Root")
+	b, _ := lab.NewBasicWindow(ss.Root, "Root", nil)
 	b.RunWindow()
 	core.Wait()
 }
