@@ -25,6 +25,7 @@ import (
 
 // XAxisStyle has overall plot level styling properties for the XAxis.
 type XAxisStyle struct { //types:add -setters
+
 	// Column specifies the column to use for the common X axis,
 	// for [plot.NewTablePlot] [table.Table] driven plots.
 	// If empty, standard Group-based role binding is used: the last column
@@ -69,10 +70,10 @@ type PlotStyle struct { //types:add -setters
 	// Legend has the styling properties for the Legend.
 	Legend LegendStyle `display:"add-fields"`
 
-	// Axis has the styling properties for the Axes.
+	// Axis has the styling properties for the Axis associated with this Data.
 	Axis AxisStyle `display:"add-fields"`
 
-	// XAxis has plot-level XAxis style properties.
+	// XAxis has plot-level properties specific to the XAxis.
 	XAxis XAxisStyle `display:"add-fields"`
 
 	// YAxisLabel is the optional label to use for the YAxis instead of the default.

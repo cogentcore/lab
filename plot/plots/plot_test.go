@@ -492,6 +492,22 @@ func TestStyle(t *testing.T) {
 	imagex.Assert(t, plt.Pixels, "style_line_point_auto.png")
 }
 
+func TestTicks(t *testing.T) {
+	data := sinCosWrapData()
+
+	plt := plot.New()
+	l1 := NewLine(data).Styler(func(s *plot.Style) {
+		s.Plot.Axis.NTicks = 0
+	})
+	plt.Add(l1)
+	plt.Legend.Add("Sine", l1)
+	plt.Legend.Add("Cos", l1)
+
+	plt.Resize(image.Point{640, 480})
+	plt.Draw()
+	imagex.Assert(t, plt.Pixels, "style_noticks.png")
+}
+
 // todo: move into statplot and test everything
 
 func TestTable(t *testing.T) {

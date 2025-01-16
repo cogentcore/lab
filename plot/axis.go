@@ -50,7 +50,8 @@ type AxisStyle struct { //types:add -setters
 	// on the axis, thus making it easier to see.
 	Padding units.Value
 
-	// NTicks is the desired number of ticks (actual likely will be different).
+	// NTicks is the desired number of ticks (actual likely
+	// will be different). If < 2 then the axis will not be drawn.
 	NTicks int
 
 	// Scale specifies how values are scaled along the axis:
@@ -99,7 +100,7 @@ type Axis struct {
 	// TickText is used for rendering the tick text labels.
 	TickText Text
 
-	// Ticker generates the tick marks.  Any tick marks
+	// Ticker generates the tick marks. Any tick marks
 	// returned by the Marker function that are not in
 	// range of the axis are not drawn.
 	Ticker Ticker
