@@ -182,7 +182,6 @@ func (bm *BareMetal) RunPendingJobs() (int, error) {
 		if job.Status != Pending {
 			continue
 		}
-		fmt.Println("job status:", job.Status, "jobno:", job.ID)
 		av := avail[0]
 		sv := bm.Servers.At(av.Name)
 		next := sv.NextGPU()
@@ -231,7 +230,6 @@ func (bm *BareMetal) CancelJobs(jobs ...int) error {
 
 // CancelJob cancels the running of the given job (killing process if Running).
 func (bm *BareMetal) CancelJob(job *Job) error {
-	fmt.Println("in cancel:", job.ID)
 	if job.Status == Pending {
 		job.Status = Canceled
 		job.End = time.Now()
@@ -239,7 +237,6 @@ func (bm *BareMetal) CancelJob(job *Job) error {
 		bm.Active.DeleteByKey(job.ID)
 		return nil
 	}
-	fmt.Println("in cancel 2:", job.ID)
 	sv, err := bm.Server(job.ServerName)
 	if errors.Log(err) != nil {
 		return err
@@ -248,7 +245,6 @@ func (bm *BareMetal) CancelJob(job *Job) error {
 	job.Status = Canceled // always mark job as canceled, even if other stuff fails
 	bm.JobDone(job, sv)
 	bm.SaveState()
-	fmt.Println("cancel set status, job done:", job.ID)
 	sv.Use()
 	goalrun.Run("cd")
 	if job.PID == 0 {
@@ -273,7 +269,6 @@ func (bm *BareMetal) PollJobs() (int, error) {
 	var errs []error
 	for ji := njobs - 1; ji >= 0; ji-- { // reverse b/c moves jobs to Done
 		job := bm.Active.Values[ji]
-		// fmt.Println("job status:", job.Status, "jobno:", job.ID)
 		if job.Status != Running {
 			continue
 		}
@@ -298,7 +293,6 @@ func (bm *BareMetal) PollJobs() (int, error) {
 		goalrun.Run("cd")
 		// psout := $ps -p {job.PID} >/dev/null; echo "$?"$ // todo: don't parse ; ourselves!
 		psout := strings.TrimSpace(goalrun.Output("ps", "-p", job.PID, ">", "/dev/null", ";", "echo", "$?"))
-		fmt.Println("status:", psout)
 		if psout == "1" {
 			job.Status = Completed
 			bm.FetchResultsJob(job, sv)
