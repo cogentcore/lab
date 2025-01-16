@@ -146,8 +146,8 @@ func (sr *SimRun) InitSimRun(startDir string) {
 	})
 	in.Config()
 	sr.SetScriptsDir(filepath.Join(sr.DataRoot, "labscripts"))
-	lab.TheBrowser = &sr.Browser
-	lab.CurTabber = sr.Browser.Tabs
+	lab.LabBrowser = &sr.Browser
+	lab.Lab = sr.Browser.Tabs
 	goalrun = in.Goal
 	sr.Config.StartDir = sr.StartDir
 	sr.Config.DataRoot = sr.DataRoot

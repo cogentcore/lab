@@ -53,8 +53,8 @@ type Browser struct { //types:add -setters
 	// Files is the [DataTree] tree browser of the tensorfs or files.
 	Files *DataTree
 
-	// Tabs is the [Tabber] element managing tabs of data views.
-	Tabs Tabber
+	// Tabs is the [Tabs] element managing tabs of data views.
+	Tabs *Tabs
 
 	// Toolbar is the top-level toolbar for the browser, if used.
 	Toolbar *core.Toolbar
