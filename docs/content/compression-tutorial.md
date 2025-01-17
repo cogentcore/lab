@@ -54,10 +54,16 @@ To compress the data, we will define a function that zeroes all but the *n* elem
 
 ```Goal
 // TODO: implement using sort
+slc := tensor.NewSliced(a)
+slc.SortFunc(0, func(tsr tensor.Tensor, dim, i, j int) int {
+    return cmp.Compare(math.Abs(tsr.Float1D(j)), math.Abs(tsr.Float1D(i)))
+})
+sorted := slc.Tensor.(*tensor.Float64)
 compress := func(n int) tensor.Tensor {
+    # top := sorted[:-n]
     # res := zeros(8)
     for i := range 8 {
-        if i < n {
+        if slices.Contains(top.Values, #a[i]#) {
             # res[i] = a[i]
         } else {
             # res[i] = 0
