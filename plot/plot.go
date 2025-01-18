@@ -110,7 +110,7 @@ func (ps *PlotStyle) Defaults() {
 	ps.Legend.Defaults()
 	ps.Axis.Defaults()
 	ps.LineWidth.Pt(1)
-	ps.PointSize.Pt(4)
+	ps.PointSize.Pt(3)
 	ps.LabelSize.Dp(16)
 	ps.BarWidth = .8
 }

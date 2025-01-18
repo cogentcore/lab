@@ -35,7 +35,7 @@ type PointStyle struct { //types:add -setters
 	Width units.Value
 
 	// Size of shape to draw for each point.
-	// Defaults to 4 Pt (point).
+	// Defaults to 3 Pt (point).
 	Size units.Value
 }
 
@@ -44,7 +44,7 @@ func (ps *PointStyle) Defaults() {
 	ps.Color = colors.Scheme.OnSurface
 	ps.Fill = colors.Scheme.OnSurface
 	ps.Width.Pt(1)
-	ps.Size.Pt(4)
+	ps.Size.Pt(3)
 }
 
 // SpacedColor sets the Color to a default spaced color based on index,
