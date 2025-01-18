@@ -35,10 +35,11 @@ for i := range 8 {
     pw.Styler(func(s *styles.Style) {
         s.Min.Y.Dp(100)
     })
-    fig2.Add(plots.NewPointLine(plot.NewY(v)).Styler(func(s *plot.Style) {
+    plot.Styler(v, func(s *plot.Style) {
         s.Plot.Axis.On = false
         s.Range.SetMin(-0.5).SetMax(0.5)
-    }))
+    })
+    fig2.Add(plots.NewPointLine(plot.NewY(v)))
     fig2.Add(plots.NewLine(plot.NewY(#zeros(8)#)))
 }
 ```
@@ -84,5 +85,8 @@ From **a2**, we can compute and plot **x2**, the approximation of **x** based on
 ```Goal
 # x2 := U @ a2
 plt := lab.NewPlotFrom(fig1, b)
+plot.Styler(x2, func(s *plot.Style) {
+    s.Point.Shape = plot.Pyramid
+})
 plt.Add(plots.NewPointLine(plot.NewY(x2)))
 ```
