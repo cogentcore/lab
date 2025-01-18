@@ -15,7 +15,7 @@ import (
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/lab"
 	"cogentcore.org/lab/tensorfs"
-	"cogentcore.org/lab/yaegilab/labcoresymbols"
+	"cogentcore.org/lab/yaegilab/labsymbols"
 )
 
 // important: must be run from an interactive terminal.
@@ -30,7 +30,7 @@ func main() {
 
 func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 	b, _ := lab.NewBasicWindow(tensorfs.CurRoot, "Data", in)
-	in.Interp.Use(labcoresymbols.Symbols)
+	in.Interp.Use(labsymbols.Symbols)
 	in.Config()
 	b.AddTopBar(func(bar *core.Frame) {
 		tb := core.NewToolbar(bar)

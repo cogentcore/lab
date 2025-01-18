@@ -12,7 +12,7 @@ import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/yaegicore"
 	"cogentcore.org/lab/goal/interpreter"
-	"cogentcore.org/lab/yaegilab/labcoresymbols"
+	"cogentcore.org/lab/yaegilab/labsymbols"
 	"cogentcore.org/lab/yaegilab/tensorsymbols"
 	"github.com/cogentcore/yaegi/interp"
 )
@@ -39,7 +39,7 @@ func (in *Interpreter) Use(values interp.Exports) error {
 
 func (in *Interpreter) ImportUsed() {
 	errors.Log(in.Use(tensorsymbols.Symbols))
-	errors.Log(in.Use(labcoresymbols.Symbols))
+	errors.Log(in.Use(labsymbols.Symbols))
 	in.Config()
 }
 

@@ -19,7 +19,7 @@ import (
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
-	"cogentcore.org/lab/yaegilab/labcoresymbols"
+	"cogentcore.org/lab/yaegilab/labsymbols"
 )
 
 //go:embed *.csv
@@ -95,7 +95,7 @@ func main() {
 
 func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 	b, _ := lab.NewBasicWindow(tensorfs.CurRoot, "Planets", in)
-	in.Interp.Use(labcoresymbols.Symbols)
+	in.Interp.Use(labsymbols.Symbols)
 	in.Config()
 	b.AddTopBar(func(bar *core.Frame) {
 		tb := core.NewToolbar(bar)
