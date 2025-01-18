@@ -10,7 +10,7 @@ We can [[plot]] **x**:
 
 ```Goal
 fig1 := lab.NewPlot(b)
-fig1.Add(plots.NewLine(plot.NewY(x)))
+fig1.Add(plots.NewPointLine(plot.NewY(x)))
 fig1.Add(plots.NewLine(plot.NewY(#zeros(8)#)))
 ```
 
@@ -35,7 +35,7 @@ for i := range 8 {
     pw.Styler(func(s *styles.Style) {
         s.Min.Y.Dp(100)
     })
-    fig2.Add(plots.NewLine(plot.NewY(v)).Styler(func(s *plot.Style) {
+    fig2.Add(plots.NewPointLine(plot.NewY(v)).Styler(func(s *plot.Style) {
         s.Plot.Axis.On = false
         s.Range.SetMin(-0.5).SetMax(0.5)
     }))
@@ -84,5 +84,5 @@ From **a2**, we can compute and plot **x2**, the approximation of **x** based on
 ```Goal
 # x2 := U @ a2
 plt := lab.NewPlotFrom(fig1, b)
-plt.Add(plots.NewLine(plot.NewY(x2)))
+plt.Add(plots.NewPointLine(plot.NewY(x2)))
 ```

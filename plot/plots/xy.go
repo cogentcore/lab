@@ -66,26 +66,34 @@ func NewXY(data plot.Data) *XY {
 	return ln
 }
 
-// NewLine returns an XY plot drawing Lines by default.
-func NewLine(data plot.Data) *XY {
+// newXYWith is a simple helper function that creates a new XY plotter
+// with lines and/or points.
+func newXYWith(data plot.Data, line, point plot.DefaultOffOn) *XY {
 	ln := NewXY(data)
 	if ln == nil {
 		return ln
 	}
-	ln.Style.Line.On = plot.On
-	ln.Style.Point.On = plot.Off
+	ln.Style.Line.On = line
+	ln.Style.Point.On = point
 	return ln
 }
 
-// NewScatter returns an XY scatter plot drawing Points by default.
+// NewLine returns an XY plot drawing Lines only by default.
+// See also [NewScatter] and [NewPointLine].
+func NewLine(data plot.Data) *XY {
+	return newXYWith(data, plot.On, plot.Off)
+}
+
+// NewScatter returns an XY scatter plot drawing Points only by default.
+// See also [NewLine] and [NewPointLine].
 func NewScatter(data plot.Data) *XY {
-	ln := NewXY(data)
-	if ln == nil {
-		return ln
-	}
-	ln.Style.Line.On = plot.Off
-	ln.Style.Point.On = plot.On
-	return ln
+	return newXYWith(data, plot.Off, plot.On)
+}
+
+// NewPointLine returns an XY plot drawing both lines and points by default.
+// See also [NewLine] and [NewScatter].
+func NewPointLine(data plot.Data) *XY {
+	return newXYWith(data, plot.On, plot.On)
 }
 
 func (ln *XY) Defaults() {

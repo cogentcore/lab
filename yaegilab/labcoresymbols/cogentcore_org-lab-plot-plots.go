@@ -17,6 +17,7 @@ func init() {
 		"NewBar":         reflect.ValueOf(plots.NewBar),
 		"NewLabels":      reflect.ValueOf(plots.NewLabels),
 		"NewLine":        reflect.ValueOf(plots.NewLine),
+		"NewPointLine":   reflect.ValueOf(plots.NewPointLine),
 		"NewScatter":     reflect.ValueOf(plots.NewScatter),
 		"NewXErrorBars":  reflect.ValueOf(plots.NewXErrorBars),
 		"NewXY":          reflect.ValueOf(plots.NewXY),
