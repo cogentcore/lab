@@ -26,14 +26,14 @@ We can plot each column vector of **U**:
 fr := core.NewFrame(b)
 fr.Styler(func(s *styles.Style) {
     s.Direction = styles.Column
-    s.Gap.Zero()
+    s.Gap.Y.Dp(2)
 })
 for i := range 8 {
     # v := U[:, i]
     fig2 := plot.New()
     pw := plotcore.NewPlot(fr).SetPlot(fig2)
     pw.Styler(func(s *styles.Style) {
-        s.Min.Y.Dp(100)
+        s.Min.Y.Dp(80)
     })
     plot.Styler(v, func(s *plot.Style) {
         s.Plot.Axis.On = false
