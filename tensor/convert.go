@@ -251,7 +251,7 @@ func Range(vals Values) (min, max float64, minIndex, maxIndex int) {
 }
 
 // ContainsFloat returns true if source tensor contains any of given vals,
-// using Float value method.
+// using Float value method for comparison.
 func ContainsFloat(tsr, vals Tensor) bool {
 	nv := vals.Len()
 	if nv == 0 {
@@ -259,8 +259,48 @@ func ContainsFloat(tsr, vals Tensor) bool {
 	}
 	n := tsr.Len()
 	for i := range n {
+		tv := tsr.Float1D(i)
 		for j := range nv {
-			if tsr.Float1D(i) == vals.Float1D(j) {
+			if tv == vals.Float1D(j) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// ContainsInt returns true if source tensor contains any of given vals,
+// using Int value method for comparison.
+func ContainsInt(tsr, vals Tensor) bool {
+	nv := vals.Len()
+	if nv == 0 {
+		return false
+	}
+	n := tsr.Len()
+	for i := range n {
+		tv := tsr.Int1D(i)
+		for j := range nv {
+			if tv == vals.Int1D(j) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// ContainsString returns true if source tensor contains any of given vals,
+// using String value method for comparison, and given options for how to
+// compare the strings.
+func ContainsString(tsr, vals Tensor, opts StringMatch) bool {
+	nv := vals.Len()
+	if nv == 0 {
+		return false
+	}
+	n := tsr.Len()
+	for i := range n {
+		tv := tsr.String1D(i)
+		for j := range nv {
+			if opts.Match(tv, vals.String1D(j)) {
 				return true
 			}
 		}
