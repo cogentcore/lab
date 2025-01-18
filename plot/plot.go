@@ -159,13 +159,16 @@ type Plot struct {
 	Title Text
 
 	// Style has the styling properties for the plot.
+	// All end-user configuration should be put in here,
+	// rather than modifying other fields directly on the plot.
 	Style PlotStyle
 
 	// standard text style with default options
 	StandardTextStyle styles.Text
 
 	// X, Y, and Z are the horizontal, vertical, and depth axes
-	// of the plot respectively.
+	// of the plot respectively. These are the actual compiled
+	// state data and should not be used for styling: use Style.
 	X, Y, Z Axis
 
 	// Legend is the plot's legend.
