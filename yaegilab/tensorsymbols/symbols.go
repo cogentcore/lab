@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package labsymbols contains yaegi symbols for lab packages.
-package labsymbols
+// Package tensorsymbols contains yaegi symbols for tensor packages and other base lab packages.
+package tensorsymbols
 
 //go:generate ./make
 
