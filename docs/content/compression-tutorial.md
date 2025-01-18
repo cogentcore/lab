@@ -53,7 +53,7 @@ core.NewText(b).SetText(a.String())
 To compress the data, we will define a function that zeroes all but the *n* elements of **a** with the highest absolute values:
 
 ```Goal
-func compress(a tensor.Tensor, n int) tensor.Tensor {
+func compress(n int) tensor.Tensor {
     sorted := tensor.NewSliced(a)
     sorted.SortFunc(0, func(tsr tensor.Tensor, i, j int) int {
         return cmp.Compare(math.Abs(tsr.Float1D(j)), math.Abs(tsr.Float1D(i)))
@@ -74,7 +74,7 @@ func compress(a tensor.Tensor, n int) tensor.Tensor {
 Then, we will make **a2**, the result of `compress(2)` (so the two most important elements are included):
 
 ```Goal
-a2 := compress(a, 2)
+a2 := compress(2)
 core.NewText(b).SetText(a2.String())
 ```
 
