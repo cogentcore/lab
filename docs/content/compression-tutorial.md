@@ -36,7 +36,7 @@ for i := range 8 {
         s.Min.Y.Dp(100)
     })
     fig2.Add(plots.NewLine(plot.NewY(v)).Styler(func(s *plot.Style) {
-        s.Plot.Axis.NTicks = 0
+        s.Plot.Axis.On = false
         s.Range.SetMin(-0.5).SetMax(0.5)
     }))
     fig2.Add(plots.NewLine(plot.NewY(#zeros(8)#)))

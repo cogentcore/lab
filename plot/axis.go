@@ -39,6 +39,9 @@ const (
 // AxisStyle has style properties for the axis.
 type AxisStyle struct { //types:add -setters
 
+	// On determines whether the axis is rendered.
+	On bool
+
 	// Text has the text style parameters for the text label.
 	Text TextStyle
 
@@ -70,6 +73,7 @@ type AxisStyle struct { //types:add -setters
 }
 
 func (ax *AxisStyle) Defaults() {
+	ax.On = true
 	ax.Line.Defaults()
 	ax.Text.Defaults()
 	ax.Text.Size.Dp(20)
@@ -82,9 +86,10 @@ func (ax *AxisStyle) Defaults() {
 	ax.TickLength.Pt(8)
 }
 
-// Axis represents either a horizontal or vertical
-// axis of a plot.
+// Axis represents either a horizontal or vertical axis of a plot.
+// This is the "internal" data structure and should not be used for styling.
 type Axis struct {
+
 	// Range has the Min, Max range of values for the axis (in raw data units.)
 	Range minmax.F64
 
