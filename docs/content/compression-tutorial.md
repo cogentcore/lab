@@ -53,22 +53,20 @@ core.NewText(b).SetText(a.String())
 To compress the data, we will define a function that zeroes all but the *n* elements of **a** with the highest absolute values:
 
 ```Goal
-// TODO: implement using sort
-slc := tensor.NewSliced(a)
-slc.SortFunc(0, func(tsr tensor.Tensor, dim, i, j int) int {
-    return cmp.Compare(math.Abs(tsr.Float1D(j)), math.Abs(tsr.Float1D(i)))
-})
-sorted := slc.Tensor.(*tensor.Float64)
-compress := func(n int) tensor.Tensor {
-    # top := sorted[:-n]
+func compress(a tensor.Tensor, n int) tensor.Tensor {
+    sorted := tensor.NewSliced(a)
+    sorted.SortFunc(0, func(tsr tensor.Tensor, i, j int) int {
+        return cmp.Compare(math.Abs(tsr.Float1D(j)), math.Abs(tsr.Float1D(i)))
+    })
+    # top := sorted[:n]
     # res := zeros(8)
     for i := range 8 {
-        if slices.Contains(top.Values, #a[i]#) {
+        if tensor.ContainsFloat(top, #a[i]#) {
             # res[i] = a[i]
         } else {
             # res[i] = 0
         }
-    }
+    }    
     return res
 }
 ```
@@ -76,9 +74,10 @@ compress := func(n int) tensor.Tensor {
 Then, we will make **a2**, the result of `compress(2)` (so the two most important elements are included):
 
 ```Goal
-a2 := compress(2)
+a2 := compress(a, 2)
 core.NewText(b).SetText(a2.String())
 ```
+
 
 From **a2**, we can compute and plot **x2**, the approximation of **x** based on the two most important elements of **a**:
 

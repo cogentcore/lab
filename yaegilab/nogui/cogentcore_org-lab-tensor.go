@@ -52,6 +52,7 @@ func init() {
 		"Clone":                   reflect.ValueOf(tensor.Clone),
 		"ColumnMajorStrides":      reflect.ValueOf(tensor.ColumnMajorStrides),
 		"Comma":                   reflect.ValueOf(tensor.Comma),
+		"ContainsFloat":           reflect.ValueOf(tensor.ContainsFloat),
 		"DefaultNumThreads":       reflect.ValueOf(tensor.DefaultNumThreads),
 		"DelimsN":                 reflect.ValueOf(tensor.DelimsN),
 		"DelimsValues":            reflect.ValueOf(tensor.DelimsValues),

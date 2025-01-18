@@ -887,7 +887,7 @@ func (mp *mathParse) callExpr(ex *ast.CallExpr) {
 				return
 			}
 			// todo: dot fun?
-			mp.expr(ex)
+			mp.expr(ex.Fun)
 		}
 	default:
 		mp.expr(ex.Fun)

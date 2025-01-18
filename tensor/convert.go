@@ -249,3 +249,21 @@ func Range(vals Values) (min, max float64, minIndex, maxIndex int) {
 	}
 	return
 }
+
+// ContainsFloat returns true if source tensor contains any of given vals,
+// using Float value method.
+func ContainsFloat(tsr, vals Tensor) bool {
+	nv := vals.Len()
+	if nv == 0 {
+		return false
+	}
+	n := tsr.Len()
+	for i := range n {
+		for j := range nv {
+			if tsr.Float1D(i) == vals.Float1D(j) {
+				return true
+			}
+		}
+	}
+	return false
+}
