@@ -228,13 +228,16 @@ func (ln *XY) Plot(plt *plot.Plot) {
 		pc.Stroke()
 	}
 	if ln.Style.Point.SetStroke(plt) {
+		origWidth := ln.Style.Point.Width
 		origSize := ln.Style.Point.Size
 		for i, ptx := range ln.PX {
 			pty := ln.PY[i]
 			if plt.HighlightPlotter == ln {
 				if i == plt.HighlightIndex {
+					pc.StrokeStyle.Width.Dots *= 2
 					ln.Style.Point.Size.Dots *= 1.5
 				} else {
+					pc.StrokeStyle.Width = origWidth
 					ln.Style.Point.Size = origSize
 				}
 			}
@@ -245,6 +248,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 		op := ln.Style.Point.On
 		origSize := ln.Style.Point.Size
 		ln.Style.Point.On = plot.On
+		ln.Style.Point.Width.Pt(2)
 		ln.Style.Point.Size.Pt(4.5)
 		ln.Style.Point.SetStroke(plt)
 		ptx := ln.PX[plt.HighlightIndex]
