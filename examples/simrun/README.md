@@ -1,16 +1,17 @@
 # simrun: simulation running infrastructure
 
 
+
+
 # Server types
 
 ## Slurm
 
 The slurm backend uses array jobs to distribute computation over many CPU nodes. See `slurm.go` for the relevant code.
 
-
 ## Bare metal
 
-If not using slurm, then the system manages jobs itself, maintaining a record of the jobs launched relative to the resources available.
+If not using slurm, then the [baremetal](../baremetal) system manages jobs itself, maintaining a record of the jobs launched relative to the resources available.
 
 ### Configuring a new "bare metal" linux compute server
 

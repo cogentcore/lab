@@ -379,11 +379,11 @@ func (sl *Sliced) Permuted(dim int) {
 // as these row numbers have already been projected through the indexes.
 // cmp(a, b) should return a negative number when a < b, a positive
 // number when a > b and zero when a == b.
-func (sl *Sliced) SortFunc(dim int, cmp func(tsr Tensor, dim, i, j int) int) {
+func (sl *Sliced) SortFunc(dim int, cmp func(i, j int) int) {
 	sl.IndexesNeeded(dim)
 	ix := sl.Indexes[dim]
 	slices.SortFunc(ix, func(a, b int) int {
-		return cmp(sl.Tensor, dim, a, b) // key point: these are already indirected through indexes!!
+		return cmp(a, b) // key point: these are already indirected through indexes!!
 	})
 	sl.Indexes[dim] = ix
 }

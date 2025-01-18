@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/core"
@@ -54,9 +55,19 @@ func (sr *SimRun) SubmitBare(jid, args string) string {
 
 // WriteBare writes the bash script to run a "bare metal" run.
 func (sr *SimRun) WriteBare(w io.Writer, jid, args string) {
+	if sr.Config.JobScript != "" {
+		js := sr.Config.JobScript
+		strings.ReplaceAll(js, "$JOB_ARGS", args)
+		fmt.Fprintln(w, js)
+		return
+	}
 	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
 
 	fmt.Fprintf(w, "\n\n")
+	if sr.Config.SetupScript != "" {
+		fmt.Fprintln(w, sr.Config.SetupScript)
+	}
+
 	// fmt.Fprintf(w, "go build -mod=mod -tags mpi\n")
 	fmt.Fprintf(w, "go build -mod=mod\n")
 	cmd := `date '+%Y-%m-%d %T %Z' > job.start`

@@ -149,6 +149,22 @@ type Configuration struct {
 
 	// ExtraGoGet is an extra package to do "go get" with, for launching the job.
 	ExtraGoGet string
+
+	// JobScript is a job script to use for running the simulation,
+	// instead of the basic default, if non-empty.
+	// This is written to the job.sbatch file. If it contains a $JOB_ARGS string
+	// then that is replaced with the args entered during submission.
+	// If using slurm, this switches to a simple direct sbatch submission instead
+	// of the default parallel job submission. All standard slurm job parameters
+	// are automatically inserted at the start of the file, so this script should
+	// just be the actual job running actions after that point.
+	JobScript string
+
+	// SetupScript contains optional lines of bash script code to insert at
+	// the start of the job submission script, which is then followed by
+	// the default script. For example, if a symbolic link to a large shared
+	// resource is needed, make that link here.
+	SetupScript string
 	
 	// TimeFormat is the format for timestamps,
 	// defaults to "2006-01-02 15:04:05 MST"
