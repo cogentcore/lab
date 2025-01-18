@@ -79,14 +79,25 @@ a2 := compress(2)
 core.NewText(b).SetText(a2.String())
 ```
 
-
 From **a2**, we can compute and plot **x2**, the approximation of **x** based on the two most important elements of **a**:
 
 ```Goal
 # x2 := U @ a2
-plt := lab.NewPlotFrom(fig1, b)
+fig1a := lab.NewPlotFrom(fig1, b)
 plot.Styler(x2, func(s *plot.Style) {
     s.Point.Shape = plot.Pyramid
 })
-plt.Add(plots.NewPointLine(plot.NewY(x2)))
+fig1a.Add(plots.NewPointLine(plot.NewY(x2)))
+```
+
+We can do the same thing for **a4** and **x4**, with the four most important elements of **a**:
+
+```Goal
+a4 := compress(4)
+# x4 := U @ a4
+fig1b := lab.NewPlotFrom(fig1a, b)
+plot.Styler(x4, func(s *plot.Style) {
+    s.Point.Shape = plot.Cross
+})
+fig1b.Add(plots.NewPointLine(plot.NewY(x4)))
 ```
