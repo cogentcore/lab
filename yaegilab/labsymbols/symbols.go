@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package gui contains yaegi symbols for lab gui packages.
-package gui
+// Package labsymbols contains yaegi symbols for lab packages.
+package labsymbols
 
 //go:generate ./make
 

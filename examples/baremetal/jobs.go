@@ -274,6 +274,13 @@ func (bm *BareMetal) PollJobs() (int, error) {
 	for ji := njobs - 1; ji >= 0; ji-- { // reverse b/c moves jobs to Done
 		job := bm.Active.Values[ji]
 		// fmt.Println("job status:", job.Status, "jobno:", job.ID)
+		if job.Status != Pending && job.Status != Running { // stray job for active
+			job.Status = Completed
+			bm.Done.Add(job.ID, job)
+			bm.Active.DeleteByKey(job.ID)
+			nDone++
+			continue
+		}
 		if job.Status != Running {
 			continue
 		}
@@ -284,14 +291,15 @@ func (bm *BareMetal) PollJobs() (int, error) {
 		}
 		sv.Use()
 		if job.PID == 0 {
-			continue
 			goalrun.Run("cd")
 			goalrun.RunErrOK("cd", job.Path)
 			if !bm.GetJobPID(job) {
 				err := fmt.Errorf("PollJobs: Job %d PID is 0 and could not get it from job.pid file: must cancel manually", job.ID)
 				errs = append(errs, err)
 				goalrun.Run("cd")
-				continue
+				job.Status = Completed
+				bm.JobDone(job, sv)
+				nDone++
 			}
 			goalrun.Run("cd")
 		}

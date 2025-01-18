@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package nogui contains yaegi symbols for lab packages.
-package nogui
+// Package labcoresymbols contains yaegi symbols for lab core packages.
+package labcoresymbols
 
 //go:generate ./make
 

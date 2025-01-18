@@ -26,7 +26,7 @@ import (
 	"cogentcore.org/lab/lab"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensorcore"
-	"cogentcore.org/lab/yaegilab/gui"
+	"cogentcore.org/lab/yaegilab/labcoresymbols"
 	"github.com/cogentcore/yaegi/interp"
 )
 
@@ -138,7 +138,7 @@ func (sr *SimRun) InitSimRun(startDir string) {
 	}
 	in := sr.Interpreter
 	in.Interp.Use(coresymbols.Symbols) // gui imports
-	in.Interp.Use(gui.Symbols)         // gui imports
+	in.Interp.Use(labcoresymbols.Symbols)
 	in.Interp.Use(interp.Exports{
 		"cogentcore.org/lab/lab/lab": map[string]reflect.Value{
 			"LabBrowser": reflect.ValueOf(sr), // our SimRun is available as lab.Lab

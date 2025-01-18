@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/yaegilab/nogui"
+	"cogentcore.org/lab/yaegilab/labsymbols"
 )
 
 func init() {
@@ -24,7 +24,7 @@ var yaegiTensorPackages = []string{"/lab/tensor", "/lab/stats", "/lab/vector", "
 // properly convert symbols to either tensors or basic literals,
 // depending on the arg types for the current function.
 func AddYaegiTensorFuncs() {
-	for pth, symap := range nogui.Symbols {
+	for pth, symap := range labsymbols.Symbols {
 		has := false
 		for _, p := range yaegiTensorPackages {
 			if strings.Contains(pth, p) {

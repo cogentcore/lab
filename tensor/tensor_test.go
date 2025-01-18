@@ -574,7 +574,7 @@ func TestSortFilter(t *testing.T) {
 
 	raw := NewFloat64FromValues(0.8, 0.2, 0.4, 0.7)
 	slc := NewSliced(raw)
-	slc.SortFunc(0, func(tsr Tensor, dim, i, j int) int {
+	slc.SortFunc(0, func(tsr Tensor, i, j int) int {
 		return cmp.Compare(tsr.Float1D(i), tsr.Float1D(j))
 	})
 	res := `[4] 0.2 0.4 0.7 0.8 
