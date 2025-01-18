@@ -40,6 +40,7 @@ type PointStyle struct { //types:add -setters
 }
 
 func (ps *PointStyle) Defaults() {
+	ps.Shape = Circle
 	ps.Color = colors.Scheme.OnSurface
 	ps.Fill = colors.Scheme.OnSurface
 	ps.Width.Pt(1)
