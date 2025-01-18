@@ -163,7 +163,7 @@ func (pl *Editor) SetSlice(sl any, stylers ...func(s *plot.Style)) *Editor {
 	}
 	mx := min(dt.NumColumns(), len(stylers))
 	for i := range mx {
-		plot.SetStyle(dt.Columns.Values[i], stylers[i])
+		plot.SetStyler(dt.Columns.Values[i], stylers[i])
 	}
 	return pl.SetTable(dt)
 }
@@ -346,7 +346,7 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 	for ci, cl := range pl.table.Columns.Values {
 		cnm := pl.table.Columns.Keys[ci]
 		tree.AddAt(p, cnm, func(w *core.Frame) {
-			psty := plot.GetStyle(cl)
+			psty := plot.GetStylers(cl)
 			cst, mods := pl.defaultColumnStyle(cl, ci, &colorIdx, psty)
 			stys := psty
 			stys.Add(func(s *plot.Style) {
@@ -354,7 +354,7 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 				errors.Log(reflectx.CopyFields(s, cst, mf...))
 				errors.Log(reflectx.CopyFields(&s.Plot, &pl.PlotStyle, modFields(pl.plotStyleModified)...))
 			})
-			plot.SetStyle(cl, stys...)
+			plot.SetStyler(cl, stys...)
 
 			w.Styler(func(s *styles.Style) {
 				s.CenterAll()
@@ -492,7 +492,7 @@ func (pl *Editor) plotStyleFromTable(dt *table.Table) {
 	tst.Defaults()
 	tst.Plot.Defaults()
 	for _, cl := range pl.table.Columns.Values {
-		stl := plot.GetStyle(cl)
+		stl := plot.GetStylers(cl)
 		if stl == nil {
 			continue
 		}

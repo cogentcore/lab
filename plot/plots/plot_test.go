@@ -62,7 +62,7 @@ func ExampleStylerMetadata() {
 		ty.SetFloat1D(50.0+40*math.Sin((float64(i)/8)*math.Pi), i)
 	}
 	// attach stylers to the Y axis data: that is where plotter looks for it
-	plot.SetStyle(ty, func(s *plot.Style) {
+	plot.SetStyler(ty, func(s *plot.Style) {
 		s.Plot.Title = "Test Line"
 		s.Plot.XAxis.Label = "X Axis"
 		s.Plot.YAxisLabel = "Y Axis"
@@ -102,7 +102,7 @@ func ExampleTable() {
 		s.Plot.Scale = 2
 		s.Plot.SetLinesOn(plot.On).SetPointsOn(plot.Off)
 	}
-	plot.SetStyle(ty, genst, func(s *plot.Style) {
+	plot.SetStyler(ty, genst, func(s *plot.Style) {
 		s.On = true
 		s.Plotter = "XY"
 		s.Role = plot.Y
@@ -110,15 +110,15 @@ func ExampleTable() {
 		s.Range.SetMin(0).SetMax(100)
 	})
 	// others get basic styling
-	plot.SetStyle(tx, func(s *plot.Style) {
+	plot.SetStyler(tx, func(s *plot.Style) {
 		s.Role = plot.X
 	})
-	plot.SetStyle(th, func(s *plot.Style) {
+	plot.SetStyler(th, func(s *plot.Style) {
 		s.On = true
 		s.Plotter = "YErrorBars"
 		s.Role = plot.High
 	})
-	plot.SetStyle(lbls, func(s *plot.Style) {
+	plot.SetStyler(lbls, func(s *plot.Style) {
 		s.On = true
 		s.Plotter = "Labels"
 		s.Role = plot.Label
@@ -480,7 +480,7 @@ func TestStyle(t *testing.T) {
 
 	plt = plot.New()
 	tdy := tensor.NewFloat64FromValues(data[plot.Y].(plot.Values)...)
-	plot.SetStyle(tdy, stf) // set metadata for tensor
+	plot.SetStyler(tdy, stf) // set metadata for tensor
 	tdx := tensor.NewFloat64FromValues(data[plot.X].(plot.Values)...)
 	// NewLine auto-grabs from Y metadata
 	l1 = NewLine(plot.Data{plot.X: tdx, plot.Y: tdy})
@@ -541,34 +541,34 @@ func TestTable(t *testing.T) {
 			s.Point.Color = colors.Uniform(colors.Blue)
 			s.Range.SetMin(0).SetMax(100)
 		}
-		plot.SetStyle(ty, genst, func(s *plot.Style) {
+		plot.SetStyler(ty, genst, func(s *plot.Style) {
 			s.On = true
 			s.Role = plot.Y
 			s.Group = "Y"
 		})
 		// others get basic styling
-		plot.SetStyle(tx, func(s *plot.Style) {
+		plot.SetStyler(tx, func(s *plot.Style) {
 			s.Role = plot.X
 			s.Group = "Y"
 		})
-		plot.SetStyle(tl, func(s *plot.Style) {
+		plot.SetStyler(tl, func(s *plot.Style) {
 			s.Role = plot.Low
 			s.Group = "Y"
 		})
-		plot.SetStyle(th, genst, func(s *plot.Style) {
+		plot.SetStyler(th, genst, func(s *plot.Style) {
 			s.On = true
 			s.Role = plot.High
 			s.Group = "Y"
 		})
-		plot.SetStyle(ts, func(s *plot.Style) {
+		plot.SetStyler(ts, func(s *plot.Style) {
 			s.Role = plot.Size
 			s.Group = "Y"
 		})
-		plot.SetStyle(tc, func(s *plot.Style) {
+		plot.SetStyler(tc, func(s *plot.Style) {
 			s.Role = plot.Color
 			s.Group = "Y"
 		})
-		plot.SetStyle(lbls, genst, func(s *plot.Style) {
+		plot.SetStyler(lbls, genst, func(s *plot.Style) {
 			s.On = true
 			s.Role = plot.Label
 			s.Group = "Y"

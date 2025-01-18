@@ -138,38 +138,38 @@ func (st *Stylers) NewStyle(ps *PlotStyle) *Style {
 	return s
 }
 
-// SetStyle sets the [Stylers] function(s) into given object's [metadata].
+// SetStyler sets the [Stylers] function(s) into given object's [metadata].
 // This overwrites any existing styler functions. The [plotcore.Editor]
 // depends on adding a styler function on top of any existing ones,
 // so it is better to use [SetFirstStyle] if that is being used.
-func SetStyle(obj any, st ...func(s *Style)) {
+func SetStyler(obj any, st ...func(s *Style)) {
 	metadata.Set(obj, "PlotStylers", Stylers(st))
 }
 
-// GetStyle returns [Stylers] functions from given object's [metadata].
+// GetStylers returns [Stylers] functions from given object's [metadata].
 // Returns nil if none or no metadata.
-func GetStyle(obj any) Stylers {
+func GetStylers(obj any) Stylers {
 	st, _ := metadata.Get[Stylers](obj, "PlotStylers")
 	return st
 }
 
-// SetFirstStyle sets the [Styler] function into given object's [metadata],
+// SetFirstStyler sets the [Styler] function into given object's [metadata],
 // only if there are no other stylers present. This is important for cases
 // where code may be run multiple times on the same object, and you don't want
 // to add multiple redundant style functions (and [plotcore.Editor] is being used).
-func SetFirstStyle(obj any, f func(s *Style)) {
-	st := GetStyle(obj)
+func SetFirstStyler(obj any, f func(s *Style)) {
+	st := GetStylers(obj)
 	if len(st) > 0 {
 		return
 	}
 	metadata.Set(obj, "PlotStylers", Stylers{f})
 }
 
-// AddStyle adds the given [Styler] function into given object's [metadata].
-func AddStyle(obj any, f func(s *Style)) {
-	st := GetStyle(obj)
+// Styler adds the given [Styler] function into given object's [metadata].
+func Styler(obj any, f func(s *Style)) {
+	st := GetStylers(obj)
 	st.Add(f)
-	SetStyle(obj, st...)
+	SetStyler(obj, st...)
 }
 
 // GetStylersFromData returns [Stylers] from given role
@@ -180,7 +180,7 @@ func GetStylersFromData(data Data, role Roles) Stylers {
 	if !ok {
 		return nil
 	}
-	return GetStyle(vr)
+	return GetStylers(vr)
 }
 
 ////////

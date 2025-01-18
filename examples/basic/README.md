@@ -19,7 +19,7 @@ lab.Lab.Plot("plot", plt)
 ## Attach some styling to the plot data
 
 ```Go
-plot.SetStyle(x, func(s *plot.Style) {
+plot.SetStyler(x, func(s *plot.Style) {
 	s.Plot.Title = "Test Line"
 	s.Plot.XAxis.Label = "X Axis"
 	s.Line.Color = colors.Uniform(colors.Red)

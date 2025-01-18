@@ -32,7 +32,7 @@ func TestTableEditor(t *testing.T) {
 		s.Plot.PointsOn = plot.On
 	}
 	perr := epc.Column("PctErr")
-	plot.SetStyle(perr, pst, func(s *plot.Style) {
+	plot.SetStyler(perr, pst, func(s *plot.Style) {
 		s.On = true
 		s.Role = plot.Y
 	})
