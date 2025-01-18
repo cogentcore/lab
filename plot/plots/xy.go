@@ -197,7 +197,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 
 	if ln.Style.Line.SetStroke(plt) {
 		if plt.HighlightPlotter == ln {
-			pc.StrokeStyle.Width.Dots *= 1.5
+			pc.StrokeStyle.Width.Dots *= 2
 		}
 		prevX, prevY := ln.PX[0], ln.PY[0]
 		pc.MoveTo(prevX, prevY)
@@ -228,26 +228,30 @@ func (ln *XY) Plot(plt *plot.Plot) {
 		pc.Stroke()
 	}
 	if ln.Style.Point.SetStroke(plt) {
-		origWidth := pc.StrokeStyle.Width.Dots
+		origSize := ln.Style.Point.Size
 		for i, ptx := range ln.PX {
 			pty := ln.PY[i]
 			if plt.HighlightPlotter == ln {
 				if i == plt.HighlightIndex {
-					pc.StrokeStyle.Width.Dots *= 1.5
+					ln.Style.Point.Size.Dots *= 1.5
 				} else {
-					pc.StrokeStyle.Width.Dots = origWidth
+					ln.Style.Point.Size = origSize
 				}
 			}
 			ln.Style.Point.DrawShape(pc, math32.Vec2(ptx, pty))
 		}
+		ln.Style.Point.Size = origSize
 	} else if plt.HighlightPlotter == ln {
 		op := ln.Style.Point.On
+		origSize := ln.Style.Point.Size
 		ln.Style.Point.On = plot.On
+		ln.Style.Point.Size.Pt(4.5)
 		ln.Style.Point.SetStroke(plt)
 		ptx := ln.PX[plt.HighlightIndex]
 		pty := ln.PY[plt.HighlightIndex]
 		ln.Style.Point.DrawShape(pc, math32.Vec2(ptx, pty))
 		ln.Style.Point.On = op
+		ln.Style.Point.Size = origSize
 	}
 	pc.FillStyle.Color = nil
 }
