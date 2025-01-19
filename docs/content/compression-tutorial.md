@@ -101,3 +101,25 @@ plot.Styler(x4, func(s *plot.Style) {
 })
 fig1b.Add(plots.NewPointLine(plot.NewY(x4)))
 ```
+
+We can also compute **x8**, which just uses **a** without anything removed:
+
+```Goal
+# x8 := U @ a
+```
+
+We can find the error of **x8** relative to **x**, which is very small since nothing is compressed:
+
+```Goal
+func relativeError(y tensor.Tensor) tensor.Tensor {
+    # return sqrt(stats.Sum((x-y)**2)/stats.Sum(x**2))
+}
+core.NewText(b).SetText("x8 error: "+relativeError(x8).String())
+```
+
+We can do the same for **x4** and **x2**:
+
+```Goal
+core.NewText(b).SetText("x4 error: "+relativeError(x4).String())
+core.NewText(b).SetText("x2 error: "+relativeError(x2).String())
+```
