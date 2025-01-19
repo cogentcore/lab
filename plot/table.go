@@ -7,10 +7,15 @@ package plot
 import (
 	"fmt"
 	"reflect"
+	"slices"
 
 	"cogentcore.org/core/base/errors"
+	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/reflectx"
+	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/table"
+	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensorfs"
 	"golang.org/x/exp/maps"
 )
 
@@ -26,6 +31,8 @@ import (
 //     then Group can be empty and all other such columns will be grouped.
 //   - Plotter: Determines the type of Plotter element to use, which in turn
 //     determines the additional Roles that can be used within a Group.
+//
+// Returns nil if no valid plot elements were present.
 func NewTablePlot(dt *table.Table) (*Plot, error) {
 	nc := len(dt.Columns.Values)
 	if nc == 0 {
@@ -64,16 +71,29 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 			errs = append(errs, errors.New("XAxis.Column name not found: "+psty.XAxis.Column))
 		}
 	}
+
+	type pitem struct {
+		pt   *PlotterType
+		data Data
+		lbl  string
+		ci   int
+	}
+	var ptrs []*pitem // accumulate in case of grouping
+
 	doneGps := map[string]bool{}
-	plt := New()
-	var legends []Thumbnailer // candidates for legend adding -- only add if > 1
-	var legLabels []string
-	var barCols []int  // column indexes of bar plots
-	var barPlots []int // plotter indexes of bar plots
+	var split tensor.Values
+
 	for ci, cl := range dt.Columns.Values {
 		cnm := dt.Columns.Keys[ci]
 		st := csty[ci]
 		if !st.On || st.Role == X {
+			continue
+		}
+		if st.Role == Split {
+			if split != nil {
+				errs = append(errs, errors.New("NewTablePlot: Only 1 Split role can be defined, using the first one"))
+			}
+			split = cl
 			continue
 		}
 		lbl := cnm
@@ -165,17 +185,84 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		if gotX >= 0 {
 			xidxs[gotX] = true
 		}
-		pl := pt.New(data)
+		ptrs = append(ptrs, &pitem{pt: pt, data: data, lbl: lbl, ci: ci})
+	}
+
+	if len(ptrs) == 0 {
+		return nil, errors.Join(errs...)
+	}
+
+	plt := New()
+	var barCols []int  // column indexes of bar plots
+	var barPlots []int // plotter indexes of bar plots
+
+	// do splits here, make a new list of ptrs
+	if split != nil {
+		spnm := metadata.Name(split)
+		if spnm == "" {
+			spnm = "0"
+		}
+
+		dir := errors.Log1(tensorfs.NewDir("TablePlot"))
+		err := stats.Groups(dir, split)
+		if err != nil {
+			errs = append(errs, err) // todo maybe bail here
+		}
+		sdir := dir.Dir("Groups").Dir(spnm)
+		gps := errors.Log1(sdir.Values())
+
+		// generate tensor.Rows indexed views of the original data
+		// for each unique element in pt.data.* -- the x axis is shared
+		// so we need a map to just do this once.
+		// [gp][pt.data.*]sliced
+		subd := make(map[tensor.Tensor]map[tensor.Values]*tensor.Rows)
+		for _, gp := range gps {
+			sv := make(map[tensor.Values]*tensor.Rows)
+			idxs := slices.Clone(gp.(*tensor.Int).Values)
+			for _, pt := range ptrs {
+				for _, dd := range pt.data {
+					dv := dd.(tensor.Values)
+					rv, ok := sv[dv]
+					if !ok {
+						rv = tensor.NewRows(dv, idxs...)
+					}
+					sv[dv] = rv
+				}
+			}
+			subd[gp] = sv
+		}
+
+		// now go in plotter item order, then groups within, and make the new
+		// plot items
+		nptrs := make([]*pitem, 0, len(gps)*len(ptrs))
+		for _, pt := range ptrs {
+			for _, gp := range gps {
+				nd := Data{}
+				for rl, dd := range pt.data {
+					dv := dd.(tensor.Values)
+					rv := subd[gp][dv]
+					nd[rl] = rv
+				}
+				npt := *pt
+				npt.data = nd
+				npt.lbl = metadata.Name(gp) + " " + pt.lbl
+				nptrs = append(nptrs, &npt)
+			}
+		}
+		ptrs = nptrs
+	}
+
+	for _, pt := range ptrs {
+		pl := pt.pt.New(pt.data)
 		if reflectx.IsNil(reflect.ValueOf(pl)) {
-			err = fmt.Errorf("plot.NewTablePlot: error in creating plotter type: %q", ptyp)
+			err := fmt.Errorf("plot.NewTablePlot: error in creating plotter type: %q", ptyp)
 			errs = append(errs, err)
 			continue
 		}
 		plt.Add(pl)
 		if !st.NoLegend {
 			if tn, ok := pl.(Thumbnailer); ok {
-				legends = append(legends, tn)
-				legLabels = append(legLabels, lbl)
+				plt.Legend.Add(pt.lbl, tn)
 			}
 		}
 		if ptyp == "Bar" {
@@ -183,11 +270,9 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 			barPlots = append(barPlots, len(plt.Plotters)-1)
 		}
 	}
-	if len(legends) > 1 {
-		for i, l := range legends {
-			plt.Legend.Add(legLabels[i], l)
-		}
-	}
+
+	// Get XAxis label from actual x axis.
+	// todo: probably range from here too.
 	if psty.XAxis.Label == "" && len(xidxs) == 1 {
 		xi := maps.Keys(xidxs)[0]
 		lbl := dt.Columns.Keys[xi]
@@ -203,6 +288,8 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 			}
 		}
 	}
+
+	// Set bar spacing based on total number of bars present.
 	nbar := len(barCols)
 	if nbar > 1 {
 		sz := 1.0 / (float64(nbar) + 0.5)

@@ -109,10 +109,14 @@ func (lb *Labels) Plot(plt *plot.Plot) {
 	ltxt.Defaults()
 	ltxt.Style = *st
 	ltxt.ToDots(uc)
+	nskip := lb.Style.LabelSkip
+	skip := nskip // start with label
 	for i, label := range lb.Labels {
-		if label == "" {
+		if label == "" || skip != nskip {
+			skip++
 			continue
 		}
+		skip = 0
 		ltxt.Text = label
 		ltxt.Config(plt)
 		tht := ltxt.PaintText.BBox.Size().Y

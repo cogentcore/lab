@@ -50,6 +50,10 @@ type Style struct { //types:add -setters
 	// NTicks sets the desired number of ticks for the axis, if > 0.
 	NTicks int
 
+	// LabelSkip is the number of data points to skip between Labels.
+	// 0 means plot the Label at every point.
+	LabelSkip int
+
 	// Line has style properties for drawing lines.
 	Line LineStyle `display:"add-fields"`
 

@@ -83,8 +83,15 @@ const (
 	// Color controls the color of points or other elements.
 	Color
 
-	// Label renders a label, typically from string data, but can also be used for values.
+	// Label renders a label, typically from string data,
+	// but can also be used for values.
 	Label
+
+	// Split is a special role for table-based plots. The
+	// unique values of this data are used to split the other
+	// plot data into groups, with each group added to the legend.
+	// A different default color will be used for each such group.
+	Split
 )
 
 // CheckFloats returns an error if any of the arguments are Infinity.
