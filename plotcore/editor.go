@@ -471,6 +471,8 @@ func (pl *Editor) defaultColumnStyle(cl tensor.Values, ci int, colorIdx *int, ps
 			mods["Line.Color"] = true
 			cst.Point.Color = spclr
 			mods["Point.Color"] = true
+			cst.Point.Fill = spclr
+			mods["Point.Color"] = true
 			if cst.Plotter == plots.BarType {
 				cst.Line.Fill = spclr
 				mods["Line.Fill"] = true

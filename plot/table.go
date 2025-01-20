@@ -6,12 +6,14 @@ package plot
 
 import (
 	"fmt"
+	"image"
 	"reflect"
 	"slices"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/reflectx"
+	"cogentcore.org/core/colors"
 	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
@@ -78,6 +80,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		data Data
 		lbl  string
 		ci   int
+		clr  image.Image // if set, set styler
 	}
 	var ptrs []*pitem // accumulate in case of grouping
 
@@ -239,6 +242,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		// plot items
 		nptrs := make([]*pitem, 0, len(gps)*len(ptrs))
 		nLegends = len(gps) * nLegends
+		idx := 0
 		for _, pt := range ptrs {
 			for _, gp := range gps {
 				nd := Data{}
@@ -248,9 +252,11 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 					nd[rl] = rv
 				}
 				npt := *pt
+				pt.clr = colors.Uniform(colors.Spaced(idx))
 				npt.data = nd
 				npt.lbl = metadata.Name(gp) + " " + pt.lbl
 				nptrs = append(nptrs, &npt)
+				idx++
 			}
 		}
 		ptrs = nptrs
@@ -264,6 +270,13 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 			err := fmt.Errorf("plot.NewTablePlot: error in creating plotter type: %q", pt.ptyp)
 			errs = append(errs, err)
 			continue
+		}
+		if pt.clr != nil {
+			pl.Stylers().Add(func(s *Style) {
+				s.Line.Color = pt.clr
+				s.Point.Color = pt.clr
+				s.Point.Fill = pt.clr
+			})
 		}
 		plt.Add(pl)
 		st := csty[pt.ci]
