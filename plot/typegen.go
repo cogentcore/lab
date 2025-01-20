@@ -389,6 +389,8 @@ var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.Stylers", IDNam
 
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.DefaultOffOn", IDName: "default-off-on", Doc: "DefaultOffOn specifies whether to use the default value for a bool option,\nor to override the default and set Off or On."})
 
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.pitem", IDName: "pitem", Fields: []types.Field{{Name: "ptyp"}, {Name: "pt"}, {Name: "data"}, {Name: "lbl"}, {Name: "ci"}}})
+
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.TextStyle", IDName: "text-style", Doc: "TextStyle specifies styling parameters for Text elements.", Directives: []types.Directive{{Tool: "types", Directive: "add", Args: []string{"-setters"}}}, Fields: []types.Field{{Name: "Size", Doc: "Size of font to render. Default is 16dp"}, {Name: "Family", Doc: "Family name for font (inherited): ordered list of comma-separated names\nfrom more general to more specific to use. Use split on, to parse."}, {Name: "Color", Doc: "Color of text."}, {Name: "Align", Doc: "Align specifies how to align text along the relevant\ndimension for the text element."}, {Name: "Padding", Doc: "Padding is used in a case-dependent manner to add\nspace around text elements."}, {Name: "Rotation", Doc: "Rotation of the text, in degrees."}, {Name: "Offset", Doc: "Offset is added directly to the final label location."}}})
 
 // SetSize sets the [TextStyle.Size]:

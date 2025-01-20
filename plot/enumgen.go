@@ -54,11 +54,11 @@ var _RolesValues = []Roles{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
 // RolesN is the highest valid value for type Roles, plus one.
 const RolesN Roles = 13
 
-var _RolesValueMap = map[string]Roles{`NoRole`: 0, `X`: 1, `Y`: 2, `Z`: 3, `U`: 4, `V`: 5, `W`: 6, `Low`: 7, `High`: 8, `Size`: 9, `Color`: 10, `Label`: 11, `Group`: 12}
+var _RolesValueMap = map[string]Roles{`NoRole`: 0, `X`: 1, `Y`: 2, `Z`: 3, `U`: 4, `V`: 5, `W`: 6, `Low`: 7, `High`: 8, `Size`: 9, `Color`: 10, `Label`: 11, `Split`: 12}
 
-var _RolesDescMap = map[Roles]string{0: `NoRole is the default no-role specified case.`, 1: `X axis`, 2: `Y axis`, 3: `Z axis`, 4: `U is the X component of a vector or first quartile in Box plot, etc.`, 5: `V is the Y component of a vector or third quartile in a Box plot, etc.`, 6: `W is the Z component of a vector`, 7: `Low is a lower error bar or region.`, 8: `High is an upper error bar or region.`, 9: `Size controls the size of points etc.`, 10: `Color controls the color of points or other elements.`, 11: `Label renders a label, typically from string data, but can also be used for values.`, 12: `Group is a special role for table-based plots. The unique values of this data are used to split the other plot data into groups, with each group added to the legend. A different default color will be used for each such group.`}
+var _RolesDescMap = map[Roles]string{0: `NoRole is the default no-role specified case.`, 1: `X axis`, 2: `Y axis`, 3: `Z axis`, 4: `U is the X component of a vector or first quartile in Box plot, etc.`, 5: `V is the Y component of a vector or third quartile in a Box plot, etc.`, 6: `W is the Z component of a vector`, 7: `Low is a lower error bar or region.`, 8: `High is an upper error bar or region.`, 9: `Size controls the size of points etc.`, 10: `Color controls the color of points or other elements.`, 11: `Label renders a label, typically from string data, but can also be used for values.`, 12: `Split is a special role for table-based plots. The unique values of this data are used to split the other plot data into groups, with each group added to the legend. A different default color will be used for each such group.`}
 
-var _RolesMap = map[Roles]string{0: `NoRole`, 1: `X`, 2: `Y`, 3: `Z`, 4: `U`, 5: `V`, 6: `W`, 7: `Low`, 8: `High`, 9: `Size`, 10: `Color`, 11: `Label`, 12: `Group`}
+var _RolesMap = map[Roles]string{0: `NoRole`, 1: `X`, 2: `Y`, 3: `Z`, 4: `U`, 5: `V`, 6: `W`, 7: `Low`, 8: `High`, 9: `Size`, 10: `Color`, 11: `Label`, 12: `Split`}
 
 // String returns the string representation of this Roles value.
 func (i Roles) String() string { return enums.String(i, _RolesMap) }
