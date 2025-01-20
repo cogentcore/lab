@@ -73,6 +73,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 	}
 
 	type pitem struct {
+		ptyp string
 		pt   *PlotterType
 		data Data
 		lbl  string
@@ -82,6 +83,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 
 	doneGps := map[string]bool{}
 	var split tensor.Values
+	nLegends := 0
 
 	for ci, cl := range dt.Columns.Values {
 		cnm := dt.Columns.Keys[ci]
@@ -186,6 +188,9 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 			xidxs[gotX] = true
 		}
 		ptrs = append(ptrs, &pitem{pt: pt, data: data, lbl: lbl, ci: ci})
+		if !st.NoLegend {
+			nLegends++
+		}
 	}
 
 	if len(ptrs) == 0 {
@@ -193,8 +198,6 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 	}
 
 	plt := New()
-	var barCols []int  // column indexes of bar plots
-	var barPlots []int // plotter indexes of bar plots
 
 	// do splits here, make a new list of ptrs
 	if split != nil {
@@ -235,6 +238,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		// now go in plotter item order, then groups within, and make the new
 		// plot items
 		nptrs := make([]*pitem, 0, len(gps)*len(ptrs))
+		nLegends = len(gps) * nLegends
 		for _, pt := range ptrs {
 			for _, gp := range gps {
 				nd := Data{}
@@ -252,21 +256,24 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		ptrs = nptrs
 	}
 
+	var barCols []int  // column indexes of bar plots
+	var barPlots []int // plotter indexes of bar plots
 	for _, pt := range ptrs {
 		pl := pt.pt.New(pt.data)
 		if reflectx.IsNil(reflect.ValueOf(pl)) {
-			err := fmt.Errorf("plot.NewTablePlot: error in creating plotter type: %q", ptyp)
+			err := fmt.Errorf("plot.NewTablePlot: error in creating plotter type: %q", pt.ptyp)
 			errs = append(errs, err)
 			continue
 		}
 		plt.Add(pl)
-		if !st.NoLegend {
+		st := csty[pt.ci]
+		if !st.NoLegend && nLegends > 1 {
 			if tn, ok := pl.(Thumbnailer); ok {
 				plt.Legend.Add(pt.lbl, tn)
 			}
 		}
-		if ptyp == "Bar" {
-			barCols = append(barCols, ci)
+		if pt.ptyp == "Bar" {
+			barCols = append(barCols, pt.ci)
 			barPlots = append(barPlots, len(plt.Plotters)-1)
 		}
 	}
