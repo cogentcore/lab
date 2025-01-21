@@ -10,8 +10,8 @@ We can [[plot]] **x**:
 
 ```Goal
 fig1 := lab.NewPlot(b)
-fig1.Add(plots.NewPointLine(plot.NewY(x)))
-fig1.Add(plots.NewLine(plot.NewY(#zeros(8)#)))
+plots.NewPointLine(fig1, x)
+plots.NewLine(fig1, #zeros(8)#)
 ```
 
 We can add in our precomputed orthogonal matrix, **U**, which will serve as our new basis for **x**.
@@ -39,8 +39,8 @@ for i := range 8 {
         s.Plot.Axis.On = false
         s.Range.SetMin(-0.5).SetMax(0.5)
     })
-    fig2.Add(plots.NewPointLine(plot.NewY(v)))
-    fig2.Add(plots.NewLine(plot.NewY(#zeros(8)#)))
+    plots.NewPointLine(fig2, v)
+    plots.NewLine(fig2, #zeros(8)#)
 }
 ```
 
@@ -88,7 +88,7 @@ fig1a := lab.NewPlotFrom(fig1, b)
 plot.Styler(x2, func(s *plot.Style) {
     s.Point.Shape = plot.Pyramid
 })
-fig1a.Add(plots.NewPointLine(plot.NewY(x2)))
+plots.NewPointLine(fig1a, x2)
 ```
 
 We can do the same thing for **a4** and **x4**, with the four most important elements of **a**:
@@ -102,7 +102,7 @@ fig1b := lab.NewPlotFrom(fig1a, b)
 plot.Styler(x4, func(s *plot.Style) {
     s.Point.Shape = plot.Cross
 })
-fig1b.Add(plots.NewPointLine(plot.NewY(x4)))
+plots.NewPointLine(fig1b, x4)
 ```
 
 We can also compute **x8**, which just uses **a** without anything removed:
