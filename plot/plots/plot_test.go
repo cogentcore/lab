@@ -33,7 +33,7 @@ func ExampleLine() {
 	}
 	data := plot.Data{plot.X: xd, plot.Y: yd}
 	plt := plot.New()
-	plt.Add(NewLine(data).Styler(func(s *plot.Style) {
+	NewLine(plt, data).Styler(func(s *plot.Style) {
 		s.Plot.Title = "Test Line"
 		s.Plot.XAxis.Label = "X Axis"
 		s.Plot.YAxisLabel = "Y Axis"
@@ -49,7 +49,7 @@ func ExampleLine() {
 		s.Line.Color = colors.Uniform(colors.Red)
 		s.Point.Color = colors.Uniform(colors.Blue)
 		s.Range.SetMin(0).SetMax(100)
-	}))
+	})
 	plt.Draw()
 	imagex.Save(plt.Pixels, "testdata/ex_line_plot.png")
 	// Output:
@@ -78,7 +78,7 @@ func ExampleStylerMetadata() {
 
 	plt := plot.New()
 	// NewLine automatically gets stylers from ty tensor metadata
-	plt.Add(NewLine(plot.Data{plot.X: tx, plot.Y: ty}))
+	NewLine(plt, plot.Data{plot.X: tx, plot.Y: ty})
 	plt.Draw()
 	imagex.Save(plt.Pixels, "testdata/ex_styler_metadata.png")
 	// Output:
@@ -197,11 +197,10 @@ func TestLine(t *testing.T) {
 	plt.Y.Range.Max = 100
 	plt.Y.Label.Text = "Y Axis"
 
-	l1 := NewLine(data)
+	l1 := NewLine(plt, data)
 	if l1 == nil {
 		t.Error("bad data")
 	}
-	plt.Add(l1)
 	plt.Legend.Add("Sine", l1)
 	plt.Legend.Add("Cos", l1)
 
@@ -244,11 +243,10 @@ func TestScatter(t *testing.T) {
 	plt.Y.Range.Max = 100
 	plt.Y.Label.Text = "Y Axis"
 
-	l1 := NewScatter(data)
+	l1 := NewScatter(plt, data)
 	if l1 == nil {
 		t.Error("bad data")
 	}
-	plt.Add(l1)
 
 	plt.Resize(image.Point{640, 480})
 
@@ -279,21 +277,19 @@ func TestLabels(t *testing.T) {
 	data[plot.Y] = yd
 	data[plot.Label] = labels
 
-	l1 := NewLine(data)
+	l1 := NewLine(plt, data)
 	if l1 == nil {
 		t.Error("bad data")
 	}
 	l1.Style.Point.On = plot.On
-	plt.Add(l1)
 	plt.Legend.Add("Sine", l1)
 
-	l2 := NewLabels(data)
+	l2 := NewLabels(plt, data)
 	if l2 == nil {
 		t.Error("bad data")
 	}
 	l2.Style.Text.Offset.X.Dp(6)
 	l2.Style.Text.Offset.Y.Dp(-6)
-	plt.Add(l2)
 
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
@@ -311,19 +307,18 @@ func TestBar(t *testing.T) {
 	data := sinData()
 	cos := cosData()
 
-	l1 := NewBar(data)
+	l1 := NewBar(plt, data)
 	if l1 == nil {
 		t.Error("bad data")
 	}
 	l1.Style.Line.Fill = colors.Uniform(colors.Red)
-	plt.Add(l1)
 	plt.Legend.Add("Sine", l1)
 
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
 	imagex.Assert(t, plt.Pixels, "bar.png")
 
-	l2 := NewBar(cos)
+	l2 := NewBar(plt, cos)
 	if l2 == nil {
 		t.Error("bad data")
 	}
@@ -334,7 +329,6 @@ func TestBar(t *testing.T) {
 	l2.Style.Width.Stride = 2
 	l2.Style.Width.Offset = 2
 
-	plt.Add(l2)
 	plt.Draw()
 	imagex.Assert(t, plt.Pixels, "bar-cos.png")
 }
@@ -351,12 +345,11 @@ func TestBarErr(t *testing.T) {
 	cos := cosData()
 	data[plot.High] = cos[plot.Y]
 
-	l1 := NewBar(data)
+	l1 := NewBar(plt, data)
 	if l1 == nil {
 		t.Error("bad data")
 	}
 	l1.Style.Line.Fill = colors.Uniform(colors.Red)
-	plt.Add(l1)
 	plt.Legend.Add("Sine", l1)
 
 	plt.Resize(image.Point{640, 480})
@@ -382,21 +375,19 @@ func TestBarStack(t *testing.T) {
 	data := sinData()
 	cos := cosData()
 
-	l1 := NewBar(data)
+	l1 := NewBar(plt, data)
 	if l1 == nil {
 		t.Error("bad data")
 	}
 	l1.Style.Line.Fill = colors.Uniform(colors.Red)
-	plt.Add(l1)
 	plt.Legend.Add("Sine", l1)
 
-	l2 := NewBar(cos)
+	l2 := NewBar(plt, cos)
 	if l2 == nil {
 		t.Error("bad data")
 	}
 	l2.Style.Line.Fill = colors.Uniform(colors.Blue)
 	l2.StackedOn = l1
-	plt.Add(l2)
 	plt.Legend.Add("Cos", l2)
 
 	plt.Resize(image.Point{640, 480})
@@ -428,18 +419,16 @@ func TestErrBar(t *testing.T) {
 
 	data := plot.Data{plot.X: xd, plot.Y: yd, plot.Low: low, plot.High: high}
 
-	l1 := NewLine(data)
+	l1 := NewLine(plt, data)
 	if l1 == nil {
 		t.Error("bad data")
 	}
-	plt.Add(l1)
 	plt.Legend.Add("Sine", l1)
 
-	l2 := NewYErrorBars(data)
+	l2 := NewYErrorBars(plt, data)
 	if l2 == nil {
 		t.Error("bad data")
 	}
-	plt.Add(l2)
 
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
@@ -469,8 +458,7 @@ func TestStyle(t *testing.T) {
 	}
 
 	plt := plot.New()
-	l1 := NewLine(data).Styler(stf)
-	plt.Add(l1)
+	l1 := NewLine(plt, data).Styler(stf)
 	plt.Legend.Add("Sine", l1) // todo: auto-add!
 	plt.Legend.Add("Cos", l1)
 
@@ -483,8 +471,7 @@ func TestStyle(t *testing.T) {
 	plot.SetStyler(tdy, stf) // set metadata for tensor
 	tdx := tensor.NewFloat64FromValues(data[plot.X].(plot.Values)...)
 	// NewLine auto-grabs from Y metadata
-	l1 = NewLine(plot.Data{plot.X: tdx, plot.Y: tdy})
-	plt.Add(l1)
+	l1 = NewLine(plt, plot.Data{plot.X: tdx, plot.Y: tdy})
 	plt.Legend.Add("Sine", l1) // todo: auto-add!
 	plt.Legend.Add("Cos", l1)
 	plt.Resize(image.Point{640, 480})
@@ -496,7 +483,7 @@ func TestTicks(t *testing.T) {
 	data := sinCosWrapData()
 
 	plt := plot.New()
-	l1 := NewLine(data).Styler(func(s *plot.Style) {
+	l1 := NewLine(plt, data).Styler(func(s *plot.Style) {
 		s.Plot.Axis.NTicks = 0
 	})
 	plt.Add(l1)

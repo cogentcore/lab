@@ -14,6 +14,7 @@ package plots
 import (
 	"math"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/lab/plot"
@@ -23,8 +24,8 @@ import (
 const BarType = "Bar"
 
 func init() {
-	plot.RegisterPlotter(BarType, "A Bar presents ordinally-organized data with rectangular bars with lengths proportional to the data values, and an optional error bar at the top of the bar using the High data role.", []plot.Roles{plot.Y}, []plot.Roles{plot.High}, func(data plot.Data) plot.Plotter {
-		return NewBar(data)
+	plot.RegisterPlotter(BarType, "A Bar presents ordinally-organized data with rectangular bars with lengths proportional to the data values, and an optional error bar at the top of the bar using the High data role.", []plot.Roles{plot.Y}, []plot.Roles{plot.High}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
+		return NewBar(plt, data)
 	})
 }
 
@@ -66,18 +67,23 @@ type Bar struct {
 // to the index of their value in the Valuer.
 // Optional error-bar values can be provided using the High data role.
 // Styler functions are obtained from the Y metadata if present.
-func NewBar(data plot.Data) *Bar {
-	if data.CheckLengths() != nil {
+func NewBar(plt *plot.Plot, data plot.Data) *Bar {
+	dt := errors.Log1(plot.DataOrValuer(data, plot.Y))
+	if dt == nil {
+		return nil
+	}
+	if dt.CheckLengths() != nil {
 		return nil
 	}
 	bc := &Bar{}
-	bc.Y = plot.MustCopyRole(data, plot.Y)
+	bc.Y = plot.MustCopyRole(dt, plot.Y)
 	if bc.Y == nil {
 		return nil
 	}
-	bc.stylers = plot.GetStylersFromData(data, plot.Y)
-	bc.Err = plot.CopyRole(data, plot.High)
+	bc.stylers = plot.GetStylersFromData(dt, plot.Y)
+	bc.Err = plot.CopyRole(dt, plot.High)
 	bc.Defaults()
+	plt.Add(bc)
 	return bc
 }
 

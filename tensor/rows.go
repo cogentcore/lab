@@ -341,7 +341,7 @@ func (sm *StringMatch) Match(trg, str string) bool {
 	has := false
 	switch {
 	case sm.Contains && sm.IgnoreCase:
-		has = strings.Contains(strings.ToLower(trg), strings.ToLower(trg))
+		has = strings.Contains(strings.ToLower(trg), strings.ToLower(str))
 	case sm.Contains:
 		has = strings.Contains(trg, str)
 	case sm.IgnoreCase:

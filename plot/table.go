@@ -265,7 +265,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 	var barCols []int  // column indexes of bar plots
 	var barPlots []int // plotter indexes of bar plots
 	for _, pt := range ptrs {
-		pl := pt.pt.New(pt.data)
+		pl := pt.pt.New(plt, pt.data)
 		if reflectx.IsNil(reflect.ValueOf(pl)) {
 			err := fmt.Errorf("plot.NewTablePlot: error in creating plotter type: %q", pt.ptyp)
 			errs = append(errs, err)

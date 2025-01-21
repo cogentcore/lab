@@ -26,6 +26,24 @@ var (
 	ErrNoData   = errors.New("plotter: no data points")
 )
 
+// DataOrValuer processes the given argument which can be either a [Data]
+// or a [Valuer]. If the latter, it is returned as a [Data] with the given Role.
+// This is used for New Plotter methods that can take the default required Valuer,
+// or a Data with roles explicitly defined. If the arg is neither, an error
+// is returned.
+func DataOrValuer(v any, role Roles) (Data, error) {
+	switch x := v.(type) {
+	case Valuer:
+		return Data{role: x}, nil
+	case Data:
+		return x, nil
+	case *Data:
+		return *x, nil
+	default:
+		return nil, errors.New("plot: argument was not a Data or Valuer (e.g., Tensor)")
+	}
+}
+
 // Data is a map of Roles and Data for that Role, providing the
 // primary way of passing data to a Plotter
 type Data map[Roles]Valuer

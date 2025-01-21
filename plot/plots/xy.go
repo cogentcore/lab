@@ -23,8 +23,8 @@ import (
 const XYType = "XY"
 
 func init() {
-	plot.RegisterPlotter(XYType, "draws lines between and / or points for X,Y data values, using optional Size and Color data for the points, for a bubble plot.", []plot.Roles{plot.Y}, []plot.Roles{plot.X, plot.Size, plot.Color}, func(data plot.Data) plot.Plotter {
-		return NewXY(data)
+	plot.RegisterPlotter(XYType, "draws lines between and / or points for X,Y data values, using optional Size and Color data for the points, for a bubble plot.", []plot.Roles{plot.Y}, []plot.Roles{plot.X, plot.Size, plot.Color}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
+		return NewXY(plt, data)
 	})
 }
 
@@ -42,34 +42,41 @@ type XY struct {
 	stylers plot.Stylers
 }
 
-// NewXY returns an XY plotter for given X, Y data.
-// data can also include Color and / or Size for the points.
+// NewXY adds a new XY plotter to given plot for given data,
+// which can either by a [plot.Valuer] (e.g., Tensor) with the Y values,
+// or a [plot.Data] with roles, and values defined.
+// Data can also include Color and / or Size for the points.
 // Styler functions are obtained from the Y metadata if present.
-func NewXY(data plot.Data) *XY {
-	if data.CheckLengths() != nil {
+func NewXY(plt *plot.Plot, data any) *XY {
+	dt := errors.Log1(plot.DataOrValuer(data, plot.Y))
+	if dt == nil {
+		return nil
+	}
+	if dt.CheckLengths() != nil {
 		return nil
 	}
 	ln := &XY{}
-	ln.Y = plot.MustCopyRole(data, plot.Y)
-	if _, ok := data[plot.X]; !ok {
+	ln.Y = plot.MustCopyRole(dt, plot.Y)
+	if _, ok := dt[plot.X]; !ok {
 		ln.X = errors.Log1(plot.CopyValues(tensor.NewIntRange(len(ln.Y))))
 	} else {
-		ln.X = plot.MustCopyRole(data, plot.X)
+		ln.X = plot.MustCopyRole(dt, plot.X)
 	}
 	if ln.X == nil || ln.Y == nil {
 		return nil
 	}
-	ln.stylers = plot.GetStylersFromData(data, plot.Y)
-	ln.Color = plot.CopyRole(data, plot.Color)
-	ln.Size = plot.CopyRole(data, plot.Size)
+	ln.stylers = plot.GetStylersFromData(dt, plot.Y)
+	ln.Color = plot.CopyRole(dt, plot.Color)
+	ln.Size = plot.CopyRole(dt, plot.Size)
 	ln.Defaults()
+	plt.Add(ln)
 	return ln
 }
 
 // newXYWith is a simple helper function that creates a new XY plotter
 // with lines and/or points.
-func newXYWith(data plot.Data, line, point plot.DefaultOffOn) *XY {
-	ln := NewXY(data)
+func newXYWith(plt *plot.Plot, data any, line, point plot.DefaultOffOn) *XY {
+	ln := NewXY(plt, data)
 	if ln == nil {
 		return ln
 	}
@@ -80,20 +87,20 @@ func newXYWith(data plot.Data, line, point plot.DefaultOffOn) *XY {
 
 // NewLine returns an XY plot drawing Lines only by default.
 // See also [NewScatter] and [NewPointLine].
-func NewLine(data plot.Data) *XY {
-	return newXYWith(data, plot.On, plot.Off)
+func NewLine(plt *plot.Plot, data any) *XY {
+	return newXYWith(plt, data, plot.On, plot.Off)
 }
 
 // NewScatter returns an XY scatter plot drawing Points only by default.
 // See also [NewLine] and [NewPointLine].
-func NewScatter(data plot.Data) *XY {
-	return newXYWith(data, plot.Off, plot.On)
+func NewScatter(plt *plot.Plot, data any) *XY {
+	return newXYWith(plt, data, plot.Off, plot.On)
 }
 
 // NewPointLine returns an XY plot drawing both lines and points by default.
 // See also [NewLine] and [NewScatter].
-func NewPointLine(data plot.Data) *XY {
-	return newXYWith(data, plot.On, plot.On)
+func NewPointLine(plt *plot.Plot, data any) *XY {
+	return newXYWith(plt, data, plot.On, plot.On)
 }
 
 func (ln *XY) Defaults() {

@@ -7,6 +7,7 @@ package plots
 import (
 	"math"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/lab/plot"
 )
@@ -20,11 +21,11 @@ const (
 )
 
 func init() {
-	plot.RegisterPlotter(YErrorBarsType, "draws draws vertical error bars, denoting error in Y values, using either High or Low & High data roles for error deviations around X, Y coordinates.", []plot.Roles{plot.X, plot.Y, plot.High}, []plot.Roles{plot.Low}, func(data plot.Data) plot.Plotter {
-		return NewYErrorBars(data)
+	plot.RegisterPlotter(YErrorBarsType, "draws draws vertical error bars, denoting error in Y values, using either High or Low & High data roles for error deviations around X, Y coordinates.", []plot.Roles{plot.X, plot.Y, plot.High}, []plot.Roles{plot.Low}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
+		return NewYErrorBars(plt, data)
 	})
-	plot.RegisterPlotter(XErrorBarsType, "draws draws horizontal error bars, denoting error in X values, using either High or Low & High data roles for error deviations around X, Y coordinates.", []plot.Roles{plot.X, plot.Y, plot.High}, []plot.Roles{plot.Low}, func(data plot.Data) plot.Plotter {
-		return NewXErrorBars(data)
+	plot.RegisterPlotter(XErrorBarsType, "draws draws horizontal error bars, denoting error in X values, using either High or Low & High data roles for error deviations around X, Y coordinates.", []plot.Roles{plot.X, plot.Y, plot.High}, []plot.Roles{plot.Low}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
+		return NewXErrorBars(plt, data)
 	})
 }
 
@@ -52,24 +53,29 @@ func (eb *YErrorBars) Defaults() {
 // NewYErrorBars returns a new YErrorBars plotter,
 // using Low, High data roles for error deviations around X, Y coordinates.
 // Styler functions are obtained from the High data if present.
-func NewYErrorBars(data plot.Data) *YErrorBars {
-	if data.CheckLengths() != nil {
+func NewYErrorBars(plt *plot.Plot, data plot.Data) *YErrorBars {
+	dt := errors.Log1(plot.DataOrValuer(data, plot.Y))
+	if dt == nil {
+		return nil
+	}
+	if dt.CheckLengths() != nil {
 		return nil
 	}
 	eb := &YErrorBars{}
-	eb.X = plot.MustCopyRole(data, plot.X)
-	eb.Y = plot.MustCopyRole(data, plot.Y)
-	eb.Low = plot.CopyRole(data, plot.Low)
-	eb.High = plot.CopyRole(data, plot.High)
+	eb.X = plot.MustCopyRole(dt, plot.X)
+	eb.Y = plot.MustCopyRole(dt, plot.Y)
+	eb.Low = plot.CopyRole(dt, plot.Low)
+	eb.High = plot.CopyRole(dt, plot.High)
 	if eb.Low == nil && eb.High != nil {
 		eb.Low = eb.High
 	}
 	if eb.X == nil || eb.Y == nil || eb.Low == nil || eb.High == nil {
 		return nil
 	}
-	eb.stylers = plot.GetStylersFromData(data, plot.High)
-	eb.ystylers = plot.GetStylersFromData(data, plot.Y)
+	eb.stylers = plot.GetStylersFromData(dt, plot.High)
+	eb.ystylers = plot.GetStylersFromData(dt, plot.Y)
 	eb.Defaults()
+	plt.Add(eb)
 	return eb
 }
 
@@ -169,26 +175,31 @@ func (eb *XErrorBars) Defaults() {
 
 // NewXErrorBars returns a new XErrorBars plotter,
 // using Low, High data roles for error deviations around X, Y coordinates.
-func NewXErrorBars(data plot.Data) *XErrorBars {
-	if data.CheckLengths() != nil {
+func NewXErrorBars(plt *plot.Plot, data plot.Data) *XErrorBars {
+	dt := errors.Log1(plot.DataOrValuer(data, plot.Y))
+	if dt == nil {
+		return nil
+	}
+	if dt.CheckLengths() != nil {
 		return nil
 	}
 	eb := &XErrorBars{}
-	eb.X = plot.MustCopyRole(data, plot.X)
-	eb.Y = plot.MustCopyRole(data, plot.Y)
-	eb.Low = plot.MustCopyRole(data, plot.Low)
-	eb.High = plot.MustCopyRole(data, plot.High)
-	eb.Low = plot.CopyRole(data, plot.Low)
-	eb.High = plot.CopyRole(data, plot.High)
+	eb.X = plot.MustCopyRole(dt, plot.X)
+	eb.Y = plot.MustCopyRole(dt, plot.Y)
+	eb.Low = plot.MustCopyRole(dt, plot.Low)
+	eb.High = plot.MustCopyRole(dt, plot.High)
+	eb.Low = plot.CopyRole(dt, plot.Low)
+	eb.High = plot.CopyRole(dt, plot.High)
 	if eb.Low == nil && eb.High != nil {
 		eb.Low = eb.High
 	}
 	if eb.X == nil || eb.Y == nil || eb.Low == nil || eb.High == nil {
 		return nil
 	}
-	eb.stylers = plot.GetStylersFromData(data, plot.High)
-	eb.ystylers = plot.GetStylersFromData(data, plot.Y)
+	eb.stylers = plot.GetStylersFromData(dt, plot.High)
+	eb.ystylers = plot.GetStylersFromData(dt, plot.Y)
 	eb.Defaults()
+	plt.Add(eb)
 	return eb
 }
 
