@@ -132,23 +132,21 @@ func (pl *Editor) Init() {
 	})
 }
 
-// setTable sets the table to view and does Update
-// to update the Column list, which will also trigger a Layout
-// and updating of the plot on next render pass.
-// This is safe to call from a different goroutine.
+// setTable sets the table to view and does UpdatePlot.
 func (pl *Editor) setTable(tab *table.Table) *Editor {
 	pl.table = tab
-	pl.Update()
+	pl.UpdatePlot()
 	return pl
 }
 
-// SetTable sets the table to view and does Update
-// to update the Column list, which will also trigger a Layout
-// and updating of the plot on next render pass.
-// This is safe to call from a different goroutine.
+// SetTable sets the table to a new view of given table,
+// and does UpdatePlot.
 func (pl *Editor) SetTable(tab *table.Table) *Editor {
+	pl.table = nil
+	pl.Update() // reset
 	pl.table = table.NewView(tab)
-	pl.Update()
+	pl.UpdatePlot()
+	pl.Update() // update to new table
 	return pl
 }
 
@@ -254,7 +252,7 @@ func (pl *Editor) UpdatePlot() {
 	pl.genPlot()
 }
 
-// genPlot generates the plot and renders it to SVG
+// genPlot generates a new plot from the current table.
 // It surrounds operation with InPlot true / false to prevent multiple updates
 func (pl *Editor) genPlot() {
 	if pl.inPlot {
@@ -472,7 +470,7 @@ func (pl *Editor) defaultColumnStyle(cl tensor.Values, ci int, colorIdx *int, ps
 			cst.Point.Color = spclr
 			mods["Point.Color"] = true
 			cst.Point.Fill = spclr
-			mods["Point.Color"] = true
+			mods["Point.Fill"] = true
 			if cst.Plotter == plots.BarType {
 				cst.Line.Fill = spclr
 				mods["Line.Fill"] = true

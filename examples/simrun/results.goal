@@ -113,7 +113,7 @@ func (sr *SimRun) Plot() { //types:add
 		res := sr.ResultsList[i]
 		jid := res.JobID
 		label := res.Label
-		dt := res.Table.InsertKeyColumns("JobID", jid, "JobLabel", label)
+		dt := res.Table.InsertKeyColumns("JobID", jid, "JobLabel", label) // this clones the table
 		if AggTable == nil {
 			AggTable = dt
 		} else {

@@ -159,7 +159,6 @@ func (ts *Tabs) PlotTable(label string, dt *table.Table) *plotcore.Editor {
 	})
 	if pl != nil {
 		pl.SetTable(dt)
-		ts.Update()
 	}
 	return pl
 }
