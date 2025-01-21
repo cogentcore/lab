@@ -85,19 +85,25 @@ func newXYWith(plt *plot.Plot, data any, line, point plot.DefaultOffOn) *XY {
 	return ln
 }
 
-// NewLine returns an XY plot drawing Lines only by default.
+// NewLine adds an XY plot drawing Lines only by default, for given data
+// which can either by a [plot.Valuer] (e.g., Tensor) with the Y values,
+// or a [plot.Data] with roles, and values defined.
 // See also [NewScatter] and [NewPointLine].
 func NewLine(plt *plot.Plot, data any) *XY {
 	return newXYWith(plt, data, plot.On, plot.Off)
 }
 
-// NewScatter returns an XY scatter plot drawing Points only by default.
+// NewScatter adds an XY scatter plot drawing Points only by default, for given data
+// which can either by a [plot.Valuer] (e.g., Tensor) with the Y values,
+// or a [plot.Data] with roles, and values defined.
 // See also [NewLine] and [NewPointLine].
 func NewScatter(plt *plot.Plot, data any) *XY {
 	return newXYWith(plt, data, plot.Off, plot.On)
 }
 
-// NewPointLine returns an XY plot drawing both lines and points by default.
+// NewPointLine adds an XY plot drawing both lines and points by default, for given data
+// which can either by a [plot.Valuer] (e.g., Tensor) with the Y values,
+// or a [plot.Data] with roles, and values defined.
 // See also [NewLine] and [NewScatter].
 func NewPointLine(plt *plot.Plot, data any) *XY {
 	return newXYWith(plt, data, plot.On, plot.On)

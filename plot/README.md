@@ -14,19 +14,19 @@ The GUI constraint requires a more systematic, factorial organization of the spa
 
 * Plot content is driven by `Plotter` elements that each consume one or more sets of data, which is provided by a `Valuer` interface that maps onto a minimal subset of the `tensor.Tensor` interface, so a tensor directly satisfies the interface.
 
-* Each `Plotter` element can generally handle multiple different data elements, that are index-aligned. For example, the basic `XY` plotter requires a `Y` Valuer, and typically an `X`, but indexes will be used if it is not present. It optionally uses `Size` or `Color` Valuers that apply to the Point elements. A `Bar` gets at least a `Y` but also optionally a `High` Valuer for an error bar.  The `plot.Data` = `map[Roles]Valuer` is used to create new Plotter elements, allowing an unordered and explicit way of specifying the `Roles` of each `Valuer` item. There are also shortcut methods for `NewXY` and `NewY`.
+* Each `Plotter` element can generally handle multiple different data elements, that are index-aligned. For example, the basic `XY` plotter requires a `Y` Valuer, and typically an `X`, but indexes will be used if it is not present. It optionally uses `Size` or `Color` Valuers that apply to the Point elements. A `Bar` gets at least a `Y` but also optionally a `High` Valuer for an error bar.  The `plot.Data` = `map[Roles]Valuer` is used to create new Plotter elements, allowing an unordered and explicit way of specifying the `Roles` of each `Valuer` item. Each Plotter also allows a single `Valuer` (i.e., Tensor) argument instead of the data, for a convenient minimal plot cse.  There are also shortcut methods for `NewXY` and `NewY`.
 
-Here is a minimal example for how a plotter XY Line element is created:
+Here is a minimal example for how a plotter XY Line element is created using Y data `yd`:
 
 ```Go
 plt := plot.NewPlot()
-plt.Add(plots.NewLine(plot.NewY(yd)))
+plots.NewLine(plt, yd)
 ```
 
 And here's a more complex example setting the `plot.Data` map of roles to data:
 
 ```Go
-plt.Add(plots.NewLine(plot.Data{plot.X: xd, plot.Y: yd, plot.Low: low, plot.High: high}))
+plots.NewLine(plt, plot.Data{plot.X: xd, plot.Y: yd, plot.Low: low, plot.High: high})
 ```
 
 The table-driven plotting case uses a `Group` name along with the `Roles` type (`X`, `Y` etc) and Plotter type names to organize different plots based on `Style` settings.  Columns with the same Group name all provide data to the same plotter using their different Roles, making it easy to configure various statistical plots of multiple series of grouped data.
@@ -41,11 +41,10 @@ Each such plot element defines a `Styler` method, e.g.,:
 
 ```Go
 plt := plot.NewPlot()
-ln := plots.NewLine(data).Styler(func(s *plot.Style) {
+ln := plots.NewLine(plt, data).Styler(func(s *plot.Style) {
     s.Plot.Title = "My Plot" // overall Plot styles
     s.Line.Color = colors.Uniform(colors.Red) // line-specific styles
 })
-plt.Add(ln)
 ```
 
 The `Plot` field (of type `PlotStyle`) contains all the properties that apply to the plot as a whole. Each element can set these values, and they are applied in the order the elements are added, so the last one gets final say. Typically you want to just set these plot-level styles on one element only and avoid any conflicts.
@@ -81,7 +80,7 @@ Here is an example of how this works:
 
 	plt := plot.New()
    // NewLine automatically gets stylers from ty tensor metadata
-	plt.Add(plots.NewLine(plot.Data{plot.X: tx, plot.Y: ty}))
+	plots.NewLine(plt, plot.Data{plot.X: tx, plot.Y: ty})
 	plt.Draw()
 ```
 

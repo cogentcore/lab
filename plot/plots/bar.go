@@ -62,12 +62,14 @@ type Bar struct {
 	stylers plot.Stylers
 }
 
-// NewBar returns a new bar plotter with a single bar for each value.
+// NewBar adds a new bar plotter with a single bar for each value, for given data
+// which can either by a [plot.Valuer] (e.g., Tensor) with the Y values,
+// or a [plot.Data] with roles, and values defined.
 // The bars heights correspond to the values and their x locations correspond
 // to the index of their value in the Valuer.
 // Optional error-bar values can be provided using the High data role.
 // Styler functions are obtained from the Y metadata if present.
-func NewBar(plt *plot.Plot, data plot.Data) *Bar {
+func NewBar(plt *plot.Plot, data any) *Bar {
 	dt := errors.Log1(plot.DataOrValuer(data, plot.Y))
 	if dt == nil {
 		return nil

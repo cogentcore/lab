@@ -7,7 +7,6 @@ package plots
 import (
 	"image"
 
-	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/lab/plot"
@@ -40,23 +39,20 @@ type Labels struct {
 	ystylers  plot.Stylers
 }
 
-// NewLabels returns a new Labels using defaults
+// NewLabels adds a new Labels to given plot for given data,
+// which must specify X, Y and Label roles.
 // Styler functions are obtained from the Label metadata if present.
 func NewLabels(plt *plot.Plot, data plot.Data) *Labels {
-	dt := errors.Log1(plot.DataOrValuer(data, plot.Y))
-	if dt == nil {
-		return nil
-	}
-	if dt.CheckLengths() != nil {
+	if data.CheckLengths() != nil {
 		return nil
 	}
 	lb := &Labels{}
-	lb.X = plot.MustCopyRole(dt, plot.X)
-	lb.Y = plot.MustCopyRole(dt, plot.Y)
+	lb.X = plot.MustCopyRole(data, plot.X)
+	lb.Y = plot.MustCopyRole(data, plot.Y)
 	if lb.X == nil || lb.Y == nil {
 		return nil
 	}
-	ld := dt[plot.Label]
+	ld := data[plot.Label]
 	if ld == nil {
 		return nil
 	}
@@ -65,8 +61,8 @@ func NewLabels(plt *plot.Plot, data plot.Data) *Labels {
 		lb.Labels[i] = ld.String1D(i)
 	}
 
-	lb.stylers = plot.GetStylersFromData(dt, plot.Label)
-	lb.ystylers = plot.GetStylersFromData(dt, plot.Y)
+	lb.stylers = plot.GetStylersFromData(data, plot.Label)
+	lb.ystylers = plot.GetStylersFromData(data, plot.Y)
 	lb.Defaults()
 	plt.Add(lb)
 	return lb
