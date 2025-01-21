@@ -83,6 +83,7 @@ From **a2**, we can compute and plot **x2**, the approximation of **x** based on
 
 ```Goal
 # x2 := U @ a2
+core.NewText(b).SetText(x2.String())
 fig1a := lab.NewPlotFrom(fig1, b)
 plot.Styler(x2, func(s *plot.Style) {
     s.Point.Shape = plot.Pyramid
@@ -94,7 +95,9 @@ We can do the same thing for **a4** and **x4**, with the four most important ele
 
 ```Goal
 a4 := compress(4)
+core.NewText(b).SetText(a4.String())
 # x4 := U @ a4
+core.NewText(b).SetText(x4.String())
 fig1b := lab.NewPlotFrom(fig1a, b)
 plot.Styler(x4, func(s *plot.Style) {
     s.Point.Shape = plot.Cross
@@ -106,6 +109,7 @@ We can also compute **x8**, which just uses **a** without anything removed:
 
 ```Goal
 # x8 := U @ a
+core.NewText(b).SetText(x8.String())
 ```
 
 We can find the error of **x8** relative to **x**, which is very small since nothing is compressed:
