@@ -79,27 +79,34 @@ type PlotStyle struct { //types:add -setters
 	// YAxisLabel is the optional label to use for the YAxis instead of the default.
 	YAxisLabel string
 
-	// LinesOn determines whether lines are plotted by default,
-	// for elements that plot lines (e.g., plots.XY).
+	// LinesOn determines whether lines are plotted by default at the overall,
+	// Plot level, for elements that plot lines (e.g., plots.XY).
 	LinesOn DefaultOffOn
 
-	// LineWidth sets the default line width for data plotting lines.
+	// LineWidth sets the default line width for data plotting lines at the
+	// overall Plot level.
 	LineWidth units.Value
 
-	// PointsOn determines whether points are plotted by default,
-	// for elements that plot points (e.g., plots.XY).
+	// PointsOn determines whether points are plotted by default at the
+	// overall Plot level, for elements that plot points (e.g., plots.XY).
 	PointsOn DefaultOffOn
 
-	// PointSize sets the default point size.
+	// PointSize sets the default point size at the overall Plot level.
 	PointSize units.Value
 
-	// LabelSize sets the default label text size.
+	// LabelSize sets the default label text size at the overall Plot level.
 	LabelSize units.Value
 
 	// BarWidth for Bar plot sets the default width of the bars,
 	// which should be less than the Stride (1 typically) to prevent
 	// bar overlap. Defaults to .8.
 	BarWidth float64
+
+	//	ShowErrors can be set to have Plot configuration errors reported.
+	// This is particularly important for table-driven plots (e.g., [plotcore.Editor]),
+	// but it is not on by default because often there are transitional states
+	// with known errors that can lead to false alarms.
+	ShowErrors bool
 }
 
 func (ps *PlotStyle) Defaults() {
