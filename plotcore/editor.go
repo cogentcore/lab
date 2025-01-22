@@ -9,6 +9,7 @@ package plotcore
 
 import (
 	"fmt"
+	"image"
 	"io/fs"
 	"log/slog"
 	"path/filepath"
@@ -346,7 +347,9 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 		cnm := pl.table.Columns.Keys[ci]
 		tree.AddAt(p, cnm, func(w *core.Frame) {
 			psty := plot.GetStylers(cl)
-			cst, mods := pl.defaultColumnStyle(cl, ci, &colorIdx, &hasSplit, psty)
+			cst, mods, clr := pl.defaultColumnStyle(cl, ci, &colorIdx, &hasSplit, psty)
+			myColorIdx := colorIdx
+			isSplit := cst.Role == plot.Split
 			stys := psty
 			stys.Add(func(s *plot.Style) {
 				mf := modFields(mods)
@@ -361,13 +364,13 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 			tree.AddChild(w, func(w *core.Switch) {
 				w.SetType(core.SwitchCheckbox).SetTooltip("Turn this column on or off")
 				w.Styler(func(s *styles.Style) {
-					s.Color = cst.Line.Color
+					s.Color = clr
 				})
 				tree.AddChildInit(w, "stack", func(w *core.Frame) {
 					f := func(name string) {
 						tree.AddChildInit(w, name, func(w *core.Icon) {
 							w.Styler(func(s *styles.Style) {
-								s.Color = cst.Line.Color
+								s.Color = clr
 							})
 						})
 					}
@@ -388,6 +391,19 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 					} else {
 						w.SetChecked(cst.On)
 					}
+					if cst.Role == plot.Split {
+						isSplit = true
+						hasSplit = true // update global flag
+					} else {
+						if isSplit && cst.Role != plot.Split {
+							isSplit = false
+							hasSplit = false
+						}
+					}
+					// update default styling
+					idx := myColorIdx
+					hsp := hasSplit
+					cst, mods, clr = pl.defaultColumnStyle(cl, ci, &idx, &hsp, psty)
 				})
 			})
 			tree.AddChild(w, func(w *core.Button) {
@@ -436,13 +452,13 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 
 // defaultColumnStyle initializes the column style with any existing stylers
 // plus additional general defaults, returning the initially modified field names.
-func (pl *Editor) defaultColumnStyle(cl tensor.Values, ci int, colorIdx *int, hasSplit *bool, psty plot.Stylers) (*plot.Style, map[string]bool) {
+func (pl *Editor) defaultColumnStyle(cl tensor.Values, ci int, colorIdx *int, hasSplit *bool, psty plot.Stylers) (*plot.Style, map[string]bool, image.Image) {
 	cst := &plot.Style{}
 	cst.Defaults()
 	if psty != nil {
 		psty.Run(cst)
 	}
-	if cst.Role == plot.Split {
+	if cst.On && cst.Role == plot.Split {
 		*hasSplit = true
 	}
 	mods := map[string]bool{}
@@ -466,25 +482,26 @@ func (pl *Editor) defaultColumnStyle(cl tensor.Values, ci int, colorIdx *int, ha
 			cst.Role = plot.X
 		}
 	}
-	if cst.Line.Color == colors.Scheme.OnSurface {
+	clr := cst.Line.Color
+	if clr == colors.Scheme.OnSurface {
 		if cst.Role == plot.Y && isfloat {
+			clr = colors.Uniform(colors.Spaced(*colorIdx))
+			(*colorIdx)++
 			if !*hasSplit {
-				spclr := colors.Uniform(colors.Spaced(*colorIdx))
-				cst.Line.Color = spclr
+				cst.Line.Color = clr
 				mods["Line.Color"] = true
-				cst.Point.Color = spclr
+				cst.Point.Color = clr
 				mods["Point.Color"] = true
-				cst.Point.Fill = spclr
+				cst.Point.Fill = clr
 				mods["Point.Fill"] = true
 				if cst.Plotter == plots.BarType {
-					cst.Line.Fill = spclr
+					cst.Line.Fill = clr
 					mods["Line.Fill"] = true
 				}
 			}
-			(*colorIdx)++
 		}
 	}
-	return cst, mods
+	return cst, mods, clr
 }
 
 func (pl *Editor) plotStyleFromTable(dt *table.Table) {
