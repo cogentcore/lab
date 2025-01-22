@@ -274,7 +274,7 @@ func (pl *Editor) genPlot() {
 	}
 	var err error
 	pl.plot, err = plot.NewTablePlot(pl.table)
-	if pl.plot.Style.ShowErrors && err != nil {
+	if pl.plot != nil && pl.plot.Style.ShowErrors && err != nil {
 		core.ErrorSnackbar(pl, fmt.Errorf("%s: %w", pl.PlotStyle.Title, err))
 	}
 	pl.plotWidget.SetPlot(pl.plot)
@@ -336,16 +336,17 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 			})
 		})
 	})
+	hasSplit := false // split uses different color styling
+	colorIdx := 0     // index for color sequence -- skips various types
 	tree.Add(p, func(w *core.Separator) {})
 	if pl.table == nil {
 		return
 	}
-	colorIdx := 0 // index for color sequence -- skips various types
 	for ci, cl := range pl.table.Columns.Values {
 		cnm := pl.table.Columns.Keys[ci]
 		tree.AddAt(p, cnm, func(w *core.Frame) {
 			psty := plot.GetStylers(cl)
-			cst, mods := pl.defaultColumnStyle(cl, ci, &colorIdx, psty)
+			cst, mods := pl.defaultColumnStyle(cl, ci, &colorIdx, &hasSplit, psty)
 			stys := psty
 			stys.Add(func(s *plot.Style) {
 				mf := modFields(mods)
@@ -435,11 +436,14 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 
 // defaultColumnStyle initializes the column style with any existing stylers
 // plus additional general defaults, returning the initially modified field names.
-func (pl *Editor) defaultColumnStyle(cl tensor.Values, ci int, colorIdx *int, psty plot.Stylers) (*plot.Style, map[string]bool) {
+func (pl *Editor) defaultColumnStyle(cl tensor.Values, ci int, colorIdx *int, hasSplit *bool, psty plot.Stylers) (*plot.Style, map[string]bool) {
 	cst := &plot.Style{}
 	cst.Defaults()
 	if psty != nil {
 		psty.Run(cst)
+	}
+	if cst.Role == plot.Split {
+		*hasSplit = true
 	}
 	mods := map[string]bool{}
 	isfloat := reflectx.KindIsFloat(cl.DataType())
@@ -464,16 +468,18 @@ func (pl *Editor) defaultColumnStyle(cl tensor.Values, ci int, colorIdx *int, ps
 	}
 	if cst.Line.Color == colors.Scheme.OnSurface {
 		if cst.Role == plot.Y && isfloat {
-			spclr := colors.Uniform(colors.Spaced(*colorIdx))
-			cst.Line.Color = spclr
-			mods["Line.Color"] = true
-			cst.Point.Color = spclr
-			mods["Point.Color"] = true
-			cst.Point.Fill = spclr
-			mods["Point.Fill"] = true
-			if cst.Plotter == plots.BarType {
-				cst.Line.Fill = spclr
-				mods["Line.Fill"] = true
+			if !*hasSplit {
+				spclr := colors.Uniform(colors.Spaced(*colorIdx))
+				cst.Line.Color = spclr
+				mods["Line.Color"] = true
+				cst.Point.Color = spclr
+				mods["Point.Color"] = true
+				cst.Point.Fill = spclr
+				mods["Point.Fill"] = true
+				if cst.Plotter == plots.BarType {
+					cst.Line.Fill = spclr
+					mods["Line.Fill"] = true
+				}
 			}
 			(*colorIdx)++
 		}

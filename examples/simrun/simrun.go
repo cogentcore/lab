@@ -225,7 +225,7 @@ func (sr *SimRun) MakeToolbar(p *tree.Plan) {
 		w.SetFunc(sr.Submit).SetIcon(icons.Add)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
-		w.SetFunc(sr.Results).SetIcon(icons.Refresh)
+		w.SetFunc(sr.Results).SetIcon(icons.Open)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(sr.Reset).SetIcon(icons.Refresh)

@@ -13,6 +13,7 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/lab/lab"
+	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 )
@@ -112,6 +113,10 @@ func (sr *SimRun) Plot() { //types:add
 		dt := res.Table.InsertKeyColumns("JobID", jid, "JobLabel", label) // this clones the table
 		if AggTable == nil {
 			AggTable = dt
+			plot.SetFirstStyler(dt.Columns.Values[0], func(s *plot.Style) {
+				s.Role = plot.Split
+				s.On = true
+			})
 		} else {
 			AggTable.AppendRows(dt)
 		}

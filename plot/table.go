@@ -190,7 +190,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		if gotX >= 0 {
 			xidxs[gotX] = true
 		}
-		ptrs = append(ptrs, &pitem{pt: pt, data: data, lbl: lbl, ci: ci})
+		ptrs = append(ptrs, &pitem{ptyp: ptyp, pt: pt, data: data, lbl: lbl, ci: ci})
 		if !st.NoLegend {
 			nLegends++
 		}
@@ -252,7 +252,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 					nd[rl] = rv
 				}
 				npt := *pt
-				pt.clr = colors.Uniform(colors.Spaced(idx))
+				npt.clr = colors.Uniform(colors.Spaced(idx))
 				npt.data = nd
 				npt.lbl = metadata.Name(gp) + " " + pt.lbl
 				nptrs = append(nptrs, &npt)
@@ -274,6 +274,9 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		if pt.clr != nil {
 			pl.Stylers().Add(func(s *Style) {
 				s.Line.Color = pt.clr
+				if pt.ptyp == "Bar" {
+					s.Line.Fill = pt.clr
+				}
 				s.Point.Color = pt.clr
 				s.Point.Fill = pt.clr
 			})
