@@ -8,7 +8,6 @@ package plotcore
 //go:generate core generate
 
 import (
-	"fmt"
 	"io/fs"
 	"log/slog"
 	"path/filepath"
@@ -272,11 +271,11 @@ func (pl *Editor) genPlot() {
 			pl.table.Sequential()
 		}
 	}
-	var err error
-	pl.plot, err = plot.NewTablePlot(pl.table)
-	if err != nil {
-		core.ErrorSnackbar(pl, fmt.Errorf("%s: %w", pl.PlotStyle.Title, err))
-	}
+	// var err error
+	pl.plot, _ = plot.NewTablePlot(pl.table)
+	// if err != nil {
+	// 	core.ErrorSnackbar(pl, fmt.Errorf("%s: %w", pl.PlotStyle.Title, err))
+	// }
 	pl.plotWidget.SetPlot(pl.plot)
 	pl.plotWidget.updatePlot()
 	pl.inPlot = false

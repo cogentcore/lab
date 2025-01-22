@@ -49,11 +49,7 @@ func (sr *SimRun) OpenResultFiles(jobs []string, filter FilterResults) {
 	tv := ts.SliceTable("Results", &sr.ResultsList)
 	if sr.ResultsTableView != tv {
 		sr.ResultsTableView = tv
-		tv.ShowIndexes = true
-		tv.ReadOnlyMultiSelect = true
-		tv.Styler(func(s *styles.Style) {
-			s.SetReadOnly(true)
-		})
+		sr.styleResults()
 	}
 	sr.ResultsTableView.Update()
 	sr.UpdateSims()
@@ -125,10 +121,23 @@ func (sr *SimRun) Plot() { //types:add
 	ts.PlotTable("Plot", AggTable)
 }
 
+func (sr *SimRun) styleResults() {
+	tv := sr.ResultsTableView
+	tv.ShowIndexes = true
+	tv.ReadOnlyMultiSelect = true
+	tv.Styler(func(s *styles.Style) {
+		s.SetReadOnly(true)
+	})
+}
+
 // Reset resets the Results table
 func (sr *SimRun) Reset() { //types:add
 	ts := sr.Tabs.AsLab()
 	sr.ResultsList = []*Result{}
-	sr.ResultsTableView = ts.SliceTable("Results", &sr.ResultsList)
+	tv := ts.SliceTable("Results", &sr.ResultsList)
+	if sr.ResultsTableView != tv {
+		sr.ResultsTableView = tv
+		sr.styleResults()
+	}
 	sr.UpdateSims()
 }
