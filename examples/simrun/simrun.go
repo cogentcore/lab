@@ -158,6 +158,7 @@ func (sr *SimRun) InitSimRun(startDir string) {
 	if !sr.IsSlurm() {
 		sr.BareMetal = baremetal.NewBareMetal()
 		sr.BareMetal.Init(in.Goal)
+		// sr.BareMetal.StartBGUpdates() // todo: this interferes with cur dir -- only in separate process
 	}
 }
 

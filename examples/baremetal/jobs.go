@@ -90,9 +90,9 @@ type Job struct {
 	PID int
 }
 
-// Job returns the Job record for given job number; nil if not found
+// job returns the Job record for given job number; nil if not found
 // in Active or Done;
-func (bm *BareMetal) Job(jobno int) *Job {
+func (bm *BareMetal) job(jobno int) *Job {
 	job, ok := bm.Active.AtTry(jobno)
 	if ok {
 		return job
@@ -104,17 +104,17 @@ func (bm *BareMetal) Job(jobno int) *Job {
 	return nil
 }
 
-// Submit adds a new Active job with given parameters.
-func (bm *BareMetal) Submit(src, path, script, results string, files []byte) *Job {
+// submit adds a new Active job with given parameters.
+func (bm *BareMetal) submit(src, path, script, results string, files []byte) *Job {
 	job := &Job{ID: bm.NextID, Status: Pending, Source: src, Path: path, Script: script, Files: files, ResultsGlob: results, Submit: time.Now(), ServerGPU: -1}
 	bm.NextID++
 	bm.Active.Add(job.ID, job)
-	bm.SaveState()
+	bm.saveState()
 	return job
 }
 
-// RunJob runs the given job on the given server on given gpu number.
-func (bm *BareMetal) RunJob(job *Job, sv *Server, gpu int) error {
+// runJob runs the given job on the given server on given gpu number.
+func (bm *BareMetal) runJob(job *Job, sv *Server, gpu int) error {
 	defer func() {
 		goalrun.Run("cd")
 		goalrun.Run("@0")
@@ -143,7 +143,7 @@ func (bm *BareMetal) RunJob(job *Job, sv *Server, gpu int) error {
 	// goalrun.Run("nohup", "./"+job.Script, ">&", "job.out", "&", "echo", "$!", ">", "job.pid")
 	goalrun.Run("BARE_GPU="+gpus, "nohup", "./"+job.Script)
 	for range 10 {
-		if bm.GetJobPID(job) {
+		if bm.getJobPID(job) {
 			break
 		}
 		time.Sleep(time.Second)
@@ -155,9 +155,9 @@ func (bm *BareMetal) RunJob(job *Job, sv *Server, gpu int) error {
 	return nil
 }
 
-// GetJobPID tries to get the job PID, returning true if obtained.
+// getJobPID tries to get the job PID, returning true if obtained.
 // Must already be in the ssh and directory for correct server.
-func (bm *BareMetal) GetJobPID(job *Job) bool {
+func (bm *BareMetal) getJobPID(job *Job) bool {
 	pids := strings.TrimSpace(goalrun.Output("cat", "job.pid"))
 	if pids != "" {
 		pidn, err := strconv.Atoi(pids)
@@ -169,10 +169,10 @@ func (bm *BareMetal) GetJobPID(job *Job) bool {
 	return false
 }
 
-// RunPendingJobs runs any pending jobs if there are available GPUs to run on.
+// runPendingJobs runs any pending jobs if there are available GPUs to run on.
 // returns number of jobs started, and any errors incurred in starting jobs.
-func (bm *BareMetal) RunPendingJobs() (int, error) {
-	avail := bm.AvailableGPUs()
+func (bm *BareMetal) runPendingJobs() (int, error) {
+	avail := bm.availableGPUs()
 	if len(avail) == 0 {
 		return 0, nil
 	}
@@ -195,7 +195,7 @@ func (bm *BareMetal) RunPendingJobs() (int, error) {
 			sv = bm.Servers.At(av.Name)
 			next = sv.NextGPU()
 		}
-		err := bm.RunJob(job, sv, next)
+		err := bm.runJob(job, sv, next)
 		if err != nil { // note: errors are server errors, not job errors, so don't affect job status
 			sv.FreeGPU(next)
 			errs = append(errs, err)
@@ -205,13 +205,13 @@ func (bm *BareMetal) RunPendingJobs() (int, error) {
 		}
 	}
 	if nRun > 0 {
-		bm.SaveState()
+		bm.saveState()
 	}
 	return nRun, errors.Join(errs...)
 }
 
-// CancelJobs cancels list of job IDs. Returns error for jobs not found.
-func (bm *BareMetal) CancelJobs(jobs ...int) error {
+// cancelJobs cancels list of job IDs. Returns error for jobs not found.
+func (bm *BareMetal) cancelJobs(jobs ...int) error {
 	var errs []error
 	for _, jid := range jobs {
 		job, ok := bm.Active.AtTry(jid)
@@ -219,19 +219,18 @@ func (bm *BareMetal) CancelJobs(jobs ...int) error {
 			err := errors.Log(fmt.Errorf("CancelJobs: job id not found in Active job list: %d", jid))
 			errs = append(errs, err)
 		} else {
-			err := bm.CancelJob(job)
+			err := bm.cancelJob(job)
 			if err != nil {
 				errs = append(errs, err)
 			}
 		}
 	}
-	bm.SaveState()
+	bm.saveState()
 	return errors.Join(errs...)
 }
 
-// CancelJob cancels the running of the given job (killing process if Running).
-func (bm *BareMetal) CancelJob(job *Job) error {
-	fmt.Println("in cancel:", job.ID)
+// cancelJob cancels the running of the given job (killing process if Running).
+func (bm *BareMetal) cancelJob(job *Job) error {
 	if job.Status == Pending {
 		job.Status = Canceled
 		job.End = time.Now()
@@ -239,21 +238,19 @@ func (bm *BareMetal) CancelJob(job *Job) error {
 		bm.Active.DeleteByKey(job.ID)
 		return nil
 	}
-	fmt.Println("in cancel 2:", job.ID)
 	sv, err := bm.Server(job.ServerName)
 	if errors.Log(err) != nil {
 		return err
 	}
 	goalrun.Run("@0")
 	job.Status = Canceled // always mark job as canceled, even if other stuff fails
-	bm.JobDone(job, sv)
-	bm.SaveState()
-	fmt.Println("cancel set status, job done:", job.ID)
+	bm.jobDone(job, sv)
+	bm.saveState()
 	sv.Use()
 	goalrun.Run("cd")
 	if job.PID == 0 {
 		goalrun.RunErrOK("cd", job.Path)
-		if !bm.GetJobPID(job) {
+		if !bm.getJobPID(job) {
 			return errors.Log(fmt.Errorf("CancelJob: Job %d PID is 0 and could not get it from job.pid file: must cancel manually", job.ID))
 		}
 	}
@@ -263,9 +260,9 @@ func (bm *BareMetal) CancelJob(job *Job) error {
 	return nil
 }
 
-// PollJobs checks to see if any running jobs have finished.
+// pollJobs checks to see if any running jobs have finished.
 // Returns number of jobs that finished.
-func (bm *BareMetal) PollJobs() (int, error) {
+func (bm *BareMetal) pollJobs() (int, error) {
 	nDone := 0
 	njobs := bm.Active.Len()
 	goalrun.Run("@0")
@@ -293,12 +290,12 @@ func (bm *BareMetal) PollJobs() (int, error) {
 		if job.PID == 0 {
 			goalrun.Run("cd")
 			goalrun.RunErrOK("cd", job.Path)
-			if !bm.GetJobPID(job) {
+			if !bm.getJobPID(job) {
 				err := fmt.Errorf("PollJobs: Job %d PID is 0 and could not get it from job.pid file: must cancel manually", job.ID)
 				errs = append(errs, err)
 				goalrun.Run("cd")
 				job.Status = Completed
-				bm.JobDone(job, sv)
+				bm.jobDone(job, sv)
 				nDone++
 			}
 			goalrun.Run("cd")
@@ -309,20 +306,20 @@ func (bm *BareMetal) PollJobs() (int, error) {
 		fmt.Println("status:", psout)
 		if psout == "1" {
 			job.Status = Completed
-			bm.FetchResultsJob(job, sv)
-			bm.JobDone(job, sv)
+			bm.fetchResultsJob(job, sv)
+			bm.jobDone(job, sv)
 			nDone++
 		}
 	}
 	goalrun.Run("@0")
 	if nDone > 0 {
-		bm.SaveState()
+		bm.saveState()
 	}
 	return nDone, errors.Join(errs...)
 }
 
-// JobDone sets job to be completed and moves to Done category.
-func (bm *BareMetal) JobDone(job *Job, sv *Server) {
+// jobDone sets job to be completed and moves to Done category.
+func (bm *BareMetal) jobDone(job *Job, sv *Server) {
 	job.End = time.Now()
 	if job.ServerGPU >= 0 {
 		sv.FreeGPU(job.ServerGPU)
@@ -331,10 +328,10 @@ func (bm *BareMetal) JobDone(job *Job, sv *Server) {
 	bm.Active.DeleteByKey(job.ID)
 }
 
-// FetchResults gets job results back from server for given job id.
+// fetchResults gets job results back from server for given job id.
 // Results are available as job.Results as a compressed tar file.
-func (bm *BareMetal) FetchResults(id int) (*Job, error) {
-	job := bm.Job(id)
+func (bm *BareMetal) fetchResults(id int) (*Job, error) {
+	job := bm.job(id)
 	if job == nil {
 		return nil, errors.Log(fmt.Errorf("FetchResults: job id not found: %d", id))
 	}
@@ -342,11 +339,11 @@ func (bm *BareMetal) FetchResults(id int) (*Job, error) {
 	if errors.Log(err) != nil {
 		return nil, err
 	}
-	return job, bm.FetchResultsJob(job, sv)
+	return job, bm.fetchResultsJob(job, sv)
 }
 
-// FetchResultsJob gets job results back from server.
-func (bm *BareMetal) FetchResultsJob(job *Job, sv *Server) error {
+// fetchResultsJob gets job results back from server.
+func (bm *BareMetal) fetchResultsJob(job *Job, sv *Server) error {
 	defer func() {
 		goalrun.Run("cd")
 		goalrun.Run("@0")
@@ -370,9 +367,9 @@ func (bm *BareMetal) FetchResultsJob(job *Job, sv *Server) error {
 	return nil
 }
 
-// SetServerUsedFromJobs is called at startup to set the server Used status
+// setServerUsedFromJobs is called at startup to set the server Used status
 // based on the current Active jobs, loaded from State.
-func (bm *BareMetal) SetServerUsedFromJobs() error {
+func (bm *BareMetal) setServerUsedFromJobs() error {
 	for _, sv := range bm.Servers.Values {
 		sv.Used = make(map[int]bool)
 	}

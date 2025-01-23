@@ -61,9 +61,9 @@ func (bm *BareMetal) Server(name string) (*Server, error) {
 	return sv, nil
 }
 
-// AvailableGPUs returns the number of GPUs available on servers.
+// availableGPUs returns the number of GPUs available on servers.
 // Only includes servers with availability (nil if nothing avail).
-func (bm *BareMetal) AvailableGPUs() []ServerAvail {
+func (bm *BareMetal) availableGPUs() []ServerAvail {
 	var avail []ServerAvail
 	for _, sv := range bm.Servers.Values {
 		na := sv.Avail()

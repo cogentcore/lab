@@ -48,7 +48,7 @@ func (sr *SimRun) SubmitBare(jid, args string) string {
 	goalrun.Output("@0")
 	bid := strconv.Itoa(job.ID)
 	goalib.WriteFile("job.job", bid)
-	bm.RunPendingJobs()
+	bm.UpdateJobs()
 	sr.GetMeta(jid)
 	return bid
 }
@@ -88,9 +88,7 @@ func (sr *SimRun) QueueBare() {
 
 // UpdateBare updates the BareMetal jobs
 func (sr *SimRun) UpdateBare() { //types:add
-	nfin := errors.Log1(sr.BareMetal.PollJobs())
-	nrun := errors.Log1(sr.BareMetal.RunPendingJobs())
-	sr.BareMetal.SaveState()
+	nrun, nfin := errors.Log2(sr.BareMetal.UpdateJobs())
 	core.MessageSnackbar(sr, fmt.Sprintf("BareMetal jobs run: %d finished: %d", nrun, nfin))
 }
 

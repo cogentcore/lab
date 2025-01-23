@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/iox/jsonx"
@@ -43,6 +44,9 @@ type BareMetal struct {
 	// The unique key is the bare metal job ID (int).
 	Done Jobs
 
+	// ticker is the [time.Ticker] used to control the background update loop.
+	ticker *time.Ticker `json:"-" toml:"-"`
+
 	// Lock for responding to inputs.
 	// everything below top-level input processing is assumed to be locked.
 	sync.Mutex `json:"-" toml:"-"`
@@ -63,15 +67,15 @@ func NewBareMetal() *BareMetal {
 // InitServers, using given goal.Goal instance.
 func (bm *BareMetal) Init(gl *goal.Goal) {
 	goalrun = gl
-	bm.Config()
-	bm.OpenState()
-	bm.InitServers()
+	bm.config()
+	bm.openState()
+	bm.initServers()
 }
 
-// Config loads a toml format config file from
+// config loads a toml format config file from
 // TheApp.DataDir()/BareMetal/config.toml to load the servers.
 // Use [[Servers.Values]] header for each server.
-func (bm *BareMetal) Config() {
+func (bm *BareMetal) config() {
 	dir := filepath.Join(system.TheApp.DataDir(), "BareMetal")
 	os.MkdirAll(dir, 0777)
 	file := filepath.Join(dir, "config.toml")
@@ -83,10 +87,10 @@ func (bm *BareMetal) Config() {
 	bm.updateServerIndexes()
 }
 
-// SaveState saves the current active state to a JSON file:
+// saveState saves the current active state to a JSON file:
 // TheApp.DataDir()/BareMetal/state.json  A backup ~ file is
 // made of any existing prior to saving.
-func (bm *BareMetal) SaveState() {
+func (bm *BareMetal) saveState() {
 	dir := filepath.Join(system.TheApp.DataDir(), "BareMetal")
 	os.MkdirAll(dir, 0777)
 	file := filepath.Join(dir, "state.json")
@@ -100,9 +104,9 @@ func (bm *BareMetal) SaveState() {
 	errors.Log(jsonx.Save(bm, file))
 }
 
-// OpenState opens the current active state from the file made by SaveState,
+// openState opens the current active state from the file made by SaveState,
 // to restore to prior running state.
-func (bm *BareMetal) OpenState() {
+func (bm *BareMetal) openState() {
 	dir := filepath.Join(system.TheApp.DataDir(), "BareMetal")
 	file := filepath.Join(dir, "state.json")
 	if !goalib.FileExists(file) {
@@ -112,21 +116,15 @@ func (bm *BareMetal) OpenState() {
 	bm.updateServerIndexes()
 	bm.Active.UpdateIndexes()
 	bm.Done.UpdateIndexes()
-	bm.SetServerUsedFromJobs()
+	bm.setServerUsedFromJobs()
 }
 
-// InitServers initializes the server state, including opening SSH connections.
-func (bm *BareMetal) InitServers() {
+// initServers initializes the server state, including opening SSH connections.
+func (bm *BareMetal) initServers() {
 	for _, sv := range bm.Servers.Values {
 		sv.OpenSSH()
 	}
 	goalrun.Run("@0")
-}
-
-// OpenLog opens a log file for recording actions.
-func (bm *BareMetal) OpenLog(filename string) error {
-	// todo: openlog file on slog
-	return nil
 }
 
 // updateServerIndexes updates the indexes in the Servers ordered map,
