@@ -212,6 +212,12 @@ func (sr *SimRun) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(sr.UpdateSims).SetText("Jobs").SetIcon(icons.ViewList).SetShortcut("Command+U")
 	})
+	tree.Add(p, func(w *core.Button) {
+		w.SetText("Bare").SetIcon(icons.Refresh).
+			SetTooltip("Update BareMetal jobs").OnClick(func(e events.Event) {
+			sr.UpdateBare()
+		})
+	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(sr.Queue).SetIcon(icons.List)
 	})

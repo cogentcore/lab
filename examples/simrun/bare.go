@@ -77,17 +77,21 @@ func (sr *SimRun) WriteBare(w io.Writer, jid, args string) {
 }
 
 func (sr *SimRun) QueueBare() {
-	nrun := errors.Log1(sr.BareMetal.RunPendingJobs())
-	nfin := errors.Log1(sr.BareMetal.PollJobs())
-	sr.BareMetal.SaveState()
-	core.MessageSnackbar(sr, fmt.Sprintf("BareMetal jobs run: %d finished: %d", nrun, nfin))
-
+	sr.UpdateBare()
 	ts := sr.Tabs.AsLab()
 	goalrun.Run("@1")
 	goalrun.Run("cd")
 	smi := goalrun.Output("nvidia-smi")
 	goalrun.Run("@0")
 	ts.EditorString("Queue", smi)
+}
+
+// UpdateBare updates the BareMetal jobs
+func (sr *SimRun) UpdateBare() { //types:add
+	nfin := errors.Log1(sr.BareMetal.PollJobs())
+	nrun := errors.Log1(sr.BareMetal.RunPendingJobs())
+	sr.BareMetal.SaveState()
+	core.MessageSnackbar(sr, fmt.Sprintf("BareMetal jobs run: %d finished: %d", nrun, nfin))
 }
 
 // FetchJobBare downloads results files from bare metal server.

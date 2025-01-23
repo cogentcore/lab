@@ -348,7 +348,6 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 		tree.AddAt(p, cnm, func(w *core.Frame) {
 			psty := plot.GetStylers(cl)
 			cst, mods, clr := pl.defaultColumnStyle(cl, ci, &colorIdx, &hasSplit, psty)
-			myColorIdx := colorIdx
 			isSplit := cst.Role == plot.Split
 			stys := psty
 			stys.Add(func(s *plot.Style) {
@@ -400,10 +399,6 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 							hasSplit = false
 						}
 					}
-					// update default styling
-					idx := myColorIdx
-					hsp := hasSplit
-					cst, mods, clr = pl.defaultColumnStyle(cl, ci, &idx, &hsp, psty)
 				})
 			})
 			tree.AddChild(w, func(w *core.Button) {
