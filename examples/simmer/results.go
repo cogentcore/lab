@@ -20,6 +20,17 @@ import (
 	"cogentcore.org/lab/tensor"
 )
 
+// FindResult finds an existing result record for given job id and path,
+// returning index and result record if found.
+func (sr *Simmer) FindResult(jid, path string) (int, *Result) {
+	for i, r := range sr.ResultsList {
+		if r.JobID == jid && r.Path == path {
+			return i, r
+		}
+	}
+	return -1, nil
+}
+
 // OpenResultFiles opens the given result files.
 func (sr *Simmer) OpenResultFiles(jobs []string, filter FilterResults) {
 	ts := sr.Tabs.AsLab()
@@ -40,7 +51,11 @@ func (sr *Simmer) OpenResultFiles(jobs []string, filter FilterResults) {
 				fmt.Println(err.Error())
 			}
 			rpath := strings.TrimPrefix(fpath, sr.DataRoot)
-			sr.ResultsList = append(sr.ResultsList, &Result{JobID: jid, Label: label, Message: message, Args: args, Path: rpath, Table: dt})
+			if ri, _ := sr.FindResult(jid, rpath); ri >= 0 {
+				sr.ResultsList[ri] = &Result{JobID: jid, Label: label, Message: message, Args: args, Path: rpath, Table: dt}
+			} else {
+				sr.ResultsList = append(sr.ResultsList, &Result{JobID: jid, Label: label, Message: message, Args: args, Path: rpath, Table: dt})
+			}
 		}
 	}
 	if len(sr.ResultsList) == 0 {

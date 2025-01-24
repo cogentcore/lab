@@ -120,8 +120,8 @@ func (sr *Simmer) FetchJobBare(jid string, force bool) {
 		// fmt.Println("status finalized")
 		goalib.WriteFile("job.status", "Fetched")
 		goalib.ReplaceInFile("dbmeta.toml", "\"Finalized\"", "\"Fetched\"")
-	} else {
-		fmt.Println("status:", sstat)
+		//	} else {
+		//		fmt.Println("status:", sstat)
 	}
 }
 

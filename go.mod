@@ -2,6 +2,11 @@ module cogentcore.org/lab
 
 go 1.22
 
+// important: after running go mod tidy, you must then run this:
+// go get google.golang.org/genproto@latest
+// otherwise there will be an ambiguous import warning when building baremetal
+// https://github.com/googleapis/go-genproto/issues/1015
+
 require (
 	cogentcore.org/core v0.3.8-0.20250116184504-a8f1ea77c96a
 	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56
