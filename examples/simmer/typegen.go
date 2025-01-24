@@ -23,46 +23,47 @@ var _ = types.AddType(&types.Type{Name: "main.Configuration", IDName: "configura
 
 var _ = types.AddType(&types.Type{Name: "main.Result", IDName: "result", Doc: "Result has info for one loaded result, as a table.Table", Fields: []types.Field{{Name: "JobID", Doc: "job id for results"}, {Name: "Label", Doc: "short label used as a legend in the plot"}, {Name: "Message", Doc: "description of job"}, {Name: "Args", Doc: "args used in running job"}, {Name: "Path", Doc: "path to data"}, {Name: "Table", Doc: "result data"}}})
 
-var _ = types.AddType(&types.Type{Name: "main.SimRun", IDName: "sim-run", Doc: "SimRun manages the running and data analysis of results from simulations\nthat are run on remote server(s), within a Cogent Lab browser environment,\nwith the files as the left panel, and the Tabber as the right panel.", Methods: []types.Method{{Name: "FetchJobBare", Doc: "FetchJobBare downloads results files from bare metal server.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}, Args: []string{"jid", "force"}}, {Name: "EditConfig", Doc: "EditConfig edits the configuration", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Jobs", Doc: "Jobs updates the Jobs tab with a Table showing all the Jobs\nwith their meta data. Uses the dbmeta.toml data compiled from\nthe Status function.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "UpdateSims", Doc: "Jobs updates the Jobs tab with a Table showing all the Jobs\nwith their meta data. Uses the dbmeta.toml data compiled from\nthe Status function.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Queue", Doc: "Queue runs a queue query command on the server and shows the results.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Status", Doc: "Status gets updated job.* files from the server for any job that\ndoesn't have a Finalized or Fetched status.  It updates the\nstatus based on the server job status query, assigning a\nstatus of Finalized if job is done.  Updates the dbmeta.toml\ndata based on current job data.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Fetch", Doc: "Fetch retrieves all the .tsv data files from the server\nfor any jobs not already marked as Fetched.\nOperates on the jobs selected in the Jobs table,\nor on all jobs if none selected.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Cancel", Doc: "Cancel cancels the jobs selected in the Jobs table,\nwith a confirmation prompt.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Delete", Doc: "Delete deletes the selected Jobs, with a confirmation prompt.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Archive", Doc: "Archive moves the selected Jobs to the Archive directory,\nlocally, and deletes them from the server,\nfor results that are useful but not immediately relevant.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Results", Doc: "Results loads specific .tsv data files from the jobs selected\nin the Jobs table, into the Results table.  There are often\nmultiple result files per job, so this step is necessary to\nchoose which such files to select for plotting.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Diff", Doc: "Diff shows the differences between two selected jobs, or if only\none job is selected, between that job and the current source directory.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Plot", Doc: "Plot concatenates selected Results data files and generates a plot\nof the resulting data.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Reset", Doc: "Reset resets the Results table", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Submit", Doc: "Submit submits a job to SLURM on the server, using an array\nstructure, with an outer startup job that calls the main array\njobs and a final cleanup job.  Creates a new job dir based on\nincrementing counter, synchronizing the job files.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}}, Embeds: []types.Field{{Name: "Frame"}, {Name: "Browser"}}, Fields: []types.Field{{Name: "Config", Doc: "Config holds all the configuration settings."}, {Name: "JobsTableView", Doc: "JobsTableView is the view of the jobs table."}, {Name: "JobsTable", Doc: "JobsTable is the jobs Table with one row per job."}, {Name: "ResultsTableView", Doc: "ResultsTableView has the results table."}, {Name: "ResultsList", Doc: "ResultsList is the list of result records."}, {Name: "BareMetal", Doc: "for now including directly -- will be rpc"}, {Name: "BareMetalActiveTable"}, {Name: "BareMetalDoneTable"}}})
+var _ = types.AddType(&types.Type{Name: "main.Simmer", IDName: "simmer", Doc: "Simmer manages the running and data analysis of results from simulations\nthat are run on remote server(s), within a Cogent Lab browser environment,\nwith the files as the left panel, and the Tabber as the right panel.", Methods: []types.Method{{Name: "FetchJobBare", Doc: "FetchJobBare downloads results files from bare metal server.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}, Args: []string{"jid", "force"}}, {Name: "EditConfig", Doc: "EditConfig edits the configuration", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Jobs", Doc: "Jobs updates the Jobs tab with a Table showing all the Jobs\nwith their meta data. Uses the dbmeta.toml data compiled from\nthe Status function.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "UpdateSims", Doc: "Jobs updates the Jobs tab with a Table showing all the Jobs\nwith their meta data. Uses the dbmeta.toml data compiled from\nthe Status function.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Queue", Doc: "Queue runs a queue query command on the server and shows the results.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Status", Doc: "Status gets updated job.* files from the server for any job that\ndoesn't have a Finalized or Fetched status.  It updates the\nstatus based on the server job status query, assigning a\nstatus of Finalized if job is done.  Updates the dbmeta.toml\ndata based on current job data.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Fetch", Doc: "Fetch retrieves all the .tsv data files from the server\nfor any jobs not already marked as Fetched.\nOperates on the jobs selected in the Jobs table,\nor on all jobs if none selected.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Cancel", Doc: "Cancel cancels the jobs selected in the Jobs table,\nwith a confirmation prompt.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Delete", Doc: "Delete deletes the selected Jobs, with a confirmation prompt.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Archive", Doc: "Archive moves the selected Jobs to the Archive directory,\nlocally, and deletes them from the server,\nfor results that are useful but not immediately relevant.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Results", Doc: "Results loads specific .tsv data files from the jobs selected\nin the Jobs table, into the Results table.  There are often\nmultiple result files per job, so this step is necessary to\nchoose which such files to select for plotting.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Diff", Doc: "Diff shows the differences between two selected jobs, or if only\none job is selected, between that job and the current source directory.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Plot", Doc: "Plot concatenates selected Results data files and generates a plot\nof the resulting data.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Reset", Doc: "Reset resets the Results table", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "Submit", Doc: "Submit submits a job to SLURM on the server, using an array\nstructure, with an outer startup job that calls the main array\njobs and a final cleanup job.  Creates a new job dir based on\nincrementing counter, synchronizing the job files.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}}, Embeds: []types.Field{{Name: "Frame"}, {Name: "Browser"}}, Fields: []types.Field{{Name: "Config", Doc: "Config holds all the configuration settings."}, {Name: "JobsTableView", Doc: "JobsTableView is the view of the jobs table."}, {Name: "JobsTable", Doc: "JobsTable is the jobs Table with one row per job."}, {Name: "ResultsTableView", Doc: "ResultsTableView has the results table."}, {Name: "ResultsList", Doc: "ResultsList is the list of result records."}, {Name: "BareMetal", Doc: "BareMetal RPC client."}, {Name: "BareMetalActive", Doc: "Status info from BareMetal"}, {Name: "BareMetalActiveTable"}}})
 
-// NewSimRun returns a new [SimRun] with the given optional parent:
-// SimRun manages the running and data analysis of results from simulations
+// NewSimmer returns a new [Simmer] with the given optional parent:
+// Simmer manages the running and data analysis of results from simulations
 // that are run on remote server(s), within a Cogent Lab browser environment,
 // with the files as the left panel, and the Tabber as the right panel.
-func NewSimRun(parent ...tree.Node) *SimRun { return tree.New[SimRun](parent...) }
+func NewSimmer(parent ...tree.Node) *Simmer { return tree.New[Simmer](parent...) }
 
-// SetConfig sets the [SimRun.Config]:
+// SetConfig sets the [Simmer.Config]:
 // Config holds all the configuration settings.
-func (t *SimRun) SetConfig(v Configuration) *SimRun { t.Config = v; return t }
+func (t *Simmer) SetConfig(v Configuration) *Simmer { t.Config = v; return t }
 
-// SetJobsTableView sets the [SimRun.JobsTableView]:
+// SetJobsTableView sets the [Simmer.JobsTableView]:
 // JobsTableView is the view of the jobs table.
-func (t *SimRun) SetJobsTableView(v *tensorcore.Table) *SimRun { t.JobsTableView = v; return t }
+func (t *Simmer) SetJobsTableView(v *tensorcore.Table) *Simmer { t.JobsTableView = v; return t }
 
-// SetJobsTable sets the [SimRun.JobsTable]:
+// SetJobsTable sets the [Simmer.JobsTable]:
 // JobsTable is the jobs Table with one row per job.
-func (t *SimRun) SetJobsTable(v *table.Table) *SimRun { t.JobsTable = v; return t }
+func (t *Simmer) SetJobsTable(v *table.Table) *Simmer { t.JobsTable = v; return t }
 
-// SetResultsTableView sets the [SimRun.ResultsTableView]:
+// SetResultsTableView sets the [Simmer.ResultsTableView]:
 // ResultsTableView has the results table.
-func (t *SimRun) SetResultsTableView(v *core.Table) *SimRun { t.ResultsTableView = v; return t }
+func (t *Simmer) SetResultsTableView(v *core.Table) *Simmer { t.ResultsTableView = v; return t }
 
-// SetResultsList sets the [SimRun.ResultsList]:
+// SetResultsList sets the [Simmer.ResultsList]:
 // ResultsList is the list of result records.
-func (t *SimRun) SetResultsList(v ...*Result) *SimRun { t.ResultsList = v; return t }
+func (t *Simmer) SetResultsList(v ...*Result) *Simmer { t.ResultsList = v; return t }
 
-// SetBareMetal sets the [SimRun.BareMetal]:
-// for now including directly -- will be rpc
-func (t *SimRun) SetBareMetal(v *baremetal.Client) *SimRun { t.BareMetal = v; return t }
+// SetBareMetal sets the [Simmer.BareMetal]:
+// BareMetal RPC client.
+func (t *Simmer) SetBareMetal(v *baremetal.Client) *Simmer { t.BareMetal = v; return t }
 
-// SetBareMetalActiveTable sets the [SimRun.BareMetalActiveTable]
-func (t *SimRun) SetBareMetalActiveTable(v *core.Table) *SimRun { t.BareMetalActiveTable = v; return t }
+// SetBareMetalActive sets the [Simmer.BareMetalActive]:
+// Status info from BareMetal
+func (t *Simmer) SetBareMetalActive(v ...*baremetal.Job) *Simmer { t.BareMetalActive = v; return t }
 
-// SetBareMetalDoneTable sets the [SimRun.BareMetalDoneTable]
-func (t *SimRun) SetBareMetalDoneTable(v *core.Table) *SimRun { t.BareMetalDoneTable = v; return t }
+// SetBareMetalActiveTable sets the [Simmer.BareMetalActiveTable]
+func (t *Simmer) SetBareMetalActiveTable(v *core.Table) *Simmer { t.BareMetalActiveTable = v; return t }
 
 var _ = types.AddFunc(&types.Func{Name: "main.main", Doc: "important: must be run from an interactive terminal.\nWill quit immediately if not!"})
 
 var _ = types.AddFunc(&types.Func{Name: "main.Interactive", Doc: "Interactive is the cli function that gets called by default at gui startup.", Args: []string{"c", "in"}, Returns: []string{"error"}})
 
-var _ = types.AddFunc(&types.Func{Name: "main.NewSimRunWindow", Doc: "NewSimRunWindow returns a new SimRun window using given interpreter.\ndo RunWindow on resulting [core.Body] to open the window.", Args: []string{"in"}, Returns: []string{"Body", "SimRun"}})
+var _ = types.AddFunc(&types.Func{Name: "main.NewSimmerWindow", Doc: "NewSimmerWindow returns a new Simmer window using given interpreter.\ndo RunWindow on resulting [core.Body] to open the window.", Args: []string{"in"}, Returns: []string{"Body", "Simmer"}})

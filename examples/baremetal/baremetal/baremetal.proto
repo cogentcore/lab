@@ -2,14 +2,16 @@ syntax = "proto3";
 package baremetal;
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 option go_package = "cogentcore.org/lab/examples/baremetal/baremetal";
 
 service BareMetal {
   rpc Submit (Submission) returns (Job);
-  rpc CancelJobs (JobIDList) returns (Error);
   rpc JobStatus (JobIDList) returns (JobList);
+  rpc CancelJobs (JobIDList) returns (Error);
   rpc FetchResults (JobIDList) returns (JobList);
+  rpc UpdateJobs (google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 // Submission is a job submission.

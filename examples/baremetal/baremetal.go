@@ -168,3 +168,29 @@ func (bm *BareMetal) newInterpreter() {
 	bm.interp = in
 	goalrun = in.Goal
 }
+
+// Interactive runs the interpreter in interactive mode.
+func (bm *BareMetal) Interactive() {
+	bm.interp.Interactive()
+}
+
+// bgLoop is the background update loop
+func (bm *BareMetal) bgLoop() {
+	for {
+		bm.Lock()
+		if bm.ticker == nil {
+			bm.Unlock()
+			return
+		}
+		bm.Unlock()
+		<-bm.ticker.C
+		nrun, nfin, err := bm.UpdateJobs()
+		if err != nil {
+			errors.Log(err)
+		} else {
+			if nrun > 0 || nfin > 0 {
+				slog.Info("Jobs Updated:", "N Run:", nrun, "N Finished:", nfin)
+			}
+		}
+	}
+}

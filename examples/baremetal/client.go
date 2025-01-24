@@ -19,6 +19,8 @@ type Client struct {
 	// The server address including port number.
 	Host string `default:"localhost:8585"`
 
+	Timeout time.Duration
+
 	// grpc connection
 	conn *grpc.ClientConn
 
@@ -28,6 +30,7 @@ type Client struct {
 func NewClient() *Client {
 	cl := &Client{}
 	cl.Host = "localhost:8585"
+	cl.Timeout = 20 * time.Second
 	return cl
 }
 
@@ -44,11 +47,10 @@ func (cl *Client) Connect() error {
 
 // Submit adds a new Active job with given parameters.
 func (cl *Client) Submit(source, path, script, resultsGlob string, files []byte) (*Job, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cl.Timeout)
 	defer cancel()
 
 	sub := &pb.Submission{Source: source, Path: path, Script: script, ResultsGlob: resultsGlob, Files: files}
-
 	job, err := cl.client.Submit(ctx, sub)
 	if err != nil {
 		return nil, errors.Log(fmt.Errorf("could not submit: %v", err))
@@ -56,24 +58,48 @@ func (cl *Client) Submit(source, path, script, resultsGlob string, files []byte)
 	return JobFromPB(job), nil
 }
 
-// UpdateJobs runs any pending jobs if there are available GPUs to run on.
-// returns number of jobs started, and any errors incurred in starting jobs.
-func (cl *Client) UpdateJobs() (nrun, nfinished int, err error) {
-	return
+// JobStatus gets current job data back from server for given job id(s).
+func (cl *Client) JobStatus(ids ...int) ([]*Job, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), cl.Timeout)
+	defer cancel()
+
+	pids := &pb.JobIDList{JobID: JobIDsToPB(ids)}
+	jobs, err := cl.client.JobStatus(ctx, pids)
+	if err != nil {
+		return nil, errors.Log(fmt.Errorf("JobStatus failed: %v", err))
+	}
+	return JobsFromPB(jobs), nil
 }
 
 // CancelJobs cancels list of job IDs. Returns error for jobs not found.
-func (cl *Client) CancelJobs(jobs ...int) error {
-	return nil
-}
+func (cl *Client) CancelJobs(ids ...int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), cl.Timeout)
+	defer cancel()
 
-// JobStatus gets current job data back from server for given job id(s).
-func (cl *Client) JobStatus(ids ...int) ([]*Job, error) {
-	return nil, nil
+	pids := &pb.JobIDList{JobID: JobIDsToPB(ids)}
+	emsg, err := cl.client.CancelJobs(ctx, pids)
+	if err != nil {
+		return errors.Log(fmt.Errorf("CancelJobs failed: %v", err))
+	}
+	return errors.New(emsg.Error)
 }
 
 // FetchResults gets job results back from server for given job id(s).
 // Results are available as job.Results as a compressed tar file.
 func (cl *Client) FetchResults(ids ...int) ([]*Job, error) {
-	return nil, nil
+	ctx, cancel := context.WithTimeout(context.Background(), cl.Timeout)
+	defer cancel()
+
+	pids := &pb.JobIDList{JobID: JobIDsToPB(ids)}
+	jobs, err := cl.client.FetchResults(ctx, pids)
+	if err != nil {
+		return nil, errors.Log(fmt.Errorf("FetchResults failed: %v", err))
+	}
+	return JobsFromPB(jobs), nil
+}
+
+// UpdateJobs pings the server to run its updates.
+// This happens automatically very 10 seconds but this is for the impatient.
+func (cl *Client) UpdateJobs() {
+	return
 }

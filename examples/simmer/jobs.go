@@ -29,30 +29,19 @@ import (
 // Jobs updates the Jobs tab with a Table showing all the Jobs
 // with their meta data. Uses the dbmeta.toml data compiled from
 // the Status function.
-func (sr *SimRun) Jobs() { //types:add
+func (sr *Simmer) Jobs() { //types:add
 	ts := sr.Tabs.AsLab()
 	if !sr.IsSlurm() {
 		// todo: get data back from server
-		// at := ts.SliceTable("Bare Active", &sr.BareMetal.Active.Values)
-		//
-		//	if sr.BareMetalActiveTable != at {
-		//		sr.BareMetalActiveTable = at
-		//		at.Styler(func(s *styles.Style) {
-		//			s.SetReadOnly(true)
-		//		})
-		//	}
-		//
-		// at.Update()
-		// dt := ts.SliceTable("Bare Done", &sr.BareMetal.Done.Values)
-		//
-		//	if sr.BareMetalDoneTable != dt {
-		//		sr.BareMetalDoneTable = dt
-		//		dt.Styler(func(s *styles.Style) {
-		//			s.SetReadOnly(true)
-		//		})
-		//	}
-		//
-		// dt.Update()
+		sr.BareMetalActive = errors.Log1(sr.BareMetal.JobStatus())
+		at := ts.SliceTable("Bare", &sr.BareMetalActive)
+		if sr.BareMetalActiveTable != at {
+			sr.BareMetalActiveTable = at
+			at.Styler(func(s *styles.Style) {
+				s.SetReadOnly(true)
+			})
+		}
+		at.Update()
 	}
 
 	tv := ts.TensorTable("Jobs", sr.JobsTable)
@@ -108,28 +97,28 @@ func (sr *SimRun) Jobs() { //types:add
 // Jobs updates the Jobs tab with a Table showing all the Jobs
 // with their meta data. Uses the dbmeta.toml data compiled from
 // the Status function.
-func (sr *SimRun) UpdateSims() { //types:add
+func (sr *Simmer) UpdateSims() { //types:add
 	sr.Jobs()
 	sr.Update()
 }
 
 // UpdateSims updates the sim status info, for async case.
-func (sr *SimRun) UpdateSimsAsync() {
+func (sr *Simmer) UpdateSimsAsync() {
 	sr.AsyncLock()
 	sr.Jobs()
 	sr.Update()
 	sr.AsyncUnlock()
 }
 
-func (sr *SimRun) JobPath(jid string) string {
+func (sr *Simmer) JobPath(jid string) string {
 	return filepath.Join(sr.DataRoot, "jobs", jid)
 }
 
-func (sr *SimRun) ServerJobPath(jid string) string {
+func (sr *Simmer) ServerJobPath(jid string) string {
 	return filepath.Join(sr.Config.Server.Root, "jobs", jid)
 }
 
-func (sr *SimRun) JobRow(jid string) int {
+func (sr *Simmer) JobRow(jid string) int {
 	jt := sr.JobsTable.Column("JobID")
 	nr := jt.DimSize(0)
 	for i := range nr {
@@ -142,7 +131,7 @@ func (sr *SimRun) JobRow(jid string) int {
 }
 
 // ValueForJob returns value in given column for given job id
-func (sr *SimRun) ValueForJob(jid, column string) string {
+func (sr *Simmer) ValueForJob(jid, column string) string {
 	if jrow := sr.JobRow(jid); jrow >= 0 {
 		return sr.JobsTable.Column(column).String1D(jrow)
 	}
@@ -150,7 +139,7 @@ func (sr *SimRun) ValueForJob(jid, column string) string {
 }
 
 // Queue runs a queue query command on the server and shows the results.
-func (sr *SimRun) Queue() { //types:add
+func (sr *Simmer) Queue() { //types:add
 	if sr.IsSlurm() {
 		sr.QueueSlurm()
 	} else {
@@ -160,7 +149,7 @@ func (sr *SimRun) Queue() { //types:add
 
 // JobStatus gets job status from server for given job id.
 // jobs that are already Finalized are skipped, unless force is true.
-func (sr *SimRun) JobStatus(jid string, force bool) {
+func (sr *Simmer) JobStatus(jid string, force bool) {
 	// fmt.Println("############\nStatus of Job:", jid)
 	spath := sr.ServerJobPath(jid)
 	jpath := sr.JobPath(jid)
@@ -263,7 +252,7 @@ func (sr *SimRun) JobStatus(jid string, force bool) {
 }
 
 // GetMeta gets the dbmeta.toml file from all job.* files in job dir.
-func (sr *SimRun) GetMeta(jid string) {
+func (sr *Simmer) GetMeta(jid string) {
 	goalrun.Run("@0")
 	goalrun.Run("cd")
 	jpath := sr.JobPath(jid)
@@ -298,7 +287,7 @@ func (sr *SimRun) GetMeta(jid string) {
 // status based on the server job status query, assigning a
 // status of Finalized if job is done.  Updates the dbmeta.toml
 // data based on current job data.
-func (sr *SimRun) Status() { //types:add
+func (sr *Simmer) Status() { //types:add
 	goalrun.Run("@0")
 	sr.UpdateFiles()
 	dpath := filepath.Join(sr.DataRoot, "jobs")
@@ -313,7 +302,7 @@ func (sr *SimRun) Status() { //types:add
 // FetchJob downloads results files from server.
 // if force == true then will re-get already-Fetched jobs,
 // otherwise these are skipped.
-func (sr *SimRun) FetchJob(jid string, force bool) {
+func (sr *Simmer) FetchJob(jid string, force bool) {
 	if sr.IsSlurm() {
 		sr.FetchJobSlurm(jid, force)
 	} else {
@@ -325,7 +314,7 @@ func (sr *SimRun) FetchJob(jid string, force bool) {
 // for any jobs not already marked as Fetched.
 // Operates on the jobs selected in the Jobs table,
 // or on all jobs if none selected.
-func (sr *SimRun) Fetch() { //types:add
+func (sr *Simmer) Fetch() { //types:add
 	goalrun.Run("@0")
 	tv := sr.JobsTableView
 	jobs := tv.SelectedColumnStrings("JobID")
@@ -342,7 +331,7 @@ func (sr *SimRun) Fetch() { //types:add
 
 // Cancel cancels the jobs selected in the Jobs table,
 // with a confirmation prompt.
-func (sr *SimRun) Cancel() { //types:add
+func (sr *Simmer) Cancel() { //types:add
 	tv := sr.JobsTableView
 	jobs := tv.SelectedColumnStrings("JobID")
 	if len(jobs) == 0 {
@@ -360,7 +349,7 @@ func (sr *SimRun) Cancel() { //types:add
 }
 
 // DeleteJobs deletes the given jobs
-func (sr *SimRun) DeleteJobs(jobs []string) {
+func (sr *Simmer) DeleteJobs(jobs []string) {
 	goalrun.Run("@0")
 	dpath := filepath.Join(sr.DataRoot, "jobs")
 	spath := filepath.Join(sr.Config.Server.Root, "jobs")
@@ -381,7 +370,7 @@ func (sr *SimRun) DeleteJobs(jobs []string) {
 }
 
 // Delete deletes the selected Jobs, with a confirmation prompt.
-func (sr *SimRun) Delete() { //types:add
+func (sr *Simmer) Delete() { //types:add
 	tv := sr.JobsTableView
 	jobs := tv.SelectedColumnStrings("JobID")
 	if len(jobs) == 0 {
@@ -395,7 +384,7 @@ func (sr *SimRun) Delete() { //types:add
 }
 
 // ArchiveJobs archives the given jobs
-func (sr *SimRun) ArchiveJobs(jobs []string) {
+func (sr *Simmer) ArchiveJobs(jobs []string) {
 	goalrun.Run("@0")
 	dpath := filepath.Join(sr.DataRoot, "jobs")
 	apath := filepath.Join(sr.DataRoot, "archive", "jobs")
@@ -420,7 +409,7 @@ func (sr *SimRun) ArchiveJobs(jobs []string) {
 // Archive moves the selected Jobs to the Archive directory,
 // locally, and deletes them from the server,
 // for results that are useful but not immediately relevant.
-func (sr *SimRun) Archive() { //types:add
+func (sr *Simmer) Archive() { //types:add
 	tv := sr.JobsTableView
 	jobs := tv.SelectedColumnStrings("JobID")
 	if len(jobs) == 0 {

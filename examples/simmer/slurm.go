@@ -21,7 +21,7 @@ import (
 // WriteSBatchHeader writes the header of a SLURM SBatch script
 // that is common across all three scripts.
 // IMPORTANT: set the job parameters here!
-func (sr *SimRun) WriteSBatchHeader(w io.Writer, jid string) {
+func (sr *Simmer) WriteSBatchHeader(w io.Writer, jid string) {
 	fmt.Fprintf(w, "#SBATCH --job-name=%s_%s\n", sr.Config.Project, jid)
 	fmt.Fprintf(w, "#SBATCH --mem-per-cpu=%dG\n", sr.Config.Job.Memory)
 	fmt.Fprintf(w, "#SBATCH --time=%d:00:00\n", sr.Config.Job.Hours)
@@ -41,7 +41,7 @@ func (sr *SimRun) WriteSBatchHeader(w io.Writer, jid string) {
 	// fmt.Fprintf(w, "unset SLURM_EXPORT_ENV\n")
 }
 
-func (sr *SimRun) WriteSBatchSetup(w io.Writer, jid string) {
+func (sr *Simmer) WriteSBatchSetup(w io.Writer, jid string) {
 	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
 	fmt.Fprint(w, "#SBATCH --output=job.setup.out\n")
 	fmt.Fprint(w, "#SBATCH --error=job.setup.err\n")
@@ -59,7 +59,7 @@ func (sr *SimRun) WriteSBatchSetup(w io.Writer, jid string) {
 	fmt.Fprintln(w, cmd)
 }
 
-func (sr *SimRun) WriteSBatchArray(w io.Writer, jid, setup_id, args string) {
+func (sr *Simmer) WriteSBatchArray(w io.Writer, jid, setup_id, args string) {
 	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
 	fmt.Fprintf(w, "#SBATCH --array=0-%d\n", sr.Config.Job.NRuns-1)
 	fmt.Fprint(w, "#SBATCH --output=job.%A_%a.out\n")
@@ -76,7 +76,7 @@ func (sr *SimRun) WriteSBatchArray(w io.Writer, jid, setup_id, args string) {
 	fmt.Fprintf(w, "./%s -nogui -cfg config_job.toml -run $SLURM_ARRAY_TASK_ID -runs 1 %s\n", sr.Config.Project, args)
 }
 
-func (sr *SimRun) WriteSBatchCleanup(w io.Writer, jid, array_id string) {
+func (sr *Simmer) WriteSBatchCleanup(w io.Writer, jid, array_id string) {
 	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
 	fmt.Fprint(w, "#SBATCH --output=job.cleanup.out\n")
 	// fmt.Fprint(w, "#SBATCH --error=job.cleanup.err")
@@ -101,7 +101,7 @@ func (sr *SimRun) WriteSBatchCleanup(w io.Writer, jid, array_id string) {
 	fmt.Fprintln(w, cmd)
 }
 
-func (sr *SimRun) SubmitSBatch(jid, args string) string {
+func (sr *Simmer) SubmitSBatch(jid, args string) string {
 	goalrun.Run("@0")
 	f, _ := os.Create("job.setup.sbatch")
 	sr.WriteSBatchSetup(f, jid)
@@ -126,7 +126,7 @@ func (sr *SimRun) SubmitSBatch(jid, args string) string {
 
 // RunSBatch runs sbatch on the given sbatch file,
 // returning the resulting job id.
-func (sr *SimRun) RunSBatch(sbatch string) string {
+func (sr *Simmer) RunSBatch(sbatch string) string {
 	goalrun.Run("@1")
 	goalrun.Run("sbatch", sbatch, ">", "job.slurm")
 	goalrun.Run("@0")
@@ -143,7 +143,7 @@ func (sr *SimRun) RunSBatch(sbatch string) string {
 }
 
 // QueueSlurm runs a queue query command on the server and shows the results.
-func (sr *SimRun) QueueSlurm() {
+func (sr *Simmer) QueueSlurm() {
 	ts := sr.Tabs.AsLab()
 	goalrun.Run("@1")
 	goalrun.Run("cd")
@@ -162,7 +162,7 @@ func (sr *SimRun) QueueSlurm() {
 	ts.EditorString("Queue", qstr)
 }
 
-func (sr *SimRun) FetchJobSlurm(jid string, force bool) {
+func (sr *Simmer) FetchJobSlurm(jid string, force bool) {
 	spath := sr.ServerJobPath(jid)
 	jpath := sr.JobPath(jid)
 	goalrun.Run("@1")
@@ -208,7 +208,7 @@ func (sr *SimRun) FetchJobSlurm(jid string, force bool) {
 }
 
 // CancelJobsSlurm cancels the given jobs, for slurm
-func (sr *SimRun) CancelJobsSlurm(jobs []string) {
+func (sr *Simmer) CancelJobsSlurm(jobs []string) {
 	goalrun.Run("@0")
 	filepath.Join(sr.DataRoot, "jobs")
 	filepath.Join(sr.Config.Server.Root, "jobs")

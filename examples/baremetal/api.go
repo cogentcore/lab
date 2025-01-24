@@ -5,10 +5,7 @@
 package baremetal
 
 import (
-	"fmt"
 	"time"
-
-	"cogentcore.org/core/base/errors"
 )
 
 // this file has the exported API for direct usage,
@@ -26,21 +23,49 @@ func (bm *BareMetal) StartBGUpdates() {
 	go bm.bgLoop()
 }
 
-// Job returns the Job record for given job number; nil if not found
-// in Active or Done;
-func (bm *BareMetal) Job(jobno int) *Job {
-	bm.Lock()
-	defer bm.Unlock()
-
-	return bm.job(jobno)
-}
-
 // Submit adds a new Active job with given parameters.
 func (bm *BareMetal) Submit(src, path, script, results string, files []byte) *Job {
 	bm.Lock()
 	defer bm.Unlock()
 
 	return bm.submit(src, path, script, results, files)
+}
+
+// JobStatus gets current job data for given job id(s).
+// An empty list returns all of the currently Active jobs.
+func (bm *BareMetal) JobStatus(ids ...int) []*Job {
+	bm.Lock()
+	defer bm.Unlock()
+
+	if len(ids) == 0 {
+		return bm.Active.Values
+	}
+	jobs := make([]*Job, 0, len(ids))
+	for _, id := range ids {
+		job := bm.job(id)
+		if job == nil {
+			continue
+		}
+		jobs = append(jobs, job)
+	}
+	return jobs
+}
+
+// CancelJobs cancels list of job IDs. Returns error for jobs not found.
+func (bm *BareMetal) CancelJobs(ids ...int) error {
+	bm.Lock()
+	defer bm.Unlock()
+
+	return bm.cancelJobs(ids...)
+}
+
+// FetchResults gets job results back from server for given job id(s).
+// Results are available as job.Results as a compressed tar file.
+func (bm *BareMetal) FetchResults(ids ...int) ([]*Job, error) {
+	bm.Lock()
+	defer bm.Unlock()
+
+	return bm.fetchResults(ids...)
 }
 
 // UpdateJobs runs any pending jobs if there are available GPUs to run on.
@@ -53,40 +78,4 @@ func (bm *BareMetal) UpdateJobs() (nrun, nfinished int, err error) {
 	nrun, err = bm.runPendingJobs()
 	bm.saveState()
 	return
-}
-
-// CancelJobs cancels list of job IDs. Returns error for jobs not found.
-func (bm *BareMetal) CancelJobs(jobs ...int) error {
-	bm.Lock()
-	defer bm.Unlock()
-
-	return bm.cancelJobs(jobs...)
-}
-
-// FetchResults gets job results back from server for given job id(s).
-// Results are available as job.Results as a compressed tar file.
-func (bm *BareMetal) FetchResults(ids ...int) ([]*Job, error) {
-	bm.Lock()
-	defer bm.Unlock()
-
-	return bm.fetchResults(ids...)
-}
-
-// bgLoop is the background update loop
-func (bm *BareMetal) bgLoop() {
-	for {
-		bm.Lock()
-		if bm.ticker == nil {
-			bm.Unlock()
-			return
-		}
-		bm.Unlock()
-		<-bm.ticker.C
-		nrun, nfin, err := bm.UpdateJobs()
-		if err != nil {
-			errors.Log(err)
-		} else {
-			fmt.Printf("BareMetal: N Run: %d  N Finished: %d\n", nrun, nfin)
-		}
-	}
 }

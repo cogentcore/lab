@@ -1,7 +1,6 @@
-# simrun: simulation running infrastructure
+# Simmer: simulation running and monitoring infrastructure
 
-
-
+"Watch your sims simmer on the GPU burners.."
 
 # Server types
 

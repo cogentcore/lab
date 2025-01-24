@@ -21,7 +21,7 @@ import (
 )
 
 // OpenResultFiles opens the given result files.
-func (sr *SimRun) OpenResultFiles(jobs []string, filter FilterResults) {
+func (sr *Simmer) OpenResultFiles(jobs []string, filter FilterResults) {
 	ts := sr.Tabs.AsLab()
 	for _, jid := range jobs {
 		jpath := sr.JobPath(jid)
@@ -60,7 +60,7 @@ func (sr *SimRun) OpenResultFiles(jobs []string, filter FilterResults) {
 // in the Jobs table, into the Results table.  There are often
 // multiple result files per job, so this step is necessary to
 // choose which such files to select for plotting.
-func (sr *SimRun) Results() { //types:add
+func (sr *Simmer) Results() { //types:add
 	tv := sr.JobsTableView
 	jobs := tv.SelectedColumnStrings("JobID")
 	if len(jobs) == 0 {
@@ -78,7 +78,7 @@ func (sr *SimRun) Results() { //types:add
 
 // Diff shows the differences between two selected jobs, or if only
 // one job is selected, between that job and the current source directory.
-func (sr *SimRun) Diff() { //types:add
+func (sr *Simmer) Diff() { //types:add
 	goalrun.Run("@0")
 	tv := sr.JobsTableView
 	jobs := tv.SelectedColumnStrings("JobID")
@@ -99,7 +99,7 @@ func (sr *SimRun) Diff() { //types:add
 
 // Plot concatenates selected Results data files and generates a plot
 // of the resulting data.
-func (sr *SimRun) Plot() { //types:add
+func (sr *Simmer) Plot() { //types:add
 	ts := sr.Tabs.AsLab()
 	tv := sr.ResultsTableView
 	jis := tv.SelectedIndexesList(false)
@@ -126,7 +126,7 @@ func (sr *SimRun) Plot() { //types:add
 	ts.PlotTable("Plot", AggTable)
 }
 
-func (sr *SimRun) styleResults() {
+func (sr *Simmer) styleResults() {
 	tv := sr.ResultsTableView
 	tv.ShowIndexes = true
 	tv.ReadOnlyMultiSelect = true
@@ -136,7 +136,7 @@ func (sr *SimRun) styleResults() {
 }
 
 // Reset resets the Results table
-func (sr *SimRun) Reset() { //types:add
+func (sr *Simmer) Reset() { //types:add
 	ts := sr.Tabs.AsLab()
 	sr.ResultsList = []*Result{}
 	tv := ts.SliceTable("Results", &sr.ResultsList)

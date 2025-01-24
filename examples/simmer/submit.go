@@ -21,7 +21,7 @@ import (
 
 // NextJobNumber returns the next sequential job number to use,
 // incrementing value saved in last_job.number file
-func (sr *SimRun) NextJobNumber() int {
+func (sr *Simmer) NextJobNumber() int {
 	jf := "last_job.number"
 	jnf := goalib.ReadFile(jf)
 	jn := 0
@@ -33,14 +33,14 @@ func (sr *SimRun) NextJobNumber() int {
 	return jn
 }
 
-func (sr *SimRun) NextJobID() string {
+func (sr *Simmer) NextJobID() string {
 	jn := sr.NextJobNumber()
 	jstr := fmt.Sprintf("%s%05d", sr.Config.UserShort, jn)
 	return jstr
 }
 
 // FindGoMod finds the go.mod file starting from the given directory
-func (sr *SimRun) FindGoMod(dir string) string {
+func (sr *Simmer) FindGoMod(dir string) string {
 	for {
 		if goalib.FileExists(filepath.Join(dir, "go.mod")) {
 			return dir
@@ -56,7 +56,7 @@ func (sr *SimRun) FindGoMod(dir string) string {
 // GoModulePath returns the overall module path for project
 // in given directory, and the full module path to the current
 // project, which is a subdirectory within the module.
-func (sr *SimRun) GoModulePath(dir string) (modpath, fullpath string) {
+func (sr *Simmer) GoModulePath(dir string) (modpath, fullpath string) {
 	goalrun.Run("@0")
 	os.Chdir(dir)
 	goalrun.Run("cd", dir)
@@ -84,7 +84,7 @@ func (sr *SimRun) GoModulePath(dir string) (modpath, fullpath string) {
 // CopyFilesToJob copies files with given extensions (none for all),
 // from localSrc to localJob and remote hostJob (@1).
 // Ensures directories are made in the job locations
-func (sr *SimRun) CopyFilesToJob(localSrc, localJob, hostJob string, exts ...string) {
+func (sr *Simmer) CopyFilesToJob(localSrc, localJob, hostJob string, exts ...string) {
 	goalrun.Run("@0")
 	if !sr.IsSlurm() { // baremetal does it separately
 		return
@@ -106,7 +106,7 @@ func (sr *SimRun) CopyFilesToJob(localSrc, localJob, hostJob string, exts ...str
 
 // NewJob runs a new job with given parameters.
 // This is run as a separate goroutine!
-func (sr *SimRun) NewJob(jp SubmitParams) {
+func (sr *Simmer) NewJob(jp SubmitParams) {
 	message := jp.Message
 	args := jp.Args
 	label := jp.Label
@@ -242,7 +242,7 @@ func (sr *SimRun) NewJob(jp SubmitParams) {
 // structure, with an outer startup job that calls the main array
 // jobs and a final cleanup job.  Creates a new job dir based on
 // incrementing counter, synchronizing the job files.
-func (sr *SimRun) Submit() { //types:add
+func (sr *Simmer) Submit() { //types:add
 	lab.PromptStruct(sr, &sr.Config.Submit, "Submit a new job", func() {
 		go sr.NewJob(sr.Config.Submit)
 	})

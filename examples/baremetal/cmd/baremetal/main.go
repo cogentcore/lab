@@ -17,6 +17,7 @@ import (
 	"cogentcore.org/lab/examples/baremetal"
 	pb "cogentcore.org/lab/examples/baremetal/baremetal"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type Config struct {
@@ -31,9 +32,41 @@ type server struct {
 
 // Submit adds a new Active job with given parameters.
 func (s *server) Submit(_ context.Context, in *pb.Submission) (*pb.Job, error) {
-	log.Printf("Submitting: %v", in.Path)
+	slog.Info("Submitting Job", "Source:", in.Source, "Path:", in.Path)
 	job := s.bm.Submit(in.Source, in.Path, in.Script, in.ResultsGlob, in.Files)
 	return baremetal.JobToPB(job), nil
+}
+
+// JobStatus gets current job data for given job id(s).
+// An empty list returns all of the active jobs.
+func (s *server) JobStatus(_ context.Context, in *pb.JobIDList) (*pb.JobList, error) {
+	slog.Info("JobStatus")
+	jobs := s.bm.JobStatus(baremetal.JobIDsFromPB(in.JobID)...)
+	return baremetal.JobsToPB(jobs), nil
+}
+
+// CancelJobs cancels list of job IDs. Returns error for jobs not found.
+func (s *server) CancelJobs(_ context.Context, in *pb.JobIDList) (*pb.Error, error) {
+	slog.Info("CancelJobs")
+	err := s.bm.CancelJobs(baremetal.JobIDsFromPB(in.JobID)...)
+	return &pb.Error{Error: err.Error()}, nil
+}
+
+// FetchResults gets job results back from server for given job id(s).
+// Results are available as job.Results as a compressed tar file.
+func (s *server) FetchResults(_ context.Context, in *pb.JobIDList) (*pb.JobList, error) {
+	slog.Info("FetchResults")
+	jobs, err := s.bm.FetchResults(baremetal.JobIDsFromPB(in.JobID)...)
+	errors.Log(err)
+	return baremetal.JobsToPB(jobs), nil
+}
+
+// UpdateJobs pings the server to run its updates.
+// This happens automatically very 10 seconds but this is for the impatient.
+func (s *server) UpdateJobs(_ context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
+	slog.Info("UpdateJobs")
+	s.bm.UpdateJobs()
+	return &emptypb.Empty{}, nil
 }
 
 func main() {
@@ -58,5 +91,6 @@ func Run(cfg *Config) error {
 	if err := s.Serve(lis); err != nil {
 		return errors.Log(fmt.Errorf("failed to serve: %v", err))
 	}
+	bms.bm.Interactive()
 	return nil
 }

@@ -23,7 +23,7 @@ import (
 // bare supports the baremetal platform without slurm or other job management infra.
 
 // SubmitBare submits a bare metal run job, returning the pid of the resulting process.
-func (sr *SimRun) SubmitBare(jid, args string) string {
+func (sr *Simmer) SubmitBare(jid, args string) string {
 	goalrun.Run("@0")
 	script := "job.sbatch"
 	f, _ := os.Create(script)
@@ -59,7 +59,7 @@ func (sr *SimRun) SubmitBare(jid, args string) string {
 }
 
 // WriteBare writes the bash script to run a "bare metal" run.
-func (sr *SimRun) WriteBare(w io.Writer, jid, args string) {
+func (sr *Simmer) WriteBare(w io.Writer, jid, args string) {
 	if sr.Config.JobScript != "" {
 		js := sr.Config.JobScript
 		strings.ReplaceAll(js, "$JOB_ARGS", args)
@@ -81,7 +81,7 @@ func (sr *SimRun) WriteBare(w io.Writer, jid, args string) {
 	fmt.Fprintf(w, "./%s -nogui -cfg config_job.toml -gpu-device $BARE_GPU %s >& job.out & echo $! > job.pid", sr.Config.Project, args)
 }
 
-func (sr *SimRun) QueueBare() {
+func (sr *Simmer) QueueBare() {
 	sr.UpdateBare()
 	ts := sr.Tabs.AsLab()
 	goalrun.Run("@1")
@@ -92,13 +92,13 @@ func (sr *SimRun) QueueBare() {
 }
 
 // UpdateBare updates the BareMetal jobs
-func (sr *SimRun) UpdateBare() { //types:add
+func (sr *Simmer) UpdateBare() { //types:add
 	// nrun, nfin := errors.Log2(sr.BareMetal.UpdateJobs())
 	// core.MessageSnackbar(sr, fmt.Sprintf("BareMetal jobs run: %d finished: %d", nrun, nfin))
 }
 
 // FetchJobBare downloads results files from bare metal server.
-func (sr *SimRun) FetchJobBare(jid string, force bool) {
+func (sr *Simmer) FetchJobBare(jid string, force bool) {
 	jpath := sr.JobPath(jid)
 	goalrun.Run("@0")
 	goalrun.Run("cd", jpath)
@@ -125,7 +125,7 @@ func (sr *SimRun) FetchJobBare(jid string, force bool) {
 	}
 }
 
-func (sr *SimRun) CancelJobsBare(jobs []string) {
+func (sr *Simmer) CancelJobsBare(jobs []string) {
 	jnos := make([]int, 0, len(jobs))
 	for _, jid := range jobs {
 		sjob := sr.ValueForJob(jid, "ServerJob")

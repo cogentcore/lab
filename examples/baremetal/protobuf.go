@@ -28,3 +28,39 @@ func JobFromPB(job *pb.Job) *Job {
 	bj.End = job.End.AsTime()
 	return bj
 }
+
+// JobsToPB returns the protobuf version of given Jobs list.
+func JobsToPB(jobs []*Job) *pb.JobList {
+	pjs := make([]*pb.Job, len(jobs))
+	for i, job := range jobs {
+		pjs[i] = JobToPB(job)
+	}
+	return &pb.JobList{Jobs: pjs}
+}
+
+// JobsFromPB returns Jobs from the protobuf version of given Jobs list.
+func JobsFromPB(pjs *pb.JobList) []*Job {
+	jobs := make([]*Job, len(pjs.Jobs))
+	for i, pj := range pjs.Jobs {
+		jobs[i] = JobFromPB(pj)
+	}
+	return jobs
+}
+
+// JobIDsToPB returns job id numbers as int64 for pb.JobIDList
+func JobIDsToPB(ids []int) []int64 {
+	i64 := make([]int64, len(ids))
+	for i, id := range ids {
+		i64[i] = int64(id)
+	}
+	return i64
+}
+
+// JobIDsFromPB returns job id numbers from int64 in pb.JobIDList
+func JobIDsFromPB(ids []int64) []int {
+	is := make([]int, len(ids))
+	for i, id := range ids {
+		is[i] = int(id)
+	}
+	return is
+}
