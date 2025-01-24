@@ -49,7 +49,11 @@ func (s *server) JobStatus(_ context.Context, in *pb.JobIDList) (*pb.JobList, er
 func (s *server) CancelJobs(_ context.Context, in *pb.JobIDList) (*pb.Error, error) {
 	slog.Info("CancelJobs")
 	err := s.bm.CancelJobs(baremetal.JobIDsFromPB(in.JobID)...)
-	return &pb.Error{Error: err.Error()}, nil
+	estr := ""
+	if err != nil {
+		estr = err.Error()
+	}
+	return &pb.Error{Error: estr}, nil
 }
 
 // FetchResults gets job results back from server for given job id(s).

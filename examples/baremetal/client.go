@@ -30,7 +30,7 @@ type Client struct {
 func NewClient() *Client {
 	cl := &Client{}
 	cl.Host = "localhost:8585"
-	cl.Timeout = 20 * time.Second
+	cl.Timeout = 120 * time.Second
 	return cl
 }
 

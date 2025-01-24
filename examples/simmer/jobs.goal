@@ -213,17 +213,19 @@ func (sr *Simmer) JobStatus(jid string, force bool) {
 		if err != nil {
 			core.ErrorSnackbar(sr, err)
 		} else {
-			job := jobs[0]
-			sstat = job.Status.String()
-			goalib.WriteFile("job.status", sstat)
-			goalib.WriteFile("job.squeue", sstat)
-			if !job.Start.IsZero() {
-				goalib.WriteFile("job.start", job.Start.Format(sr.Config.TimeFormat))
+			if len(jobs) == 1 {
+				job := jobs[0]
+				sstat = job.Status.String()
+				goalib.WriteFile("job.status", sstat)
+				goalib.WriteFile("job.squeue", sstat)
+				if !job.Start.IsZero() {
+					goalib.WriteFile("job.start", job.Start.Format(sr.Config.TimeFormat))
+				}
+				if !job.End.IsZero() {
+					goalib.WriteFile("job.end", job.End.Format(sr.Config.TimeFormat))
+				}
+				// fmt.Println(jid, sstat)
 			}
-			if !job.End.IsZero() {
-				goalib.WriteFile("job.end", job.End.Format(sr.Config.TimeFormat))
-			}
-			// fmt.Println(jid, sstat)
 		}
 		@0
 		if sstat == "Running" {
@@ -288,6 +290,7 @@ func (sr *Simmer) GetMeta(jid string) {
 func (sr *Simmer) Status() { //types:add
 	@0
 	sr.UpdateFiles()
+	sr.Jobs()
 	dpath := filepath.Join(sr.DataRoot, "jobs")
 	ds := fsx.Dirs(dpath)
 	for _, jid := range ds {
