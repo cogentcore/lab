@@ -113,6 +113,9 @@ func (sr *Simmer) FetchJobBare(jid string, force bool) {
 		core.ErrorSnackbar(sr, err)
 		return
 	}
+	if len(jobs) == 0 {
+		return
+	}
 	job := jobs[0]
 	baremetal.Untar(bytes.NewReader(job.Results), jpath, true) // gzip
 	// note: we don't do any post-processing here -- see slurm version for combining separate runs

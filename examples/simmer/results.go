@@ -50,7 +50,8 @@ func (sr *Simmer) OpenResultFiles(jobs []string, filter FilterResults) {
 			if err != nil {
 				fmt.Println(err.Error())
 			}
-			rpath := strings.TrimPrefix(fpath, sr.DataRoot)
+			// rpath := strings.TrimPrefix(fpath, sr.DataRoot)
+			rpath := fn // actually visible in table
 			if ri, _ := sr.FindResult(jid, rpath); ri >= 0 {
 				sr.ResultsList[ri] = &Result{JobID: jid, Label: label, Message: message, Args: args, Path: rpath, Table: dt}
 			} else {
