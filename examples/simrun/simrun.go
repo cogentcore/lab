@@ -71,7 +71,7 @@ type SimRun struct {
 	ResultsList []*Result
 
 	// for now including directly -- will be rpc
-	BareMetal *baremetal.BareMetal
+	BareMetal *baremetal.Client
 
 	BareMetalActiveTable *core.Table
 	BareMetalDoneTable   *core.Table
@@ -156,9 +156,11 @@ func (sr *SimRun) InitSimRun(startDir string) {
 	sr.UpdateScripts() // automatically runs lowercase init scripts
 
 	if !sr.IsSlurm() {
-		sr.BareMetal = baremetal.NewBareMetal()
-		sr.BareMetal.Init(in.Goal)
-		// sr.BareMetal.StartBGUpdates() // todo: this interferes with cur dir -- only in separate process
+		sr.BareMetal = baremetal.NewClient()
+		err := sr.BareMetal.Connect()
+		if errors.Log(err) != nil {
+			sr.BareMetal = nil
+		}
 	}
 }
 

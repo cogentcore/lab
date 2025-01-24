@@ -26,25 +26,6 @@ func (bm *BareMetal) StartBGUpdates() {
 	go bm.bgLoop()
 }
 
-// bgLoop is the background update loop
-func (bm *BareMetal) bgLoop() {
-	for {
-		bm.Lock()
-		if bm.ticker == nil {
-			bm.Unlock()
-			return
-		}
-		bm.Unlock()
-		<-bm.ticker.C
-		nrun, nfin, err := bm.UpdateJobs()
-		if err != nil {
-			errors.Log(err)
-		} else {
-			fmt.Printf("BareMetal: N Run: %d  N Finished: %d\n", nrun, nfin)
-		}
-	}
-}
-
 // Job returns the Job record for given job number; nil if not found
 // in Active or Done;
 func (bm *BareMetal) Job(jobno int) *Job {
@@ -82,11 +63,30 @@ func (bm *BareMetal) CancelJobs(jobs ...int) error {
 	return bm.cancelJobs(jobs...)
 }
 
-// FetchResults gets job results back from server for given job id.
+// FetchResults gets job results back from server for given job id(s).
 // Results are available as job.Results as a compressed tar file.
-func (bm *BareMetal) FetchResults(id int) (*Job, error) {
+func (bm *BareMetal) FetchResults(ids ...int) ([]*Job, error) {
 	bm.Lock()
 	defer bm.Unlock()
 
-	return bm.fetchResults(id)
+	return bm.fetchResults(ids...)
+}
+
+// bgLoop is the background update loop
+func (bm *BareMetal) bgLoop() {
+	for {
+		bm.Lock()
+		if bm.ticker == nil {
+			bm.Unlock()
+			return
+		}
+		bm.Unlock()
+		<-bm.ticker.C
+		nrun, nfin, err := bm.UpdateJobs()
+		if err != nil {
+			errors.Log(err)
+		} else {
+			fmt.Printf("BareMetal: N Run: %d  N Finished: %d\n", nrun, nfin)
+		}
+	}
 }

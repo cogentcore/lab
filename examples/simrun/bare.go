@@ -36,6 +36,7 @@ func (sr *SimRun) SubmitBare(jid, args string) string {
 		return ""
 	}
 	// fmt.Println("files:", files)
+	// todo: this is triggering a type defn mode:
 	var b bytes.Buffer
 	err = baremetal.TarFiles(&b, "./", true, files...)
 	if errors.Log(err) != nil {
@@ -44,8 +45,12 @@ func (sr *SimRun) SubmitBare(jid, args string) string {
 	bm := sr.BareMetal
 
 	spath := sr.ServerJobPath(jid)
-	job := bm.Submit(sr.Config.Project, spath, script, sr.Config.FetchFiles, b.Bytes())
-	goalrun.Output("@0")
+	job, err := bm.Submit(sr.Config.Project, spath, script, sr.Config.FetchFiles, b.Bytes())
+	goalrun.Run("@0")
+	if err != nil {
+		core.ErrorSnackbar(sr, err)
+		return "-1"
+	}
 	bid := strconv.Itoa(job.ID)
 	goalib.WriteFile("job.job", bid)
 	bm.UpdateJobs()
@@ -88,8 +93,8 @@ func (sr *SimRun) QueueBare() {
 
 // UpdateBare updates the BareMetal jobs
 func (sr *SimRun) UpdateBare() { //types:add
-	nrun, nfin := errors.Log2(sr.BareMetal.UpdateJobs())
-	core.MessageSnackbar(sr, fmt.Sprintf("BareMetal jobs run: %d finished: %d", nrun, nfin))
+	// nrun, nfin := errors.Log2(sr.BareMetal.UpdateJobs())
+	// core.MessageSnackbar(sr, fmt.Sprintf("BareMetal jobs run: %d finished: %d", nrun, nfin))
 }
 
 // FetchJobBare downloads results files from bare metal server.
@@ -103,11 +108,12 @@ func (sr *SimRun) FetchJobBare(jid string, force bool) {
 	}
 	sjob := sr.ValueForJob(jid, "ServerJob")
 	sj := errors.Log1(strconv.Atoi(sjob))
-	job, err := sr.BareMetal.FetchResults(sj)
+	jobs, err := sr.BareMetal.FetchResults(sj)
 	if err != nil {
 		core.ErrorSnackbar(sr, err)
 		return
 	}
+	job := jobs[0]
 	baremetal.Untar(bytes.NewReader(job.Results), jpath, true) // gzip
 	// note: we don't do any post-processing here -- see slurm version for combining separate runs
 	if sstat == "Finalized" {

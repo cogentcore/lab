@@ -32,22 +32,27 @@ import (
 func (sr *SimRun) Jobs() { //types:add
 	ts := sr.Tabs.AsLab()
 	if !sr.IsSlurm() {
-		at := ts.SliceTable("Bare Active", &sr.BareMetal.Active.Values)
-		if sr.BareMetalActiveTable != at {
-			sr.BareMetalActiveTable = at
-			at.Styler(func(s *styles.Style) {
-				s.SetReadOnly(true)
-			})
-		}
-		at.Update()
-		dt := ts.SliceTable("Bare Done", &sr.BareMetal.Done.Values)
-		if sr.BareMetalDoneTable != dt {
-			sr.BareMetalDoneTable = dt
-			dt.Styler(func(s *styles.Style) {
-				s.SetReadOnly(true)
-			})
-		}
-		dt.Update()
+		// todo: get data back from server
+		// at := ts.SliceTable("Bare Active", &sr.BareMetal.Active.Values)
+		//
+		//	if sr.BareMetalActiveTable != at {
+		//		sr.BareMetalActiveTable = at
+		//		at.Styler(func(s *styles.Style) {
+		//			s.SetReadOnly(true)
+		//		})
+		//	}
+		//
+		// at.Update()
+		// dt := ts.SliceTable("Bare Done", &sr.BareMetal.Done.Values)
+		//
+		//	if sr.BareMetalDoneTable != dt {
+		//		sr.BareMetalDoneTable = dt
+		//		dt.Styler(func(s *styles.Style) {
+		//			s.SetReadOnly(true)
+		//		})
+		//	}
+		//
+		// dt.Update()
 	}
 
 	tv := ts.TensorTable("Jobs", sr.JobsTable)
@@ -217,10 +222,11 @@ func (sr *SimRun) JobStatus(jid string, force bool) {
 		}
 		sj := errors.Log1(strconv.Atoi(jstr))
 		// fmt.Println(jid, "jobno:", sj)
-		job := sr.BareMetal.Job(sj)
-		if job == nil {
-			core.MessageSnackbar(sr, fmt.Sprintf("Could not get BareMetal Job for: %s at job ID: %d", jid, sj))
+		jobs, err := sr.BareMetal.JobStatus(sj)
+		if err != nil {
+			core.ErrorSnackbar(sr, err)
 		} else {
+			job := jobs[0]
 			sstat = job.Status.String()
 			goalib.WriteFile("job.status", sstat)
 			goalib.WriteFile("job.squeue", sstat)

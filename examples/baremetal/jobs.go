@@ -303,7 +303,7 @@ func (bm *BareMetal) pollJobs() (int, error) {
 		goalrun.Run("cd")
 		// psout := $ps -p {job.PID} >/dev/null; echo "$?"$ // todo: don't parse ; ourselves!
 		psout := strings.TrimSpace(goalrun.Output("ps", "-p", job.PID, ">", "/dev/null", ";", "echo", "$?"))
-		fmt.Println("status:", psout)
+		// fmt.Println("status:", psout)
 		if psout == "1" {
 			job.Status = Completed
 			bm.fetchResultsJob(job, sv)
@@ -328,18 +328,30 @@ func (bm *BareMetal) jobDone(job *Job, sv *Server) {
 	bm.Active.DeleteByKey(job.ID)
 }
 
-// fetchResults gets job results back from server for given job id.
+// fetchResults gets job results back from server for given job id(s).
 // Results are available as job.Results as a compressed tar file.
-func (bm *BareMetal) fetchResults(id int) (*Job, error) {
-	job := bm.job(id)
-	if job == nil {
-		return nil, errors.Log(fmt.Errorf("FetchResults: job id not found: %d", id))
+func (bm *BareMetal) fetchResults(ids ...int) ([]*Job, error) {
+	var errs []error
+	var jobs []*Job
+	for _, id := range ids {
+		job := bm.job(id)
+		if job == nil {
+			errs = append(errs, fmt.Errorf("FetchResults: job id not found: %d", id))
+			continue
+		}
+		sv, err := bm.Server(job.ServerName)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		err = bm.fetchResultsJob(job, sv)
+		if err != nil {
+			errs = append(errs, err)
+		} else {
+			jobs = append(jobs, job)
+		}
 	}
-	sv, err := bm.Server(job.ServerName)
-	if errors.Log(err) != nil {
-		return nil, err
-	}
-	return job, bm.fetchResultsJob(job, sv)
+	return jobs, errors.Join(errs...)
 }
 
 // fetchResultsJob gets job results back from server.
