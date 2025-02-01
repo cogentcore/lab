@@ -21,13 +21,13 @@ This is a list of all the stuff that doesn't work in goal.
 
 ## simrun / baremetal
 
-baremetal/jobs.goal:
+### baremetal/jobs.goal:
 ```Goal
     var errs []error // triggers some kind of interp state switch
     // so that subsequent parsing is whack
-```    
+``` 
 
-simrun/jobs.goal:
+### simrun/jobs.goal:
 
 ```Goal
     [cd {spath} && /bin/rm -rf {jid}] // && gets captured as &

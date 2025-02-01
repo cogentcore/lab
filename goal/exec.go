@@ -224,11 +224,8 @@ func (gl *Goal) ExecArgs(cmdIO *exec.CmdIO, errOk bool, cmd any, args ...any) (*
 	// isCmd := gl.isCommand.Peek()
 	sargs := make([]string, 0, len(args))
 	var err error
-	for _, a := range args {
-		s := reflectx.ToString(a)
-		if s == "" {
-			continue
-		}
+
+	homeDir := func(s string) string {
 		if cl == nil {
 			s, err = homedir.Expand(s)
 			gl.HandleArgErr(errOk, err)
@@ -238,6 +235,36 @@ func (gl *Goal) ExecArgs(cmdIO *exec.CmdIO, errOk bool, cmd any, args ...any) (*
 				s = "$HOME/" + s[1:]
 			}
 		}
+		return s
+	}
+
+	for _, a := range args {
+		if sa, ok := a.([]string); ok {
+			for _, s := range sa {
+				if s == "" {
+					continue
+				}
+				s = homeDir(s)
+				sargs = append(sargs, s)
+			}
+			continue
+		}
+		if sa, ok := a.([]any); ok {
+			for _, aa := range sa {
+				s := reflectx.ToString(aa)
+				if s == "" {
+					continue
+				}
+				s = homeDir(s)
+				sargs = append(sargs, s)
+			}
+			continue
+		}
+		s := reflectx.ToString(a)
+		if s == "" {
+			continue
+		}
+		s = homeDir(s)
 		sargs = append(sargs, s)
 	}
 	if scmd[0] == '@' {

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"cogentcore.org/core/base/errors"
+	"cogentcore.org/lab/goal/goalib"
 )
 
 // Status are the job status values.
@@ -363,7 +364,13 @@ func (bm *BareMetal) fetchResultsJob(job *Job, sv *Server) error {
 	sv.Use()
 	goalrun.Run("cd")
 	goalrun.Run("cd", job.Path)
-	goalrun.Run("tar", "-czf", "job.results.tar.gz", "job.out", "nohup.out", job.ResultsGlob)
+	res := goalrun.OutputErrOK("/bin/ls", "-1", job.ResultsGlob)
+	if strings.Contains(res, "No such file") {
+		res = ""
+	}
+	ress := goalib.SplitLines(res)
+	fmt.Println("results:", ress)
+	goalrun.Run("tar", "-czf", "job.results.tar.gz", "job.out", "nohup.out", ress)
 	var b bytes.Buffer
 	sshcl, err := goalrun.SSHByHost(sv.Name)
 	if errors.Log(err) != nil {
