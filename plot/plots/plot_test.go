@@ -33,7 +33,7 @@ func ExampleLine() {
 	}
 	data := plot.Data{plot.X: xd, plot.Y: yd}
 	plt := plot.New()
-	plt.Add(NewLine(data).Styler(func(s *plot.Style) {
+	NewLine(plt, data).Styler(func(s *plot.Style) {
 		s.Plot.Title = "Test Line"
 		s.Plot.XAxis.Label = "X Axis"
 		s.Plot.YAxisLabel = "Y Axis"
@@ -49,7 +49,7 @@ func ExampleLine() {
 		s.Line.Color = colors.Uniform(colors.Red)
 		s.Point.Color = colors.Uniform(colors.Blue)
 		s.Range.SetMin(0).SetMax(100)
-	}))
+	})
 	plt.Draw()
 	imagex.Save(plt.Pixels, "testdata/ex_line_plot.png")
 	// Output:
@@ -62,7 +62,7 @@ func ExampleStylerMetadata() {
 		ty.SetFloat1D(50.0+40*math.Sin((float64(i)/8)*math.Pi), i)
 	}
 	// attach stylers to the Y axis data: that is where plotter looks for it
-	plot.SetStylersTo(ty, plot.Stylers{func(s *plot.Style) {
+	plot.SetStyler(ty, func(s *plot.Style) {
 		s.Plot.Title = "Test Line"
 		s.Plot.XAxis.Label = "X Axis"
 		s.Plot.YAxisLabel = "Y Axis"
@@ -72,13 +72,13 @@ func ExampleStylerMetadata() {
 		s.Line.Color = colors.Uniform(colors.Red)
 		s.Point.Color = colors.Uniform(colors.Blue)
 		s.Range.SetMin(0).SetMax(100)
-	}})
+	})
 
 	// somewhere else in the code:
 
 	plt := plot.New()
 	// NewLine automatically gets stylers from ty tensor metadata
-	plt.Add(NewLine(plot.Data{plot.X: tx, plot.Y: ty}))
+	NewLine(plt, plot.Data{plot.X: tx, plot.Y: ty})
 	plt.Draw()
 	imagex.Save(plt.Pixels, "testdata/ex_styler_metadata.png")
 	// Output:
@@ -102,29 +102,29 @@ func ExampleTable() {
 		s.Plot.Scale = 2
 		s.Plot.SetLinesOn(plot.On).SetPointsOn(plot.Off)
 	}
-	plot.SetStylersTo(ty, plot.Stylers{genst, func(s *plot.Style) {
+	plot.SetStyler(ty, genst, func(s *plot.Style) {
 		s.On = true
 		s.Plotter = "XY"
 		s.Role = plot.Y
 		s.Line.Color = colors.Uniform(colors.Red)
 		s.Range.SetMin(0).SetMax(100)
-	}})
+	})
 	// others get basic styling
-	plot.SetStylersTo(tx, plot.Stylers{func(s *plot.Style) {
+	plot.SetStyler(tx, func(s *plot.Style) {
 		s.Role = plot.X
-	}})
-	plot.SetStylersTo(th, plot.Stylers{func(s *plot.Style) {
+	})
+	plot.SetStyler(th, func(s *plot.Style) {
 		s.On = true
 		s.Plotter = "YErrorBars"
 		s.Role = plot.High
-	}})
-	plot.SetStylersTo(lbls, plot.Stylers{func(s *plot.Style) {
+	})
+	plot.SetStyler(lbls, func(s *plot.Style) {
 		s.On = true
 		s.Plotter = "Labels"
 		s.Role = plot.Label
 		s.Text.Offset.X.Dp(6)
 		s.Text.Offset.Y.Dp(-6)
-	}})
+	})
 	dt := table.New("Test Table") // todo: use Name by default for plot.
 	dt.AddColumn("X", tx)
 	dt.AddColumn("Y", ty)
@@ -197,11 +197,10 @@ func TestLine(t *testing.T) {
 	plt.Y.Range.Max = 100
 	plt.Y.Label.Text = "Y Axis"
 
-	l1 := NewLine(data)
+	l1 := NewLine(plt, data)
 	if l1 == nil {
 		t.Error("bad data")
 	}
-	plt.Add(l1)
 	plt.Legend.Add("Sine", l1)
 	plt.Legend.Add("Cos", l1)
 
@@ -244,11 +243,10 @@ func TestScatter(t *testing.T) {
 	plt.Y.Range.Max = 100
 	plt.Y.Label.Text = "Y Axis"
 
-	l1 := NewScatter(data)
+	l1 := NewScatter(plt, data)
 	if l1 == nil {
 		t.Error("bad data")
 	}
-	plt.Add(l1)
 
 	plt.Resize(image.Point{640, 480})
 
@@ -279,21 +277,19 @@ func TestLabels(t *testing.T) {
 	data[plot.Y] = yd
 	data[plot.Label] = labels
 
-	l1 := NewLine(data)
+	l1 := NewLine(plt, data)
 	if l1 == nil {
 		t.Error("bad data")
 	}
 	l1.Style.Point.On = plot.On
-	plt.Add(l1)
 	plt.Legend.Add("Sine", l1)
 
-	l2 := NewLabels(data)
+	l2 := NewLabels(plt, data)
 	if l2 == nil {
 		t.Error("bad data")
 	}
 	l2.Style.Text.Offset.X.Dp(6)
 	l2.Style.Text.Offset.Y.Dp(-6)
-	plt.Add(l2)
 
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
@@ -311,19 +307,18 @@ func TestBar(t *testing.T) {
 	data := sinData()
 	cos := cosData()
 
-	l1 := NewBar(data)
+	l1 := NewBar(plt, data)
 	if l1 == nil {
 		t.Error("bad data")
 	}
 	l1.Style.Line.Fill = colors.Uniform(colors.Red)
-	plt.Add(l1)
 	plt.Legend.Add("Sine", l1)
 
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
 	imagex.Assert(t, plt.Pixels, "bar.png")
 
-	l2 := NewBar(cos)
+	l2 := NewBar(plt, cos)
 	if l2 == nil {
 		t.Error("bad data")
 	}
@@ -334,7 +329,6 @@ func TestBar(t *testing.T) {
 	l2.Style.Width.Stride = 2
 	l2.Style.Width.Offset = 2
 
-	plt.Add(l2)
 	plt.Draw()
 	imagex.Assert(t, plt.Pixels, "bar-cos.png")
 }
@@ -351,12 +345,11 @@ func TestBarErr(t *testing.T) {
 	cos := cosData()
 	data[plot.High] = cos[plot.Y]
 
-	l1 := NewBar(data)
+	l1 := NewBar(plt, data)
 	if l1 == nil {
 		t.Error("bad data")
 	}
 	l1.Style.Line.Fill = colors.Uniform(colors.Red)
-	plt.Add(l1)
 	plt.Legend.Add("Sine", l1)
 
 	plt.Resize(image.Point{640, 480})
@@ -382,21 +375,19 @@ func TestBarStack(t *testing.T) {
 	data := sinData()
 	cos := cosData()
 
-	l1 := NewBar(data)
+	l1 := NewBar(plt, data)
 	if l1 == nil {
 		t.Error("bad data")
 	}
 	l1.Style.Line.Fill = colors.Uniform(colors.Red)
-	plt.Add(l1)
 	plt.Legend.Add("Sine", l1)
 
-	l2 := NewBar(cos)
+	l2 := NewBar(plt, cos)
 	if l2 == nil {
 		t.Error("bad data")
 	}
 	l2.Style.Line.Fill = colors.Uniform(colors.Blue)
 	l2.StackedOn = l1
-	plt.Add(l2)
 	plt.Legend.Add("Cos", l2)
 
 	plt.Resize(image.Point{640, 480})
@@ -428,18 +419,16 @@ func TestErrBar(t *testing.T) {
 
 	data := plot.Data{plot.X: xd, plot.Y: yd, plot.Low: low, plot.High: high}
 
-	l1 := NewLine(data)
+	l1 := NewLine(plt, data)
 	if l1 == nil {
 		t.Error("bad data")
 	}
-	plt.Add(l1)
 	plt.Legend.Add("Sine", l1)
 
-	l2 := NewYErrorBars(data)
+	l2 := NewYErrorBars(plt, data)
 	if l2 == nil {
 		t.Error("bad data")
 	}
-	plt.Add(l2)
 
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
@@ -469,8 +458,7 @@ func TestStyle(t *testing.T) {
 	}
 
 	plt := plot.New()
-	l1 := NewLine(data).Styler(stf)
-	plt.Add(l1)
+	l1 := NewLine(plt, data).Styler(stf)
 	plt.Legend.Add("Sine", l1) // todo: auto-add!
 	plt.Legend.Add("Cos", l1)
 
@@ -480,16 +468,31 @@ func TestStyle(t *testing.T) {
 
 	plt = plot.New()
 	tdy := tensor.NewFloat64FromValues(data[plot.Y].(plot.Values)...)
-	plot.SetStylersTo(tdy, plot.Stylers{stf}) // set metadata for tensor
+	plot.SetStyler(tdy, stf) // set metadata for tensor
 	tdx := tensor.NewFloat64FromValues(data[plot.X].(plot.Values)...)
 	// NewLine auto-grabs from Y metadata
-	l1 = NewLine(plot.Data{plot.X: tdx, plot.Y: tdy})
-	plt.Add(l1)
+	l1 = NewLine(plt, plot.Data{plot.X: tdx, plot.Y: tdy})
 	plt.Legend.Add("Sine", l1) // todo: auto-add!
 	plt.Legend.Add("Cos", l1)
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
 	imagex.Assert(t, plt.Pixels, "style_line_point_auto.png")
+}
+
+func TestTicks(t *testing.T) {
+	data := sinCosWrapData()
+
+	plt := plot.New()
+	l1 := NewLine(plt, data).Styler(func(s *plot.Style) {
+		s.Plot.Axis.NTicks = 0
+	})
+	plt.Add(l1)
+	plt.Legend.Add("Sine", l1)
+	plt.Legend.Add("Cos", l1)
+
+	plt.Resize(image.Point{640, 480})
+	plt.Draw()
+	imagex.Assert(t, plt.Pixels, "style_noticks.png")
 }
 
 // todo: move into statplot and test everything
@@ -525,38 +528,38 @@ func TestTable(t *testing.T) {
 			s.Point.Color = colors.Uniform(colors.Blue)
 			s.Range.SetMin(0).SetMax(100)
 		}
-		plot.SetStylersTo(ty, plot.Stylers{genst, func(s *plot.Style) {
+		plot.SetStyler(ty, genst, func(s *plot.Style) {
 			s.On = true
 			s.Role = plot.Y
 			s.Group = "Y"
-		}})
+		})
 		// others get basic styling
-		plot.SetStylersTo(tx, plot.Stylers{func(s *plot.Style) {
+		plot.SetStyler(tx, func(s *plot.Style) {
 			s.Role = plot.X
 			s.Group = "Y"
-		}})
-		plot.SetStylersTo(tl, plot.Stylers{func(s *plot.Style) {
+		})
+		plot.SetStyler(tl, func(s *plot.Style) {
 			s.Role = plot.Low
 			s.Group = "Y"
-		}})
-		plot.SetStylersTo(th, plot.Stylers{genst, func(s *plot.Style) {
+		})
+		plot.SetStyler(th, genst, func(s *plot.Style) {
 			s.On = true
 			s.Role = plot.High
 			s.Group = "Y"
-		}})
-		plot.SetStylersTo(ts, plot.Stylers{func(s *plot.Style) {
+		})
+		plot.SetStyler(ts, func(s *plot.Style) {
 			s.Role = plot.Size
 			s.Group = "Y"
-		}})
-		plot.SetStylersTo(tc, plot.Stylers{func(s *plot.Style) {
+		})
+		plot.SetStyler(tc, func(s *plot.Style) {
 			s.Role = plot.Color
 			s.Group = "Y"
-		}})
-		plot.SetStylersTo(lbls, plot.Stylers{genst, func(s *plot.Style) {
+		})
+		plot.SetStyler(lbls, genst, func(s *plot.Style) {
 			s.On = true
 			s.Role = plot.Label
 			s.Group = "Y"
-		}})
+		})
 		dt := table.New("Test Table") // todo: use Name by default for plot.
 		dt.AddColumn("X", tx)
 		dt.AddColumn("Y", ty)
@@ -573,4 +576,55 @@ func TestTable(t *testing.T) {
 		fnm := "table_" + ttyp + ".png"
 		imagex.Assert(t, plt.Pixels, fnm)
 	}
+}
+
+func TestTableSplit(t *testing.T) {
+	ngps := 3
+	nitms := 4
+	n := ngps * nitms
+	lbls := tensor.NewString(n)
+	tx, ty := tensor.NewFloat64(n), tensor.NewFloat64(n)
+	groups := []string{"Aaa", "Bbb", "Ccc"}
+	for i := range n {
+		tx.SetFloat1D(float64(i*5), i)
+		ty.SetFloat1D(50.0+40*math.Sin((float64(i)/8)*math.Pi), i)
+		lbls.SetString1D(groups[i/nitms], i)
+	}
+	// attach stylers to the Y axis data: that is where plotter looks for it
+	genst := func(s *plot.Style) {
+		s.Plot.Title = "Test Split"
+		s.Plot.XAxis.Label = "X Axis"
+		s.Plot.YAxisLabel = "Y Axis"
+		s.Plotter = plot.PlotterName("XY")
+		s.Plot.Scale = 2
+		s.Plot.SetLinesOn(plot.On).SetPointsOn(plot.On)
+		s.Line.Color = colors.Uniform(colors.Red)
+		s.Point.Color = colors.Uniform(colors.Blue)
+		s.Range.SetMin(0).SetMax(100)
+	}
+	plot.SetStyler(ty, genst, func(s *plot.Style) {
+		s.On = true
+		s.Role = plot.Y
+		s.Group = "Y"
+	})
+	plot.SetStyler(tx, func(s *plot.Style) {
+		s.Role = plot.X
+		s.Group = "Y"
+	})
+	plot.SetStyler(lbls, genst, func(s *plot.Style) {
+		s.On = true
+		s.Role = plot.Split
+		s.Group = "Y"
+	})
+	dt := table.New("Test Table") // todo: use Name by default for plot.
+	dt.AddColumn("X", tx)
+	dt.AddColumn("Y", ty)
+	dt.AddColumn("Labels", lbls)
+
+	plt, err := plot.NewTablePlot(dt)
+	assert.NoError(t, err)
+	plt.Resize(image.Point{640, 480})
+	plt.Draw()
+	fnm := "table_split.png"
+	imagex.Assert(t, plt.Pixels, fnm)
 }

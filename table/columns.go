@@ -72,7 +72,7 @@ func (cl *Columns) Clone() *Columns {
 		tsr := cl.Values[i]
 		cp.AddColumn(nm, tsr.Clone())
 	}
-	return cl
+	return cp
 }
 
 // AppendRows appends shared columns in both tables with input table rows.

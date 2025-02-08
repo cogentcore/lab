@@ -57,7 +57,7 @@ If the subdirectory doesn't exist yet, it will be made, and otherwise it is retu
 There are parallel `Node` and `Value` access methods for directory nodes, with the Value ones being:
 
 * `tsr := dir.Value("name")` returns tensor directly, will panic if not valid
-* `tsrs, err := dir.Values("name1", "name2")` returns a slice of tensors and error if any issues
+* `tsrs, err := dir.Values("name1", "name2")` returns a slice of tensor values within directory by name. a plain `.Values()` returns all values.
 * `tsrs := dir.ValuesFunc(<filter func>)` walks down directories (unless filtered) and returns a flat list of all tensors found. Goes in "directory order" = order nodes were added.
 * `tsrs := dir.ValuesAlphaFunc(<filter func>)` is like `ValuesFunc` but traverses in alpha order at each node.
 

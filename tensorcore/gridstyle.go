@@ -107,13 +107,13 @@ func (st *GridStylers) Run(s *GridStyle) {
 
 // SetGridStylersTo sets the [GridStylers] into given object's [metadata].
 func SetGridStylersTo(obj any, st GridStylers) {
-	metadata.SetTo(obj, "GridStylers", st)
+	metadata.Set(obj, "GridStylers", st)
 }
 
 // GetGridStylersFrom returns [GridStylers] from given object's [metadata].
 // Returns nil if none or no metadata.
 func GetGridStylersFrom(obj any) GridStylers {
-	st, _ := metadata.GetFrom[GridStylers](obj, "GridStylers")
+	st, _ := metadata.Get[GridStylers](obj, "GridStylers")
 	return st
 }
 

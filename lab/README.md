@@ -10,7 +10,7 @@ The lab package provides GUI elements for data exploration and visualization, an
 
 * `Browser` provides a hub structure connecting the above elements, which can be included in an actual GUI widget, that also provides additional functionality / GUI elements.
 
-The basic `Browser` puts the `FileTree` in a left `Splits` and the `Tabs` in the right, and supports interactive exploration and visualization of data.
+The basic `Browser` puts the `FileTree` in a left `Splits` and the `Tabs` in the right, and supports interactive exploration and visualization of data. See the [basic](examples/basic) example for a simple instance.
 
 In the [emergent](https://github.com/emer) framework, these elements are combined with other GUI elements to provide a full neural network simulation environment on top of the databrowser foundation.
 

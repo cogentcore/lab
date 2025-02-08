@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	//	Headers is passed to CSV methods for the headers arg, to use headers
+	// Headers is passed to CSV methods for the headers arg, to use headers
 	// that capture full type and tensor shape information.
 	Headers = true
 
