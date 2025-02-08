@@ -15,7 +15,7 @@ import (
 // while the Plot properties applies to the overall plot itself.
 type Style struct { //types:add -setters
 
-	//	Plot has overall plot-level properties, which can be set by any
+	// Plot has overall plot-level properties, which can be set by any
 	// plot element, and are updated first, before applying element-wise styles.
 	Plot PlotStyle `display:"-"`
 

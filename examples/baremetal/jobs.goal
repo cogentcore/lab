@@ -79,7 +79,7 @@ type Job struct {
 	// End is the time stopped running.
 	End time.Time
 
-	//	ServerName is the name of the server it is running / ran on. Empty for pending.
+	// ServerName is the name of the server it is running / ran on. Empty for pending.
 	ServerName string
 
 	// ServerGPU is the logical index of the GPU assigned to this job (0..N-1).

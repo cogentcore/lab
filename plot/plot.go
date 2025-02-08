@@ -102,7 +102,7 @@ type PlotStyle struct { //types:add -setters
 	// bar overlap. Defaults to .8.
 	BarWidth float64
 
-	//	ShowErrors can be set to have Plot configuration errors reported.
+	// ShowErrors can be set to have Plot configuration errors reported.
 	// This is particularly important for table-driven plots (e.g., [plotcore.Editor]),
 	// but it is not on by default because often there are transitional states
 	// with known errors that can lead to false alarms.
@@ -195,7 +195,7 @@ type Plot struct {
 	// PanZoom provides post-styling pan and zoom range factors.
 	PanZoom PanZoom
 
-	//	HighlightPlotter is the Plotter to highlight. Used for mouse hovering for example.
+	// HighlightPlotter is the Plotter to highlight. Used for mouse hovering for example.
 	// It is the responsibility of the Plotter Plot function to implement highlighting.
 	HighlightPlotter Plotter
 

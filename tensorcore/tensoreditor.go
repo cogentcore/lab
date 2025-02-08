@@ -42,7 +42,7 @@ type TensorEditor struct {
 	// colMaxWidths records maximum width in chars of string type fields
 	colMaxWidths []int `set:"-" copier:"-" json:"-" xml:"-"`
 
-	//	blank values for out-of-range rows
+	// blank values for out-of-range rows
 	BlankString string
 	BlankFloat  float64
 }

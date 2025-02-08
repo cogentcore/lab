@@ -31,7 +31,7 @@ var goalrun *goal.Goal
 // BareMetal is the overall bare metal job manager.
 type BareMetal struct {
 
-	//	Servers is the ordered list of server machines.
+	// Servers is the ordered list of server machines.
 	Servers Servers `json:"-"`
 
 	// NextID is the next job ID to assign.

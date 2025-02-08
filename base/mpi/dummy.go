@@ -32,8 +32,7 @@ const (
 )
 
 // IsOn tells whether MPI is on or not
-//
-//	NOTE: this returns true even after Stop
+// NOTE: this returns true even after Stop
 func IsOn() bool {
 	return false
 }

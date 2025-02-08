@@ -133,7 +133,7 @@ func (sr *Simmer) NewJob(jp SubmitParams) {
 	goalib.WriteFile("job.submit", time.Now().Format(sr.Config.TimeFormat))
 	goalib.WriteFile("job.status", "Submitted")
 
-	//	need to do sub-code first and update paths in copied files
+	// need to do sub-code first and update paths in copied files
 	codepaths := make([]string, len(sr.Config.CodeDirs))
 	for i, ed := range sr.Config.CodeDirs {
 		@0

@@ -31,7 +31,7 @@ type Config struct {
 	// Keep keeps temporary converted versions of the source files, for debugging.
 	Keep bool
 
-	//	Debug enables debugging messages while running.
+	// Debug enables debugging messages while running.
 	Debug bool
 }
 
