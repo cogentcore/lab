@@ -11,7 +11,7 @@ import (
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/icons"
-	"cogentcore.org/core/parse/complete"
+	"cogentcore.org/core/text/parse/complete"
 	"github.com/mitchellh/go-homedir"
 )
 
