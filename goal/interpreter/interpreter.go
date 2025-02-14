@@ -24,9 +24,9 @@ import (
 	_ "cogentcore.org/lab/tensor/tmath"
 	"cogentcore.org/lab/tensorfs"
 	"cogentcore.org/lab/yaegilab/tensorsymbols"
+	"github.com/cogentcore/readline"
 	"github.com/cogentcore/yaegi/interp"
 	"github.com/cogentcore/yaegi/stdlib"
-	"github.com/ergochat/readline"
 )
 
 // Interpreter represents one running shell context

@@ -67,7 +67,7 @@ func (gl *Goal) CompleteEdit(data any, text string, cursorPos int, completion co
 	return complete.EditWord(text, cursorPos, completion.Text, seed)
 }
 
-// ReadlineCompleter implements [github.com/ergochat/readline.AutoCompleter].
+// ReadlineCompleter implements [github.com/cogentcore/readline.AutoCompleter].
 type ReadlineCompleter struct {
 	Goal *Goal
 }
