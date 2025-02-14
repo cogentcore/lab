@@ -1,6 +1,6 @@
 module cogentcore.org/lab
 
-go 1.22
+go 1.22.7
 
 // important: after running go mod tidy, you must then run this:
 // go get google.golang.org/genproto@latest
@@ -9,8 +9,8 @@ go 1.22
 
 require (
 	cogentcore.org/core v0.3.9-0.20250204223236-67d60a912a4b
+	github.com/cogentcore/readline v0.1.3
 	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56
-	github.com/ergochat/readline v0.1.2
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/nsf/termbox-go v1.1.1
 	github.com/stretchr/testify v1.9.0
@@ -62,7 +62,7 @@ require (
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	google.golang.org/genproto v0.0.0-20250207221924-e9438ea467c6 // indirect
+	google.golang.org/genproto v0.0.0-20250212204824-5a70512c5d8b // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250124145028-65684f501c47 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
