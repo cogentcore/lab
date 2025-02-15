@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -261,6 +261,7 @@ func TestMath(t *testing.T) {
 		{"# a := [1,2,3,4]", `a := tensor.Tensor(tensor.NewIntFromValues([]int { 1, 2, 3, 4 }  ...))`},
 		{"# a := [1.,2,3,4]", `a := tensor.Tensor(tensor.NewFloat64FromValues([]float64 { 1., 2, 3, 4 }  ...))`},
 		{"# a := [[1,2], [3,4]]", `a := tensor.Tensor(tensor.Reshape(tensor.NewIntFromValues([]int { 1, 2, 3, 4 }  ...), 2, 2))`},
+		{`# U := [[1., 2.], [3., 4.]]`, `U := tensor.Tensor(tensor.Reshape(tensor.NewFloat64FromValues([]float64 { 1., 2., 3., 4. }  ...), 2, 2))`},
 		{"# a.ndim", `tensor.NewIntScalar(a.NumDims())`},
 		{"# ndim(a)", `tensor.NewIntScalar(a.NumDims())`},
 		{"# x.shape", `tensor.NewIntFromValues(x.Shape().Sizes ...)`},
@@ -269,7 +270,7 @@ func TestMath(t *testing.T) {
 		{"# full(5.5, 3, 4)", `tensor.NewFloat64Full(5.5, 3, 4)`},
 		{"# zeros(sh)", `tensor.NewFloat64(tensor.AsIntSlice(sh) ...)`},
 		{"# arange(36)", `tensor.NewIntRange(36)`},
-		{"# arange(36, 0, -1)", `tensor.NewIntRange(36, 0,  - 1)`},
+		{"# arange(36, 0, -1)", `tensor.NewIntRange(36, 0, -1)`},
 		{"# linspace(0, 5, 6, true)", `tensor.NewFloat64SpacedLinear(tensor.NewIntScalar(0), tensor.NewIntScalar(5), 6, true)`},
 		{"# reshape(x, 6, 6)", `tensor.Reshape(x, 6, 6)`},
 		{"# reshape(x, [6, 6])", `tensor.Reshape(x, 6, 6)`},
@@ -279,7 +280,7 @@ func TestMath(t *testing.T) {
 		{"# a[1, 2]", `tensor.Reslice(a, 1, 2)`},
 		{"# a[:, 2]", `tensor.Reslice(a, tensor.FullAxis, 2)`},
 		{"# a[1:3:1, 2]", `tensor.Reslice(a, tensor.Slice { Start:1, Stop:3, Step:1 } , 2)`},
-		{"# a[::-1, 2]", `tensor.Reslice(a, tensor.Slice { Step: - 1 } , 2)`},
+		{"# a[::-1, 2]", `tensor.Reslice(a, tensor.Slice { Step:-1 } , 2)`},
 		{"# a[:3, 2]", `tensor.Reslice(a, tensor.Slice { Stop:3 } , 2)`},
 		{"# a[2:, 2]", `tensor.Reslice(a, tensor.Slice { Start:2 } , 2)`},
 		{"# a[2:, 2, newaxis]", `tensor.Reslice(a, tensor.Slice { Start:2 } , 2, tensor.NewAxis)`},

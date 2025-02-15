@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -46,8 +46,23 @@ type LineStyle struct { //types:add -setters
 
 func (ls *LineStyle) Defaults() {
 	ls.Color = colors.Scheme.OnSurface
-	ls.Fill = colors.Uniform(colors.Transparent)
 	ls.Width.Pt(1)
+}
+
+// SpacedColor sets the Color to a default spaced color based on index,
+// if it still has the initial OnSurface default.
+func (ls *LineStyle) SpacedColor(idx int) {
+	if ls.Color == colors.Scheme.OnSurface {
+		ls.Color = colors.Uniform(colors.Spaced(idx))
+	}
+}
+
+// SpacedFill sets the Fill to a default spaced color based on index,
+// if it still has the initial nil default.
+func (ls *LineStyle) SpacedFill(idx int) {
+	if ls.Fill == nil {
+		ls.Fill = colors.Uniform(colors.Spaced(idx))
+	}
 }
 
 // SetStroke sets the stroke style in plot paint to current line style.

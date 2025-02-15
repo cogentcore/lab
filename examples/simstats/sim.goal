@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -96,12 +96,9 @@ func (ss *Sim) ConfigStats() {
 			tsr := tensorfs.Value[int](timeDir, name)
 			if lphase == Start {
 				tsr.SetNumRows(0)
-				if ps := plot.GetStylersFrom(tsr); ps == nil {
-					ps.Add(func(s *plot.Style) {
-						s.Range.SetMin(0)
-					})
-					plot.SetStylersTo(tsr, ps)
-				}
+				plot.SetFirstStyler(tsr, func(s *plot.Style) {
+					s.Range.SetMin(0)
+				})
 				return
 			}
 			ctv := ss.Counters[ctr]
@@ -117,13 +114,10 @@ func (ss *Sim) ConfigStats() {
 		tsr := timeDir.Float64(name)
 		if lphase == Start {
 			tsr.SetNumRows(0)
-			if ps := plot.GetStylersFrom(tsr); ps == nil {
-				ps.Add(func(s *plot.Style) {
-					s.Range.SetMin(0).SetMax(1)
-					s.On = true
-				})
-				plot.SetStylersTo(tsr, ps)
-			}
+			plot.SetFirstStyler(tsr, func(s *plot.Style) {
+				s.Range.SetMin(0).SetMax(1)
+				s.On = true
+			})
 			return
 		}
 		switch ltime {
@@ -147,13 +141,10 @@ func (ss *Sim) ConfigStats() {
 		tsr := tensorfs.Value[float64](timeDir, name)
 		if lphase == Start {
 			tsr.SetNumRows(0)
-			if ps := plot.GetStylersFrom(tsr); ps == nil {
-				ps.Add(func(s *plot.Style) {
-					s.Range.SetMin(0).SetMax(1)
-					s.On = true
-				})
-				plot.SetStylersTo(tsr, ps)
-			}
+			plot.SetFirstStyler(tsr, func(s *plot.Style) {
+				s.Range.SetMin(0).SetMax(1)
+				s.On = true
+			})
 			return
 		}
 		switch ltime {
@@ -211,7 +202,7 @@ func main() {
 	ss.ConfigAll()
 	ss.Run()
 
-	b, _ := lab.NewBasicWindow(ss.Root, "Root")
+	b, _ := lab.NewBasicWindow(ss.Root, "Root", nil)
 	b.RunWindow()
 	core.Wait()
 }

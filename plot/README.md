@@ -2,11 +2,11 @@
 
 The `plot` package generates 2D plots of data using the Cogent Core `paint` rendering system.  The `plotcore` sub-package has Cogent Core Widgets that can be used in applications.  
 * `Plot` is just a wrapper around a `plot.Plot`, for code-generated plots.
-* `PlotEditor` is an interactive plot viewer that supports selection of which data to plot, and GUI configuration of plot parameters.
+* `Editor` is an interactive plot viewer that supports selection of which data to plot, and GUI configuration of plot parameters.
 
 `plot` is designed to work in two potentially-conflicting ways:
 * Code-based creation of a specific plot with specific data.
-* GUI-based configuration of plots based on a `tensor.Table` of data columns (via `PlotEditor`).
+* GUI-based configuration of plots based on a `tensor.Table` of data columns (via `Editor`).
 
 The GUI constraint requires a more systematic, factorial organization of the space of possible plot data and how it is organized to create a plot, so that it can be configured with a relatively simple set of GUI settings. The overall logic is as follows:
 
@@ -14,13 +14,19 @@ The GUI constraint requires a more systematic, factorial organization of the spa
 
 * Plot content is driven by `Plotter` elements that each consume one or more sets of data, which is provided by a `Valuer` interface that maps onto a minimal subset of the `tensor.Tensor` interface, so a tensor directly satisfies the interface.
 
-* Each `Plotter` element can generally handle multiple different data elements, that are index-aligned. For example, the basic `XY` plotter requires `X` and `Y` Valuers, and optionally `Size` or `Color` Valuers that apply to the Point elements, while `Bar` gets at least a `Y` but also optionally a `High` Valuer for an error bar.  The `plot.Data` = `map[Roles]Valuer` is used to create new Plotter elements, allowing an unordered and explicit way of specifying the `Roles` of each `Valuer` item.
+* Each `Plotter` element can generally handle multiple different data elements, that are index-aligned. For example, the basic `XY` plotter requires a `Y` Valuer, and typically an `X`, but indexes will be used if it is not present. It optionally uses `Size` or `Color` Valuers that apply to the Point elements. A `Bar` gets at least a `Y` but also optionally a `High` Valuer for an error bar.  The `plot.Data` = `map[Roles]Valuer` is used to create new Plotter elements, allowing an unordered and explicit way of specifying the `Roles` of each `Valuer` item. Each Plotter also allows a single `Valuer` (i.e., Tensor) argument instead of the data, for a convenient minimal plot cse.  There are also shortcut methods for `NewXY` and `NewY`.
 
-Here is a example for how a plotter element is created with the `plot.Data` map of roles to data:
+Here is a minimal example for how a plotter XY Line element is created using Y data `yd`:
 
 ```Go
 plt := plot.NewPlot()
-plt.Add(plots.NewLine(plot.Data{plot.X: xd, plot.Y: yd, plot.Low: low, plot.High: high}))
+plots.NewLine(plt, yd)
+```
+
+And here's a more complex example setting the `plot.Data` map of roles to data:
+
+```Go
+plots.NewLine(plt, plot.Data{plot.X: xd, plot.Y: yd, plot.Low: low, plot.High: high})
 ```
 
 The table-driven plotting case uses a `Group` name along with the `Roles` type (`X`, `Y` etc) and Plotter type names to organize different plots based on `Style` settings.  Columns with the same Group name all provide data to the same plotter using their different Roles, making it easy to configure various statistical plots of multiple series of grouped data.
@@ -35,11 +41,10 @@ Each such plot element defines a `Styler` method, e.g.,:
 
 ```Go
 plt := plot.NewPlot()
-ln := plots.NewLine(data).Styler(func(s *plot.Style) {
+ln := plots.NewLine(plt, data).Styler(func(s *plot.Style) {
     s.Plot.Title = "My Plot" // overall Plot styles
     s.Line.Color = colors.Uniform(colors.Red) // line-specific styles
 })
-plt.Add(ln)
 ```
 
 The `Plot` field (of type `PlotStyle`) contains all the properties that apply to the plot as a whole. Each element can set these values, and they are applied in the order the elements are added, so the last one gets final say. Typically you want to just set these plot-level styles on one element only and avoid any conflicts.
@@ -59,7 +64,7 @@ Here is an example of how this works:
 		ty.SetFloat1D(50.0+40*math.Sin((float64(i)/8)*math.Pi), i)
 	}
 	// attach stylers to the Y axis data: that is where plotter looks for it
-	plot.SetStylersTo(ty, plot.Stylers{func(s *plot.Style) {
+	plot.SetStyler(ty, func(s *plot.Style) {
 		s.Plot.Title = "Test Line"
 		s.Plot.XAxis.Label = "X Axis"
 		s.Plot.YAxisLabel = "Y Axis"
@@ -69,13 +74,13 @@ Here is an example of how this works:
 		s.Line.Color = colors.Uniform(colors.Red)
 		s.Point.Color = colors.Uniform(colors.Blue)
 		s.Range.SetMin(0).SetMax(100)
-	}})
+	})
 
 	// somewhere else in the code:
 
 	plt := plot.New()
    // NewLine automatically gets stylers from ty tensor metadata
-	plt.Add(plots.NewLine(plot.Data{plot.X: tx, plot.Y: ty}))
+	plots.NewLine(plt, plot.Data{plot.X: tx, plot.Y: ty})
 	plt.Draw()
 ```
 

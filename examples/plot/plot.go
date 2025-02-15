@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -26,12 +26,12 @@ func main() {
 		s.Plot.Title = "RA25 Epoch Train"
 	}
 	perr := epc.Column("PctErr")
-	plot.SetStylersTo(perr, plot.Stylers{pst, func(s *plot.Style) {
+	plot.SetStyler(perr, pst, func(s *plot.Style) {
 		s.On = true
 		s.Role = plot.Y
-	}})
+	})
 
-	pl := plotcore.NewPlotEditor(b)
+	pl := plotcore.NewEditor(b)
 	pl.SetTable(epc)
 	b.AddTopBar(func(bar *core.Frame) {
 		core.NewToolbar(bar).Maker(pl.MakeToolbar)

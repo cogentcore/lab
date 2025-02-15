@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -13,13 +13,13 @@ import (
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/tree"
-	"cogentcore.org/core/yaegicore/coresymbols"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/lab"
 	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
+	"cogentcore.org/lab/yaegilab/labsymbols"
 )
 
 //go:embed *.csv
@@ -94,9 +94,9 @@ func main() {
 }
 
 func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
-	in.Interp.Use(coresymbols.Symbols) // gui imports
+	b, _ := lab.NewBasicWindow(tensorfs.CurRoot, "Planets", in)
+	in.Interp.Use(labsymbols.Symbols)
 	in.Config()
-	b, _ := lab.NewBasicWindow(tensorfs.CurRoot, "Planets")
 	b.AddTopBar(func(bar *core.Frame) {
 		tb := core.NewToolbar(bar)
 		// tb.Maker(tbv.MakeToolbar)
@@ -104,7 +104,7 @@ func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 			tree.Add(p, func(w *core.Button) {
 				w.SetText("README").SetIcon(icons.FileMarkdown).
 					SetTooltip("open README help file").OnClick(func(e events.Event) {
-					core.TheApp.OpenURL("https://github.com/cogentcore/core/blob/main/tensor/examples/planets/README.md")
+					core.TheApp.OpenURL("https://github.com/cogentcore/lab/blob/main/examples/planets/README.md")
 				})
 			})
 		})

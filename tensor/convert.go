@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -248,4 +248,62 @@ func Range(vals Values) (min, max float64, minIndex, maxIndex int) {
 		}
 	}
 	return
+}
+
+// ContainsFloat returns true if source tensor contains any of given vals,
+// using Float value method for comparison.
+func ContainsFloat(tsr, vals Tensor) bool {
+	nv := vals.Len()
+	if nv == 0 {
+		return false
+	}
+	n := tsr.Len()
+	for i := range n {
+		tv := tsr.Float1D(i)
+		for j := range nv {
+			if tv == vals.Float1D(j) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// ContainsInt returns true if source tensor contains any of given vals,
+// using Int value method for comparison.
+func ContainsInt(tsr, vals Tensor) bool {
+	nv := vals.Len()
+	if nv == 0 {
+		return false
+	}
+	n := tsr.Len()
+	for i := range n {
+		tv := tsr.Int1D(i)
+		for j := range nv {
+			if tv == vals.Int1D(j) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// ContainsString returns true if source tensor contains any of given vals,
+// using String value method for comparison, and given options for how to
+// compare the strings.
+func ContainsString(tsr, vals Tensor, opts StringMatch) bool {
+	nv := vals.Len()
+	if nv == 0 {
+		return false
+	}
+	n := tsr.Len()
+	for i := range n {
+		tv := tsr.String1D(i)
+		for j := range nv {
+			if opts.Match(tv, vals.String1D(j)) {
+				return true
+			}
+		}
+	}
+	return false
 }

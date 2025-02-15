@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -92,7 +92,7 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 			logx.PrintlnDebug("math #")
 			if toks[1].Tok == token.ILLEGAL && toks[1].Str == "#" {
 				st.MathMode = true
-				return nil
+				return st.TranspileMath(toks[2:], code, true)
 			}
 			return st.TranspileMath(toks[1:], code, true)
 		}

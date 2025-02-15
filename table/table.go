@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -62,7 +62,7 @@ func NewView(src *Table) *Table {
 	if src.Indexes != nil {
 		dt.Indexes = slices.Clone(src.Indexes)
 	}
-	dt.Meta.CopyFrom(src.Meta)
+	dt.Meta.Copy(src.Meta)
 	return dt
 }
 
@@ -310,7 +310,7 @@ func (dt *Table) SetNumRowsToMax() {
 func (dt *Table) Clone() *Table {
 	cp := &Table{}
 	cp.Columns = dt.Columns.Clone()
-	cp.Meta.CopyFrom(dt.Meta)
+	cp.Meta.Copy(dt.Meta)
 	if dt.Indexes != nil {
 		cp.Indexes = slices.Clone(dt.Indexes)
 	}

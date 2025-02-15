@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -25,6 +25,24 @@ var (
 	ErrInfinity = errors.New("plotter: infinite data point")
 	ErrNoData   = errors.New("plotter: no data points")
 )
+
+// DataOrValuer processes the given argument which can be either a [Data]
+// or a [Valuer]. If the latter, it is returned as a [Data] with the given Role.
+// This is used for New Plotter methods that can take the default required Valuer,
+// or a Data with roles explicitly defined. If the arg is neither, an error
+// is returned.
+func DataOrValuer(v any, role Roles) (Data, error) {
+	switch x := v.(type) {
+	case Valuer:
+		return Data{role: x}, nil
+	case Data:
+		return x, nil
+	case *Data:
+		return *x, nil
+	default:
+		return nil, errors.New("plot: argument was not a Data or Valuer (e.g., Tensor)")
+	}
+}
 
 // Data is a map of Roles and Data for that Role, providing the
 // primary way of passing data to a Plotter
@@ -83,8 +101,15 @@ const (
 	// Color controls the color of points or other elements.
 	Color
 
-	// Label renders a label, typically from string data, but can also be used for values.
+	// Label renders a label, typically from string data,
+	// but can also be used for values.
 	Label
+
+	// Split is a special role for table-based plots. The
+	// unique values of this data are used to split the other
+	// plot data into groups, with each group added to the legend.
+	// A different default color will be used for each such group.
+	Split
 )
 
 // CheckFloats returns an error if any of the arguments are Infinity.
@@ -149,6 +174,16 @@ func (dt Data) CheckLengths() error {
 		}
 	}
 	return nil
+}
+
+// NewXY returns a new Data with X, Y roles for given values.
+func NewXY(x, y Valuer) Data {
+	return Data{X: x, Y: y}
+}
+
+// NewY returns a new Data with Y role for given values.
+func NewY(y Valuer) Data {
+	return Data{Y: y}
 }
 
 // Values provides a minimal implementation of the Data interface

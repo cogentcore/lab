@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -25,6 +25,7 @@ import (
 
 // XAxisStyle has overall plot level styling properties for the XAxis.
 type XAxisStyle struct { //types:add -setters
+
 	// Column specifies the column to use for the common X axis,
 	// for [plot.NewTablePlot] [table.Table] driven plots.
 	// If empty, standard Group-based role binding is used: the last column
@@ -69,36 +70,43 @@ type PlotStyle struct { //types:add -setters
 	// Legend has the styling properties for the Legend.
 	Legend LegendStyle `display:"add-fields"`
 
-	// Axis has the styling properties for the Axes.
+	// Axis has the styling properties for the Axis associated with this Data.
 	Axis AxisStyle `display:"add-fields"`
 
-	// XAxis has plot-level XAxis style properties.
+	// XAxis has plot-level properties specific to the XAxis.
 	XAxis XAxisStyle `display:"add-fields"`
 
 	// YAxisLabel is the optional label to use for the YAxis instead of the default.
 	YAxisLabel string
 
-	// LinesOn determines whether lines are plotted by default,
-	// for elements that plot lines (e.g., plots.XY).
+	// LinesOn determines whether lines are plotted by default at the overall,
+	// Plot level, for elements that plot lines (e.g., plots.XY).
 	LinesOn DefaultOffOn
 
-	// LineWidth sets the default line width for data plotting lines.
+	// LineWidth sets the default line width for data plotting lines at the
+	// overall Plot level.
 	LineWidth units.Value
 
-	// PointsOn determines whether points are plotted by default,
-	// for elements that plot points (e.g., plots.XY).
+	// PointsOn determines whether points are plotted by default at the
+	// overall Plot level, for elements that plot points (e.g., plots.XY).
 	PointsOn DefaultOffOn
 
-	// PointSize sets the default point size.
+	// PointSize sets the default point size at the overall Plot level.
 	PointSize units.Value
 
-	// LabelSize sets the default label text size.
+	// LabelSize sets the default label text size at the overall Plot level.
 	LabelSize units.Value
 
 	// BarWidth for Bar plot sets the default width of the bars,
 	// which should be less than the Stride (1 typically) to prevent
 	// bar overlap. Defaults to .8.
 	BarWidth float64
+
+	// ShowErrors can be set to have Plot configuration errors reported.
+	// This is particularly important for table-driven plots (e.g., [plotcore.Editor]),
+	// but it is not on by default because often there are transitional states
+	// with known errors that can lead to false alarms.
+	ShowErrors bool
 }
 
 func (ps *PlotStyle) Defaults() {
@@ -109,7 +117,7 @@ func (ps *PlotStyle) Defaults() {
 	ps.Legend.Defaults()
 	ps.Axis.Defaults()
 	ps.LineWidth.Pt(1)
-	ps.PointSize.Pt(4)
+	ps.PointSize.Pt(3)
 	ps.LabelSize.Dp(16)
 	ps.BarWidth = .8
 }
@@ -158,13 +166,16 @@ type Plot struct {
 	Title Text
 
 	// Style has the styling properties for the plot.
+	// All end-user configuration should be put in here,
+	// rather than modifying other fields directly on the plot.
 	Style PlotStyle
 
 	// standard text style with default options
 	StandardTextStyle styles.Text
 
 	// X, Y, and Z are the horizontal, vertical, and depth axes
-	// of the plot respectively.
+	// of the plot respectively. These are the actual compiled
+	// state data and should not be used for styling: use Style.
 	X, Y, Z Axis
 
 	// Legend is the plot's legend.
@@ -184,7 +195,7 @@ type Plot struct {
 	// PanZoom provides post-styling pan and zoom range factors.
 	PanZoom PanZoom
 
-	//	HighlightPlotter is the Plotter to highlight. Used for mouse hovering for example.
+	// HighlightPlotter is the Plotter to highlight. Used for mouse hovering for example.
 	// It is the responsibility of the Plotter Plot function to implement highlighting.
 	HighlightPlotter Plotter
 
@@ -235,8 +246,8 @@ func (pt *Plot) applyStyle() {
 	}
 	pt.Style = st.Plot
 	// then apply to elements
-	for _, plt := range pt.Plotters {
-		plt.ApplyStyle(&pt.Style)
+	for i, plt := range pt.Plotters {
+		plt.ApplyStyle(&pt.Style, i)
 	}
 	// now style plot:
 	pt.DPI *= pt.Style.Scale

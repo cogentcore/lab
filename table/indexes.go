@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -201,7 +201,7 @@ func (dt *Table) Filter(filterer func(dt *Table, row int) bool) {
 // if IgnoreCase, ignores case, otherwise filtering is case sensitive.
 // Uses first cell from higher dimensions.
 // Returns error if column name not found.
-func (dt *Table) FilterString(columnName string, str string, opts tensor.FilterOptions) error { //types:add
+func (dt *Table) FilterString(columnName string, str string, opts tensor.StringMatch) error { //types:add
 	dt.IndexesNeeded()
 	cl, err := dt.ColumnTry(columnName)
 	if err != nil {

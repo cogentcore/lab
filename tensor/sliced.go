@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -375,15 +375,17 @@ func (sl *Sliced) Permuted(dim int) {
 }
 
 // SortFunc sorts the indexes along given dimension using given compare function.
-// The compare function operates directly on indexes into the Tensor
-// as these row numbers have already been projected through the indexes.
+// The compare function operates directly on indexes into the source Tensor
+// that Sliced is a view of, as these row numbers have already been projected
+// through the indexes. That is why the tensor is passed through to the compare
+// function, to ensure the proper tensor values are being used.
 // cmp(a, b) should return a negative number when a < b, a positive
 // number when a > b and zero when a == b.
-func (sl *Sliced) SortFunc(dim int, cmp func(tsr Tensor, dim, i, j int) int) {
+func (sl *Sliced) SortFunc(dim int, cmp func(tsr Tensor, i, j int) int) {
 	sl.IndexesNeeded(dim)
 	ix := sl.Indexes[dim]
 	slices.SortFunc(ix, func(a, b int) int {
-		return cmp(sl.Tensor, dim, a, b) // key point: these are already indirected through indexes!!
+		return cmp(sl.Tensor, a, b) // key point: these are already indirected through indexes!!
 	})
 	sl.Indexes[dim] = ix
 }
@@ -401,17 +403,19 @@ func (sl *Sliced) SortIndexes(dim int) {
 }
 
 // SortStableFunc stably sorts along given dimension using given compare function.
-// The compare function operates directly on row numbers into the Tensor
-// as these row numbers have already been projected through the indexes.
+// The compare function operates directly on indexes into the source Tensor
+// that Sliced is a view of, as these row numbers have already been projected
+// through the indexes. That is why the tensor is passed through to the compare
+// function, to ensure the proper tensor values are being used.
 // cmp(a, b) should return a negative number when a < b, a positive
 // number when a > b and zero when a == b.
 // It is *essential* that it always returns 0 when the two are equal
 // for the stable function to actually work.
-func (sl *Sliced) SortStableFunc(dim int, cmp func(tsr Tensor, dim, i, j int) int) {
+func (sl *Sliced) SortStableFunc(dim int, cmp func(tsr Tensor, i, j int) int) {
 	sl.IndexesNeeded(dim)
 	ix := sl.Indexes[dim]
 	slices.SortStableFunc(ix, func(a, b int) int {
-		return cmp(sl.Tensor, dim, a, b) // key point: these are already indirected through indexes!!
+		return cmp(sl.Tensor, a, b) // key point: these are already indirected through indexes!!
 	})
 	sl.Indexes[dim] = ix
 }

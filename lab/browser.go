@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -18,10 +18,8 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-// TheBrowser is the current browser,
-// which is valid immediately after NewBrowserWindow
-// where it is used to get a local variable for subsequent use.
-var TheBrowser *Browser
+// LabBrowser is the current Lab Browser, for yaegi / Go consistent access.
+var LabBrowser *Browser
 
 // Browser holds all the elements of a data browser, for browsing data
 // either on an OS filesystem or as a tensorfs virtual data filesystem.
@@ -55,8 +53,8 @@ type Browser struct { //types:add -setters
 	// Files is the [DataTree] tree browser of the tensorfs or files.
 	Files *DataTree
 
-	// Tabs is the [Tabber] element managing tabs of data views.
-	Tabs Tabber
+	// Tabs is the [Tabs] element managing tabs of data views.
+	Tabs *Tabs
 
 	// Toolbar is the top-level toolbar for the browser, if used.
 	Toolbar *core.Toolbar

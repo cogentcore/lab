@@ -1,10 +1,11 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 package tensor
 
 import (
+	"cmp"
 	"reflect"
 	"testing"
 
@@ -564,12 +565,22 @@ func TestSortFilter(t *testing.T) {
 	assert.Equal(t, []int{4, 3, 2, 1, 0}, tsr.Indexes)
 
 	tsr.Sequential()
-	tsr.FilterString("1", FilterOptions{})
+	tsr.FilterString("1", StringMatch{})
 	assert.Equal(t, []int{1}, tsr.Indexes)
 
 	tsr.Sequential()
-	tsr.FilterString("1", FilterOptions{Exclude: true})
+	tsr.FilterString("1", StringMatch{Exclude: true})
 	assert.Equal(t, []int{0, 2, 3, 4}, tsr.Indexes)
+
+	raw := NewFloat64FromValues(0.8, 0.2, 0.4, 0.7)
+	slc := NewSliced(raw)
+	slc.SortFunc(0, func(tsr Tensor, i, j int) int {
+		return cmp.Compare(tsr.Float1D(i), tsr.Float1D(j))
+	})
+	res := `[4] 0.2 0.4 0.7 0.8 
+`
+	// fmt.Println(slc)
+	assert.Equal(t, res, slc.String())
 }
 
 func TestGrowRow(t *testing.T) {

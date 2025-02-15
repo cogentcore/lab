@@ -12,17 +12,19 @@ package plots
 //go:generate core generate
 
 import (
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/tensor"
 )
 
 // XYType is be used for specifying the type name.
 const XYType = "XY"
 
 func init() {
-	plot.RegisterPlotter(XYType, "draws lines between and / or points for X,Y data values, using optional Size and Color data for the points, for a bubble plot.", []plot.Roles{plot.X, plot.Y}, []plot.Roles{plot.Size, plot.Color}, func(data plot.Data) plot.Plotter {
-		return NewXY(data)
+	plot.RegisterPlotter(XYType, "draws lines between and / or points for X,Y data values, using optional Size and Color data for the points, for a bubble plot.", []plot.Roles{plot.Y}, []plot.Roles{plot.X, plot.Size, plot.Color}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
+		return NewXY(plt, data)
 	})
 }
 
@@ -40,46 +42,71 @@ type XY struct {
 	stylers plot.Stylers
 }
 
-// NewXY returns an XY plotter for given X, Y data.
-// data can also include Color and / or Size for the points.
+// NewXY adds a new XY plotter to given plot for given data,
+// which can either by a [plot.Valuer] (e.g., Tensor) with the Y values,
+// or a [plot.Data] with roles, and values defined.
+// Data can also include Color and / or Size for the points.
 // Styler functions are obtained from the Y metadata if present.
-func NewXY(data plot.Data) *XY {
-	if data.CheckLengths() != nil {
+func NewXY(plt *plot.Plot, data any) *XY {
+	dt := errors.Log1(plot.DataOrValuer(data, plot.Y))
+	if dt == nil {
+		return nil
+	}
+	if dt.CheckLengths() != nil {
 		return nil
 	}
 	ln := &XY{}
-	ln.X = plot.MustCopyRole(data, plot.X)
-	ln.Y = plot.MustCopyRole(data, plot.Y)
+	ln.Y = plot.MustCopyRole(dt, plot.Y)
+	if _, ok := dt[plot.X]; !ok {
+		ln.X = errors.Log1(plot.CopyValues(tensor.NewIntRange(len(ln.Y))))
+	} else {
+		ln.X = plot.MustCopyRole(dt, plot.X)
+	}
 	if ln.X == nil || ln.Y == nil {
 		return nil
 	}
-	ln.stylers = plot.GetStylersFromData(data, plot.Y)
-	ln.Color = plot.CopyRole(data, plot.Color)
-	ln.Size = plot.CopyRole(data, plot.Size)
+	ln.stylers = plot.GetStylersFromData(dt, plot.Y)
+	ln.Color = plot.CopyRole(dt, plot.Color)
+	ln.Size = plot.CopyRole(dt, plot.Size)
 	ln.Defaults()
+	plt.Add(ln)
 	return ln
 }
 
-// NewLine returns an XY plot drawing Lines by default.
-func NewLine(data plot.Data) *XY {
-	ln := NewXY(data)
+// newXYWith is a simple helper function that creates a new XY plotter
+// with lines and/or points.
+func newXYWith(plt *plot.Plot, data any, line, point plot.DefaultOffOn) *XY {
+	ln := NewXY(plt, data)
 	if ln == nil {
 		return ln
 	}
-	ln.Style.Line.On = plot.On
-	ln.Style.Point.On = plot.Off
+	ln.Style.Line.On = line
+	ln.Style.Point.On = point
 	return ln
 }
 
-// NewScatter returns an XY scatter plot drawing Points by default.
-func NewScatter(data plot.Data) *XY {
-	ln := NewXY(data)
-	if ln == nil {
-		return ln
-	}
-	ln.Style.Line.On = plot.Off
-	ln.Style.Point.On = plot.On
-	return ln
+// NewLine adds an XY plot drawing Lines only by default, for given data
+// which can either by a [plot.Valuer] (e.g., Tensor) with the Y values,
+// or a [plot.Data] with roles, and values defined.
+// See also [NewScatter] and [NewPointLine].
+func NewLine(plt *plot.Plot, data any) *XY {
+	return newXYWith(plt, data, plot.On, plot.Off)
+}
+
+// NewScatter adds an XY scatter plot drawing Points only by default, for given data
+// which can either by a [plot.Valuer] (e.g., Tensor) with the Y values,
+// or a [plot.Data] with roles, and values defined.
+// See also [NewLine] and [NewPointLine].
+func NewScatter(plt *plot.Plot, data any) *XY {
+	return newXYWith(plt, data, plot.Off, plot.On)
+}
+
+// NewPointLine adds an XY plot drawing both lines and points by default, for given data
+// which can either by a [plot.Valuer] (e.g., Tensor) with the Y values,
+// or a [plot.Data] with roles, and values defined.
+// See also [NewLine] and [NewScatter].
+func NewPointLine(plt *plot.Plot, data any) *XY {
+	return newXYWith(plt, data, plot.On, plot.On)
 }
 
 func (ln *XY) Defaults() {
@@ -94,7 +121,9 @@ func (ln *XY) Styler(f func(s *plot.Style)) *XY {
 
 func (ln *XY) Stylers() *plot.Stylers { return &ln.stylers }
 
-func (ln *XY) ApplyStyle(ps *plot.PlotStyle) {
+func (ln *XY) ApplyStyle(ps *plot.PlotStyle, idx int) {
+	ln.Style.Line.SpacedColor(idx)
+	ln.Style.Point.SpacedColor(idx)
 	ps.SetElementStyle(&ln.Style)
 	ln.stylers.Run(&ln.Style)
 }
@@ -181,7 +210,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 
 	if ln.Style.Line.SetStroke(plt) {
 		if plt.HighlightPlotter == ln {
-			pc.StrokeStyle.Width.Dots *= 1.5
+			pc.StrokeStyle.Width.Dots *= 2
 		}
 		prevX, prevY := ln.PX[0], ln.PY[0]
 		pc.MoveTo(prevX, prevY)
@@ -212,26 +241,34 @@ func (ln *XY) Plot(plt *plot.Plot) {
 		pc.Stroke()
 	}
 	if ln.Style.Point.SetStroke(plt) {
-		origWidth := pc.StrokeStyle.Width.Dots
+		origWidth := ln.Style.Point.Width
+		origSize := ln.Style.Point.Size
 		for i, ptx := range ln.PX {
 			pty := ln.PY[i]
 			if plt.HighlightPlotter == ln {
 				if i == plt.HighlightIndex {
-					pc.StrokeStyle.Width.Dots *= 1.5
+					pc.StrokeStyle.Width.Dots *= 2
+					ln.Style.Point.Size.Dots *= 1.5
 				} else {
-					pc.StrokeStyle.Width.Dots = origWidth
+					pc.StrokeStyle.Width = origWidth
+					ln.Style.Point.Size = origSize
 				}
 			}
 			ln.Style.Point.DrawShape(pc, math32.Vec2(ptx, pty))
 		}
+		ln.Style.Point.Size = origSize
 	} else if plt.HighlightPlotter == ln {
 		op := ln.Style.Point.On
+		origSize := ln.Style.Point.Size
 		ln.Style.Point.On = plot.On
+		ln.Style.Point.Width.Pt(2)
+		ln.Style.Point.Size.Pt(4.5)
 		ln.Style.Point.SetStroke(plt)
 		ptx := ln.PX[plt.HighlightIndex]
 		pty := ln.PY[plt.HighlightIndex]
 		ln.Style.Point.DrawShape(pc, math32.Vec2(ptx, pty))
 		ln.Style.Point.On = op
+		ln.Style.Point.Size = origSize
 	}
 	pc.FillStyle.Color = nil
 }

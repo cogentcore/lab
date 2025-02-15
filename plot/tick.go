@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -42,6 +42,9 @@ var _ Ticker = DefaultTicks{}
 func (DefaultTicks) Ticks(min, max float64, nticks int) []Tick {
 	if max <= min {
 		panic("illegal range")
+	}
+	if nticks < 2 {
+		return nil
 	}
 
 	labels, step, q, mag := talbotLinHanrahan(min, max, nticks, withinData, nil, nil, nil)
@@ -141,6 +144,9 @@ func (t LogTicks) Ticks(min, max float64, nticks int) []Tick {
 	if min <= 0 || max <= 0 {
 		panic("Values must be greater than 0 for a log scale.")
 	}
+	if nticks < 2 {
+		return nil
+	}
 
 	val := math.Pow10(int(math.Log10(min)))
 	max = math.Pow10(int(math.Ceil(math.Log10(max))))
@@ -207,6 +213,9 @@ func (t TimeTicks) Ticks(min, max float64, nticks int) []Tick {
 	}
 	if t.Time == nil {
 		t.Time = UTCUnixTime
+	}
+	if nticks < 2 {
+		return nil
 	}
 
 	ticks := t.Ticker.Ticks(min, max, nticks)

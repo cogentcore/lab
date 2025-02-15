@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -32,7 +32,7 @@ type Plotter interface {
 	// ApplyStyle applies any stylers to this element,
 	// first initializing from the given global plot style, which has
 	// already been styled with defaults and all the plot element stylers.
-	ApplyStyle(plotStyle *PlotStyle)
+	ApplyStyle(plotStyle *PlotStyle, idx int)
 }
 
 // PlotterType registers a Plotter so that it can be created with appropriate data.
@@ -50,7 +50,7 @@ type PlotterType struct {
 	Optional []Roles
 
 	// New returns a new plotter of this type with given data in given roles.
-	New func(data Data) Plotter
+	New func(plt *Plot, data Data) Plotter
 }
 
 // PlotterName is the name of a specific plotter type.
@@ -60,7 +60,7 @@ type PlotterName string
 var Plotters = map[string]PlotterType{}
 
 // RegisterPlotter registers a plotter type.
-func RegisterPlotter(name, doc string, required, optional []Roles, newFun func(data Data) Plotter) {
+func RegisterPlotter(name, doc string, required, optional []Roles, newFun func(plt *Plot, data Data) Plotter) {
 	Plotters[name] = PlotterType{Name: name, Doc: doc, Required: required, Optional: optional, New: newFun}
 }
 
@@ -78,10 +78,10 @@ func PlotterByType(typeName string) (*PlotterType, error) {
 // NewPlotter returns a new plotter of given type, e.g., "XY", "Bar" etc,
 // for given data roles (which must include Required roles, and may include Optional ones).
 // Logs an error and returns nil if type name is not a registered type.
-func NewPlotter(typeName string, data Data) Plotter {
+func NewPlotter(plt *Plot, typeName string, data Data) Plotter {
 	pt, err := PlotterByType(typeName)
 	if errors.Log(err) != nil {
 		return nil
 	}
-	return pt.New(data)
+	return pt.New(plt, data)
 }

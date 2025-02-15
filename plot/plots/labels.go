@@ -16,8 +16,8 @@ import (
 const LabelsType = "Labels"
 
 func init() {
-	plot.RegisterPlotter(LabelsType, "draws text labels at specified X, Y points.", []plot.Roles{plot.X, plot.Y, plot.Label}, []plot.Roles{}, func(data plot.Data) plot.Plotter {
-		return NewLabels(data)
+	plot.RegisterPlotter(LabelsType, "draws text labels at specified X, Y points.", []plot.Roles{plot.X, plot.Y, plot.Label}, []plot.Roles{}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
+		return NewLabels(plt, data)
 	})
 }
 
@@ -39,9 +39,10 @@ type Labels struct {
 	ystylers  plot.Stylers
 }
 
-// NewLabels returns a new Labels using defaults
+// NewLabels adds a new Labels to given plot for given data,
+// which must specify X, Y and Label roles.
 // Styler functions are obtained from the Label metadata if present.
-func NewLabels(data plot.Data) *Labels {
+func NewLabels(plt *plot.Plot, data plot.Data) *Labels {
 	if data.CheckLengths() != nil {
 		return nil
 	}
@@ -63,6 +64,7 @@ func NewLabels(data plot.Data) *Labels {
 	lb.stylers = plot.GetStylersFromData(data, plot.Label)
 	lb.ystylers = plot.GetStylersFromData(data, plot.Y)
 	lb.Defaults()
+	plt.Add(lb)
 	return lb
 }
 
@@ -76,7 +78,8 @@ func (lb *Labels) Styler(f func(s *plot.Style)) *Labels {
 	return lb
 }
 
-func (lb *Labels) ApplyStyle(ps *plot.PlotStyle) {
+func (lb *Labels) ApplyStyle(ps *plot.PlotStyle, idx int) {
+	lb.Style.Line.SpacedColor(idx)
 	ps.SetElementStyle(&lb.Style)
 	yst := &plot.Style{}
 	lb.ystylers.Run(yst)
@@ -108,10 +111,14 @@ func (lb *Labels) Plot(plt *plot.Plot) {
 	ltxt.Defaults()
 	ltxt.Style = *st
 	ltxt.ToDots(uc)
+	nskip := lb.Style.LabelSkip
+	skip := nskip // start with label
 	for i, label := range lb.Labels {
-		if label == "" {
+		if label == "" || skip != nskip {
+			skip++
 			continue
 		}
+		skip = 0
 		ltxt.Text = label
 		ltxt.Config(plt)
 		tht := ltxt.PaintText.BBox.Size().Y

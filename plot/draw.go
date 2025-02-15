@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -129,8 +129,7 @@ func (pt *Plot) Draw() {
 	pc.PopBounds() // global
 }
 
-////////////////////////////////////////////////////////////////
-//		Axis
+////////	Axis
 
 // drawTicks returns true if the tick marks should be drawn.
 func (ax *Axis) drawTicks() bool {
@@ -139,6 +138,9 @@ func (ax *Axis) drawTicks() bool {
 
 // sizeX returns the total height of the axis, left and right padding
 func (ax *Axis) sizeX(pt *Plot, axw float32) (ht, lpad, rpad int) {
+	if !ax.Style.On {
+		return
+	}
 	pc := pt.Paint
 	uc := &pc.UnitContext
 	ax.Style.TickLength.ToDots(uc)
@@ -232,6 +234,9 @@ func (ax *Axis) longestTickLabel() string {
 }
 
 func (ax *Axis) sizeY(pt *Plot) (ywidth, tickWidth, tpad, bpad int) {
+	if !ax.Style.On {
+		return
+	}
 	pc := pt.Paint
 	uc := &pc.UnitContext
 	ax.ticks = ax.Ticker.Ticks(ax.Range.Min, ax.Range.Max, ax.Style.NTicks)
@@ -271,6 +276,9 @@ func (ax *Axis) sizeY(pt *Plot) (ywidth, tickWidth, tpad, bpad int) {
 
 // drawX draws the horizontal axis
 func (ax *Axis) drawX(pt *Plot, lpad, rpad int) {
+	if !ax.Style.On {
+		return
+	}
 	ab := pt.Paint.Bounds
 	ab.Min.X += lpad
 	ab.Max.X -= rpad
@@ -329,6 +337,9 @@ func (ax *Axis) drawX(pt *Plot, lpad, rpad int) {
 
 // drawY draws the Y axis along the left side
 func (ax *Axis) drawY(pt *Plot, tickWidth, tpad, bpad int) {
+	if !ax.Style.On {
+		return
+	}
 	ab := pt.Paint.Bounds
 	ab.Min.Y += tpad
 	ab.Max.Y -= bpad
@@ -384,8 +395,7 @@ func (ax *Axis) drawY(pt *Plot, tickWidth, tpad, bpad int) {
 	ax.Style.Line.Draw(pt, math32.Vec2(float32(ab.Min.X), float32(ab.Min.Y)), math32.Vec2(float32(ab.Min.X), float32(ab.Max.Y)))
 }
 
-////////////////////////////////////////////////
-//		Legend
+////////	Legend
 
 // draw draws the legend
 func (lg *Legend) draw(pt *Plot) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -39,6 +39,9 @@ const (
 // AxisStyle has style properties for the axis.
 type AxisStyle struct { //types:add -setters
 
+	// On determines whether the axis is rendered.
+	On bool
+
 	// Text has the text style parameters for the text label.
 	Text TextStyle
 
@@ -50,7 +53,8 @@ type AxisStyle struct { //types:add -setters
 	// on the axis, thus making it easier to see.
 	Padding units.Value
 
-	// NTicks is the desired number of ticks (actual likely will be different).
+	// NTicks is the desired number of ticks (actual likely
+	// will be different). If < 2 then the axis will not be drawn.
 	NTicks int
 
 	// Scale specifies how values are scaled along the axis:
@@ -69,6 +73,7 @@ type AxisStyle struct { //types:add -setters
 }
 
 func (ax *AxisStyle) Defaults() {
+	ax.On = true
 	ax.Line.Defaults()
 	ax.Text.Defaults()
 	ax.Text.Size.Dp(20)
@@ -81,9 +86,10 @@ func (ax *AxisStyle) Defaults() {
 	ax.TickLength.Pt(8)
 }
 
-// Axis represents either a horizontal or vertical
-// axis of a plot.
+// Axis represents either a horizontal or vertical axis of a plot.
+// This is the "internal" data structure and should not be used for styling.
 type Axis struct {
+
 	// Range has the Min, Max range of values for the axis (in raw data units.)
 	Range minmax.F64
 
@@ -99,7 +105,7 @@ type Axis struct {
 	// TickText is used for rendering the tick text labels.
 	TickText Text
 
-	// Ticker generates the tick marks.  Any tick marks
+	// Ticker generates the tick marks. Any tick marks
 	// returned by the Marker function that are not in
 	// range of the axis are not drawn.
 	Ticker Ticker

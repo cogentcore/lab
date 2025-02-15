@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -23,7 +23,7 @@ import (
 
 // Plot is a widget that renders a [plot.Plot] object.
 // If it is not [states.ReadOnly], the user can pan and zoom the graph.
-// See [PlotEditor] for an interactive interface for selecting columns to view.
+// See [Editor] for an interactive interface for selecting columns to view.
 type Plot struct {
 	core.WidgetBase
 
@@ -35,15 +35,15 @@ type Plot struct {
 	SetRangesFunc func()
 }
 
-// SetPlot sets the plot to given Plot, and calls UpdatePlot to ensure it is
-// drawn at the current size of this widget
-func (pt *Plot) SetPlot(pl *plot.Plot) {
+// SetPlot sets the plot to the given [plot.Plot]. You must still call [core.WidgetBase.Update]
+// to trigger a redrawing of the plot.
+func (pt *Plot) SetPlot(pl *plot.Plot) *Plot {
 	if pl != nil && pt.Plot != nil && pt.Plot.Pixels != nil {
 		pl.DPI = pt.Styles.UnitContext.DPI
 		pl.SetPixels(pt.Plot.Pixels) // re-use the image!
 	}
 	pt.Plot = pl
-	pt.updatePlot()
+	return pt
 }
 
 // updatePlot draws the current plot at the size of the current widget,
@@ -69,7 +69,7 @@ func (pt *Plot) updatePlot() {
 func (pt *Plot) Init() {
 	pt.WidgetBase.Init()
 	pt.Styler(func(s *styles.Style) {
-		s.Min.Set(units.Dp(256))
+		s.Min.Set(units.Dp(512), units.Dp(384))
 		ro := pt.IsReadOnly()
 		s.SetAbilities(!ro, abilities.Slideable, abilities.Activatable, abilities.Scrollable)
 		if !ro {

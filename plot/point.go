@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -35,15 +35,27 @@ type PointStyle struct { //types:add -setters
 	Width units.Value
 
 	// Size of shape to draw for each point.
-	// Defaults to 4 Pt (point).
+	// Defaults to 3 Pt (point).
 	Size units.Value
 }
 
 func (ps *PointStyle) Defaults() {
+	ps.Shape = Circle
 	ps.Color = colors.Scheme.OnSurface
 	ps.Fill = colors.Scheme.OnSurface
 	ps.Width.Pt(1)
-	ps.Size.Pt(4)
+	ps.Size.Pt(3)
+}
+
+// SpacedColor sets the Color to a default spaced color based on index,
+// if it still has the initial OnSurface default.
+func (ps *PointStyle) SpacedColor(idx int) {
+	if ps.Color == colors.Scheme.OnSurface {
+		ps.Color = colors.Uniform(colors.Spaced(idx))
+	}
+	if ps.Fill == colors.Scheme.OnSurface {
+		ps.Fill = colors.Uniform(colors.Spaced(idx))
+	}
 }
 
 // SetStroke sets the stroke style in plot paint to current line style.

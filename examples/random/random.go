@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Cogent Lab. All rights reserved.
+// Copyright (c) 2020, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -51,7 +51,7 @@ type Data struct { //types:add
 	Histogram *table.Table `display:"no-inline"`
 
 	// the plot
-	plot *plotcore.PlotEditor `display:"-"`
+	plot *plotcore.Editor `display:"-"`
 }
 
 // logPrec is the precision for saving float values in logs.
@@ -83,7 +83,7 @@ func (rd *Random) Init() {
 				rd.Plot()
 			})
 		})
-		tree.AddChild(w, func(w *plotcore.PlotEditor) {
+		tree.AddChild(w, func(w *plotcore.Editor) {
 			w.SetTable(rd.Histogram)
 			rd.plot = w
 		})
@@ -111,7 +111,7 @@ func (rd *Random) ConfigTable(dt *table.Table) {
 	// metadata.SetReadOnly(dt, true)
 	tensor.SetPrecision(dt, logPrec)
 	val := dt.AddFloat64Column("Value")
-	plot.SetFirstStylerTo(val, func(s *plot.Style) {
+	plot.SetStyler(val, func(s *plot.Style) {
 		s.Role = plot.X
 		s.Plotter = plots.BarType
 		s.Plot.XAxis.Rotation = 45

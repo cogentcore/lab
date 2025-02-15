@@ -20,11 +20,11 @@ const (
 )
 
 func init() {
-	plot.RegisterPlotter(YErrorBarsType, "draws draws vertical error bars, denoting error in Y values, using either High or Low & High data roles for error deviations around X, Y coordinates.", []plot.Roles{plot.X, plot.Y, plot.High}, []plot.Roles{plot.Low}, func(data plot.Data) plot.Plotter {
-		return NewYErrorBars(data)
+	plot.RegisterPlotter(YErrorBarsType, "draws draws vertical error bars, denoting error in Y values, using either High or Low & High data roles for error deviations around X, Y coordinates.", []plot.Roles{plot.X, plot.Y, plot.High}, []plot.Roles{plot.Low}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
+		return NewYErrorBars(plt, data)
 	})
-	plot.RegisterPlotter(XErrorBarsType, "draws draws horizontal error bars, denoting error in X values, using either High or Low & High data roles for error deviations around X, Y coordinates.", []plot.Roles{plot.X, plot.Y, plot.High}, []plot.Roles{plot.Low}, func(data plot.Data) plot.Plotter {
-		return NewXErrorBars(data)
+	plot.RegisterPlotter(XErrorBarsType, "draws draws horizontal error bars, denoting error in X values, using either High or Low & High data roles for error deviations around X, Y coordinates.", []plot.Roles{plot.X, plot.Y, plot.High}, []plot.Roles{plot.Low}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
+		return NewXErrorBars(plt, data)
 	})
 }
 
@@ -49,10 +49,10 @@ func (eb *YErrorBars) Defaults() {
 	eb.Style.Defaults()
 }
 
-// NewYErrorBars returns a new YErrorBars plotter,
+// NewYErrorBars adds a new YErrorBars plotter to given plot,
 // using Low, High data roles for error deviations around X, Y coordinates.
 // Styler functions are obtained from the High data if present.
-func NewYErrorBars(data plot.Data) *YErrorBars {
+func NewYErrorBars(plt *plot.Plot, data plot.Data) *YErrorBars {
 	if data.CheckLengths() != nil {
 		return nil
 	}
@@ -70,6 +70,7 @@ func NewYErrorBars(data plot.Data) *YErrorBars {
 	eb.stylers = plot.GetStylersFromData(data, plot.High)
 	eb.ystylers = plot.GetStylersFromData(data, plot.Y)
 	eb.Defaults()
+	plt.Add(eb)
 	return eb
 }
 
@@ -79,7 +80,8 @@ func (eb *YErrorBars) Styler(f func(s *plot.Style)) *YErrorBars {
 	return eb
 }
 
-func (eb *YErrorBars) ApplyStyle(ps *plot.PlotStyle) {
+func (eb *YErrorBars) ApplyStyle(ps *plot.PlotStyle, idx int) {
+	eb.Style.Line.SpacedColor(idx)
 	ps.SetElementStyle(&eb.Style)
 	yst := &plot.Style{}
 	eb.ystylers.Run(yst)
@@ -166,9 +168,9 @@ func (eb *XErrorBars) Defaults() {
 	eb.Style.Defaults()
 }
 
-// NewXErrorBars returns a new XErrorBars plotter,
+// NewXErrorBars adds a new XErrorBars plotter to given plot,
 // using Low, High data roles for error deviations around X, Y coordinates.
-func NewXErrorBars(data plot.Data) *XErrorBars {
+func NewXErrorBars(plt *plot.Plot, data plot.Data) *XErrorBars {
 	if data.CheckLengths() != nil {
 		return nil
 	}
@@ -188,6 +190,7 @@ func NewXErrorBars(data plot.Data) *XErrorBars {
 	eb.stylers = plot.GetStylersFromData(data, plot.High)
 	eb.ystylers = plot.GetStylersFromData(data, plot.Y)
 	eb.Defaults()
+	plt.Add(eb)
 	return eb
 }
 
@@ -197,7 +200,8 @@ func (eb *XErrorBars) Styler(f func(s *plot.Style)) *XErrorBars {
 	return eb
 }
 
-func (eb *XErrorBars) ApplyStyle(ps *plot.PlotStyle) {
+func (eb *XErrorBars) ApplyStyle(ps *plot.PlotStyle, idx int) {
+	eb.Style.Line.SpacedColor(idx)
 	ps.SetElementStyle(&eb.Style)
 	yst := &plot.Style{}
 	eb.ystylers.Run(yst)

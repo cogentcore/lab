@@ -1,0 +1,124 @@
+syntax = "proto3";
+package baremetal;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "cogentcore.org/lab/examples/baremetal/baremetal";
+
+service BareMetal {
+  rpc Submit (Submission) returns (Job);
+  rpc JobStatus (JobIDList) returns (JobList);
+  rpc CancelJobs (JobIDList) returns (Error);
+  rpc FetchResults (JobIDList) returns (JobList);
+  rpc UpdateJobs (google.protobuf.Empty) returns (google.protobuf.Empty);
+}
+
+// Submission is a job submission.
+message Submission {
+	// Source is info about the source of the job, e.g., simrun sim project.
+	string source = 1;
+
+	// Path is the path from the SSH home directory to launch the job in.
+	// This path will be created on the server when the job is run.
+	string path = 2;
+
+	// Script is name of the job script to run, which must be at the top level
+	// within the given tar file.
+	string script = 3;
+
+	// ResultsGlob is a glob expression for the result files to get back
+	// from the server (e.g., *.tsv). job.out is automatically included as well,
+	// which has the job stdout, stederr output.
+	string resultsGlob = 4;
+	
+	// Files is the gzipped tar file of the job files set at submission.
+	bytes files = 5;
+}
+
+// Status are the job status values.
+enum Status {
+	// NoStatus is the unknown status state.
+	NoStatus = 0;
+
+	// Pending means the job has been submitted, but not yet run.
+	Pending = 1;
+
+	// Running means the job is running.
+	Running = 2;
+
+	// Completed means the job finished on its own, with no error status.
+	Completed = 3;
+
+	// Canceled means the job was canceled by the user.
+	Canceled = 4;
+
+	// Errored means the job quit with an error
+	Errored = 5;
+}
+
+// Job is one bare metal job.
+message Job {
+	// ID is the overall baremetal unique job ID number.
+	int64 ID = 1;
+
+	// Status is the current status of the job.
+	Status status = 2;
+
+	// Source is info about the source of the job, e.g., simrun sim project.
+	string source = 3;
+
+	// Path is the path from the SSH home directory to launch the job in.
+	// This path will be created on the server when the job is run.
+	string path = 4;
+
+	// Script is name of the job script to run, which must be at the top level
+	// within the given tar file.
+	string script = 5;
+
+	// Files is the gzipped tar file of the job files set at submission.
+	bytes files = 6;
+
+	// ResultsGlob is a glob expression for the result files to get back
+	// from the server (e.g., *.tsv). job.out is automatically included as well,
+	// which has the job stdout, stederr output.
+	string resultsGlob = 7;
+	
+	// Results is the gzipped tar file of the job result files, gathered
+	// at completion or when queried for results.
+	bytes results = 8;
+
+	// Submit is the time submitted.
+	google.protobuf.Timestamp submit = 9;
+
+	// Start is the time actually started.
+	google.protobuf.Timestamp start = 10;
+
+	// End is the time stopped running.
+	google.protobuf.Timestamp end = 11;
+
+	//	ServerName is the name of the server it is running / ran on. Empty for pending.
+	string serverName = 12;
+
+	// ServerGPU is the logical index of the GPU assigned to this job (0..N-1).
+	int32 serverGPU = 13;
+
+	// PID is the process id of the job script.
+	int64 PID = 14;
+}
+
+// JobList is a list of Jobs.
+message JobList {
+	repeated Job jobs = 1;
+}
+
+// JobIDList is a list of unique job ID numbers
+message JobIDList {
+	repeated int64 jobID = 1;
+}
+
+// Error is an error message about an operation.
+message Error {
+	string error = 1;
+}
+

@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -86,13 +86,14 @@ type funcInfo struct {
 // mathParse has the parsing state, active only during a parsing pass
 // on one specific chunk of code and tokens.
 type mathParse struct {
-	state  *State
-	code   string   // code string
-	toks   Tokens   // source tokens we are parsing
-	ewords []string // exec words
-	idx    int      // current index in source tokens -- critical to sync as we "use" source
-	out    Tokens   // output tokens we generate
-	trace  bool     // trace of parsing -- turn on to see alignment
+	state   *State
+	code    string   // code string
+	toks    Tokens   // source tokens we are parsing
+	ewords  []string // exec words
+	idx     int      // current index in source tokens -- critical to sync as we "use" source
+	out     Tokens   // output tokens we generate
+	trace   bool     // trace of parsing -- turn on to see alignment
+	inArray bool     // we are in an array
 
 	// stack of function info -- top of stack reflects the current function
 	funcs stack.Stack[*funcInfo]
@@ -795,13 +796,14 @@ func (mp *mathParse) arrayLiteral(il *ast.IndexListExpr) {
 		typ = "string"
 		fun = "String"
 	}
-	if mp.curArgIsInts() {
+	if mp.inArray || mp.curArgIsInts() {
 		mp.idx++ // opening brace we're not using
 		mp.exprList(il.Indices)
 		mp.idx++ // closing brace we're not using
 		return
 	}
 	var sh []int
+	mp.inArray = true
 	mp.arrayShape(il.Indices, &sh)
 	if len(sh) > 1 {
 		mp.startFunc("tensor.Reshape")
@@ -827,6 +829,7 @@ func (mp *mathParse) arrayLiteral(il *ast.IndexListExpr) {
 		mp.out.Add(token.RPAREN)
 		mp.endFunc()
 	}
+	mp.inArray = false
 }
 
 func (mp *mathParse) arrayShape(ex []ast.Expr, sh *[]int) {
@@ -884,7 +887,7 @@ func (mp *mathParse) callExpr(ex *ast.CallExpr) {
 				return
 			}
 			// todo: dot fun?
-			mp.expr(ex)
+			mp.expr(ex.Fun)
 		}
 	default:
 		mp.expr(ex.Fun)

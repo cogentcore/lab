@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -23,10 +23,10 @@ import (
 	_ "cogentcore.org/lab/stats/stats"
 	_ "cogentcore.org/lab/tensor/tmath"
 	"cogentcore.org/lab/tensorfs"
-	"cogentcore.org/lab/yaegilab/nogui"
+	"cogentcore.org/lab/yaegilab/tensorsymbols"
+	"github.com/cogentcore/readline"
 	"github.com/cogentcore/yaegi/interp"
 	"github.com/cogentcore/yaegi/stdlib"
-	"github.com/ergochat/readline"
 )
 
 // Interpreter represents one running shell context
@@ -69,7 +69,7 @@ func NewInterpreter(options interp.Options) *Interpreter {
 	options.Stdin = in.Goal.StdIOWrappers.In
 	in.Interp = interp.New(options)
 	errors.Log(in.Interp.Use(basesymbols.Symbols))
-	errors.Log(in.Interp.Use(nogui.Symbols))
+	errors.Log(in.Interp.Use(tensorsymbols.Symbols))
 	in.ImportGoal()
 	go in.MonitorSignals()
 	return in

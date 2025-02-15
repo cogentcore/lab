@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Cogent Lab. All rights reserved.
+// Copyright (c) 2023, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -59,7 +59,7 @@ type Table struct {
 	// colMaxWidths records maximum width in chars of string type fields.
 	colMaxWidths []int `set:"-" copier:"-" json:"-" xml:"-"`
 
-	//	blank values for out-of-range rows.
+	// blank values for out-of-range rows.
 	blankString string
 	blankFloat  float64
 

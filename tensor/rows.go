@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -315,13 +315,10 @@ func (rw *Rows) Filter(filterer func(tsr Values, row int) bool) {
 	}
 }
 
-// FilterOptions are options to a Filter function
-// determining how the string filter value is used for matching.
-type FilterOptions struct { //types:add
+// todo: move to stringsx
 
-	// Exclude means to exclude matches,
-	// with the default (false) being to include
-	Exclude bool
+// StringMatch are options for how to compare strings.
+type StringMatch struct { //types:add
 
 	// Contains means the string only needs to contain the target string,
 	// with the default (false) requiring a complete match to entire string.
@@ -330,6 +327,32 @@ type FilterOptions struct { //types:add
 	// IgnoreCase means that differences in case are ignored in comparing strings,
 	// with the default (false) using case.
 	IgnoreCase bool
+
+	// Exclude means to exclude matches,
+	// with the default (false) being to include.
+	Exclude bool
+}
+
+// Match compares two strings according to the options.
+// The trg is the target string that you are comparing,
+// such that it must contain the given str string,
+// not the other way around.
+func (sm *StringMatch) Match(trg, str string) bool {
+	has := false
+	switch {
+	case sm.Contains && sm.IgnoreCase:
+		has = strings.Contains(strings.ToLower(trg), strings.ToLower(str))
+	case sm.Contains:
+		has = strings.Contains(trg, str)
+	case sm.IgnoreCase:
+		has = strings.EqualFold(trg, str)
+	default:
+		has = (trg == str)
+	}
+	if sm.Exclude {
+		return !has
+	}
+	return has
 }
 
 // FilterString filters the indexes using string values compared to given
@@ -337,24 +360,10 @@ type FilterOptions struct { //types:add
 // If Contains option is set, it only checks if row contains string;
 // if IgnoreCase, ignores case, otherwise filtering is case sensitive.
 // Uses first cell of higher dimensional data.
-func (rw *Rows) FilterString(str string, opts FilterOptions) { //types:add
-	lowstr := strings.ToLower(str)
+func (rw *Rows) FilterString(str string, opts StringMatch) { //types:add
 	rw.Filter(func(tsr Values, row int) bool {
 		val := tsr.StringRow(row, 0)
-		has := false
-		switch {
-		case opts.Contains && opts.IgnoreCase:
-			has = strings.Contains(strings.ToLower(val), lowstr)
-		case opts.Contains:
-			has = strings.Contains(val, str)
-		case opts.IgnoreCase:
-			has = strings.EqualFold(val, str)
-		default:
-			has = (val == str)
-		}
-		if opts.Exclude {
-			return !has
-		}
+		has := opts.Match(val, str)
 		return has
 	})
 }

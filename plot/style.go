@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -15,7 +15,7 @@ import (
 // while the Plot properties applies to the overall plot itself.
 type Style struct { //types:add -setters
 
-	//	Plot has overall plot-level properties, which can be set by any
+	// Plot has overall plot-level properties, which can be set by any
 	// plot element, and are updated first, before applying element-wise styles.
 	Plot PlotStyle `display:"-"`
 
@@ -49,6 +49,10 @@ type Style struct { //types:add -setters
 
 	// NTicks sets the desired number of ticks for the axis, if > 0.
 	NTicks int
+
+	// LabelSkip is the number of data points to skip between Labels.
+	// 0 means plot the Label at every point.
+	LabelSkip int
 
 	// Line has style properties for drawing lines.
 	Line LineStyle `display:"add-fields"`
@@ -119,11 +123,18 @@ type Stylers []func(s *Style)
 
 // Add Adds a styling function to the list.
 func (st *Stylers) Add(f func(s *Style)) {
-	*st = append(*st, f)
+	if st == nil {
+		*st = append(Stylers{}, f)
+	} else {
+		*st = append(*st, f)
+	}
 }
 
 // Run runs the list of styling functions on given [Style] object.
 func (st *Stylers) Run(s *Style) {
+	if st == nil {
+		return
+	}
 	for _, f := range *st {
 		f(s)
 	}
@@ -138,49 +149,49 @@ func (st *Stylers) NewStyle(ps *PlotStyle) *Style {
 	return s
 }
 
-// SetStylersTo sets the [Stylers] into given object's [metadata].
-func SetStylersTo(obj any, st Stylers) {
-	metadata.SetTo(obj, "PlotStylers", st)
+// SetStyler sets the [Stylers] function(s) into given object's [metadata].
+// This overwrites any existing styler functions. The [plotcore.Editor]
+// depends on adding a styler function on top of any existing ones,
+// so it is better to use [SetFirstStyle] if that is being used.
+func SetStyler(obj any, st ...func(s *Style)) {
+	metadata.Set(obj, "PlotStylers", Stylers(st))
 }
 
-// GetStylersFrom returns [Stylers] from given object's [metadata].
+// GetStylers returns [Stylers] functions from given object's [metadata].
 // Returns nil if none or no metadata.
-func GetStylersFrom(obj any) Stylers {
-	st, _ := metadata.GetFrom[Stylers](obj, "PlotStylers")
+func GetStylers(obj any) Stylers {
+	st, _ := metadata.Get[Stylers](obj, "PlotStylers")
 	return st
 }
 
-// SetStylerTo sets the [Styler] function into given object's [metadata],
-// replacing anything that might have already been added.
-func SetStylerTo(obj any, f func(s *Style)) {
-	metadata.SetTo(obj, "PlotStylers", Stylers{f})
-}
-
-// SetFirstStylerTo sets the [Styler] function into given object's [metadata],
-// only if there are no other stylers present.
-func SetFirstStylerTo(obj any, f func(s *Style)) {
-	st := GetStylersFrom(obj)
+// SetFirstStyler sets the [Styler] function into given object's [metadata],
+// only if there are no other stylers present. This is important for cases
+// where code may be run multiple times on the same object, and you don't want
+// to add multiple redundant style functions (and [plotcore.Editor] is being used).
+func SetFirstStyler(obj any, f func(s *Style)) {
+	st := GetStylers(obj)
 	if len(st) > 0 {
 		return
 	}
-	metadata.SetTo(obj, "PlotStylers", Stylers{f})
+	metadata.Set(obj, "PlotStylers", Stylers{f})
 }
 
-// AddStylerTo adds the given [Styler] function into given object's [metadata].
-func AddStylerTo(obj any, f func(s *Style)) {
-	st := GetStylersFrom(obj)
+// Styler adds the given [Styler] function into given object's [metadata].
+func Styler(obj any, f func(s *Style)) {
+	st := GetStylers(obj)
 	st.Add(f)
-	SetStylersTo(obj, st)
+	SetStyler(obj, st...)
 }
 
 // GetStylersFromData returns [Stylers] from given role
-// in given [Data]. nil if not present.
+// in given [Data]. nil if not present. Mostly used internally
+// for Plotters implementations.
 func GetStylersFromData(data Data, role Roles) Stylers {
 	vr, ok := data[role]
 	if !ok {
 		return nil
 	}
-	return GetStylersFrom(vr)
+	return GetStylers(vr)
 }
 
 ////////

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Cogent Lab. All rights reserved.
+// Copyright (c) 2020, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -32,8 +32,7 @@ const (
 )
 
 // IsOn tells whether MPI is on or not
-//
-//	NOTE: this returns true even after Stop
+// NOTE: this returns true even after Stop
 func IsOn() bool {
 	return false
 }

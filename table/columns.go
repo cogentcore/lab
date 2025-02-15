@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -72,7 +72,7 @@ func (cl *Columns) Clone() *Columns {
 		tsr := cl.Values[i]
 		cp.AddColumn(nm, tsr.Clone())
 	}
-	return cl
+	return cp
 }
 
 // AppendRows appends shared columns in both tables with input table rows.

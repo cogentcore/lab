@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -173,11 +173,14 @@ func (tk Tokens) Code() string {
 	for _, tok := range tk {
 		switch {
 		case tok.IsOp():
-			if tok.Tok == token.INC || tok.Tok == token.DEC {
+			switch tok.Tok {
+			case token.INC, token.DEC:
 				str += tok.String() + " "
-			} else if tok.Tok == token.MUL {
+			case token.MUL:
 				str += " " + tok.String()
-			} else {
+			case token.SUB:
+				str += tok.String()
+			default:
 				str += " " + tok.String() + " "
 			}
 			prvIdent = false

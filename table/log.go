@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -13,19 +13,19 @@ import (
 )
 
 func setLogRow(dt *Table, row int) {
-	metadata.SetTo(dt, "LogRow", row)
+	metadata.Set(dt, "LogRow", row)
 }
 
 func logRow(dt *Table) int {
-	return errors.Ignore1(metadata.GetFrom[int](dt, "LogRow"))
+	return errors.Ignore1(metadata.Get[int](dt, "LogRow"))
 }
 
 func setLogDelim(dt *Table, delim tensor.Delims) {
-	metadata.SetTo(dt, "LogDelim", delim)
+	metadata.Set(dt, "LogDelim", delim)
 }
 
 func logDelim(dt *Table) tensor.Delims {
-	return errors.Ignore1(metadata.GetFrom[tensor.Delims](dt, "LogDelim"))
+	return errors.Ignore1(metadata.Get[tensor.Delims](dt, "LogDelim"))
 }
 
 // OpenLog opens a log file for this table, which supports incremental

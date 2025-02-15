@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -83,7 +83,7 @@ func TestAppendRowsEtc(t *testing.T) {
 	assert.Equal(t, []int{2, 5, 8, 11, 1, 4, 7, 10, 0, 3, 6, 9}, dt.Indexes)
 
 	dt.Sequential()
-	dt.FilterString("Int", "1", tensor.FilterOptions{Contains: true, IgnoreCase: true})
+	dt.FilterString("Int", "1", tensor.StringMatch{Contains: true, IgnoreCase: true})
 	assert.Equal(t, []int{1, 4, 7, 10}, dt.Indexes)
 
 	dt.Sequential()
