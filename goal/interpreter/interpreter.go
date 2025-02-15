@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Cogent Lab. All rights reserved.
+// Copyright (c) 2024, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -24,9 +24,9 @@ import (
 	_ "cogentcore.org/lab/tensor/tmath"
 	"cogentcore.org/lab/tensorfs"
 	"cogentcore.org/lab/yaegilab/tensorsymbols"
+	"github.com/cogentcore/readline"
 	"github.com/cogentcore/yaegi/interp"
 	"github.com/cogentcore/yaegi/stdlib"
-	"github.com/ergochat/readline"
 )
 
 // Interpreter represents one running shell context
