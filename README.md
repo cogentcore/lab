@@ -2,7 +2,7 @@
     <a href="https://cogentcore.org/lab">
         <img alt="Cogent Core Logo" src="icon.svg"><br>
     </a>
-    <p style="font-size:60px">Cogent Lab</p>
+    <img alt="Cogent Lab Name Banner" width="570" src="name.svg">
 </h1>
 
 <p align="center">
