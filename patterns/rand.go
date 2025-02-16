@@ -4,7 +4,10 @@
 
 package patterns
 
-import "cogentcore.org/lab/base/randx"
+import (
+	"cogentcore.org/lab/base/randx"
+	"cogentcore.org/lab/tensor"
+)
 
 var (
 	// RandSource is a random source to use for all random numbers used in patterns.
@@ -37,4 +40,14 @@ func SetRandSeed(seed int64) {
 // will repeat what was generated from that point onward.
 func RestoreSeed() {
 	RandSource.Seed(RandSeed)
+}
+
+// NewRandom makes a new random tensor of the given size using the given random number parameters.
+func NewRandom(rp *randx.RandParams, sizes ...int) *tensor.Float64 {
+	// TODO: does this belong in this package?
+	tsr := tensor.NewFloat64(sizes...)
+	tensor.FloatSetFunc(20, func(idx int) float64 { // TODO: is the right number of FLOPS?
+		return rp.Gen(RandSource)
+	}, tsr)
+	return tsr
 }
