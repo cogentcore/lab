@@ -18,7 +18,6 @@ func init() {
 		"NOnInTensor":            reflect.ValueOf(patterns.NOnInTensor),
 		"NameRows":               reflect.ValueOf(patterns.NameRows),
 		"NewRand":                reflect.ValueOf(patterns.NewRand),
-		"NewRandom":              reflect.ValueOf(patterns.NewRandom),
 		"PctActInTensor":         reflect.ValueOf(patterns.PctActInTensor),
 		"PermutedBinary":         reflect.ValueOf(patterns.PermutedBinary),
 		"PermutedBinaryMinDiff":  reflect.ValueOf(patterns.PermutedBinaryMinDiff),
