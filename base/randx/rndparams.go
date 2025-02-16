@@ -6,7 +6,7 @@ package randx
 
 // RandParams provides parameterized random number generation according to different distributions
 // and variance, mean params
-type RandParams struct { //git:add
+type RandParams struct {
 
 	// distribution to generate random numbers from
 	Dist RandDists
