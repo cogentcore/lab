@@ -70,7 +70,7 @@ const (
 	// Uniform has a uniform probability distribution over Var = range on either side of the Mean
 	Uniform RandDists = iota
 
-	// Binomial represents number of 1's in n (Par) random (Bernouli) trials of probability p (Var)
+	// Binomial represents number of 1's in n (Par) random (Bernoulli) trials of probability p (Var)
 	Binomial
 
 	// Poisson represents number of events in interval, with event rate (lambda = Var) plus Mean
