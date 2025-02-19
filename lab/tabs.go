@@ -11,7 +11,6 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/text/textcore"
-	"cogentcore.org/core/texteditor"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/plotcore"
 	"cogentcore.org/lab/table"
@@ -235,14 +234,14 @@ func (ts *Tabs) SliceTable(label string, slc any) *core.Table {
 // EditorString recycles a [textcore.Editor] tab, displaying given string.
 func (ts *Tabs) EditorString(label, content string) *textcore.Editor {
 	ed := NewTab(ts, label, func(tab *core.Frame) *textcore.Editor {
-		ed := texteditor.NewEditor(tab)
+		ed := textcore.NewEditor(tab)
 		ed.Styler(func(s *styles.Style) {
 			s.Grow.Set(1, 1)
 		})
 		return ed
 	})
 	if content != "" {
-		ed.Buffer.SetText([]byte(content))
+		ed.Lines.SetText([]byte(content))
 	}
 	ts.Update()
 	return ed
@@ -251,13 +250,13 @@ func (ts *Tabs) EditorString(label, content string) *textcore.Editor {
 // EditorFile opens an editor tab for given file.
 func (ts *Tabs) EditorFile(label, filename string) *textcore.Editor {
 	ed := NewTab(ts, label, func(tab *core.Frame) *textcore.Editor {
-		ed := texteditor.NewEditor(tab)
+		ed := textcore.NewEditor(tab)
 		ed.Styler(func(s *styles.Style) {
 			s.Grow.Set(1, 1)
 		})
 		return ed
 	})
-	ed.Buffer.Open(core.Filename(filename))
+	ed.Lines.Open(core.Filename(filename))
 	ts.Update()
 	return ed
 }
