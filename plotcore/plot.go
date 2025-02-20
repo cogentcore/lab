@@ -7,9 +7,7 @@ package plotcore
 import (
 	"fmt"
 	"image"
-	"image/draw"
 
-	"cogentcore.org/core/colors"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/cursors"
 	"cogentcore.org/core/events"
@@ -38,32 +36,12 @@ type Plot struct {
 // SetPlot sets the plot to the given [plot.Plot]. You must still call [core.WidgetBase.Update]
 // to trigger a redrawing of the plot.
 func (pt *Plot) SetPlot(pl *plot.Plot) *Plot {
-	if pl != nil && pt.Plot != nil && pt.Plot.Pixels != nil {
-		pl.DPI = pt.Styles.UnitContext.DPI
-		pl.SetPixels(pt.Plot.Pixels) // re-use the image!
-	}
+	pl.DPI = pt.Styles.UnitContext.DPI
 	pt.Plot = pl
+	pt.Plot.Painter = &pt.Scene.Painter
+	pt.Plot.TextShaper = pt.Scene.TextShaper
+	pt.Plot.PaintBox = pt.Geom.ContentBBox
 	return pt
-}
-
-// updatePlot draws the current plot at the size of the current widget,
-// and triggers a Render so the widget will be rendered.
-func (pt *Plot) updatePlot() {
-	if pt.Plot == nil {
-		pt.NeedsRender()
-		return
-	}
-	sz := pt.Geom.Size.Actual.Content.ToPoint()
-	if sz == (image.Point{}) {
-		return
-	}
-	pt.Plot.DPI = pt.Styles.UnitContext.DPI
-	pt.Plot.Resize(sz)
-	if pt.SetRangesFunc != nil {
-		pt.SetRangesFunc()
-	}
-	pt.Plot.Draw()
-	pt.NeedsRender()
 }
 
 func (pt *Plot) Init() {
@@ -98,7 +76,7 @@ func (pt *Plot) Init() {
 		dy := float64(del.Y) * (pt.Plot.Y.Range.Range()) * 0.0008 * yf
 		pt.Plot.PanZoom.XOffset += dx
 		pt.Plot.PanZoom.YOffset += dy
-		pt.updatePlot()
+		pt.NeedsRender()
 	})
 
 	pt.On(events.Scroll, func(e events.Event) {
@@ -116,7 +94,7 @@ func (pt *Plot) Init() {
 		}
 		pt.Plot.PanZoom.XScale *= xsc
 		pt.Plot.PanZoom.YScale *= ysc
-		pt.updatePlot()
+		pt.NeedsRender()
 	})
 }
 
@@ -132,7 +110,7 @@ func (pt *Plot) WidgetTooltip(pos image.Point) (string, image.Point) {
 	if dist <= 10 {
 		pt.Plot.HighlightPlotter = plt
 		pt.Plot.HighlightIndex = idx
-		pt.updatePlot()
+		pt.NeedsRender()
 		dx := 0.0
 		if data[plot.X] != nil {
 			dx = data[plot.X].Float1D(idx)
@@ -145,25 +123,28 @@ func (pt *Plot) WidgetTooltip(pos image.Point) (string, image.Point) {
 	} else {
 		if pt.Plot.HighlightPlotter != nil {
 			pt.Plot.HighlightPlotter = nil
-			pt.updatePlot()
+			pt.NeedsRender()
 		}
 	}
 	return pt.Tooltip, pt.DefaultTooltipPos()
 }
 
-func (pt *Plot) SizeFinal() {
-	pt.WidgetBase.SizeFinal()
-	pt.updatePlot()
+// renderPlot draws the current plot into the scene.
+func (pt *Plot) renderPlot() {
+	if pt.Plot == nil {
+		return
+	}
+	pt.Plot.Painter = &pt.Scene.Painter
+	pt.Plot.TextShaper = pt.Scene.TextShaper
+	pt.Plot.PaintBox = pt.Geom.ContentBBox
+	pt.Plot.DPI = pt.Styles.UnitContext.DPI
+	if pt.SetRangesFunc != nil {
+		pt.SetRangesFunc()
+	}
+	pt.Plot.Draw()
 }
 
 func (pt *Plot) Render() {
 	pt.WidgetBase.Render()
-
-	r := pt.Geom.ContentBBox
-	sp := pt.Geom.ScrollOffset()
-	if pt.Plot == nil || pt.Plot.Pixels == nil {
-		draw.Draw(pt.Scene.Pixels, r, colors.Scheme.Surface, sp, draw.Src)
-		return
-	}
-	draw.Draw(pt.Scene.Pixels, r, pt.Plot.Pixels, sp, draw.Src)
+	pt.renderPlot()
 }

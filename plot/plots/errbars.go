@@ -103,7 +103,7 @@ func (eb *YErrorBars) Data() (data plot.Data, pixX, pixY []float32) {
 }
 
 func (eb *YErrorBars) Plot(plt *plot.Plot) {
-	pc := plt.Paint
+	pc := plt.Painter
 	uc := &pc.UnitContext
 
 	eb.Style.Width.Cap.ToDots(uc)
@@ -223,7 +223,7 @@ func (eb *XErrorBars) Data() (data plot.Data, pixX, pixY []float32) {
 }
 
 func (eb *XErrorBars) Plot(plt *plot.Plot) {
-	pc := plt.Paint
+	pc := plt.Painter
 	uc := &pc.UnitContext
 
 	eb.Style.Width.Cap.ToDots(uc)

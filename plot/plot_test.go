@@ -5,28 +5,25 @@
 package plot
 
 import (
-	"image"
 	"os"
 	"testing"
 
 	"cogentcore.org/core/base/iox/imagex"
-	"cogentcore.org/core/paint"
 )
 
 func TestMain(m *testing.M) {
-	paint.FontLibrary.InitFontPaths(paint.FontPaths...)
 	os.Exit(m.Run())
 }
 
 func TestPlot(t *testing.T) {
 	pt := New()
+	pt.SetImageRender(640, 480)
 	pt.Title.Text = "Test Plot"
 	pt.X.Range.Max = 100
 	pt.X.Label.Text = "X Axis"
 	pt.Y.Range.Max = 100
 	pt.Y.Label.Text = "Y Axis"
 
-	pt.Resize(image.Point{640, 480})
 	pt.Draw()
-	imagex.Assert(t, pt.Pixels, "plot.png")
+	imagex.Assert(t, pt.Painter.RenderImage(), "plot.png")
 }

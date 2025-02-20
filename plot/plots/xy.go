@@ -151,7 +151,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 	if np == 0 || len(ln.PY) == 0 {
 		return
 	}
-	pc := plt.Paint
+	pc := plt.Painter
 	if ln.Style.Line.HasFill() {
 		pc.Fill.Color = ln.Style.Line.Fill
 		minY := plt.PY(plt.Y.Range.Min)
@@ -282,7 +282,7 @@ func (ln *XY) UpdateRange(plt *plot.Plot, xr, yr, zr *minmax.F64) {
 
 // Thumbnail returns the thumbnail, implementing the plot.Thumbnailer interface.
 func (ln *XY) Thumbnail(plt *plot.Plot) {
-	pc := plt.Paint
+	pc := plt.Painter
 	ptb := plt.CurBounds()
 	midY := 0.5 * float32(ptb.Min.Y+ptb.Max.Y)
 

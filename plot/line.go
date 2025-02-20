@@ -71,7 +71,7 @@ func (ls *LineStyle) SetStroke(pt *Plot) bool {
 	if ls.On == Off || ls.Color == nil {
 		return false
 	}
-	pc := pt.Paint
+	pc := pt.Painter
 	uc := &pc.UnitContext
 	ls.Width.ToDots(uc)
 	if ls.Width.Dots == 0 {
@@ -100,7 +100,7 @@ func (ls *LineStyle) Draw(pt *Plot, start, end math32.Vector2) bool {
 	if !ls.SetStroke(pt) {
 		return false
 	}
-	pc := pt.Paint
+	pc := pt.Painter
 	pc.MoveTo(start.X, start.Y)
 	pc.LineTo(end.X, end.Y)
 	pc.PathDone()

@@ -24,7 +24,7 @@ func (pt *Plot) drawConfig() {
 	pt.X.drawConfig()
 	pt.Y.drawConfig()
 	pt.Z.drawConfig()
-	pt.Paint.ToDots()
+	pt.Painter.ToDots()
 }
 
 // Draw draws the plot to image.
@@ -32,7 +32,7 @@ func (pt *Plot) drawConfig() {
 // added to the plot.
 func (pt *Plot) Draw() {
 	pt.drawConfig()
-	pc := pt.Paint
+	pc := pt.Painter
 
 	ptb := pt.PaintBox
 	off := math32.FromPoint(pt.PaintBox.Min)
@@ -112,7 +112,7 @@ func (ax *Axis) sizeX(pt *Plot, axw float32) (ht, lpad, rpad int) {
 	if !ax.Style.On {
 		return
 	}
-	pc := pt.Paint
+	pc := pt.Painter
 	uc := &pc.UnitContext
 	ax.Style.TickLength.ToDots(uc)
 	ax.ticks = ax.Ticker.Ticks(ax.Range.Min, ax.Range.Max, ax.Style.NTicks)
@@ -208,7 +208,7 @@ func (ax *Axis) sizeY(pt *Plot) (ywidth, tickWidth, tpad, bpad int) {
 	if !ax.Style.On {
 		return
 	}
-	pc := pt.Paint
+	pc := pt.Painter
 	uc := &pc.UnitContext
 	ax.ticks = ax.Ticker.Ticks(ax.Range.Min, ax.Range.Max, ax.Style.NTicks)
 	ax.Style.TickLength.ToDots(uc)
@@ -370,7 +370,7 @@ func (ax *Axis) drawY(pt *Plot, tickWidth, tpad, bpad int) {
 
 // draw draws the legend
 func (lg *Legend) draw(pt *Plot) {
-	pc := pt.Paint
+	pc := pt.Painter
 	uc := &pc.UnitContext
 	ptb := pt.CurBounds()
 

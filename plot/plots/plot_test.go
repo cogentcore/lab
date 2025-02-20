@@ -51,7 +51,7 @@ func ExampleLine() {
 		s.Range.SetMin(0).SetMax(100)
 	})
 	plt.Draw()
-	imagex.Save(plt.Paint.RenderImage(), "testdata/ex_line_plot.png")
+	imagex.Save(plt.Painter.RenderImage(), "testdata/ex_line_plot.png")
 	// Output:
 }
 
@@ -81,7 +81,7 @@ func ExampleStylerMetadata() {
 	// NewLine automatically gets stylers from ty tensor metadata
 	NewLine(plt, plot.Data{plot.X: tx, plot.Y: ty})
 	plt.Draw()
-	imagex.Save(plt.Paint.RenderImage(), "testdata/ex_styler_metadata.png")
+	imagex.Save(plt.Painter.RenderImage(), "testdata/ex_styler_metadata.png")
 	// Output:
 }
 
@@ -136,7 +136,7 @@ func ExampleTable() {
 	plt.SetImageRender(1280, 1024)
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
-	imagex.Save(plt.Paint.RenderImage(), "testdata/ex_table.png")
+	imagex.Save(plt.Painter.RenderImage(), "testdata/ex_table.png")
 	// Output:
 }
 
@@ -208,29 +208,29 @@ func TestLine(t *testing.T) {
 
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "line.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "line.png")
 
 	l1.Style.Line.Fill = colors.Uniform(colors.Yellow)
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "line-fill.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "line-fill.png")
 
 	l1.Style.Line.Step = plot.PreStep
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "line-prestep.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "line-prestep.png")
 
 	l1.Style.Line.Step = plot.MidStep
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "line-midstep.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "line-midstep.png")
 
 	l1.Style.Line.Step = plot.PostStep
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "line-poststep.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "line-poststep.png")
 
 	l1.Style.Line.Step = plot.NoStep
 	l1.Style.Line.Fill = nil
 	l1.Style.Line.NegativeX = true
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "line-negx.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "line-negx.png")
 }
 
 func TestScatter(t *testing.T) {
@@ -257,7 +257,7 @@ func TestScatter(t *testing.T) {
 	for _, sh := range shs {
 		l1.Style.Point.Shape = sh
 		plt.Draw()
-		imagex.Assert(t, plt.Paint.RenderImage(), "scatter-"+sh.String()+".png")
+		imagex.Assert(t, plt.Painter.RenderImage(), "scatter-"+sh.String()+".png")
 	}
 }
 
@@ -297,7 +297,7 @@ func TestLabels(t *testing.T) {
 
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "labels.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "labels.png")
 }
 
 func TestBar(t *testing.T) {
@@ -321,7 +321,7 @@ func TestBar(t *testing.T) {
 
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "bar.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "bar.png")
 
 	l2 := NewBar(plt, cos)
 	if l2 == nil {
@@ -335,7 +335,7 @@ func TestBar(t *testing.T) {
 	l2.Style.Width.Offset = 2
 
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "bar-cos.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "bar-cos.png")
 }
 
 func TestBarErr(t *testing.T) {
@@ -360,14 +360,14 @@ func TestBarErr(t *testing.T) {
 
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "bar-err.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "bar-err.png")
 
 	l1.Horizontal = true
 	plt.UpdateRange()
 	plt.X.Range.Min = 0
 	plt.X.Range.Max = 100
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "bar-err-horiz.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "bar-err-horiz.png")
 }
 
 func TestBarStack(t *testing.T) {
@@ -399,7 +399,7 @@ func TestBarStack(t *testing.T) {
 
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "bar-stacked.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "bar-stacked.png")
 }
 
 func TestErrBar(t *testing.T) {
@@ -440,7 +440,7 @@ func TestErrBar(t *testing.T) {
 
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "errbar.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "errbar.png")
 }
 
 func TestStyle(t *testing.T) {
@@ -473,7 +473,7 @@ func TestStyle(t *testing.T) {
 
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "style_line_point.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "style_line_point.png")
 
 	plt = plot.New()
 	plt.SetImageRender(1280, 1024)
@@ -486,7 +486,7 @@ func TestStyle(t *testing.T) {
 	plt.Legend.Add("Cos", l1)
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "style_line_point_auto.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "style_line_point_auto.png")
 }
 
 func TestTicks(t *testing.T) {
@@ -503,7 +503,7 @@ func TestTicks(t *testing.T) {
 
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
-	imagex.Assert(t, plt.Paint.RenderImage(), "style_noticks.png")
+	imagex.Assert(t, plt.Painter.RenderImage(), "style_noticks.png")
 }
 
 // todo: move into statplot and test everything
@@ -586,7 +586,7 @@ func TestTable(t *testing.T) {
 		plt.Resize(image.Point{640, 480})
 		plt.Draw()
 		fnm := "table_" + ttyp + ".png"
-		imagex.Assert(t, plt.Paint.RenderImage(), fnm)
+		imagex.Assert(t, plt.Painter.RenderImage(), fnm)
 	}
 }
 
@@ -639,5 +639,5 @@ func TestTableSplit(t *testing.T) {
 	plt.Resize(image.Point{640, 480})
 	plt.Draw()
 	fnm := "table_split.png"
-	imagex.Assert(t, plt.Paint.RenderImage(), fnm)
+	imagex.Assert(t, plt.Painter.RenderImage(), fnm)
 }

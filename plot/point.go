@@ -64,7 +64,7 @@ func (ps *PointStyle) SetStroke(pt *Plot) bool {
 	if ps.On == Off || ps.Color == nil {
 		return false
 	}
-	pc := pt.Paint
+	pc := pt.Painter
 	uc := &pc.UnitContext
 	ps.Width.ToDots(uc)
 	ps.Size.ToDots(uc)

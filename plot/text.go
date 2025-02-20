@@ -82,7 +82,7 @@ func (tx *Text) Defaults() {
 
 // config is called during the layout of the plot, prior to drawing
 func (tx *Text) Config(pt *Plot) {
-	uc := &pt.Paint.UnitContext
+	uc := &pt.Painter.UnitContext
 	ts := &tx.textStyle
 	fs := &tx.font
 	fs.Defaults()
@@ -157,5 +157,5 @@ func (tx *Text) PosY(height float32) math32.Vector2 {
 
 // Draw renders the text at given upper left position
 func (tx *Text) Draw(pt *Plot, pos math32.Vector2) {
-	pt.Paint.TextLines(tx.PaintText, pos)
+	pt.Painter.TextLines(tx.PaintText, pos)
 }

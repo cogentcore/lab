@@ -101,7 +101,7 @@ func (lb *Labels) Data() (data plot.Data, pixX, pixY []float32) {
 
 // Plot implements the Plotter interface, drawing labels.
 func (lb *Labels) Plot(plt *plot.Plot) {
-	pc := plt.Paint
+	pc := plt.Painter
 	uc := &pc.UnitContext
 	lb.PX = plot.PlotX(plt, lb.X)
 	lb.PY = plot.PlotY(plt, lb.Y)

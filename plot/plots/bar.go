@@ -145,7 +145,7 @@ func (bc *Bar) StackOn(on *Bar) {
 
 // Plot implements the plot.Plotter interface.
 func (bc *Bar) Plot(plt *plot.Plot) {
-	pc := plt.Paint
+	pc := plt.Painter
 	bc.Style.Line.SetStroke(plt)
 	pc.Fill.Color = bc.Style.Line.Fill
 	bw := bc.Style.Width
@@ -246,7 +246,7 @@ func (bc *Bar) UpdateRange(plt *plot.Plot, xr, yr, zr *minmax.F64) {
 
 // Thumbnail fulfills the plot.Thumbnailer interface.
 func (bc *Bar) Thumbnail(plt *plot.Plot) {
-	pc := plt.Paint
+	pc := plt.Painter
 	bc.Style.Line.SetStroke(plt)
 	pc.Fill.Color = bc.Style.Line.Fill
 	ptb := plt.CurBounds()

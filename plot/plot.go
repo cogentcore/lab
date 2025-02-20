@@ -205,10 +205,10 @@ type Plot struct {
 	// TextShaper is the text shaping system for this scene, for doing text layout.
 	TextShaper shaped.Shaper
 
-	// Paint is the painter for rendering. It can be a pointer to a shared Painter,
+	// Painter is the painter for rendering. It can be a pointer to a shared Painter,
 	// e.g., when plot is used in a [core.Scene] as in [plotcore], or its own
 	// painter when used in a standalone manner.
-	Paint *paint.Painter
+	Painter *paint.Painter
 
 	// PaintBox is the bounding box for the plot within the Paint.
 	// For standalone, it is the size of the image.
@@ -242,14 +242,14 @@ func (pt *Plot) Defaults() {
 
 // SetImageRender sets the Paint to an image renderer of given size.
 func (pt *Plot) SetImageRender(width, height int) {
-	pt.Paint = paint.NewPainter(width, height)
+	pt.Painter = paint.NewPainter(width, height)
 	pt.PaintBox.Max = image.Point{width, height}
 	pt.TextShaper = shaped.NewShaper()
 }
 
 // Resize resizes an image render to given size.
 func (pt *Plot) Resize(sz image.Point) {
-	pt.Paint.InitImageRaster(nil, sz.X, sz.Y)
+	pt.Painter.InitImageRaster(nil, sz.X, sz.Y)
 	pt.PaintBox.Max = sz
 }
 
@@ -303,12 +303,12 @@ func (pt *Plot) Add(ps ...Plotter) {
 
 // CurBounds returns the current render bounds from Paint
 func (pt *Plot) CurBounds() image.Rectangle {
-	return pt.Paint.Context().Bounds.Rect.ToRect()
+	return pt.Painter.Context().Bounds.Rect.ToRect()
 }
 
 // PushBounds returns the current render bounds from Paint
 func (pt *Plot) PushBounds(tb image.Rectangle) {
-	pt.Paint.PushContext(nil, render.NewBoundsRect(tb, sides.Floats{}))
+	pt.Painter.PushContext(nil, render.NewBoundsRect(tb, sides.Floats{}))
 }
 
 // NominalX configures the plot to have a nominal X
