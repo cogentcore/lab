@@ -10,51 +10,17 @@
 package plot
 
 import (
-	"bufio"
-	"bytes"
 	"image"
-	"io"
-	"os"
 
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/paint/render"
 	"cogentcore.org/core/styles"
+	"cogentcore.org/core/styles/sides"
 )
-
-// SVGString returns an SVG representation of the plot as a string
-func (pt *Plot) SVGString() string {
-	b := &bytes.Buffer{}
-	pt.Paint.SVGOut = b
-	pt.svgDraw()
-	pt.Paint.SVGOut = nil
-	return b.String()
-}
-
-// svgDraw draws SVGOut writer that must already be set in Paint
-func (pt *Plot) svgDraw() {
-	pt.drawConfig()
-	io.WriteString(pt.Paint.SVGOut, pt.Paint.SVGStart())
-	pt.Draw()
-	io.WriteString(pt.Paint.SVGOut, pt.Paint.SVGEnd())
-}
-
-// SVGToFile saves the SVG to given file
-func (pt *Plot) SVGToFile(filename string) error {
-	fp, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer fp.Close()
-	bw := bufio.NewWriter(fp)
-	pt.Paint.SVGOut = bw
-	pt.svgDraw()
-	pt.Paint.SVGOut = nil
-	return bw.Flush()
-}
 
 // drawConfig configures everything for drawing, applying styles etc.
 func (pt *Plot) drawConfig() {
 	pt.applyStyle()
-	pt.Resize(pt.Size) // ensure
 	pt.X.drawConfig()
 	pt.Y.drawConfig()
 	pt.Z.drawConfig()
@@ -67,14 +33,17 @@ func (pt *Plot) drawConfig() {
 func (pt *Plot) Draw() {
 	pt.drawConfig()
 	pc := pt.Paint
-	ptw := float32(pt.Size.X)
-	pth := float32(pt.Size.X)
 
-	ptb := image.Rectangle{Max: pt.Size}
-	pc.PushBounds(ptb)
+	ptb := pt.PaintBox
+	off := math32.FromPoint(pt.PaintBox.Min)
+	sz := pt.PaintBox.Size()
+	ptw := float32(sz.X)
+	pth := float32(sz.Y)
+
+	pc.PushContext(nil, render.NewBoundsRect(pt.PaintBox, sides.Floats{}))
 
 	if pt.Style.Background != nil {
-		pc.BlitBox(math32.Vector2{}, math32.FromPoint(pt.Size), pt.Style.Background)
+		pc.BlitBox(off, math32.FromPoint(sz), pt.Style.Background)
 	}
 
 	if pt.Title.Text != "" {
@@ -82,8 +51,9 @@ func (pt *Plot) Draw() {
 		pos := pt.Title.PosX(ptw)
 		pad := pt.Title.Style.Padding.Dots
 		pos.Y = pad
-		pt.Title.Draw(pt, pos)
-		th := pt.Title.PaintText.BBox.Size().Y + 2*pad
+		pt.Title.Draw(pt, pos.Add(off))
+		rsz := pt.Title.PaintText.Bounds.Size().Ceil()
+		th := rsz.Y + 2*pad
 		pth -= th
 		ptb.Min.Y += int(math32.Ceil(th))
 	}
@@ -92,19 +62,19 @@ func (pt *Plot) Draw() {
 	pt.Y.SanitizeRange()
 
 	ywidth, tickWidth, tpad, bpad := pt.Y.sizeY(pt)
-	xheight, lpad, rpad := pt.X.sizeX(pt, float32(pt.Size.X-int(ywidth)))
+	xheight, lpad, rpad := pt.X.sizeX(pt, float32(sz.X-int(ywidth)))
 
 	tb := ptb
 	tb.Min.X += ywidth
-	pc.PushBounds(tb)
+	pt.PushBounds(tb)
 	pt.X.drawX(pt, lpad, rpad)
-	pc.PopBounds()
+	pc.PopContext()
 
 	tb = ptb
 	tb.Max.Y -= xheight
-	pc.PushBounds(tb)
+	pt.PushBounds(tb)
 	pt.Y.drawY(pt, tickWidth, tpad, bpad)
-	pc.PopBounds()
+	pc.PopContext()
 
 	tb = ptb
 	tb.Min.X += ywidth + lpad
@@ -118,15 +88,16 @@ func (pt *Plot) Draw() {
 	tb.Min.Y -= 2
 	tb.Max.X += 2
 	tb.Max.Y += 2
-	pc.PushBounds(tb)
+	pt.PushBounds(tb)
 
 	for _, plt := range pt.Plotters {
 		plt.Plot(pt)
 	}
 
 	pt.Legend.draw(pt)
-	pc.PopBounds()
-	pc.PopBounds() // global
+	pc.PopContext()
+	pc.PopContext() // global
+	pc.RenderDone()
 }
 
 ////////	Axis
@@ -148,7 +119,7 @@ func (ax *Axis) sizeX(pt *Plot, axw float32) (ht, lpad, rpad int) {
 	h := float32(0)
 	if ax.Label.Text != "" { // We assume that the label isn't rotated.
 		ax.Label.Config(pt)
-		h += ax.Label.PaintText.BBox.Size().Y
+		h += ax.Label.Size().Y
 		h += ax.Label.Style.Padding.Dots
 	}
 	lw := ax.Style.Line.Width.Dots
@@ -165,7 +136,7 @@ func (ax *Axis) sizeX(pt *Plot, axw float32) (ht, lpad, rpad int) {
 			if px < 0 {
 				lpad += int(math32.Ceil(-px))
 			}
-			tht = max(tht, ax.TickText.PaintText.BBox.Size().Y)
+			tht = max(tht, ax.TickText.Size().Y)
 		}
 		ltk := ax.lastTickLabel()
 		if ltk.Label != "" {
@@ -173,12 +144,12 @@ func (ax *Axis) sizeX(pt *Plot, axw float32) (ht, lpad, rpad int) {
 			if px+wd > axw {
 				rpad += int(math32.Ceil((px + wd) - axw))
 			}
-			tht = max(tht, ax.TickText.PaintText.BBox.Size().Y)
+			tht = max(tht, ax.TickText.Size().Y)
 		}
 		ax.TickText.Text = ax.longestTickLabel()
 		if ax.TickText.Text != "" {
 			ax.TickText.Config(pt)
-			tht = max(tht, ax.TickText.PaintText.BBox.Size().Y)
+			tht = max(tht, ax.TickText.Size().Y)
 		}
 		h += ax.TickText.Style.Padding.Dots
 	}
@@ -199,7 +170,7 @@ func (ax *Axis) tickPosX(pt *Plot, t Tick, axw float32) (px, wd float32) {
 	ax.TickText.Config(pt)
 	pos := ax.TickText.PosX(0)
 	px = pos.X + x
-	wd = ax.TickText.PaintText.BBox.Size().X
+	wd = ax.TickText.Size().X
 	return
 }
 
@@ -245,7 +216,7 @@ func (ax *Axis) sizeY(pt *Plot) (ywidth, tickWidth, tpad, bpad int) {
 	w := float32(0)
 	if ax.Label.Text != "" {
 		ax.Label.Config(pt)
-		w += ax.Label.PaintText.BBox.Size().X
+		w += ax.Label.Size().X
 		w += ax.Label.Style.Padding.Dots
 	}
 
@@ -260,11 +231,11 @@ func (ax *Axis) sizeY(pt *Plot) (ywidth, tickWidth, tpad, bpad int) {
 		ax.TickText.Text = ax.longestTickLabel()
 		if ax.TickText.Text != "" {
 			ax.TickText.Config(pt)
-			tw := ax.TickText.PaintText.BBox.Size().X
+			tw := ax.TickText.Size().X
 			w += tw
 			tickWidth = int(math32.Ceil(tw))
 			w += ax.TickText.Style.Padding.Dots
-			tht := int(math32.Ceil(0.5 * ax.TickText.PaintText.BBox.Size().X))
+			tht := int(math32.Ceil(0.5 * ax.TickText.Size().X))
 			tpad += tht
 			bpad += tht
 		}
@@ -279,7 +250,7 @@ func (ax *Axis) drawX(pt *Plot, lpad, rpad int) {
 	if !ax.Style.On {
 		return
 	}
-	ab := pt.Paint.Bounds
+	ab := pt.CurBounds()
 	ab.Min.X += lpad
 	ab.Max.X -= rpad
 	axw := float32(ab.Size().X)
@@ -288,7 +259,7 @@ func (ax *Axis) drawX(pt *Plot, lpad, rpad int) {
 		ax.Label.Config(pt)
 		pos := ax.Label.PosX(axw)
 		pos.X += float32(ab.Min.X)
-		th := ax.Label.PaintText.BBox.Size().Y
+		th := ax.Label.Size().Y
 		pos.Y = float32(ab.Max.Y) - th
 		ax.Label.Draw(pt, pos)
 		ab.Max.Y -= int(math32.Ceil(th + ax.Label.Style.Padding.Dots))
@@ -304,7 +275,7 @@ func (ax *Axis) drawX(pt *Plot, lpad, rpad int) {
 		ax.TickText.Config(pt)
 		pos := ax.TickText.PosX(0)
 		pos.X += x + float32(ab.Min.X)
-		tickHt = ax.TickText.PaintText.BBox.Size().Y + ax.TickText.Style.Padding.Dots
+		tickHt = ax.TickText.Size().Y + ax.TickText.Style.Padding.Dots
 		pos.Y += float32(ab.Max.Y) - tickHt
 		ax.TickText.Draw(pt, pos)
 	}
@@ -340,15 +311,15 @@ func (ax *Axis) drawY(pt *Plot, tickWidth, tpad, bpad int) {
 	if !ax.Style.On {
 		return
 	}
-	ab := pt.Paint.Bounds
+	ab := pt.CurBounds()
 	ab.Min.Y += tpad
 	ab.Max.Y -= bpad
 	axh := float32(ab.Size().Y)
 	if ax.Label.Text != "" {
 		ax.Label.Style.Align = styles.Center
 		pos := ax.Label.PosY(axh)
-		tw := ax.Label.PaintText.BBox.Size().X
-		pos.Y += float32(ab.Min.Y) + ax.Label.PaintText.BBox.Size().Y
+		tw := ax.Label.Size().X
+		pos.Y += float32(ab.Min.Y) + ax.Label.Size().Y
 		pos.X = float32(ab.Min.X)
 		ax.Label.Draw(pt, pos)
 		ab.Min.X += int(math32.Ceil(tw + ax.Label.Style.Padding.Dots))
@@ -364,8 +335,8 @@ func (ax *Axis) drawY(pt *Plot, tickWidth, tpad, bpad int) {
 		ax.TickText.Config(pt)
 		pos := ax.TickText.PosX(float32(tickWidth))
 		pos.X += float32(ab.Min.X)
-		pos.Y = float32(ab.Min.Y) + y - 0.5*ax.TickText.PaintText.BBox.Size().Y
-		tickWd = max(tickWd, ax.TickText.PaintText.BBox.Size().X+ax.TickText.Style.Padding.Dots)
+		pos.Y = float32(ab.Min.Y) + y - 0.5*ax.TickText.Size().Y
+		tickWd = max(tickWd, ax.TickText.Size().X+ax.TickText.Style.Padding.Dots)
 		ax.TickText.Draw(pt, pos)
 	}
 
@@ -401,7 +372,7 @@ func (ax *Axis) drawY(pt *Plot, tickWidth, tpad, bpad int) {
 func (lg *Legend) draw(pt *Plot) {
 	pc := pt.Paint
 	uc := &pc.UnitContext
-	ptb := pc.Bounds
+	ptb := pt.CurBounds()
 
 	lg.Style.ThumbnailWidth.ToDots(uc)
 	lg.Style.Position.XOffs.ToDots(uc)
@@ -412,15 +383,14 @@ func (lg *Legend) draw(pt *Plot) {
 	ltxt.Style = lg.Style.Text
 	ltxt.ToDots(uc)
 	pad := math32.Ceil(ltxt.Style.Padding.Dots)
-	ltxt.openFont(pt)
-	em := ltxt.font.Face.Metrics.Em
+	em := ltxt.textStyle.FontSize.Dots
 	var sz image.Point
 	maxTht := 0
 	for _, e := range lg.Entries {
 		ltxt.Text = e.Text
 		ltxt.Config(pt)
-		sz.X = max(sz.X, int(math32.Ceil(ltxt.PaintText.BBox.Size().X)))
-		tht := int(math32.Ceil(ltxt.PaintText.BBox.Size().Y + pad))
+		sz.X = max(sz.X, int(math32.Ceil(ltxt.Size().X)))
+		tht := int(math32.Ceil(ltxt.Size().Y + pad))
 		maxTht = max(tht, maxTht)
 	}
 	sz.X += int(em)
@@ -450,11 +420,11 @@ func (lg *Legend) draw(pt *Plot) {
 		tp.X += int(txsz.X)
 		tp.Y += int(pad)
 		tb := image.Rectangle{Min: tp, Max: tp.Add(thsz)}
-		pc.PushBounds(tb)
+		pt.PushBounds(tb)
 		for _, t := range e.Thumbs {
 			t.Thumbnail(pt)
 		}
-		pc.PopBounds()
+		pc.PopContext()
 		ltxt.Text = e.Text
 		ltxt.Config(pt)
 		ltxt.Draw(pt, math32.FromPoint(cp))

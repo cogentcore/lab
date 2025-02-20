@@ -147,7 +147,7 @@ func (bc *Bar) StackOn(on *Bar) {
 func (bc *Bar) Plot(plt *plot.Plot) {
 	pc := plt.Paint
 	bc.Style.Line.SetStroke(plt)
-	pc.FillStyle.Color = bc.Style.Line.Fill
+	pc.Fill.Color = bc.Style.Line.Fill
 	bw := bc.Style.Width
 
 	nv := len(bc.Y)
@@ -191,8 +191,8 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 			box.Max.Set(catMax, valMax)
 		}
 
-		pc.DrawRectangle(box.Min.X, box.Min.Y, box.Size().X, box.Size().Y)
-		pc.FillStrokeClear()
+		pc.Rectangle(box.Min.X, box.Min.Y, box.Size().X, box.Size().Y)
+		pc.PathDone()
 
 		if i < len(bc.Err) {
 			errval := math.Abs(bc.Err[i])
@@ -209,10 +209,10 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 				pc.MoveTo(plt.PX(cat-ew), eVal)
 				pc.LineTo(plt.PX(cat+ew), eVal)
 			}
-			pc.Stroke()
+			pc.PathDone()
 		}
 	}
-	pc.FillStyle.Color = nil
+	pc.Fill.Color = nil
 }
 
 // UpdateRange updates the given ranges.
@@ -248,9 +248,9 @@ func (bc *Bar) UpdateRange(plt *plot.Plot, xr, yr, zr *minmax.F64) {
 func (bc *Bar) Thumbnail(plt *plot.Plot) {
 	pc := plt.Paint
 	bc.Style.Line.SetStroke(plt)
-	pc.FillStyle.Color = bc.Style.Line.Fill
-	ptb := pc.Bounds
-	pc.DrawRectangle(float32(ptb.Min.X), float32(ptb.Min.Y), float32(ptb.Size().X), float32(ptb.Size().Y))
-	pc.FillStrokeClear()
-	pc.FillStyle.Color = nil
+	pc.Fill.Color = bc.Style.Line.Fill
+	ptb := plt.CurBounds()
+	pc.Rectangle(float32(ptb.Min.X), float32(ptb.Min.Y), float32(ptb.Size().X), float32(ptb.Size().Y))
+	pc.PathDone()
+	pc.Fill.Color = nil
 }

@@ -121,7 +121,7 @@ func (lb *Labels) Plot(plt *plot.Plot) {
 		skip = 0
 		ltxt.Text = label
 		ltxt.Config(plt)
-		tht := ltxt.PaintText.BBox.Size().Y
+		tht := ltxt.Size().Y
 		ltxt.Draw(plt, math32.Vec2(lb.PX[i]+st.Offset.X.Dots, lb.PY[i]+st.Offset.Y.Dots-tht))
 	}
 }
@@ -131,7 +131,7 @@ func (lb *Labels) UpdateRange(plt *plot.Plot, xr, yr, zr *minmax.F64) {
 	// todo: include point sizes!
 	plot.Range(lb.X, xr)
 	plot.RangeClamp(lb.Y, yr, &lb.Style.Range)
-	pxToData := math32.FromPoint(plt.Size)
+	pxToData := math32.FromPoint(plt.PaintBox.Size())
 	pxToData.X = float32(xr.Range()) / pxToData.X
 	pxToData.Y = float32(yr.Range()) / pxToData.Y
 	st := &lb.Style.Text
@@ -143,8 +143,8 @@ func (lb *Labels) UpdateRange(plt *plot.Plot, xr, yr, zr *minmax.F64) {
 		}
 		ltxt.Text = label
 		ltxt.Config(plt)
-		tht := pxToData.Y * ltxt.PaintText.BBox.Size().Y
-		twd := 1.1 * pxToData.X * ltxt.PaintText.BBox.Size().X
+		tht := pxToData.Y * ltxt.Size().Y
+		twd := 1.1 * pxToData.X * ltxt.Size().X
 		x := lb.X[i]
 		y := lb.Y[i]
 		maxx := x + float64(pxToData.X*st.Offset.X.Dots+twd)

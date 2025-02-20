@@ -153,7 +153,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 	}
 	pc := plt.Paint
 	if ln.Style.Line.HasFill() {
-		pc.FillStyle.Color = ln.Style.Line.Fill
+		pc.Fill.Color = ln.Style.Line.Fill
 		minY := plt.PY(plt.Y.Range.Min)
 		prevX := ln.PX[0]
 		prevY := minY
@@ -164,7 +164,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			case plot.NoStep:
 				if ptx < prevX {
 					pc.LineTo(prevX, minY)
-					pc.ClosePath()
+					pc.Close()
 					pc.MoveTo(ptx, minY)
 				}
 				pc.LineTo(ptx, pty)
@@ -174,7 +174,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 				}
 				if ptx < prevX {
 					pc.LineTo(prevX, minY)
-					pc.ClosePath()
+					pc.Close()
 					pc.MoveTo(ptx, minY)
 				} else {
 					pc.LineTo(prevX, pty)
@@ -183,7 +183,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			case plot.MidStep:
 				if ptx < prevX {
 					pc.LineTo(prevX, minY)
-					pc.ClosePath()
+					pc.Close()
 					pc.MoveTo(ptx, minY)
 				} else {
 					pc.LineTo(0.5*(prevX+ptx), prevY)
@@ -193,7 +193,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			case plot.PostStep:
 				if ptx < prevX {
 					pc.LineTo(prevX, minY)
-					pc.ClosePath()
+					pc.Close()
 					pc.MoveTo(ptx, minY)
 				} else {
 					pc.LineTo(ptx, prevY)
@@ -203,14 +203,14 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			prevX, prevY = ptx, pty
 		}
 		pc.LineTo(prevX, minY)
-		pc.ClosePath()
-		pc.Fill()
+		pc.Close()
+		pc.PathDone()
 	}
-	pc.FillStyle.Color = nil
+	pc.Fill.Color = nil
 
 	if ln.Style.Line.SetStroke(plt) {
 		if plt.HighlightPlotter == ln {
-			pc.StrokeStyle.Width.Dots *= 2
+			pc.Stroke.Width.Dots *= 2
 		}
 		prevX, prevY := ln.PX[0], ln.PY[0]
 		pc.MoveTo(prevX, prevY)
@@ -238,7 +238,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			}
 			prevX, prevY = ptx, pty
 		}
-		pc.Stroke()
+		pc.PathDone()
 	}
 	if ln.Style.Point.SetStroke(plt) {
 		origWidth := ln.Style.Point.Width
@@ -247,10 +247,10 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			pty := ln.PY[i]
 			if plt.HighlightPlotter == ln {
 				if i == plt.HighlightIndex {
-					pc.StrokeStyle.Width.Dots *= 2
+					pc.Stroke.Width.Dots *= 2
 					ln.Style.Point.Size.Dots *= 1.5
 				} else {
-					pc.StrokeStyle.Width = origWidth
+					pc.Stroke.Width = origWidth
 					ln.Style.Point.Size = origSize
 				}
 			}
@@ -270,7 +270,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 		ln.Style.Point.On = op
 		ln.Style.Point.Size = origSize
 	}
-	pc.FillStyle.Color = nil
+	pc.Fill.Color = nil
 }
 
 // UpdateRange updates the given ranges.
@@ -283,7 +283,7 @@ func (ln *XY) UpdateRange(plt *plot.Plot, xr, yr, zr *minmax.F64) {
 // Thumbnail returns the thumbnail, implementing the plot.Thumbnailer interface.
 func (ln *XY) Thumbnail(plt *plot.Plot) {
 	pc := plt.Paint
-	ptb := pc.Bounds
+	ptb := plt.CurBounds()
 	midY := 0.5 * float32(ptb.Min.Y+ptb.Max.Y)
 
 	if ln.Style.Line.Fill != nil {
@@ -297,12 +297,12 @@ func (ln *XY) Thumbnail(plt *plot.Plot) {
 	if ln.Style.Line.SetStroke(plt) {
 		pc.MoveTo(float32(ptb.Min.X), midY)
 		pc.LineTo(float32(ptb.Max.X), midY)
-		pc.Stroke()
+		pc.PathDone()
 	}
 
 	if ln.Style.Point.SetStroke(plt) {
 		midX := 0.5 * float32(ptb.Min.X+ptb.Max.X)
 		ln.Style.Point.DrawShape(pc, math32.Vec2(midX, midY))
 	}
-	pc.FillStyle.Color = nil
+	pc.Fill.Color = nil
 }

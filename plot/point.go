@@ -71,15 +71,15 @@ func (ps *PointStyle) SetStroke(pt *Plot) bool {
 	if ps.Width.Dots == 0 || ps.Size.Dots == 0 {
 		return false
 	}
-	pc.StrokeStyle.Width = ps.Width
-	pc.StrokeStyle.Color = ps.Color
-	pc.StrokeStyle.ToDots(uc)
-	pc.FillStyle.Color = ps.Fill
+	pc.Stroke.Width = ps.Width
+	pc.Stroke.Color = ps.Color
+	pc.Stroke.ToDots(uc)
+	pc.Fill.Color = ps.Fill
 	return true
 }
 
 // DrawShape draws the given shape
-func (ps *PointStyle) DrawShape(pc *paint.Context, pos math32.Vector2) {
+func (ps *PointStyle) DrawShape(pc *paint.Painter, pos math32.Vector2) {
 	size := ps.Size.Dots
 	if size == 0 {
 		return
@@ -104,72 +104,72 @@ func (ps *PointStyle) DrawShape(pc *paint.Context, pos math32.Vector2) {
 	}
 }
 
-func DrawRing(pc *paint.Context, pos math32.Vector2, size float32) {
-	pc.DrawCircle(pos.X, pos.Y, size)
-	pc.Stroke()
+func DrawRing(pc *paint.Painter, pos math32.Vector2, size float32) {
+	pc.Circle(pos.X, pos.Y, size)
+	pc.PathDone()
 }
 
-func DrawCircle(pc *paint.Context, pos math32.Vector2, size float32) {
-	pc.DrawCircle(pos.X, pos.Y, size)
-	pc.FillStrokeClear()
+func DrawCircle(pc *paint.Painter, pos math32.Vector2, size float32) {
+	pc.Circle(pos.X, pos.Y, size)
+	pc.PathDone()
 }
 
-func DrawSquare(pc *paint.Context, pos math32.Vector2, size float32) {
+func DrawSquare(pc *paint.Painter, pos math32.Vector2, size float32) {
 	x := size * 0.9
 	pc.MoveTo(pos.X-x, pos.Y-x)
 	pc.LineTo(pos.X+x, pos.Y-x)
 	pc.LineTo(pos.X+x, pos.Y+x)
 	pc.LineTo(pos.X-x, pos.Y+x)
-	pc.ClosePath()
-	pc.Stroke()
+	pc.Close()
+	pc.PathDone()
 }
 
-func DrawBox(pc *paint.Context, pos math32.Vector2, size float32) {
+func DrawBox(pc *paint.Painter, pos math32.Vector2, size float32) {
 	x := size * 0.9
 	pc.MoveTo(pos.X-x, pos.Y-x)
 	pc.LineTo(pos.X+x, pos.Y-x)
 	pc.LineTo(pos.X+x, pos.Y+x)
 	pc.LineTo(pos.X-x, pos.Y+x)
-	pc.ClosePath()
-	pc.FillStrokeClear()
+	pc.Close()
+	pc.PathDone()
 }
 
-func DrawTriangle(pc *paint.Context, pos math32.Vector2, size float32) {
+func DrawTriangle(pc *paint.Painter, pos math32.Vector2, size float32) {
 	x := size * 0.9
 	pc.MoveTo(pos.X, pos.Y-x)
 	pc.LineTo(pos.X-x, pos.Y+x)
 	pc.LineTo(pos.X+x, pos.Y+x)
-	pc.ClosePath()
-	pc.Stroke()
+	pc.Close()
+	pc.PathDone()
 }
 
-func DrawPyramid(pc *paint.Context, pos math32.Vector2, size float32) {
+func DrawPyramid(pc *paint.Painter, pos math32.Vector2, size float32) {
 	x := size * 0.9
 	pc.MoveTo(pos.X, pos.Y-x)
 	pc.LineTo(pos.X-x, pos.Y+x)
 	pc.LineTo(pos.X+x, pos.Y+x)
-	pc.ClosePath()
-	pc.FillStrokeClear()
+	pc.Close()
+	pc.PathDone()
 }
 
-func DrawPlus(pc *paint.Context, pos math32.Vector2, size float32) {
+func DrawPlus(pc *paint.Painter, pos math32.Vector2, size float32) {
 	x := size * 1.05
 	pc.MoveTo(pos.X-x, pos.Y)
 	pc.LineTo(pos.X+x, pos.Y)
 	pc.MoveTo(pos.X, pos.Y-x)
 	pc.LineTo(pos.X, pos.Y+x)
-	pc.ClosePath()
-	pc.Stroke()
+	pc.Close()
+	pc.PathDone()
 }
 
-func DrawCross(pc *paint.Context, pos math32.Vector2, size float32) {
+func DrawCross(pc *paint.Painter, pos math32.Vector2, size float32) {
 	x := size * 0.9
 	pc.MoveTo(pos.X-x, pos.Y-x)
 	pc.LineTo(pos.X+x, pos.Y+x)
 	pc.MoveTo(pos.X+x, pos.Y-x)
 	pc.LineTo(pos.X-x, pos.Y+x)
-	pc.ClosePath()
-	pc.Stroke()
+	pc.Close()
+	pc.PathDone()
 }
 
 // Shapes has the options for how to draw points in the plot.

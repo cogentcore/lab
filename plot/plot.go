@@ -14,13 +14,16 @@ package plot
 import (
 	"image"
 
-	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/paint"
+	"cogentcore.org/core/paint/render"
 	"cogentcore.org/core/styles"
+	"cogentcore.org/core/styles/sides"
 	"cogentcore.org/core/styles/units"
+	"cogentcore.org/core/text/shaped"
+	"cogentcore.org/core/text/text"
 )
 
 // XAxisStyle has overall plot level styling properties for the XAxis.
@@ -171,7 +174,7 @@ type Plot struct {
 	Style PlotStyle
 
 	// standard text style with default options
-	StandardTextStyle styles.Text
+	StandardTextStyle text.Style
 
 	// X, Y, and Z are the horizontal, vertical, and depth axes
 	// of the plot respectively. These are the actual compiled
@@ -183,9 +186,6 @@ type Plot struct {
 
 	// Plotters are drawn by calling their Plot method after the axes are drawn.
 	Plotters []Plotter
-
-	// Size is the target size of the image to render to.
-	Size image.Point
 
 	// DPI is the dots per inch for rendering the image.
 	// Larger numbers result in larger scaling of the plot contents
@@ -202,13 +202,20 @@ type Plot struct {
 	// HighlightIndex is the index of the data point to highlight, for HighlightPlotter.
 	HighlightIndex int
 
-	// pixels that we render into
-	Pixels *image.RGBA `copier:"-" json:"-" xml:"-" edit:"-"`
+	// TextShaper is the text shaping system for this scene, for doing text layout.
+	TextShaper shaped.Shaper
 
-	// Paint is the painter for rendering
-	Paint *paint.Context
+	// Paint is the painter for rendering. It can be a pointer to a shared Painter,
+	// e.g., when plot is used in a [core.Scene] as in [plotcore], or its own
+	// painter when used in a standalone manner.
+	Paint *paint.Painter
 
-	// Current plot bounding box in image coordinates, for plotting coordinates
+	// PaintBox is the bounding box for the plot within the Paint.
+	// For standalone, it is the size of the image.
+	PaintBox image.Rectangle
+
+	// Current local plot bounding box in image coordinates, for computing
+	// plotting coordinates.
 	PlotBox math32.Box2
 }
 
@@ -229,9 +236,21 @@ func (pt *Plot) Defaults() {
 	pt.Legend.Defaults()
 	pt.DPI = 96
 	pt.PanZoom.Defaults()
-	pt.Size = image.Point{1280, 1024}
 	pt.StandardTextStyle.Defaults()
-	pt.StandardTextStyle.WhiteSpace = styles.WhiteSpaceNowrap
+	pt.StandardTextStyle.WhiteSpace = text.WrapNever
+}
+
+// SetImageRender sets the Paint to an image renderer of given size.
+func (pt *Plot) SetImageRender(width, height int) {
+	pt.Paint = paint.NewPainter(width, height)
+	pt.PaintBox.Max = image.Point{width, height}
+	pt.TextShaper = shaped.NewShaper()
+}
+
+// Resize resizes an image render to given size.
+func (pt *Plot) Resize(sz image.Point) {
+	pt.Paint.InitImageRaster(nil, sz.X, sz.Y)
+	pt.PaintBox.Max = sz
 }
 
 // applyStyle applies all the style parameters
@@ -282,30 +301,14 @@ func (pt *Plot) Add(ps ...Plotter) {
 	pt.Plotters = append(pt.Plotters, ps...)
 }
 
-// SetPixels sets the backing pixels image to given image.RGBA.
-func (pt *Plot) SetPixels(img *image.RGBA) {
-	pt.Pixels = img
-	pt.Paint = paint.NewContextFromImage(pt.Pixels)
-	pt.Paint.UnitContext.DPI = pt.DPI
-	pt.Size = pt.Pixels.Bounds().Size()
+// CurBounds returns the current render bounds from Paint
+func (pt *Plot) CurBounds() image.Rectangle {
+	return pt.Paint.Context().Bounds.Rect.ToRect()
 }
 
-// Resize sets the size of the output image to given size.
-// Does nothing if already the right size.
-func (pt *Plot) Resize(sz image.Point) {
-	if pt.Pixels != nil {
-		ib := pt.Pixels.Bounds().Size()
-		if ib == sz {
-			pt.Size = sz
-			pt.Paint.UnitContext.DPI = pt.DPI
-			return // already good
-		}
-	}
-	pt.SetPixels(image.NewRGBA(image.Rectangle{Max: sz}))
-}
-
-func (pt *Plot) SaveImage(filename string) error {
-	return imagex.Save(pt.Pixels, filename)
+// PushBounds returns the current render bounds from Paint
+func (pt *Plot) PushBounds(tb image.Rectangle) {
+	pt.Paint.PushContext(nil, render.NewBoundsRect(tb, sides.Floats{}))
 }
 
 // NominalX configures the plot to have a nominal X
