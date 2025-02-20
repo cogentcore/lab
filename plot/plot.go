@@ -240,11 +240,20 @@ func (pt *Plot) Defaults() {
 	pt.StandardTextStyle.WhiteSpace = text.WrapNever
 }
 
-// SetImageRender sets the Paint to an image renderer of given size.
+// SetImageRender sets the Painter to an image renderer of given size.
+// Use this for standalone rendering to an image.
 func (pt *Plot) SetImageRender(width, height int) {
 	pt.Painter = paint.NewPainter(width, height)
 	pt.PaintBox.Max = image.Point{width, height}
 	pt.TextShaper = shaped.NewShaper()
+}
+
+// SetPainter sets the Painter, PaintBox, and TextShaper to use
+// existing ones (e.g., from the [core.Scene]).
+func (pt *Plot) SetPainter(ptr *paint.Painter, pbox image.Rectangle, shp shaped.Shaper) {
+	pt.Painter = ptr
+	pt.PaintBox = pbox
+	pt.TextShaper = shp
 }
 
 // Resize resizes an image render to given size.

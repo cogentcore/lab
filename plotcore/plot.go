@@ -19,13 +19,13 @@ import (
 	"cogentcore.org/lab/plot"
 )
 
-// Plot is a widget that renders a [plot.Plot] object.
-// If it is not [states.ReadOnly], the user can pan and zoom the graph.
-// See [Editor] for an interactive interface for selecting columns to view.
+// Plot is a widget that renders a [plot.Plot] object to the [core.Scene]
+// of this widget. If it is not [states.ReadOnly], the user can pan and zoom
+// the graph. See [Editor] for an interactive interface for selecting columns to view.
 type Plot struct {
 	core.WidgetBase
 
-	// Plot is the Plot to display in this widget
+	// Plot is the Plot to display in this widget.
 	Plot *plot.Plot `set:"-"`
 
 	// SetRangesFunc, if set, is called to adjust the data ranges
@@ -38,9 +38,7 @@ type Plot struct {
 func (pt *Plot) SetPlot(pl *plot.Plot) *Plot {
 	pl.DPI = pt.Styles.UnitContext.DPI
 	pt.Plot = pl
-	pt.Plot.Painter = &pt.Scene.Painter
-	pt.Plot.TextShaper = pt.Scene.TextShaper
-	pt.Plot.PaintBox = pt.Geom.ContentBBox
+	pt.Plot.SetPainter(&pt.Scene.Painter, pt.Geom.ContentBBox, pt.Scene.TextShaper)
 	return pt
 }
 
@@ -105,8 +103,8 @@ func (pt *Plot) WidgetTooltip(pos image.Point) (string, image.Point) {
 	if pt.Plot == nil {
 		return pt.Tooltip, pt.DefaultTooltipPos()
 	}
-	wpos := pos.Sub(pt.Geom.ContentBBox.Min)
-	plt, _, idx, dist, _, data, legend := pt.Plot.ClosestDataToPixel(wpos.X, wpos.Y)
+	// note: plot pixel coords are in scene coordinates, so we use pos directly.
+	plt, _, idx, dist, _, data, legend := pt.Plot.ClosestDataToPixel(pos.X, pos.Y)
 	if dist <= 10 {
 		pt.Plot.HighlightPlotter = plt
 		pt.Plot.HighlightIndex = idx
@@ -134,9 +132,7 @@ func (pt *Plot) renderPlot() {
 	if pt.Plot == nil {
 		return
 	}
-	pt.Plot.Painter = &pt.Scene.Painter
-	pt.Plot.TextShaper = pt.Scene.TextShaper
-	pt.Plot.PaintBox = pt.Geom.ContentBBox
+	pt.Plot.SetPainter(&pt.Scene.Painter, pt.Geom.ContentBBox, pt.Scene.TextShaper)
 	pt.Plot.DPI = pt.Styles.UnitContext.DPI
 	if pt.SetRangesFunc != nil {
 		pt.SetRangesFunc()
