@@ -52,43 +52,43 @@ loop:
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
 			switch {
-			case ev.Key == termbox.KeyEsc || ev.Char == 'Q' || ev.Char == 'q':
+			case ev.Key == termbox.KeyEsc || ev.Ch == 'Q' || ev.Ch == 'q':
 				break loop
-			case ev.Char == ' ' || ev.Char == 'n' || ev.Char == 'N' || ev.Key == termbox.KeyPgdn || ev.Key == termbox.KeySpace:
+			case ev.Ch == ' ' || ev.Ch == 'n' || ev.Ch == 'N' || ev.Key == termbox.KeyPgdn || ev.Key == termbox.KeySpace:
 				TheTerm.NextPage()
-			case ev.Char == 'p' || ev.Char == 'P' || ev.Key == termbox.KeyPgup:
+			case ev.Ch == 'p' || ev.Ch == 'P' || ev.Key == termbox.KeyPgup:
 				TheTerm.PrevPage()
 			case ev.Key == termbox.KeyArrowDown:
 				TheTerm.NextLine()
 			case ev.Key == termbox.KeyArrowUp:
 				TheTerm.PrevLine()
-			case ev.Char == 'f' || ev.Char == 'F' || ev.Key == termbox.KeyArrowRight:
+			case ev.Ch == 'f' || ev.Ch == 'F' || ev.Key == termbox.KeyArrowRight:
 				TheTerm.ScrollRight()
-			case ev.Char == 'b' || ev.Char == 'B' || ev.Key == termbox.KeyArrowLeft:
+			case ev.Ch == 'b' || ev.Ch == 'B' || ev.Key == termbox.KeyArrowLeft:
 				TheTerm.ScrollLeft()
-			case ev.Char == 'a' || ev.Char == 'A' || ev.Key == termbox.KeyHome:
+			case ev.Ch == 'a' || ev.Ch == 'A' || ev.Key == termbox.KeyHome:
 				TheTerm.Top()
-			case ev.Char == 'e' || ev.Char == 'E' || ev.Key == termbox.KeyEnd:
+			case ev.Ch == 'e' || ev.Ch == 'E' || ev.Key == termbox.KeyEnd:
 				TheTerm.End()
-			case ev.Char == 'w' || ev.Char == 'W':
+			case ev.Ch == 'w' || ev.Ch == 'W':
 				TheTerm.FixRight()
-			case ev.Char == 's' || ev.Char == 'S':
+			case ev.Ch == 's' || ev.Ch == 'S':
 				TheTerm.FixLeft()
-			case ev.Char == 'v' || ev.Char == 'V':
+			case ev.Ch == 'v' || ev.Ch == 'V':
 				TheTerm.FilesNext()
-			case ev.Char == 'u' || ev.Char == 'U':
+			case ev.Ch == 'u' || ev.Ch == 'U':
 				TheTerm.FilesPrev()
-			case ev.Char == 'm' || ev.Char == 'M':
+			case ev.Ch == 'm' || ev.Ch == 'M':
 				TheTerm.MoreMinLines()
-			case ev.Char == 'l' || ev.Char == 'L':
+			case ev.Ch == 'l' || ev.Ch == 'L':
 				TheTerm.LessMinLines()
-			case ev.Char == 'd' || ev.Char == 'D':
+			case ev.Ch == 'd' || ev.Ch == 'D':
 				TheTerm.ToggleNames()
-			case ev.Char == 't' || ev.Char == 'T':
+			case ev.Ch == 't' || ev.Ch == 'T':
 				TheTerm.ToggleTail()
-			case ev.Char == 'c' || ev.Char == 'C':
+			case ev.Ch == 'c' || ev.Ch == 'C':
 				TheTerm.ToggleColNums()
-			case ev.Char == 'h' || ev.Char == 'H':
+			case ev.Ch == 'h' || ev.Ch == 'H':
 				TheTerm.Help()
 			}
 		case termbox.EventResize:

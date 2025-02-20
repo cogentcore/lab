@@ -256,7 +256,7 @@ func (ts *Tabs) EditorFile(label, filename string) *textcore.Editor {
 		})
 		return ed
 	})
-	ed.Lines.Open(core.Filename(filename))
+	ed.Lines.Open(filename)
 	ts.Update()
 	return ed
 }
