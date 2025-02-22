@@ -10,7 +10,7 @@ import (
 	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/styles"
-	"cogentcore.org/core/texteditor"
+	"cogentcore.org/core/text/textcore"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/plotcore"
 	"cogentcore.org/lab/table"
@@ -231,32 +231,32 @@ func (ts *Tabs) SliceTable(label string, slc any) *core.Table {
 	return tv
 }
 
-// EditorString recycles a [texteditor.Editor] tab, displaying given string.
-func (ts *Tabs) EditorString(label, content string) *texteditor.Editor {
-	ed := NewTab(ts, label, func(tab *core.Frame) *texteditor.Editor {
-		ed := texteditor.NewEditor(tab)
+// EditorString recycles a [textcore.Editor] tab, displaying given string.
+func (ts *Tabs) EditorString(label, content string) *textcore.Editor {
+	ed := NewTab(ts, label, func(tab *core.Frame) *textcore.Editor {
+		ed := textcore.NewEditor(tab)
 		ed.Styler(func(s *styles.Style) {
 			s.Grow.Set(1, 1)
 		})
 		return ed
 	})
 	if content != "" {
-		ed.Buffer.SetText([]byte(content))
+		ed.Lines.SetText([]byte(content))
 	}
 	ts.Update()
 	return ed
 }
 
 // EditorFile opens an editor tab for given file.
-func (ts *Tabs) EditorFile(label, filename string) *texteditor.Editor {
-	ed := NewTab(ts, label, func(tab *core.Frame) *texteditor.Editor {
-		ed := texteditor.NewEditor(tab)
+func (ts *Tabs) EditorFile(label, filename string) *textcore.Editor {
+	ed := NewTab(ts, label, func(tab *core.Frame) *textcore.Editor {
+		ed := textcore.NewEditor(tab)
 		ed.Styler(func(s *styles.Style) {
 			s.Grow.Set(1, 1)
 		})
 		return ed
 	})
-	ed.Buffer.Open(core.Filename(filename))
+	ed.Lines.Open(filename)
 	ts.Update()
 	return ed
 }

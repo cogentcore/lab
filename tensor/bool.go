@@ -21,9 +21,16 @@ import (
 // of binary, boolean data. Bool does not support [RowMajor.SubSpace] access
 // and related methods due to the nature of the underlying data representation.
 type Bool struct {
-	shape  Shape
+
+	// shape contains the N-dimensional shape and indexing functionality.
+	shape Shape
+
+	//	Values is a flat 1D slice of the underlying data, using [bitslice].
 	Values bitslice.Slice
-	Meta   metadata.Data
+
+	// Meta data is used extensively for Name, Plot styles, etc.
+	// Use standard Go camel-case key names, standards in [metadata].
+	Meta metadata.Data
 }
 
 // NewBool returns a new n-dimensional tensor of bit values

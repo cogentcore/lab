@@ -21,12 +21,12 @@ func NewEditor(parent ...tree.Node) *Editor { return tree.New[Editor](parent...)
 // PlotStyle has the overall plot style parameters.
 func (t *Editor) SetPlotStyle(v plot.PlotStyle) *Editor { t.PlotStyle = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plotcore.Plot", IDName: "plot", Doc: "Plot is a widget that renders a [plot.Plot] object.\nIf it is not [states.ReadOnly], the user can pan and zoom the graph.\nSee [Editor] for an interactive interface for selecting columns to view.", Embeds: []types.Field{{Name: "WidgetBase"}}, Fields: []types.Field{{Name: "Plot", Doc: "Plot is the Plot to display in this widget"}, {Name: "SetRangesFunc", Doc: "SetRangesFunc, if set, is called to adjust the data ranges\nafter the point when these ranges are updated based on the plot data."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plotcore.Plot", IDName: "plot", Doc: "Plot is a widget that renders a [plot.Plot] object to the [core.Scene]\nof this widget. If it is not [states.ReadOnly], the user can pan and zoom\nthe graph. See [Editor] for an interactive interface for selecting columns to view.", Embeds: []types.Field{{Name: "WidgetBase"}}, Fields: []types.Field{{Name: "Plot", Doc: "Plot is the Plot to display in this widget."}, {Name: "SetRangesFunc", Doc: "SetRangesFunc, if set, is called to adjust the data ranges\nafter the point when these ranges are updated based on the plot data."}}})
 
 // NewPlot returns a new [Plot] with the given optional parent:
-// Plot is a widget that renders a [plot.Plot] object.
-// If it is not [states.ReadOnly], the user can pan and zoom the graph.
-// See [Editor] for an interactive interface for selecting columns to view.
+// Plot is a widget that renders a [plot.Plot] object to the [core.Scene]
+// of this widget. If it is not [states.ReadOnly], the user can pan and zoom
+// the graph. See [Editor] for an interactive interface for selecting columns to view.
 func NewPlot(parent ...tree.Node) *Plot { return tree.New[Plot](parent...) }
 
 // SetSetRangesFunc sets the [Plot.SetRangesFunc]:

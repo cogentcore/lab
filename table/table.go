@@ -33,12 +33,8 @@ type Table struct { //types:add
 	// to provide a coordinated indexed view into the underlying data.
 	Indexes []int
 
-	// Meta is misc metadata for the table. Use lower-case key names
-	// following the struct tag convention:
-	//	- name string = name of table
-	//	- doc string = documentation, description
-	//	- read-only bool = gui is read-only
-	//	- precision int = n for precision to write out floats in csv.
+	// Meta data is used extensively for Name, Precision, Doc etc.
+	// Use standard Go camel-case key names, standards in [metadata].
 	Meta metadata.Data
 }
 

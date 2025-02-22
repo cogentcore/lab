@@ -19,7 +19,6 @@ import (
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fsx"
-	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/colors"
@@ -179,7 +178,8 @@ func (pl *Editor) SaveSVG(fname core.Filename) { //types:add
 // SavePNG saves the current plot to a png, capturing current render
 func (pl *Editor) SavePNG(fname core.Filename) { //types:add
 	pl.UpdatePlot()
-	imagex.Save(pl.plot.Pixels, string(fname))
+	// todo:
+	// imagex.Save(pl.plot.Pixels, string(fname))
 }
 
 // SaveCSV saves the Table data to a csv (comma-separated values) file with headers (any delim)
@@ -279,7 +279,8 @@ func (pl *Editor) genPlot() {
 		core.ErrorSnackbar(pl, fmt.Errorf("%s: %w", pl.PlotStyle.Title, err))
 	}
 	pl.plotWidget.SetPlot(pl.plot)
-	pl.plotWidget.updatePlot()
+	// pl.plotWidget.updatePlot()
+	pl.plotWidget.NeedsRender()
 	pl.inPlot = false
 }
 

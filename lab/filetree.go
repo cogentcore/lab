@@ -17,7 +17,7 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/styles/states"
-	"cogentcore.org/core/texteditor/diffbrowser"
+	"cogentcore.org/core/text/diffbrowser"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/core/types"
 	"cogentcore.org/lab/table"

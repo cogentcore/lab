@@ -16,9 +16,16 @@ import (
 
 // Base is the base Tensor implementation for given type.
 type Base[T any] struct {
-	shape  Shape
+
+	// shape contains the N-dimensional shape and indexing functionality.
+	shape Shape
+
+	//	Values is a flat 1D slice of the underlying data.
 	Values []T
-	Meta   metadata.Data
+
+	// Meta data is used extensively for Name, Plot styles, etc.
+	// Use standard Go camel-case key names, standards in [metadata].
+	Meta metadata.Data
 }
 
 // Metadata returns the metadata for this tensor, which can be used

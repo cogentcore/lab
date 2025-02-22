@@ -160,7 +160,7 @@ func (tg *TensorGrid) Render() {
 	tg.EnsureColorMap()
 	tg.UpdateRange()
 
-	pc := &tg.Scene.PaintContext
+	pc := &tg.Scene.Painter
 
 	pos := tg.Geom.Pos.Content
 	sz := tg.Geom.Size.Actual.Content
@@ -205,8 +205,8 @@ func (tg *TensorGrid) Render() {
 					}
 					cr := math32.Vec2(float32(x), float32(ey))
 					pr := pos.Add(cr.Mul(gsz))
-					pc.StrokeStyle.Color = colors.Uniform(colors.FromFloat64(r, g, b, a))
-					pc.FillBox(pr, gsz, pc.StrokeStyle.Color)
+					pc.Stroke.Color = colors.Uniform(colors.FromFloat64(r, g, b, a))
+					pc.FillBox(pr, gsz, pc.Stroke.Color)
 				case nclr > 1:
 					var r, g, b, a float64
 					a = 1
@@ -218,14 +218,14 @@ func (tg *TensorGrid) Render() {
 					}
 					cr := math32.Vec2(float32(x), float32(ey))
 					pr := pos.Add(cr.Mul(gsz))
-					pc.StrokeStyle.Color = colors.Uniform(colors.FromFloat64(r, g, b, a))
-					pc.FillBox(pr, gsz, pc.StrokeStyle.Color)
+					pc.Stroke.Color = colors.Uniform(colors.FromFloat64(r, g, b, a))
+					pc.FillBox(pr, gsz, pc.Stroke.Color)
 				default:
 					val := tg.GridStyle.Range.ClipNormValue(tsr.Float(y, x))
 					cr := math32.Vec2(float32(x), float32(ey))
 					pr := pos.Add(cr.Mul(gsz))
-					pc.StrokeStyle.Color = colors.Uniform(colors.FromFloat64(val, val, val, 1))
-					pc.FillBox(pr, gsz, pc.StrokeStyle.Color)
+					pc.Stroke.Color = colors.Uniform(colors.FromFloat64(val, val, val, 1))
+					pc.FillBox(pr, gsz, pc.Stroke.Color)
 				}
 			}
 		}
