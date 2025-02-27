@@ -6,7 +6,6 @@ package plots
 
 import (
 	"fmt"
-	"image"
 	"math"
 	"math/rand"
 	"os"
@@ -17,6 +16,7 @@ import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/colors"
+	_ "cogentcore.org/core/paint/renderers"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
@@ -133,8 +133,7 @@ func ExampleTable() {
 	dt.AddColumn("Labels", lbls)
 
 	plt := errors.Log1(plot.NewTablePlot(dt))
-	plt.SetImageRender(1280, 1024)
-	plt.Resize(image.Point{640, 480})
+	plt.SetImageRender(640, 480)
 	plt.Draw()
 	imagex.Save(plt.Painter.RenderImage(), "testdata/ex_table.png")
 	// Output:
@@ -190,7 +189,7 @@ func TestLine(t *testing.T) {
 	data := sinCosWrapData()
 
 	plt := plot.New()
-	plt.SetImageRender(1280, 1024)
+	plt.SetImageRender(640, 480)
 	plt.Title.Text = "Test Line"
 	plt.X.Range.Min = 0
 	plt.X.Range.Max = 100
@@ -206,7 +205,6 @@ func TestLine(t *testing.T) {
 	plt.Legend.Add("Sine", l1)
 	plt.Legend.Add("Cos", l1)
 
-	plt.Resize(image.Point{640, 480})
 	plt.Draw()
 	imagex.Assert(t, plt.Painter.RenderImage(), "line.png")
 
@@ -237,7 +235,7 @@ func TestScatter(t *testing.T) {
 	data := sinDataXY()
 
 	plt := plot.New()
-	plt.SetImageRender(1280, 1024)
+	plt.SetImageRender(640, 480)
 	plt.Title.Text = "Test Scatter"
 	plt.X.Range.Min = 0
 	plt.X.Range.Max = 100
@@ -251,8 +249,6 @@ func TestScatter(t *testing.T) {
 		t.Error("bad data")
 	}
 
-	plt.Resize(image.Point{640, 480})
-
 	shs := plot.ShapesValues()
 	for _, sh := range shs {
 		l1.Style.Point.Shape = sh
@@ -263,7 +259,7 @@ func TestScatter(t *testing.T) {
 
 func TestLabels(t *testing.T) {
 	plt := plot.New()
-	plt.SetImageRender(1280, 1024)
+	plt.SetImageRender(640, 480)
 	plt.Title.Text = "Test Labels"
 	plt.X.Label.Text = "X Axis"
 	plt.Y.Label.Text = "Y Axis"
@@ -295,14 +291,13 @@ func TestLabels(t *testing.T) {
 	l2.Style.Text.Offset.X.Dp(6)
 	l2.Style.Text.Offset.Y.Dp(-6)
 
-	plt.Resize(image.Point{640, 480})
 	plt.Draw()
 	imagex.Assert(t, plt.Painter.RenderImage(), "labels.png")
 }
 
 func TestBar(t *testing.T) {
 	plt := plot.New()
-	plt.SetImageRender(1280, 1024)
+	plt.SetImageRender(640, 480)
 	plt.Title.Text = "Test Bar Chart"
 	plt.X.Label.Text = "X Axis"
 	plt.Y.Range.Min = 0
@@ -319,7 +314,6 @@ func TestBar(t *testing.T) {
 	l1.Style.Line.Fill = colors.Uniform(colors.Red)
 	plt.Legend.Add("Sine", l1)
 
-	plt.Resize(image.Point{640, 480})
 	plt.Draw()
 	imagex.Assert(t, plt.Painter.RenderImage(), "bar.png")
 
@@ -340,7 +334,7 @@ func TestBar(t *testing.T) {
 
 func TestBarErr(t *testing.T) {
 	plt := plot.New()
-	plt.SetImageRender(1280, 1024)
+	plt.SetImageRender(640, 480)
 	plt.Title.Text = "Test Bar Chart Errors"
 	plt.X.Label.Text = "X Axis"
 	plt.Y.Range.Min = 0
@@ -358,7 +352,6 @@ func TestBarErr(t *testing.T) {
 	l1.Style.Line.Fill = colors.Uniform(colors.Red)
 	plt.Legend.Add("Sine", l1)
 
-	plt.Resize(image.Point{640, 480})
 	plt.Draw()
 	imagex.Assert(t, plt.Painter.RenderImage(), "bar-err.png")
 
@@ -372,7 +365,7 @@ func TestBarErr(t *testing.T) {
 
 func TestBarStack(t *testing.T) {
 	plt := plot.New()
-	plt.SetImageRender(1280, 1024)
+	plt.SetImageRender(640, 480)
 	plt.Title.Text = "Test Bar Chart Stacked"
 	plt.X.Label.Text = "X Axis"
 	plt.Y.Range.Min = 0
@@ -397,14 +390,13 @@ func TestBarStack(t *testing.T) {
 	l2.StackedOn = l1
 	plt.Legend.Add("Cos", l2)
 
-	plt.Resize(image.Point{640, 480})
 	plt.Draw()
 	imagex.Assert(t, plt.Painter.RenderImage(), "bar-stacked.png")
 }
 
 func TestErrBar(t *testing.T) {
 	plt := plot.New()
-	plt.SetImageRender(1280, 1024)
+	plt.SetImageRender(640, 480)
 	plt.Title.Text = "Test Line Errors"
 	plt.X.Label.Text = "X Axis"
 	plt.Y.Range.Min = 0
@@ -438,7 +430,6 @@ func TestErrBar(t *testing.T) {
 		t.Error("bad data")
 	}
 
-	plt.Resize(image.Point{640, 480})
 	plt.Draw()
 	imagex.Assert(t, plt.Painter.RenderImage(), "errbar.png")
 }
@@ -466,17 +457,16 @@ func TestStyle(t *testing.T) {
 	}
 
 	plt := plot.New()
-	plt.SetImageRender(1280, 1024)
+	plt.SetImageRender(640, 480)
 	l1 := NewLine(plt, data).Styler(stf)
 	plt.Legend.Add("Sine", l1) // todo: auto-add!
 	plt.Legend.Add("Cos", l1)
 
-	plt.Resize(image.Point{640, 480})
 	plt.Draw()
 	imagex.Assert(t, plt.Painter.RenderImage(), "style_line_point.png")
 
 	plt = plot.New()
-	plt.SetImageRender(1280, 1024)
+	plt.SetImageRender(640, 480)
 	tdy := tensor.NewFloat64FromValues(data[plot.Y].(plot.Values)...)
 	plot.SetStyler(tdy, stf) // set metadata for tensor
 	tdx := tensor.NewFloat64FromValues(data[plot.X].(plot.Values)...)
@@ -484,7 +474,6 @@ func TestStyle(t *testing.T) {
 	l1 = NewLine(plt, plot.Data{plot.X: tdx, plot.Y: tdy})
 	plt.Legend.Add("Sine", l1) // todo: auto-add!
 	plt.Legend.Add("Cos", l1)
-	plt.Resize(image.Point{640, 480})
 	plt.Draw()
 	imagex.Assert(t, plt.Painter.RenderImage(), "style_line_point_auto.png")
 }
@@ -493,7 +482,7 @@ func TestTicks(t *testing.T) {
 	data := sinCosWrapData()
 
 	plt := plot.New()
-	plt.SetImageRender(1280, 1024)
+	plt.SetImageRender(640, 480)
 	l1 := NewLine(plt, data).Styler(func(s *plot.Style) {
 		s.Plot.Axis.NTicks = 0
 	})
@@ -501,7 +490,6 @@ func TestTicks(t *testing.T) {
 	plt.Legend.Add("Sine", l1)
 	plt.Legend.Add("Cos", l1)
 
-	plt.Resize(image.Point{640, 480})
 	plt.Draw()
 	imagex.Assert(t, plt.Painter.RenderImage(), "style_noticks.png")
 }
@@ -581,9 +569,8 @@ func TestTable(t *testing.T) {
 		dt.AddColumn("Labels", lbls)
 
 		plt, err := plot.NewTablePlot(dt)
-		plt.SetImageRender(1280, 1024)
+		plt.SetImageRender(640, 480)
 		assert.NoError(t, err)
-		plt.Resize(image.Point{640, 480})
 		plt.Draw()
 		fnm := "table_" + ttyp + ".png"
 		imagex.Assert(t, plt.Painter.RenderImage(), fnm)
@@ -634,9 +621,8 @@ func TestTableSplit(t *testing.T) {
 	dt.AddColumn("Labels", lbls)
 
 	plt, err := plot.NewTablePlot(dt)
-	plt.SetImageRender(1280, 1024)
+	plt.SetImageRender(640, 480)
 	assert.NoError(t, err)
-	plt.Resize(image.Point{640, 480})
 	plt.Draw()
 	fnm := "table_split.png"
 	imagex.Assert(t, plt.Painter.RenderImage(), fnm)

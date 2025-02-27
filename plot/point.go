@@ -74,7 +74,11 @@ func (ps *PointStyle) SetStroke(pt *Plot) bool {
 	pc.Stroke.Width = ps.Width
 	pc.Stroke.Color = ps.Color
 	pc.Stroke.ToDots(uc)
-	pc.Fill.Color = ps.Fill
+	if ps.Shape <= Pyramid {
+		pc.Fill.Color = ps.Fill
+	} else {
+		pc.Fill.Color = nil
+	}
 	return true
 }
 
@@ -176,20 +180,11 @@ func DrawCross(pc *paint.Painter, pos math32.Vector2, size float32) {
 type Shapes int32 //enums:enum
 
 const (
-	// Ring is the outline of a circle
-	Ring Shapes = iota
-
 	// Circle is a solid circle
-	Circle
-
-	// Square is the outline of a square
-	Square
+	Circle Shapes = iota
 
 	// Box is a filled square
 	Box
-
-	// Triangle is the outline of a triangle
-	Triangle
 
 	// Pyramid is a filled triangle
 	Pyramid
@@ -199,4 +194,13 @@ const (
 
 	// Cross is a big X
 	Cross
+
+	// Ring is the outline of a circle
+	Ring
+
+	// Square is the outline of a square
+	Square
+
+	// Triangle is the outline of a triangle
+	Triangle
 )

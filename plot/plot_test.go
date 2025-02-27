@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"cogentcore.org/core/base/iox/imagex"
+	_ "cogentcore.org/core/paint/renderers"
 )
 
 func TestMain(m *testing.M) {

@@ -134,11 +134,11 @@ var _ShapesValues = []Shapes{0, 1, 2, 3, 4, 5, 6, 7}
 // ShapesN is the highest valid value for type Shapes, plus one.
 const ShapesN Shapes = 8
 
-var _ShapesValueMap = map[string]Shapes{`Ring`: 0, `Circle`: 1, `Square`: 2, `Box`: 3, `Triangle`: 4, `Pyramid`: 5, `Plus`: 6, `Cross`: 7}
+var _ShapesValueMap = map[string]Shapes{`Circle`: 0, `Box`: 1, `Pyramid`: 2, `Plus`: 3, `Cross`: 4, `Ring`: 5, `Square`: 6, `Triangle`: 7}
 
-var _ShapesDescMap = map[Shapes]string{0: `Ring is the outline of a circle`, 1: `Circle is a solid circle`, 2: `Square is the outline of a square`, 3: `Box is a filled square`, 4: `Triangle is the outline of a triangle`, 5: `Pyramid is a filled triangle`, 6: `Plus is a plus sign`, 7: `Cross is a big X`}
+var _ShapesDescMap = map[Shapes]string{0: `Circle is a solid circle`, 1: `Box is a filled square`, 2: `Pyramid is a filled triangle`, 3: `Plus is a plus sign`, 4: `Cross is a big X`, 5: `Ring is the outline of a circle`, 6: `Square is the outline of a square`, 7: `Triangle is the outline of a triangle`}
 
-var _ShapesMap = map[Shapes]string{0: `Ring`, 1: `Circle`, 2: `Square`, 3: `Box`, 4: `Triangle`, 5: `Pyramid`, 6: `Plus`, 7: `Cross`}
+var _ShapesMap = map[Shapes]string{0: `Circle`, 1: `Box`, 2: `Pyramid`, 3: `Plus`, 4: `Cross`, 5: `Ring`, 6: `Square`, 7: `Triangle`}
 
 // String returns the string representation of this Shapes value.
 func (i Shapes) String() string { return enums.String(i, _ShapesMap) }

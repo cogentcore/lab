@@ -7,9 +7,7 @@ package plot
 import (
 	"image"
 
-	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/colors"
-	"cogentcore.org/core/core"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/styles/units"
@@ -103,13 +101,8 @@ func (tx *Text) Config(pt *Plot) {
 	hsz := float32(12) * txln
 	// txs := &pt.StandardTextStyle
 
-	rt := errors.Log1(htmltext.HTMLToRich([]byte(tx.Text), fs, nil))
-	tx.PaintText = pt.TextShaper.WrapLines(rt, fs, ts, &core.AppearanceSettings.Text, math32.Vec2(hsz, fht))
-	if tx.Style.Rotation != 0 {
-		// todo:
-		// rotx := math32.Rotate2D(math32.DegToRad(tx.Style.Rotation))
-		// tx.PaintText.Transform(rotx, fs, uc)
-	}
+	rt, _ := htmltext.HTMLToRich([]byte(tx.Text), fs, nil)
+	tx.PaintText = pt.TextShaper.WrapLines(rt, fs, ts, &rich.DefaultSettings, math32.Vec2(hsz, fht))
 }
 
 func (tx *Text) ToDots(uc *units.Context) {
@@ -119,7 +112,11 @@ func (tx *Text) ToDots(uc *units.Context) {
 
 // Size returns the actual render size of the text.
 func (tx *Text) Size() math32.Vector2 {
-	return tx.PaintText.Bounds.Size().Ceil()
+	bb := tx.PaintText.Bounds
+	if tx.Style.Rotation != 0 {
+		bb = bb.MulMatrix2(math32.Rotate2D(math32.DegToRad(tx.Style.Rotation)))
+	}
+	return bb.Size().Ceil()
 }
 
 // PosX returns the starting position for a horizontally-aligned text element,
@@ -143,7 +140,7 @@ func (tx *Text) PosX(width float32) math32.Vector2 {
 // PosY returns the starting position for a vertically-rotated text element,
 // based on given height.  Text must have been config'd already.
 func (tx *Text) PosY(height float32) math32.Vector2 {
-	rsz := tx.PaintText.Bounds.Size().Ceil()
+	rsz := tx.Size() // rotated size
 	pos := math32.Vector2{}
 	pos.Y = styles.AlignFactor(tx.Style.Align) * height
 	switch tx.Style.Align {
@@ -157,5 +154,13 @@ func (tx *Text) PosY(height float32) math32.Vector2 {
 
 // Draw renders the text at given upper left position
 func (tx *Text) Draw(pt *Plot, pos math32.Vector2) {
-	pt.Painter.TextLines(tx.PaintText, pos)
+	if tx.Style.Rotation == 0 {
+		pt.Painter.TextLines(tx.PaintText, pos)
+		return
+	}
+	m := pt.Painter.Paint.Transform
+	rotx := math32.Rotate2D(math32.DegToRad(tx.Style.Rotation))
+	pt.Painter.Paint.Transform = m.Mul(rotx)
+	pt.Painter.TextLinesAbsolute(tx.PaintText, m.MulVector2AsPoint(pos)) // key: pos is not rotated
+	pt.Painter.Paint.Transform = m
 }
