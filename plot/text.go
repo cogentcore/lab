@@ -159,8 +159,8 @@ func (tx *Text) Draw(pt *Plot, pos math32.Vector2) {
 		return
 	}
 	m := pt.Painter.Paint.Transform
-	rotx := math32.Rotate2D(math32.DegToRad(tx.Style.Rotation))
+	rotx := math32.Rotate2DAround(math32.DegToRad(tx.Style.Rotation), pos)
 	pt.Painter.Paint.Transform = m.Mul(rotx)
-	pt.Painter.TextLinesAbsolute(tx.PaintText, m.MulVector2AsPoint(pos)) // key: pos is not rotated
+	pt.Painter.TextLines(tx.PaintText, pos)
 	pt.Painter.Paint.Transform = m
 }
