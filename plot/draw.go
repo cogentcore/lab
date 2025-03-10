@@ -97,7 +97,7 @@ func (pt *Plot) Draw() {
 	pt.Legend.draw(pt)
 	pc.PopContext()
 	pc.PopContext() // global
-	pc.RenderDone()
+	pc.RenderToImage()
 }
 
 ////////	Axis

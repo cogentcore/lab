@@ -258,7 +258,7 @@ func (pt *Plot) SetPainter(ptr *paint.Painter, pbox image.Rectangle, shp shaped.
 
 // Resize resizes an image render to given size.
 func (pt *Plot) Resize(sz image.Point) {
-	pt.Painter.InitImageRaster(nil, sz.X, sz.Y)
+	pt.Painter.InitImageRender(nil, sz.X, sz.Y)
 	pt.PaintBox.Max = sz
 }
 
