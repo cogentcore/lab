@@ -278,7 +278,9 @@ func (pl *Editor) genPlot() {
 	if pl.plot != nil && pl.plot.Style.ShowErrors && err != nil {
 		core.ErrorSnackbar(pl, fmt.Errorf("%s: %w", pl.PlotStyle.Title, err))
 	}
-	pl.plotWidget.SetPlot(pl.plot)
+	if pl.plot != nil {
+		pl.plotWidget.SetPlot(pl.plot)
+	}
 	// pl.plotWidget.updatePlot()
 	pl.plotWidget.NeedsRender()
 	pl.inPlot = false
