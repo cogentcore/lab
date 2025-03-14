@@ -66,7 +66,7 @@ func (st *State) TranspileMath(toks Tokens, code string, fullLine bool) Tokens {
 		mp.expr(ex)
 	}
 
-	if mp.idx != len(toks) {
+	if !(mp.idx == len(toks) || mp.idx == len(toks)-1) { // -1 is for comment at end
 		fmt.Println(code)
 		fmt.Println(mp.out.Code())
 		fmt.Printf("parsing error: index: %d != len(toks): %d\n", mp.idx, len(toks))
