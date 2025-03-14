@@ -12,6 +12,8 @@ package plots
 //go:generate core generate
 
 import (
+	"fmt"
+
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
@@ -48,29 +50,42 @@ type XY struct {
 // Data can also include Color and / or Size for the points.
 // Styler functions are obtained from the Y metadata if present.
 func NewXY(plt *plot.Plot, data any) *XY {
-	dt := errors.Log1(plot.DataOrValuer(data, plot.Y))
-	if dt == nil {
-		return nil
-	}
-	if dt.CheckLengths() != nil {
-		return nil
-	}
 	ln := &XY{}
+	err := ln.SetData(data)
+	if err != nil {
+		errors.Log(err)
+		return nil
+	}
+	ln.Defaults()
+	plt.Add(ln)
+	return ln
+}
+
+// SetData sets the plot data.
+func (ln *XY) SetData(data any) error {
+	dt, err := plot.DataOrValuer(data, plot.Y)
+	if err != nil {
+		return err
+	}
+	if err := dt.CheckLengths(); err != nil {
+		return err
+	}
 	ln.Y = plot.MustCopyRole(dt, plot.Y)
 	if _, ok := dt[plot.X]; !ok {
-		ln.X = errors.Log1(plot.CopyValues(tensor.NewIntRange(len(ln.Y))))
+		ln.X, err = plot.CopyValues(tensor.NewIntRange(len(ln.Y)))
+		if err != nil {
+			return err
+		}
 	} else {
 		ln.X = plot.MustCopyRole(dt, plot.X)
 	}
 	if ln.X == nil || ln.Y == nil {
-		return nil
+		return fmt.Errorf("X or Y is nil")
 	}
 	ln.stylers = plot.GetStylersFromData(dt, plot.Y)
 	ln.Color = plot.CopyRole(dt, plot.Color)
 	ln.Size = plot.CopyRole(dt, plot.Size)
-	ln.Defaults()
-	plt.Add(ln)
-	return ln
+	return nil
 }
 
 // newXYWith is a simple helper function that creates a new XY plotter

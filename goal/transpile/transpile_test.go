@@ -5,10 +5,12 @@
 package transpile
 
 import (
+	"fmt"
 	"testing"
 
 	_ "cogentcore.org/lab/stats/metric"
 	_ "cogentcore.org/lab/stats/stats"
+	"cogentcore.org/lab/tensor"
 	_ "cogentcore.org/lab/tensor/tmath"
 	"github.com/stretchr/testify/assert"
 )
@@ -236,6 +238,8 @@ goalrun.AddCommand("build", func(args ...string) {
 func TestCur(t *testing.T) {
 	// logx.UserLevel = slog.LevelDebug
 	tests := []exIn{
+		{"# totalTime := 100", `totalTime := tensor.Tensor(tensor.NewIntScalar(100))`},
+		{"# driver := zeros(100)", `driver := tensor.Tensor(tensor.NewFloat64(100))`},
 		// {"type Servers keylist.List[int, *Server]", `type Servers keylist.List[int, *Server]`},
 		// {"`string literal over lines todo add \n`", `todo`},
 	}
@@ -245,6 +249,27 @@ func TestCur(t *testing.T) {
 		o := st.TranspileLine(test.i)
 		assert.Equal(t, test.e, o)
 	}
+}
+
+// Use this for testing the current thing working on -- multi-line code.
+func TestCurCode(t *testing.T) {
+	// logx.UserLevel = slog.LevelDebug
+	tests := []exIn{
+		{`## totalTime := 100
+driver := zeros(totalTime)`,
+			`totalTime := tensor.Tensor(tensor.NewIntScalar(100))
+driver := tensor.Tensor(tensor.NewFloat64(tensor.AsIntSlice(totalTime) ...))`},
+	}
+	for _, test := range tests {
+		st := NewState()
+		st.MathRecord = false
+		st.TranspileCode(test.i)
+		o := st.Code()
+		assert.Equal(t, test.e, o)
+	}
+	totalTime := tensor.Tensor(tensor.NewIntScalar(100))
+	driver := tensor.Tensor(tensor.NewFloat64(tensor.AsIntSlice(totalTime)...))
+	fmt.Println(driver)
 }
 
 func TestMath(t *testing.T) {
@@ -309,6 +334,8 @@ func TestMath(t *testing.T) {
 		{`# set("item", x)`, `tensorfs.Set("item", x)`},
 		{`# set("item", 5)`, `tensorfs.Set("item", tensor.NewIntScalar(5))`},
 		{`fmt.Println(#zeros(3,4)#)`, `fmt.Println(tensor.NewFloat64(3, 4))`},
+		{"# totalTime := 100", `totalTime := tensor.Tensor(tensor.NewIntScalar(100))`},
+		{"# driver := zeros(100)", `driver := tensor.Tensor(tensor.NewFloat64(100))`},
 	}
 
 	st := NewState()
