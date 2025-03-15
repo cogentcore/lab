@@ -7,7 +7,39 @@ package tensor
 import (
 	"math/rand"
 	"slices"
+
+	"cogentcore.org/core/base/slicesx"
 )
+
+// NewFromValues returns a new Values tensor from given list of values
+// which must be the same type, for the supported tensor types including
+// string, bool, and standard float, int types.
+func NewFromValues(val ...any) Values {
+	if len(val) == 0 {
+		return nil
+	}
+	switch val[0].(type) {
+	case string:
+		return NewStringFromValues(slicesx.As[any, string](val)...)
+	case []bool:
+		return NewBoolFromValues(slicesx.As[any, bool](val)...)
+	case float64:
+		return NewNumberFromValues(slicesx.As[any, float64](val)...)
+	case float32:
+		return NewNumberFromValues(slicesx.As[any, float32](val)...)
+	case int:
+		return NewNumberFromValues(slicesx.As[any, int](val)...)
+	case int32:
+		return NewNumberFromValues(slicesx.As[any, int32](val)...)
+	case uint32:
+		return NewNumberFromValues(slicesx.As[any, uint32](val)...)
+	case int64:
+		return NewNumberFromValues(slicesx.As[any, int64](val)...)
+	case byte:
+		return NewNumberFromValues(slicesx.As[any, byte](val)...)
+	}
+	return nil
+}
 
 // NewFloat64Scalar is a convenience method for a Tensor
 // representation of a single float64 scalar value.

@@ -2,8 +2,13 @@ This is a list of all the stuff that doesn't work in goal.
 
 ## converting between go / tensor
 
-* need a short function to make a tensor from a go value: `tensor.NewFloat64Scalar()`
 * `for range` expression that deals with iterating over tensors, in math mode
+
+* CCN temporal-derivative.md: 
+
+```
+    for t := range #totalTime[0]# { // or something even simpler?
+```
 
 ## `compression-tutorial`
 

@@ -51,6 +51,19 @@ func NewBoolShape(shape *Shape) *Bool {
 	return tsr
 }
 
+// NewBoolFromValues returns a new 1-dimensional tensor of given value type
+// initialized directly from the given slice values, which are not copied.
+// The resulting Tensor thus "wraps" the given values.
+func NewBoolFromValues(vals ...bool) *Bool {
+	n := len(vals)
+	tsr := &Bool{}
+	tsr.SetShapeSizes(n)
+	for i, b := range vals {
+		tsr.Values.Set(b, i)
+	}
+	return tsr
+}
+
 // Float64ToBool converts float64 value to bool.
 func Float64ToBool(val float64) bool {
 	return num.ToBool(val)
@@ -304,7 +317,7 @@ func (tsr *Bool) CopyFrom(frm Values) {
 		return
 	}
 	sz := min(len(tsr.Values), frm.Len())
-	for i := 0; i < sz; i++ {
+	for i := range sz {
 		tsr.Values.Set(Float64ToBool(frm.Float1D(i)), i)
 	}
 }
@@ -328,7 +341,7 @@ func (tsr *Bool) AppendFrom(frm Values) Values {
 		copy(tsr.Values[st:st+fsz], fsm.Values)
 		return tsr
 	}
-	for i := 0; i < fsz; i++ {
+	for i := range fsz {
 		tsr.Values.Set(Float64ToBool(frm.Float1D(i)), st+i)
 	}
 	return tsr
@@ -341,12 +354,12 @@ func (tsr *Bool) AppendFrom(frm Values) Values {
 // of the same type, and otherwise it goes through appropriate standard type.
 func (tsr *Bool) CopyCellsFrom(frm Values, to, start, n int) {
 	if fsm, ok := frm.(*Bool); ok {
-		for i := 0; i < n; i++ {
+		for i := range n {
 			tsr.Values.Set(fsm.Values.Index(start+i), to+i)
 		}
 		return
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		tsr.Values.Set(Float64ToBool(frm.Float1D(start+i)), to+i)
 	}
 }

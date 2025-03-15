@@ -848,7 +848,7 @@ func (mp *mathParse) arrayShape(ex []ast.Expr, sh *[]int) {
 
 // nofun = do not accept a function version, just a method
 var numpyFuncs = map[string]funWrap{
-	// "array":   {"tensor.NewFloatFromValues", ""}, // todo: probably not right, maybe don't have?
+	"array":    {"tensor.NewFromValues", ""},
 	"zeros":    {"tensor.NewFloat64", ""},
 	"full":     {"tensor.NewFloat64Full", ""},
 	"ones":     {"tensor.NewFloat64Ones", ""},
