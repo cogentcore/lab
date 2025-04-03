@@ -6,6 +6,8 @@ package lab
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/core"
@@ -134,9 +136,15 @@ func (ts *Tabs) TensorGrid(label string, tsr tensor.Tensor) *tensorcore.TensorGr
 	return tv
 }
 
+// DirAndFileNoSlash returns [fsx.DirAndFile] with slashes replaced with spaces.
+// Slashes are also used in core Widget paths, so spaces are safer.
+func DirAndFileNoSlash(fpath string) string {
+	return strings.ReplaceAll(fsx.DirAndFile(fpath), string(filepath.Separator), " ")
+}
+
 // GridTensorFS recycles a tab with a Grid of given [tensorfs.Node].
 func (ts *Tabs) GridTensorFS(dfs *tensorfs.Node) *tensorcore.TensorGrid {
-	label := fsx.DirAndFile(dfs.Path()) + " Grid"
+	label := DirAndFileNoSlash(dfs.Path()) + " Grid"
 	if dfs.IsDir() {
 		core.MessageSnackbar(ts, "Use Edit instead of Grid to view a directory")
 		return nil
@@ -165,7 +173,7 @@ func (ts *Tabs) PlotTable(label string, dt *table.Table) *plotcore.Editor {
 
 // PlotTensorFS recycles a tab with a Plot of given [tensorfs.Node].
 func (ts *Tabs) PlotTensorFS(dfs *tensorfs.Node) *plotcore.Editor {
-	label := fsx.DirAndFile(dfs.Path()) + " Plot"
+	label := DirAndFileNoSlash(dfs.Path()) + " Plot"
 	if dfs.IsDir() {
 		return ts.PlotTable(label, tensorfs.DirTable(dfs, nil))
 	}
