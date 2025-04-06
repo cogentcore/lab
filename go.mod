@@ -1,6 +1,6 @@
 module cogentcore.org/lab
 
-go 1.22
+go 1.23.0
 
 // important: after running go mod tidy, you must then run this:
 // go get google.golang.org/genproto@latest
@@ -8,7 +8,7 @@ go 1.22
 // https://github.com/googleapis/go-genproto/issues/1015
 
 require (
-	cogentcore.org/core v0.3.9-0.20250402182034-99b63fc362e0
+	cogentcore.org/core v0.3.9-0.20250406033103-abf571a3ef6c
 	github.com/cogentcore/readline v0.1.3
 	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56
 	github.com/mitchellh/go-homedir v1.1.0
@@ -17,8 +17,8 @@ require (
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
 	golang.org/x/tools v0.23.0
 	gonum.org/v1/gonum v0.15.0
-	google.golang.org/grpc v1.70.0
-	google.golang.org/protobuf v1.36.5
+	google.golang.org/grpc v1.71.0
+	google.golang.org/protobuf v1.36.6
 )
 
 require (
@@ -59,14 +59,16 @@ require (
 	github.com/tdewolff/minify/v2 v2.21.3 // indirect
 	github.com/tdewolff/parse/v2 v2.7.19 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
-	golang.org/x/image v0.23.0 // indirect
+	golang.org/x/image v0.25.0 // indirect
 	golang.org/x/mod v0.19.0 // indirect
 	golang.org/x/net v0.37.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
-	google.golang.org/genproto v0.0.0-20250324211829-b45e905df463 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250227231956-55c901821b1e // indirect
+	google.golang.org/genproto v0.0.0-20250404141209-ee84b53bf3d0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250324211829-b45e905df463 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	star-tex.org/x/tex v0.5.0 // indirect
+	modernc.org/knuth v0.5.4 // indirect
+	modernc.org/token v1.1.0 // indirect
+	star-tex.org/x/tex v0.6.0 // indirect
 )
