@@ -72,7 +72,7 @@ func (ls *LineStyle) SetStroke(pt *Plot) bool {
 		return false
 	}
 	pc := pt.Painter
-	uc := &pc.UnitContext
+	uc := pt.UnitContext()
 	ls.Width.ToDots(uc)
 	if ls.Width.Dots == 0 {
 		return false

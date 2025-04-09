@@ -100,7 +100,6 @@ func ExampleTable() {
 		s.Plot.Title = "Test Table"
 		s.Plot.XAxis.Label = "X Axis"
 		s.Plot.YAxisLabel = "Y Axis"
-		s.Plot.Scale = 2
 		s.Plot.SetLinesOn(plot.On).SetPointsOn(plot.Off)
 	}
 	plot.SetStyler(ty, genst, func(s *plot.Style) {
@@ -521,7 +520,6 @@ func TestTable(t *testing.T) {
 			s.Plot.XAxis.Label = "X Axis"
 			s.Plot.YAxisLabel = "Y Axis"
 			s.Plotter = plot.PlotterName(ttyp)
-			s.Plot.Scale = 2
 			s.Plot.SetLinesOn(plot.On).SetPointsOn(plot.On)
 			s.Line.Color = colors.Uniform(colors.Red)
 			s.Point.Color = colors.Uniform(colors.Blue)
@@ -595,7 +593,6 @@ func TestTableSplit(t *testing.T) {
 		s.Plot.XAxis.Label = "X Axis"
 		s.Plot.YAxisLabel = "Y Axis"
 		s.Plotter = plot.PlotterName("XY")
-		s.Plot.Scale = 2
 		s.Plot.SetLinesOn(plot.On).SetPointsOn(plot.On)
 		s.Line.Color = colors.Uniform(colors.Red)
 		s.Point.Color = colors.Uniform(colors.Blue)

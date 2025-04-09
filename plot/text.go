@@ -80,7 +80,7 @@ func (tx *Text) Defaults() {
 
 // config is called during the layout of the plot, prior to drawing
 func (tx *Text) Config(pt *Plot) {
-	uc := &pt.Painter.UnitContext
+	uc := pt.UnitContext()
 	ts := &tx.textStyle
 	fs := &tx.font
 	fs.Defaults()
@@ -95,6 +95,8 @@ func (tx *Text) Config(pt *Plot) {
 		tx.Style.Align = styles.End
 	}
 	ts.ToDots(uc)
+	// fmt.Printf("%p\n", pt.Painter)
+	// fmt.Println("tdots:", ts.FontSize.Dots)
 	tx.Style.Padding.ToDots(uc)
 	txln := float32(len(tx.Text))
 	fht := tx.textStyle.FontSize.Dots

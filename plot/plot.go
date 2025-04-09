@@ -187,11 +187,6 @@ type Plot struct {
 	// Plotters are drawn by calling their Plot method after the axes are drawn.
 	Plotters []Plotter
 
-	// DPI is the dots per inch for rendering the image.
-	// Larger numbers result in larger scaling of the plot contents
-	// which is strongly recommended for print (e.g., use 300 for print)
-	DPI float32 `default:"96,160,300"`
-
 	// PanZoom provides post-styling pan and zoom range factors.
 	PanZoom PanZoom
 
@@ -234,7 +229,6 @@ func (pt *Plot) Defaults() {
 	pt.X.Defaults(math32.X)
 	pt.Y.Defaults(math32.Y)
 	pt.Legend.Defaults()
-	pt.DPI = 96
 	pt.PanZoom.Defaults()
 	pt.StandardTextStyle.Defaults()
 	pt.StandardTextStyle.WhiteSpace = text.WrapNever
@@ -262,6 +256,19 @@ func (pt *Plot) Resize(sz image.Point) {
 	pt.PaintBox.Max = sz
 }
 
+// UnitContext returns the [units.Context] to use for styling.
+// This includes the scaling factor.
+func (pt *Plot) UnitContext() *units.Context {
+	uc := &units.Context{}
+	if pt.Painter != nil {
+		*uc = pt.Painter.UnitContext
+	} else {
+		uc.Defaults()
+	}
+	uc.DPI *= pt.Style.Scale
+	return uc
+}
+
 // applyStyle applies all the style parameters
 func (pt *Plot) applyStyle() {
 	// first update the global plot style settings
@@ -277,8 +284,6 @@ func (pt *Plot) applyStyle() {
 	for i, plt := range pt.Plotters {
 		plt.ApplyStyle(&pt.Style, i)
 	}
-	// now style plot:
-	pt.DPI *= pt.Style.Scale
 	pt.Title.Style = pt.Style.TitleStyle
 	if pt.Style.Title != "" {
 		pt.Title.Text = pt.Style.Title

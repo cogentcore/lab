@@ -36,7 +36,6 @@ type Plot struct {
 // SetPlot sets the plot to the given [plot.Plot]. You must still call [core.WidgetBase.Update]
 // to trigger a redrawing of the plot.
 func (pt *Plot) SetPlot(pl *plot.Plot) *Plot {
-	pl.DPI = pt.Styles.UnitContext.DPI
 	pt.Plot = pl
 	pt.Plot.SetPainter(&pt.Scene.Painter, pt.Geom.ContentBBox, pt.Scene.TextShaper)
 	return pt
@@ -133,7 +132,6 @@ func (pt *Plot) renderPlot() {
 		return
 	}
 	pt.Plot.SetPainter(&pt.Scene.Painter, pt.Geom.ContentBBox, pt.Scene.TextShaper)
-	pt.Plot.DPI = pt.Styles.UnitContext.DPI
 	if pt.SetRangesFunc != nil {
 		pt.SetRangesFunc()
 	}

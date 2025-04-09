@@ -112,8 +112,7 @@ func (ax *Axis) sizeX(pt *Plot, axw float32) (ht, lpad, rpad int) {
 	if !ax.Style.On {
 		return
 	}
-	pc := pt.Painter
-	uc := &pc.UnitContext
+	uc := pt.UnitContext()
 	ax.Style.TickLength.ToDots(uc)
 	ax.ticks = ax.Ticker.Ticks(ax.Range.Min, ax.Range.Max, ax.Style.NTicks)
 	h := float32(0)
@@ -208,8 +207,7 @@ func (ax *Axis) sizeY(pt *Plot) (ywidth, tickWidth, tpad, bpad int) {
 	if !ax.Style.On {
 		return
 	}
-	pc := pt.Painter
-	uc := &pc.UnitContext
+	uc := pt.UnitContext()
 	ax.ticks = ax.Ticker.Ticks(ax.Range.Min, ax.Range.Max, ax.Style.NTicks)
 	ax.Style.TickLength.ToDots(uc)
 
@@ -371,7 +369,7 @@ func (ax *Axis) drawY(pt *Plot, tickWidth, tpad, bpad int) {
 // draw draws the legend
 func (lg *Legend) draw(pt *Plot) {
 	pc := pt.Painter
-	uc := &pc.UnitContext
+	uc := pt.UnitContext()
 	ptb := pt.CurBounds()
 
 	lg.Style.ThumbnailWidth.ToDots(uc)
