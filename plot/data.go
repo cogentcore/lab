@@ -264,6 +264,15 @@ func PlotY(plt *Plot, data Valuer) []float32 {
 	return py
 }
 
+// PlotYR returns plot pixel YR right axis coordinate values for given data.
+func PlotYR(plt *Plot, data Valuer) []float32 {
+	py := make([]float32, data.Len())
+	for i := range py {
+		py[i] = plt.PYR(data.Float1D(i))
+	}
+	return py
+}
+
 //////// Labels
 
 // Labels provides a minimal implementation of the Data interface

@@ -96,6 +96,9 @@ type Axis struct {
 	// specifies which axis this is: X, Y or Z.
 	Axis math32.Dims
 
+	// For a Y axis, this puts the axis on the right (i.e., the second Y axis).
+	RightY bool
+
 	// Label for the axis.
 	Label Text
 
@@ -130,7 +133,11 @@ func (ax *Axis) Defaults(dim math32.Dims) {
 	ax.Axis = dim
 	if dim == math32.Y {
 		ax.Label.Style.Rotation = -90
-		ax.Style.TickText.Align = styles.End
+		if ax.RightY {
+			ax.Style.TickText.Align = styles.Start
+		} else {
+			ax.Style.TickText.Align = styles.End
+		}
 	}
 	ax.Scale = LinearScale{}
 	ax.Ticker = DefaultTicks{}

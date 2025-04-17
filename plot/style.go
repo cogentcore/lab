@@ -47,6 +47,9 @@ type Style struct { //types:add -setters
 	// Role = Y values are included in the Legend by default.
 	NoLegend bool
 
+	// RightY specifies that this should use the right-side alternate Y axis.
+	RightY bool
+
 	// NTicks sets the desired number of ticks for the axis, if > 0.
 	NTicks int
 

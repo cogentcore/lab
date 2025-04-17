@@ -184,17 +184,22 @@ func cosData() plot.Data {
 	return plot.Data{plot.Y: yd}
 }
 
+func cosDataXY() plot.Data {
+	xd, yd := make(plot.Values, 21), make(plot.Values, 21)
+	for i := range yd {
+		xd[i] = float64(i * 5)
+		yd[i] = float64(50) + 40*math.Cos((float64(i)/8)*math.Pi)
+	}
+	return plot.Data{plot.X: xd, plot.Y: yd}
+}
+
 func TestLine(t *testing.T) {
 	data := sinCosWrapData()
 
 	plt := plot.New()
 	plt.SetImageRender(640, 480)
 	plt.Title.Text = "Test Line"
-	plt.X.Range.Min = 0
-	plt.X.Range.Max = 100
 	plt.X.Label.Text = "X Axis"
-	plt.Y.Range.Min = 0
-	plt.Y.Range.Max = 100
 	plt.Y.Label.Text = "Y Axis"
 
 	l1 := NewLine(plt, data)
@@ -228,6 +233,42 @@ func TestLine(t *testing.T) {
 	l1.Style.Line.NegativeX = true
 	plt.Draw()
 	imagex.Assert(t, plt.Painter.RenderImage(), "line-negx.png")
+}
+
+func TestLineYRight(t *testing.T) {
+	sin := sinDataXY()
+	cos := cosDataXY()
+
+	plt := plot.New()
+	plt.SetImageRender(640, 480)
+	plt.Title.Text = "Test Line YRight"
+	plt.X.Label.Text = "X Axis"
+
+	l1 := NewLine(plt, sin)
+	if l1 == nil {
+		t.Error("bad data")
+	}
+	l1.Styler(func(s *plot.Style) {
+		s.Range.SetMin(10)
+		s.Range.SetMax(90)
+		s.Label = "Sin Y Axis"
+	})
+	l2 := NewLine(plt, cos)
+	if l2 == nil {
+		t.Error("bad data")
+	}
+	l2.Styler(func(s *plot.Style) {
+		s.RightY = true
+		s.Range.SetMin(0)
+		s.Range.SetMax(100)
+		s.Label = "Cos Y Axis"
+	})
+
+	plt.Legend.Add("Sine", l1)
+	plt.Legend.Add("Cos", l2)
+
+	plt.Draw()
+	imagex.Assert(t, plt.Painter.RenderImage(), "line-righty.png")
 }
 
 func TestScatter(t *testing.T) {

@@ -23,6 +23,7 @@ func (pt *Plot) drawConfig() {
 	pt.applyStyle()
 	pt.X.drawConfig()
 	pt.Y.drawConfig()
+	pt.YR.drawConfig()
 	pt.Z.drawConfig()
 	pt.Painter.ToDots()
 }
@@ -60,25 +61,25 @@ func (pt *Plot) Draw() {
 
 	pt.X.SanitizeRange()
 	pt.Y.SanitizeRange()
+	pt.YR.SanitizeRange()
 
-	ywidth, tickWidth, tpad, bpad := pt.Y.sizeY(pt)
-	xheight, lpad, rpad := pt.X.sizeX(pt, float32(sz.X-int(ywidth)))
+	ywidth, tickWidth, tpad, bpad := pt.Y.sizeY(pt, ptb.Min.Y)
+	yrwidth, yrtickWidth, yrtpad, yrbpad := pt.YR.sizeY(pt, ptb.Min.Y)
+	xheight, lpad, rpad := pt.X.sizeX(pt, float32(ywidth), float32(yrwidth), float32(sz.X-int(ywidth+yrwidth)))
 
 	tb := ptb
 	tb.Min.X += ywidth
-	pt.PushBounds(tb)
-	pt.X.drawX(pt, lpad, rpad)
-	pc.PopContext()
+	tb.Max.X -= yrwidth
+	pt.X.drawX(pt, tb, lpad, rpad)
 
 	tb = ptb
 	tb.Max.Y -= xheight
-	pt.PushBounds(tb)
-	pt.Y.drawY(pt, tickWidth, tpad, bpad)
-	pc.PopContext()
+	pt.Y.drawY(pt, tb, tickWidth, tpad, bpad)
+	pt.YR.drawY(pt, tb, yrtickWidth, yrtpad, yrbpad)
 
 	tb = ptb
 	tb.Min.X += ywidth + lpad
-	tb.Max.X -= rpad
+	tb.Max.X -= yrwidth + rpad
 	tb.Max.Y -= xheight + bpad
 	tb.Min.Y += tpad
 	pt.PlotBox.SetFromRect(tb)
@@ -108,7 +109,7 @@ func (ax *Axis) drawTicks() bool {
 }
 
 // sizeX returns the total height of the axis, left and right padding
-func (ax *Axis) sizeX(pt *Plot, axw float32) (ht, lpad, rpad int) {
+func (ax *Axis) sizeX(pt *Plot, yw, yrw, axw float32) (ht, lpad, rpad int) {
 	if !ax.Style.On {
 		return
 	}
@@ -122,8 +123,8 @@ func (ax *Axis) sizeX(pt *Plot, axw float32) (ht, lpad, rpad int) {
 		h += ax.Label.Style.Padding.Dots
 	}
 	lw := ax.Style.Line.Width.Dots
-	lpad = int(math32.Ceil(lw)) + 2
-	rpad = int(math32.Ceil(lw)) + 10
+	lpad = int(math32.Ceil(lw)) + 4
+	rpad = int(math32.Ceil(lw)) + 4
 	tht := float32(0)
 	if len(ax.ticks) > 0 {
 		if ax.drawTicks() {
@@ -132,16 +133,16 @@ func (ax *Axis) sizeX(pt *Plot, axw float32) (ht, lpad, rpad int) {
 		ftk := ax.firstTickLabel()
 		if ftk.Label != "" {
 			px, _ := ax.tickPosX(pt, ftk, axw)
-			if px < 0 {
-				lpad += int(math32.Ceil(-px))
+			if px < -yw {
+				lpad += int(math32.Ceil(-px - yw))
 			}
 			tht = max(tht, ax.TickText.Size().Y)
 		}
 		ltk := ax.lastTickLabel()
 		if ltk.Label != "" {
 			px, wd := ax.tickPosX(pt, ltk, axw)
-			if px+wd > axw {
-				rpad += int(math32.Ceil((px + wd) - axw))
+			if px+wd > axw+yrw {
+				rpad += int(math32.Ceil((px + wd) - (axw + yrw)))
 			}
 			tht = max(tht, ax.TickText.Size().Y)
 		}
@@ -203,7 +204,7 @@ func (ax *Axis) longestTickLabel() string {
 	return lst
 }
 
-func (ax *Axis) sizeY(pt *Plot) (ywidth, tickWidth, tpad, bpad int) {
+func (ax *Axis) sizeY(pt *Plot, theight int) (ywidth, tickWidth, tpad, bpad int) {
 	if !ax.Style.On {
 		return
 	}
@@ -229,13 +230,13 @@ func (ax *Axis) sizeY(pt *Plot) (ywidth, tickWidth, tpad, bpad int) {
 		ax.TickText.Text = ax.longestTickLabel()
 		if ax.TickText.Text != "" {
 			ax.TickText.Config(pt)
-			tw := ax.TickText.Size().X
+			tw := math32.Ceil(ax.TickText.Size().X + ax.TickText.Style.Padding.Dots)
 			w += tw
-			tickWidth = int(math32.Ceil(tw))
-			w += ax.TickText.Style.Padding.Dots
+			tickWidth = int(tw)
 			tht := int(math32.Ceil(0.5 * ax.TickText.Size().X))
-			tpad += tht
-			bpad += tht
+			if theight == 0 {
+				tpad += tht
+			}
 		}
 	}
 	w += lw + ax.Style.Padding.Dots
@@ -244,11 +245,10 @@ func (ax *Axis) sizeY(pt *Plot) (ywidth, tickWidth, tpad, bpad int) {
 }
 
 // drawX draws the horizontal axis
-func (ax *Axis) drawX(pt *Plot, lpad, rpad int) {
+func (ax *Axis) drawX(pt *Plot, ab image.Rectangle, lpad, rpad int) {
 	if !ax.Style.On {
 		return
 	}
-	ab := pt.CurBounds()
 	ab.Min.X += lpad
 	ab.Max.X -= rpad
 	axw := float32(ab.Size().X)
@@ -305,25 +305,36 @@ func (ax *Axis) drawX(pt *Plot, lpad, rpad int) {
 }
 
 // drawY draws the Y axis along the left side
-func (ax *Axis) drawY(pt *Plot, tickWidth, tpad, bpad int) {
+func (ax *Axis) drawY(pt *Plot, ab image.Rectangle, tickWidth, tpad, bpad int) {
 	if !ax.Style.On {
 		return
 	}
-	ab := pt.CurBounds()
 	ab.Min.Y += tpad
 	ab.Max.Y -= bpad
 	axh := float32(ab.Size().Y)
+	xpos := float32(ab.Min.X)
+	if ax.RightY {
+		xpos = float32(ab.Max.X)
+	}
 	if ax.Label.Text != "" {
 		ax.Label.Style.Align = styles.Center
 		pos := ax.Label.PosY(axh)
-		tw := ax.Label.Size().X
-		pos.Y += float32(ab.Min.Y) + ax.Label.Size().Y
-		pos.X = float32(ab.Min.X)
+		tw := math32.Ceil(ax.Label.Size().X + ax.Label.Style.Padding.Dots)
+		if ax.RightY {
+			pos.Y += float32(ab.Min.Y)
+			pos.X = xpos
+			xpos -= tw
+		} else {
+			pos.Y += float32(ab.Min.Y) + ax.Label.Size().Y
+			pos.X = xpos
+			xpos += tw
+		}
 		ax.Label.Draw(pt, pos)
-		ab.Min.X += int(math32.Ceil(tw + ax.Label.Style.Padding.Dots))
 	}
 
-	tickWd := float32(0)
+	if len(ax.ticks) > 0 && ax.RightY {
+		xpos -= float32(tickWidth)
+	}
 	for _, t := range ax.ticks {
 		y := axh * (1 - float32(ax.Norm(t.Value)))
 		if y < 0 || y > axh || t.IsMinor() {
@@ -332,36 +343,43 @@ func (ax *Axis) drawY(pt *Plot, tickWidth, tpad, bpad int) {
 		ax.TickText.Text = t.Label
 		ax.TickText.Config(pt)
 		pos := ax.TickText.PosX(float32(tickWidth))
-		pos.X += float32(ab.Min.X)
+		pos.X += xpos
 		pos.Y = float32(ab.Min.Y) + y - 0.5*ax.TickText.Size().Y
-		tickWd = max(tickWd, ax.TickText.Size().X+ax.TickText.Style.Padding.Dots)
 		ax.TickText.Draw(pt, pos)
 	}
 
-	if len(ax.ticks) > 0 {
-		ab.Min.X += int(math32.Ceil(tickWd))
-		// } else {
-		// 	y += ax.Width / 2
+	if len(ax.ticks) > 0 && !ax.RightY {
+		xpos += float32(tickWidth)
 	}
 
 	if len(ax.ticks) > 0 && ax.drawTicks() {
 		ln := ax.Style.TickLength.Dots
+		if ax.RightY {
+			xpos -= math32.Ceil(ln + 0.5*ax.Style.Line.Width.Dots)
+		}
 		for _, t := range ax.ticks {
 			xoff := float32(0)
+			eln := ln
 			if t.IsMinor() {
-				xoff = 0.5 * ln
+				if ax.RightY {
+					eln *= .5
+				} else {
+					xoff = 0.5 * ln
+				}
 			}
 			y := axh * (1 - float32(ax.Norm(t.Value)))
 			if y < 0 || y > axh {
 				continue
 			}
 			y += float32(ab.Min.Y)
-			ax.Style.TickLine.Draw(pt, math32.Vec2(float32(ab.Min.X)+xoff, y), math32.Vec2(float32(ab.Min.X)+ln, y))
+			ax.Style.TickLine.Draw(pt, math32.Vec2(xpos+xoff, y), math32.Vec2(xpos+eln, y))
 		}
-		ab.Min.X += int(ln + 0.5*ax.Style.Line.Width.Dots)
+		if !ax.RightY {
+			xpos += math32.Ceil(ln + 0.5*ax.Style.Line.Width.Dots)
+		}
 	}
 
-	ax.Style.Line.Draw(pt, math32.Vec2(float32(ab.Min.X), float32(ab.Min.Y)), math32.Vec2(float32(ab.Min.X), float32(ab.Max.Y)))
+	ax.Style.Line.Draw(pt, math32.Vec2(xpos, float32(ab.Min.Y)), math32.Vec2(xpos, float32(ab.Max.Y)))
 }
 
 ////////	Legend

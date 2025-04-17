@@ -161,7 +161,14 @@ func (ln *XY) Data() (data plot.Data, pixX, pixY []float32) {
 // Plot does the drawing, implementing the plot.Plotter interface.
 func (ln *XY) Plot(plt *plot.Plot) {
 	ln.PX = plot.PlotX(plt, ln.X)
-	ln.PY = plot.PlotY(plt, ln.Y)
+	var minY float32
+	if ln.Style.RightY {
+		ln.PY = plot.PlotYR(plt, ln.Y)
+		minY = plt.PYR(plt.YR.Range.Min)
+	} else {
+		ln.PY = plot.PlotY(plt, ln.Y)
+		minY = plt.PY(plt.Y.Range.Min)
+	}
 	np := len(ln.PX)
 	if np == 0 || len(ln.PY) == 0 {
 		return
@@ -169,7 +176,6 @@ func (ln *XY) Plot(plt *plot.Plot) {
 	pc := plt.Painter
 	if ln.Style.Line.HasFill() {
 		pc.Fill.Color = ln.Style.Line.Fill
-		minY := plt.PY(plt.Y.Range.Min)
 		prevX := ln.PX[0]
 		prevY := minY
 		pc.MoveTo(prevX, prevY)
@@ -289,10 +295,25 @@ func (ln *XY) Plot(plt *plot.Plot) {
 }
 
 // UpdateRange updates the given ranges.
-func (ln *XY) UpdateRange(plt *plot.Plot, xr, yr, zr *minmax.F64) {
-	// todo: include point sizes!
-	plot.Range(ln.X, xr)
-	plot.RangeClamp(ln.Y, yr, &ln.Style.Range)
+func (ln *XY) UpdateRange(plt *plot.Plot, x, y, yr, z *minmax.F64) {
+	if ln.Style.RightY {
+		y = yr
+	}
+	plot.Range(ln.X, x)
+	if !ln.Style.Point.IsOn(plt) {
+		plot.RangeClamp(ln.Y, y, &ln.Style.Range)
+		return
+	}
+	plot.Range(ln.Y, y)
+	psz := ln.Style.Point.Size.Dots
+	ptb := plt.PaintBox
+	dy := (float64(psz) / float64(ptb.Size().Y)) * y.Range()
+	y.Min -= dy
+	y.Max += dy
+	y.Min, y.Max = ln.Style.Range.Clamp(y.Min, y.Max)
+	dx := (float64(psz) / float64(ptb.Size().X)) * x.Range()
+	x.Min -= dx
+	x.Max += dx
 }
 
 // Thumbnail returns the thumbnail, implementing the plot.Thumbnailer interface.

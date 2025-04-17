@@ -58,19 +58,26 @@ func (ps *PointStyle) SpacedColor(idx int) {
 	}
 }
 
-// SetStroke sets the stroke style in plot paint to current line style.
-// returns false if either the Width = 0 or Color is nil
-func (ps *PointStyle) SetStroke(pt *Plot) bool {
-	if ps.On == Off || ps.Color == nil {
-		return false
-	}
-	pc := pt.Painter
+// IsOn returns true if points are to be drawn.
+// Also computes the dots sizes at this point.
+func (ps *PointStyle) IsOn(pt *Plot) bool {
 	uc := pt.UnitContext()
 	ps.Width.ToDots(uc)
 	ps.Size.ToDots(uc)
-	if ps.Width.Dots == 0 || ps.Size.Dots == 0 {
+	if ps.On == Off || ps.Color == nil || ps.Width.Dots == 0 || ps.Size.Dots == 0 {
 		return false
 	}
+	return true
+}
+
+// SetStroke sets the stroke style in plot paint to current line style.
+// returns false if either the Width = 0 or Color is nil
+func (ps *PointStyle) SetStroke(pt *Plot) bool {
+	if !ps.IsOn(pt) {
+		return false
+	}
+	uc := pt.UnitContext()
+	pc := pt.Painter
 	pc.Stroke.Width = ps.Width
 	pc.Stroke.Color = ps.Color
 	pc.Stroke.ToDots(uc)
