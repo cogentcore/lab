@@ -12,9 +12,11 @@ package plot
 import (
 	"log/slog"
 	"math"
+	"reflect"
 	"strconv"
 
 	"cogentcore.org/core/base/errors"
+	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/math32/minmax"
 )
 
@@ -207,7 +209,7 @@ func (vs Values) String1D(i int) string {
 // the copied values is a Infinity.
 // NaN values are skipped in the copying process.
 func CopyValues(data Valuer) (Values, error) {
-	if data == nil {
+	if reflectx.IsNil(reflect.ValueOf(data)) {
 		return nil, ErrNoData
 	}
 	cpy := make(Values, 0, data.Len())
