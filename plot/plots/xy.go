@@ -14,7 +14,6 @@ package plots
 import (
 	"fmt"
 
-	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/lab/plot"
@@ -53,7 +52,7 @@ func NewXY(plt *plot.Plot, data any) *XY {
 	ln := &XY{}
 	err := ln.SetData(data)
 	if err != nil {
-		errors.Log(err)
+		// errors.Log(err) not useful actually
 		return nil
 	}
 	ln.Defaults()

@@ -200,17 +200,18 @@ func (pl *Editor) SaveAll(fname core.Filename) { //types:add
 
 // OpenCSV opens the Table data from a csv (comma-separated values) file (or any delim)
 func (pl *Editor) OpenCSV(filename core.Filename, delim tensor.Delims) { //types:add
-	pl.table.OpenCSV(fsx.Filename(filename), delim)
+	dt := table.New()
+	dt.OpenCSV(fsx.Filename(filename), delim)
 	pl.dataFile = filename
-	pl.UpdatePlot()
+	pl.SetTable(dt)
 }
 
 // OpenFS opens the Table data from a csv (comma-separated values) file (or any delim)
 // from the given filesystem.
 func (pl *Editor) OpenFS(fsys fs.FS, filename core.Filename, delim tensor.Delims) {
-	pl.table.OpenFS(fsys, string(filename), delim)
-	pl.dataFile = filename
-	pl.UpdatePlot()
+	dt := table.New()
+	dt.OpenFS(fsys, string(filename), delim)
+	pl.SetTable(dt)
 }
 
 // GoUpdatePlot updates the display based on current Indexed view into table.
@@ -280,6 +281,8 @@ func (pl *Editor) genPlot() {
 	}
 	if pl.plot != nil {
 		pl.plotWidget.SetPlot(pl.plot)
+		// } else {
+		// errors.Log(fmt.Errorf("%s: nil plot: %w", pl.PlotStyle.Title, err))
 	}
 	// pl.plotWidget.updatePlot()
 	pl.plotWidget.NeedsRender()
@@ -572,8 +575,8 @@ func (pl *Editor) MakeToolbar(p *tree.Plan) {
 		w.SetText("Update").SetIcon(icons.Update).
 			SetTooltip("update fully redraws display, reflecting any new settings etc").
 			OnClick(func(e events.Event) {
-				pl.UpdateWidget()
 				pl.UpdatePlot()
+				pl.Update()
 			})
 	})
 	tree.Add(p, func(w *core.Button) {

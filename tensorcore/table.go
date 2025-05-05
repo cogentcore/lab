@@ -314,6 +314,7 @@ func (tb *Table) MakeRow(p *tree.Plan, i int) {
 					})
 				}
 				wb.Updater(func() {
+					col := tb.Table.Columns.Values[fli]
 					_, vi, invis := svi.SliceIndex(i)
 					if !invis {
 						if isstr {

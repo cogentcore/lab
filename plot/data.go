@@ -234,7 +234,8 @@ func MustCopyRole(data Data, role Roles) Values {
 		slog.Error("plot Data role not present, but is required", "role:", role)
 		return nil
 	}
-	return errors.Log1(CopyValues(d))
+	v, _ := CopyValues(d)
+	return v
 }
 
 // CopyRole returns Values copy of given role from given data map,
