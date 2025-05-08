@@ -8,7 +8,7 @@ go 1.23.4
 // https://github.com/googleapis/go-genproto/issues/1015
 
 require (
-	cogentcore.org/core v0.3.10-0.20250409041215-e6441a20a402
+	cogentcore.org/core v0.3.11-0.20250508012726-eb5d74adb681
 	github.com/cogentcore/readline v0.1.3
 	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56
 	github.com/mitchellh/go-homedir v1.1.0
@@ -17,12 +17,12 @@ require (
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
 	golang.org/x/tools v0.23.0
 	gonum.org/v1/gonum v0.15.0
-	google.golang.org/grpc v1.71.1
+	google.golang.org/grpc v1.72.0
 	google.golang.org/protobuf v1.36.6
 )
 
 require (
-	github.com/Bios-Marcel/wastebasket/v2 v2.0.2 // indirect
+	github.com/Bios-Marcel/wastebasket/v2 v2.0.3 // indirect
 	github.com/Masterminds/vcs v1.13.3 // indirect
 	github.com/adrg/strutil v0.3.1 // indirect
 	github.com/alecthomas/chroma/v2 v2.13.0 // indirect
@@ -31,7 +31,7 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/bramvdbogaerde/go-scp v1.4.0 // indirect
 	github.com/chewxy/math32 v1.10.1 // indirect
-	github.com/cogentcore/webgpu v0.0.0-20250118183535-3dd1436165cf // indirect
+	github.com/cogentcore/webgpu v0.0.0-20250506132018-9faea5a0f598 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dlclark/regexp2 v1.11.0 // indirect
 	github.com/ericchiang/css v1.3.0 // indirect
@@ -66,8 +66,8 @@ require (
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
-	google.golang.org/genproto v0.0.0-20250428153025-10db94c68c34 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250425173222-7b384671a197 // indirect
+	google.golang.org/genproto v0.0.0-20250505200425-f936aa4a68b2 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250428153025-10db94c68c34 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/knuth v0.5.4 // indirect
 	modernc.org/token v1.1.0 // indirect

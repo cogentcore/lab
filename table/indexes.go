@@ -33,6 +33,7 @@ func (dt *Table) NumRows() int {
 // Sequential sets Indexes to nil, resulting in sequential row-wise access into tensor.
 func (dt *Table) Sequential() { //types:add
 	dt.Indexes = nil
+	dt.Columns.UpdateRows()
 }
 
 // IndexesNeeded is called prior to an operation that needs actual indexes,
@@ -43,6 +44,7 @@ func (dt *Table) IndexesNeeded() {
 	if dt.Indexes != nil {
 		return
 	}
+	dt.Columns.UpdateRows()
 	dt.Indexes = make([]int, dt.Columns.Rows)
 	for i := range dt.Indexes {
 		dt.Indexes[i] = i
@@ -59,6 +61,7 @@ func (dt *Table) IndexesFromTensor(ix *tensor.Rows) {
 // ValidIndexes deletes all invalid indexes from the list.
 // Call this if rows (could) have been deleted from table.
 func (dt *Table) ValidIndexes() {
+	dt.Columns.UpdateRows()
 	if dt.Columns.Rows <= 0 || dt.Indexes == nil {
 		dt.Indexes = nil
 		return
@@ -75,6 +78,7 @@ func (dt *Table) ValidIndexes() {
 // then existing list of indexes is permuted, otherwise a new set of
 // permuted indexes are generated
 func (dt *Table) Permuted() {
+	dt.Columns.UpdateRows()
 	if dt.Columns.Rows <= 0 {
 		dt.Indexes = nil
 		return

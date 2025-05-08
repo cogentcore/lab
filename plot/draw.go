@@ -399,7 +399,7 @@ func (lg *Legend) draw(pt *Plot) {
 	ltxt.Style = lg.Style.Text
 	ltxt.ToDots(uc)
 	pad := math32.Ceil(ltxt.Style.Padding.Dots)
-	em := ltxt.textStyle.FontSize.Dots
+	em := ltxt.textStyle.FontHeight(&ltxt.font)
 	var sz image.Point
 	maxTht := 0
 	for _, e := range lg.Entries {

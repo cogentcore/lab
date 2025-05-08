@@ -87,3 +87,11 @@ func (cl *Columns) AppendRows(cl2 *Columns) {
 	}
 	cl.SetNumRows(cl.Rows + cl2.Rows)
 }
+
+// UpdateRows updates the current Rows count based on length of the first column.
+func (cl *Columns) UpdateRows() {
+	if cl.Len() == 0 {
+		return
+	}
+	cl.Rows = cl.Values[0].DimSize(0)
+}

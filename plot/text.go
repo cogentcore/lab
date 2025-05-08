@@ -99,7 +99,7 @@ func (tx *Text) Config(pt *Plot) {
 	// fmt.Println("tdots:", ts.FontSize.Dots)
 	tx.Style.Padding.ToDots(uc)
 	txln := float32(len(tx.Text))
-	fht := tx.textStyle.FontSize.Dots
+	fht := tx.textStyle.FontHeight(fs)
 	hsz := float32(12) * txln
 	// txs := &pt.StandardTextStyle
 
