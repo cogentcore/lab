@@ -103,7 +103,7 @@ func (ls *LineStyle) Draw(pt *Plot, start, end math32.Vector2) bool {
 	pc := pt.Painter
 	pc.MoveTo(start.X, start.Y)
 	pc.LineTo(end.X, end.Y)
-	pc.PathDone()
+	pc.Draw()
 	return true
 }
 

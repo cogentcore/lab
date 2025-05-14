@@ -117,12 +117,12 @@ func (ps *PointStyle) DrawShape(pc *paint.Painter, pos math32.Vector2) {
 
 func DrawRing(pc *paint.Painter, pos math32.Vector2, size float32) {
 	pc.Circle(pos.X, pos.Y, size)
-	pc.PathDone()
+	pc.Draw()
 }
 
 func DrawCircle(pc *paint.Painter, pos math32.Vector2, size float32) {
 	pc.Circle(pos.X, pos.Y, size)
-	pc.PathDone()
+	pc.Draw()
 }
 
 func DrawSquare(pc *paint.Painter, pos math32.Vector2, size float32) {
@@ -132,7 +132,7 @@ func DrawSquare(pc *paint.Painter, pos math32.Vector2, size float32) {
 	pc.LineTo(pos.X+x, pos.Y+x)
 	pc.LineTo(pos.X-x, pos.Y+x)
 	pc.Close()
-	pc.PathDone()
+	pc.Draw()
 }
 
 func DrawBox(pc *paint.Painter, pos math32.Vector2, size float32) {
@@ -142,7 +142,7 @@ func DrawBox(pc *paint.Painter, pos math32.Vector2, size float32) {
 	pc.LineTo(pos.X+x, pos.Y+x)
 	pc.LineTo(pos.X-x, pos.Y+x)
 	pc.Close()
-	pc.PathDone()
+	pc.Draw()
 }
 
 func DrawTriangle(pc *paint.Painter, pos math32.Vector2, size float32) {
@@ -151,7 +151,7 @@ func DrawTriangle(pc *paint.Painter, pos math32.Vector2, size float32) {
 	pc.LineTo(pos.X-x, pos.Y+x)
 	pc.LineTo(pos.X+x, pos.Y+x)
 	pc.Close()
-	pc.PathDone()
+	pc.Draw()
 }
 
 func DrawPyramid(pc *paint.Painter, pos math32.Vector2, size float32) {
@@ -160,7 +160,7 @@ func DrawPyramid(pc *paint.Painter, pos math32.Vector2, size float32) {
 	pc.LineTo(pos.X-x, pos.Y+x)
 	pc.LineTo(pos.X+x, pos.Y+x)
 	pc.Close()
-	pc.PathDone()
+	pc.Draw()
 }
 
 func DrawPlus(pc *paint.Painter, pos math32.Vector2, size float32) {
@@ -170,7 +170,7 @@ func DrawPlus(pc *paint.Painter, pos math32.Vector2, size float32) {
 	pc.MoveTo(pos.X, pos.Y-x)
 	pc.LineTo(pos.X, pos.Y+x)
 	pc.Close()
-	pc.PathDone()
+	pc.Draw()
 }
 
 func DrawCross(pc *paint.Painter, pos math32.Vector2, size float32) {
@@ -180,7 +180,7 @@ func DrawCross(pc *paint.Painter, pos math32.Vector2, size float32) {
 	pc.MoveTo(pos.X+x, pos.Y-x)
 	pc.LineTo(pos.X-x, pos.Y+x)
 	pc.Close()
-	pc.PathDone()
+	pc.Draw()
 }
 
 // Shapes has the options for how to draw points in the plot.

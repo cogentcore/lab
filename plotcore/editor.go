@@ -12,6 +12,7 @@ import (
 	"image"
 	"io/fs"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -169,9 +170,24 @@ func (pl *Editor) SetSlice(sl any, stylers ...func(s *plot.Style)) *Editor {
 // SaveSVG saves the plot to an svg -- first updates to ensure that plot is current
 func (pl *Editor) SaveSVG(fname core.Filename) { //types:add
 	pl.UpdatePlot()
-	// TODO: get plot svg saving working
-	// pc := pl.PlotChild()
-	// SaveSVGView(string(fname), pl.Plot, sv, 2)
+
+	pl.AsyncLock()
+	defer pl.AsyncUnlock()
+
+	pc := &pl.Scene.Painter
+	sz := pl.Geom.Size.Actual.Content
+	sv := pc.AddSVGRenderer(int(sz.X), int(sz.Y))
+	fmt.Println("start render:")
+	pl.plotWidget.renderPlot()
+
+	rend := pc.RenderDone()
+	fmt.Println(rend)
+	sv.Render(rend)
+	err := os.WriteFile(string(fname), sv.Source(), 0666)
+	if err != nil {
+		core.ErrorSnackbar(pl, err)
+	}
+	pc.DeleteExtraRenderers()
 	pl.svgFile = fname
 }
 

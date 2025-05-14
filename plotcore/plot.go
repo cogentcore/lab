@@ -135,6 +135,7 @@ func (pt *Plot) renderPlot() {
 	if pt.SetRangesFunc != nil {
 		pt.SetRangesFunc()
 	}
+	fmt.Println("draw plot")
 	pt.Plot.Draw()
 }
 

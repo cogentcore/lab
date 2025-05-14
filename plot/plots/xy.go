@@ -224,7 +224,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 		}
 		pc.LineTo(prevX, minY)
 		pc.Close()
-		pc.PathDone()
+		pc.Draw()
 	}
 	pc.Fill.Color = nil
 
@@ -258,7 +258,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			}
 			prevX, prevY = ptx, pty
 		}
-		pc.PathDone()
+		pc.Draw()
 	}
 	if ln.Style.Point.SetStroke(plt) {
 		origWidth := ln.Style.Point.Width
@@ -332,7 +332,7 @@ func (ln *XY) Thumbnail(plt *plot.Plot) {
 	if ln.Style.Line.SetStroke(plt) {
 		pc.MoveTo(float32(ptb.Min.X), midY)
 		pc.LineTo(float32(ptb.Max.X), midY)
-		pc.PathDone()
+		pc.Draw()
 	}
 
 	if ln.Style.Point.SetStroke(plt) {

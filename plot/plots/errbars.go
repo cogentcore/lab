@@ -128,7 +128,7 @@ func (eb *YErrorBars) Plot(plt *plot.Plot) {
 
 		pc.MoveTo(x-cw, yhigh)
 		pc.LineTo(x+cw, yhigh)
-		pc.PathDone()
+		pc.Draw()
 	}
 }
 
@@ -251,7 +251,7 @@ func (eb *XErrorBars) Plot(plt *plot.Plot) {
 
 		pc.MoveTo(xhigh, y-cw)
 		pc.LineTo(xhigh, y+cw)
-		pc.PathDone()
+		pc.Draw()
 	}
 }
 

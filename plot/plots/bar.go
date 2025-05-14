@@ -192,7 +192,7 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 		}
 
 		pc.Rectangle(box.Min.X, box.Min.Y, box.Size().X, box.Size().Y)
-		pc.PathDone()
+		pc.Draw()
 
 		if i < len(bc.Err) {
 			errval := math.Abs(bc.Err[i])
@@ -209,7 +209,7 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 				pc.MoveTo(plt.PX(cat-ew), eVal)
 				pc.LineTo(plt.PX(cat+ew), eVal)
 			}
-			pc.PathDone()
+			pc.Draw()
 		}
 	}
 	pc.Fill.Color = nil
@@ -254,6 +254,6 @@ func (bc *Bar) Thumbnail(plt *plot.Plot) {
 	pc.Fill.Color = bc.Style.Line.Fill
 	ptb := plt.CurBounds()
 	pc.Rectangle(float32(ptb.Min.X), float32(ptb.Min.Y), float32(ptb.Size().X), float32(ptb.Size().Y))
-	pc.PathDone()
+	pc.Draw()
 	pc.Fill.Color = nil
 }
