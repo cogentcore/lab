@@ -37,7 +37,8 @@ type Plot struct {
 // to trigger a redrawing of the plot.
 func (pt *Plot) SetPlot(pl *plot.Plot) *Plot {
 	pt.Plot = pl
-	pt.Plot.SetPainter(&pt.Scene.Painter, pt.Geom.ContentBBox, pt.Scene.TextShaper())
+	pt.Plot.SetSize(pt.Geom.ContentBBox.Size())
+	pt.Plot.TextShaper = pt.Scene.TextShaper()
 	return pt
 }
 
@@ -131,12 +132,12 @@ func (pt *Plot) renderPlot() {
 	if pt.Plot == nil {
 		return
 	}
-	pt.Plot.SetPainter(&pt.Scene.Painter, pt.Geom.ContentBBox, pt.Scene.TextShaper())
 	if pt.SetRangesFunc != nil {
 		pt.SetRangesFunc()
 	}
-	fmt.Println("draw plot")
-	pt.Plot.Draw()
+	pt.Plot.TextShaper = pt.Scene.TextShaper()
+	pt.Plot.PaintBox = pt.Geom.ContentBBox
+	pt.Plot.Draw(&pt.Scene.Painter)
 }
 
 func (pt *Plot) Render() {

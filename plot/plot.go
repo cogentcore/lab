@@ -13,6 +13,7 @@ package plot
 
 import (
 	"image"
+	"sync"
 
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/math32"
@@ -24,6 +25,14 @@ import (
 	"cogentcore.org/core/styles/units"
 	"cogentcore.org/core/text/shaped"
 	"cogentcore.org/core/text/text"
+)
+
+var (
+	// plotShaper is a shared text shaper.
+	plotShaper shaped.Shaper
+
+	// mutex for sharing the plotShaper.
+	shaperMu sync.Mutex
 )
 
 // XAxisStyle has overall plot level styling properties for the XAxis.
@@ -197,13 +206,9 @@ type Plot struct {
 	// HighlightIndex is the index of the data point to highlight, for HighlightPlotter.
 	HighlightIndex int
 
-	// TextShaper is the text shaping system for this scene, for doing text layout.
+	// TextShaper for shaping text. Can set to a shared external one,
+	// or else the shared plotShaper is used under a mutex lock during Render.
 	TextShaper shaped.Shaper
-
-	// Painter is the painter for rendering. It can be a pointer to a shared Painter,
-	// e.g., when plot is used in a [core.Scene] as in [plotcore], or its own
-	// painter when used in a standalone manner.
-	Painter *paint.Painter
 
 	// PaintBox is the bounding box for the plot within the Paint.
 	// For standalone, it is the size of the image.
@@ -212,6 +217,14 @@ type Plot struct {
 	// Current local plot bounding box in image coordinates, for computing
 	// plotting coordinates.
 	PlotBox math32.Box2
+
+	// Painter is the current painter being used,
+	// which is only valid during rendering, and is set by Draw function.
+	// It needs to be exported for different plot types in other packages.
+	Painter *paint.Painter
+
+	// unitContext is current unit context, only valid during rendering.
+	unitContext *units.Context
 }
 
 // New returns a new plot with some reasonable default settings.
@@ -223,6 +236,7 @@ func New() *Plot {
 
 // Defaults sets defaults
 func (pt *Plot) Defaults() {
+	pt.SetSize(image.Point{640, 480})
 	pt.Style.Defaults()
 	pt.Title.Defaults()
 	pt.Title.Style.Size.Dp(24)
@@ -236,38 +250,22 @@ func (pt *Plot) Defaults() {
 	pt.StandardTextStyle.WhiteSpace = text.WrapNever
 }
 
-// SetImageRender sets the Painter to an image renderer of given size.
-// Use this for standalone rendering to an image.
-func (pt *Plot) SetImageRender(width, height int) {
-	pt.Painter = paint.NewPainter(width, height)
-	pt.PaintBox.Max = image.Point{width, height}
-	pt.TextShaper = shaped.NewShaper()
-}
-
-// SetPainter sets the Painter, PaintBox, and TextShaper to use
-// existing ones (e.g., from the [core.Scene]).
-func (pt *Plot) SetPainter(ptr *paint.Painter, pbox image.Rectangle, shp shaped.Shaper) {
-	pt.Painter = ptr
-	pt.PaintBox = pbox
-	pt.TextShaper = shp
-}
-
-// Resize resizes an image render to given size.
-func (pt *Plot) Resize(sz image.Point) {
-	pt.Painter.InitImageRender(nil, sz.X, sz.Y)
+// SetSize sets the size of the plot, typically in terms
+// of actual device pixels (dots).
+func (pt *Plot) SetSize(sz image.Point) {
 	pt.PaintBox.Max = sz
 }
 
 // UnitContext returns the [units.Context] to use for styling.
 // This includes the scaling factor.
 func (pt *Plot) UnitContext() *units.Context {
-	uc := &units.Context{}
-	if pt.Painter != nil {
-		*uc = pt.Painter.UnitContext
-	} else {
-		uc.Defaults()
+	if pt.unitContext != nil {
+		return pt.unitContext
 	}
+	uc := &units.Context{}
+	*uc = pt.Painter.UnitContext
 	uc.DPI *= pt.Style.Scale
+	pt.unitContext = uc
 	return uc
 }
 

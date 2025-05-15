@@ -11,12 +11,37 @@ package plot
 
 import (
 	"image"
+	"os"
 
+	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/paint"
 	"cogentcore.org/core/paint/render"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/styles/sides"
+	"cogentcore.org/core/text/shaped"
 )
+
+// RenderImage renders the plot to an image and returns it.
+func (pt *Plot) RenderImage() image.Image {
+	return paint.RenderToImage(pt.Draw(nil))
+}
+
+// RenderSVG renders the plot to an SVG document and returns it.
+func (pt *Plot) RenderSVG() []byte {
+	return paint.RenderToSVG(pt.Draw(nil))
+}
+
+// SaveImage renders the plot to an image and saves it to given filename,
+// using the filename extension to determine the file type.
+func (pt *Plot) SaveImage(fname string) error {
+	return imagex.Save(pt.RenderImage(), fname)
+}
+
+// SaveSVG renders the plot to an SVG document and saves it to given filename.
+func (pt *Plot) SaveSVG(fname string) error {
+	return os.WriteFile(fname, pt.RenderSVG(), 0666)
+}
 
 // drawConfig configures everything for drawing, applying styles etc.
 func (pt *Plot) drawConfig() {
@@ -28,18 +53,40 @@ func (pt *Plot) drawConfig() {
 	pt.Painter.ToDots()
 }
 
-// Draw draws the plot to image.
-// Plotters are drawn in the order in which they were
-// added to the plot.
-func (pt *Plot) Draw() {
-	pt.drawConfig()
-	pc := pt.Painter
-
+// Draw draws the plot to a core paint.Painter, which then
+// can be used with a core render.Renderer to generate an image or SVG
+// document, etc. If painter is nil, then one is created.
+// See [Plot.RenderImage] and [Plot.RenderSVG] for convenience methods.
+// Plotters are drawn in the order in which they were added to the plot.
+func (pt *Plot) Draw(pc *paint.Painter) *paint.Painter {
 	ptb := pt.PaintBox
 	off := math32.FromPoint(pt.PaintBox.Min)
 	sz := pt.PaintBox.Size()
 	ptw := float32(sz.X)
 	pth := float32(sz.Y)
+
+	if pc != nil {
+		pt.Painter = pc
+		if pt.unitContext != nil && pt.unitContext.DPI != pc.UnitContext.DPI {
+			pt.unitContext = nil // regenerate with given painter
+		}
+	} else {
+		pt.Painter = paint.NewPainter(math32.FromPoint(sz))
+		pc = pt.Painter
+	}
+	if pt.TextShaper == nil {
+		shaperMu.Lock()
+		if plotShaper == nil {
+			plotShaper = shaped.NewShaper()
+		}
+		pt.TextShaper = plotShaper
+		shaperMu.Unlock()
+		defer func() {
+			pt.TextShaper = nil
+		}()
+	}
+
+	pt.drawConfig()
 
 	pc.PushContext(nil, render.NewBoundsRect(pt.PaintBox, sides.Floats{}))
 
@@ -98,7 +145,9 @@ func (pt *Plot) Draw() {
 	pt.Legend.draw(pt)
 	pc.PopContext()
 	pc.PopContext() // global
-	pc.RenderToImage()
+
+	pt.Painter = nil
+	return pc
 }
 
 ////////	Axis

@@ -114,6 +114,9 @@ func (tx *Text) ToDots(uc *units.Context) {
 
 // Size returns the actual render size of the text.
 func (tx *Text) Size() math32.Vector2 {
+	if tx.PaintText == nil {
+		return math32.Vector2{}
+	}
 	bb := tx.PaintText.Bounds
 	if tx.Style.Rotation != 0 {
 		bb = bb.MulMatrix2(math32.Rotate2D(math32.DegToRad(tx.Style.Rotation)))

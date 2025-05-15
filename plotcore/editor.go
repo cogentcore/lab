@@ -12,7 +12,6 @@ import (
 	"image"
 	"io/fs"
 	"log/slog"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -169,33 +168,20 @@ func (pl *Editor) SetSlice(sl any, stylers ...func(s *plot.Style)) *Editor {
 
 // SaveSVG saves the plot to an svg -- first updates to ensure that plot is current
 func (pl *Editor) SaveSVG(fname core.Filename) { //types:add
-	pl.UpdatePlot()
-
-	pl.AsyncLock()
-	defer pl.AsyncUnlock()
-
-	pc := &pl.Scene.Painter
-	sz := pl.Geom.Size.Actual.Content
-	sv := pc.AddSVGRenderer(int(sz.X), int(sz.Y))
-	fmt.Println("start render:")
-	pl.plotWidget.renderPlot()
-
-	rend := pc.RenderDone()
-	fmt.Println(rend)
-	sv.Render(rend)
-	err := os.WriteFile(string(fname), sv.Source(), 0666)
+	plt := pl.plotWidget.Plot
+	err := plt.SaveSVG(string(fname))
 	if err != nil {
 		core.ErrorSnackbar(pl, err)
 	}
-	pc.DeleteExtraRenderers()
 	pl.svgFile = fname
 }
 
-// SavePNG saves the current plot to a png, capturing current render
-func (pl *Editor) SavePNG(fname core.Filename) { //types:add
-	pl.UpdatePlot()
-	// todo:
-	// imagex.Save(pl.plot.Pixels, string(fname))
+// SaveImage saves the current plot as an image (e.g., png).
+func (pl *Editor) SaveImage(fname core.Filename) { //types:add
+	err := pl.plotWidget.Plot.SaveImage(string(fname))
+	if err != nil {
+		core.ErrorSnackbar(pl, err)
+	}
 }
 
 // SaveCSV saves the Table data to a csv (comma-separated values) file with headers (any delim)
@@ -210,7 +196,7 @@ func (pl *Editor) SaveAll(fname core.Filename) { //types:add
 	fn := string(fname)
 	fn = strings.TrimSuffix(fn, filepath.Ext(fn))
 	pl.SaveCSV(core.Filename(fn+".tsv"), tensor.Tab)
-	pl.SavePNG(core.Filename(fn + ".png"))
+	pl.SaveImage(core.Filename(fn + ".png"))
 	pl.SaveSVG(core.Filename(fn + ".svg"))
 }
 
@@ -625,7 +611,7 @@ func (pl *Editor) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.Button) {
 		w.SetText("Save").SetIcon(icons.Save).SetMenu(func(m *core.Scene) {
 			core.NewFuncButton(m).SetFunc(pl.SaveSVG).SetIcon(icons.Save)
-			core.NewFuncButton(m).SetFunc(pl.SavePNG).SetIcon(icons.Save)
+			core.NewFuncButton(m).SetFunc(pl.SaveImage).SetIcon(icons.Save)
 			core.NewFuncButton(m).SetFunc(pl.SaveCSV).SetIcon(icons.Save)
 			core.NewSeparator(m)
 			core.NewFuncButton(m).SetFunc(pl.SaveAll).SetIcon(icons.Save)

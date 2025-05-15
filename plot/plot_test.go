@@ -18,13 +18,11 @@ func TestMain(m *testing.M) {
 
 func TestPlot(t *testing.T) {
 	pt := New()
-	pt.SetImageRender(640, 480)
 	pt.Title.Text = "Test Plot"
 	pt.X.Range.Max = 100
 	pt.X.Label.Text = "X Axis"
 	pt.Y.Range.Max = 100
 	pt.Y.Label.Text = "Y Axis"
 
-	pt.Draw()
-	imagex.Assert(t, pt.Painter.RenderImage(), "plot.png")
+	imagex.Assert(t, pt.RenderImage(), "plot.png")
 }
