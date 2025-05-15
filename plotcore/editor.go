@@ -169,7 +169,10 @@ func (pl *Editor) SetSlice(sl any, stylers ...func(s *plot.Style)) *Editor {
 // SaveSVG saves the plot to an svg -- first updates to ensure that plot is current
 func (pl *Editor) SaveSVG(fname core.Filename) { //types:add
 	plt := pl.plotWidget.Plot
+	mp := plt.PaintBox.Min
+	plt.PaintBox = plt.PaintBox.Sub(mp)
 	err := plt.SaveSVG(string(fname))
+	plt.PaintBox = plt.PaintBox.Add(mp)
 	if err != nil {
 		core.ErrorSnackbar(pl, err)
 	}
@@ -178,7 +181,11 @@ func (pl *Editor) SaveSVG(fname core.Filename) { //types:add
 
 // SaveImage saves the current plot as an image (e.g., png).
 func (pl *Editor) SaveImage(fname core.Filename) { //types:add
+	plt := pl.plotWidget.Plot
+	mp := plt.PaintBox.Min
+	plt.PaintBox = plt.PaintBox.Sub(mp)
 	err := pl.plotWidget.Plot.SaveImage(string(fname))
+	plt.PaintBox = plt.PaintBox.Add(mp)
 	if err != nil {
 		core.ErrorSnackbar(pl, err)
 	}
