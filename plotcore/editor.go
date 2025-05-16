@@ -12,6 +12,7 @@ import (
 	"image"
 	"io/fs"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -25,6 +26,8 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
+	"cogentcore.org/core/math32"
+	"cogentcore.org/core/paint"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/styles/states"
 	"cogentcore.org/core/system"
@@ -171,7 +174,10 @@ func (pl *Editor) SaveSVG(fname core.Filename) { //types:add
 	plt := pl.plotWidget.Plot
 	mp := plt.PaintBox.Min
 	plt.PaintBox = plt.PaintBox.Sub(mp)
-	err := plt.SaveSVG(string(fname))
+	ptr := paint.NewPainter(math32.FromPoint(plt.PaintBox.Size()))
+	ptr.Paint.UnitContext = pl.Styles.UnitContext // preserve DPI from current
+	sv := paint.RenderToSVG(plt.Draw(ptr))
+	err := os.WriteFile(string(fname), sv, 0666)
 	plt.PaintBox = plt.PaintBox.Add(mp)
 	if err != nil {
 		core.ErrorSnackbar(pl, err)

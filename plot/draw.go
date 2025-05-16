@@ -88,7 +88,7 @@ func (pt *Plot) Draw(pc *paint.Painter) *paint.Painter {
 
 	pt.drawConfig()
 
-	pc.PushContext(nil, render.NewBoundsRect(pt.PaintBox, sides.Floats{}))
+	pc.PushContext(pc.Paint, render.NewBoundsRect(pt.PaintBox, sides.Floats{}))
 
 	if pt.Style.Background != nil {
 		pc.BlitBox(off, math32.FromPoint(sz), pt.Style.Background)
