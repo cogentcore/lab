@@ -8,7 +8,7 @@ go 1.23.4
 // https://github.com/googleapis/go-genproto/issues/1015
 
 require (
-	cogentcore.org/core v0.3.11-0.20250508012726-eb5d74adb681
+	cogentcore.org/core v0.3.11-0.20250518200330-88079186e7b5
 	github.com/cogentcore/readline v0.1.3
 	github.com/cogentcore/yaegi v0.0.0-20240724064145-e32a03faad56
 	github.com/mitchellh/go-homedir v1.1.0
@@ -31,12 +31,11 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/bramvdbogaerde/go-scp v1.4.0 // indirect
 	github.com/chewxy/math32 v1.10.1 // indirect
-	github.com/cogentcore/webgpu v0.0.0-20250506132018-9faea5a0f598 // indirect
+	github.com/cogentcore/webgpu v0.23.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dlclark/regexp2 v1.11.0 // indirect
 	github.com/ericchiang/css v1.3.0 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
-	github.com/go-fonts/latin-modern v0.3.3 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20240506104042-037f3cc74f2a // indirect
 	github.com/go-text/typesetting v0.3.1-0.20250402122313-7a0f05577ff5 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
@@ -57,8 +56,8 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
-	github.com/tdewolff/minify/v2 v2.21.3 // indirect
 	github.com/tdewolff/parse/v2 v2.7.19 // indirect
+	github.com/tdewolff/test v1.0.11-0.20240106005702-7de5f7df4739 // indirect
 	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/image v0.25.0 // indirect
 	golang.org/x/mod v0.19.0 // indirect
@@ -66,10 +65,7 @@ require (
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
-	google.golang.org/genproto v0.0.0-20250505200425-f936aa4a68b2 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250428153025-10db94c68c34 // indirect
+	google.golang.org/genproto v0.0.0-20250512202823-5a2f75b736a9 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250505200425-f936aa4a68b2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/knuth v0.5.4 // indirect
-	modernc.org/token v1.1.0 // indirect
-	star-tex.org/x/tex v0.6.0 // indirect
 )

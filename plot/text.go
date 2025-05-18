@@ -160,12 +160,12 @@ func (tx *Text) PosY(height float32) math32.Vector2 {
 // Draw renders the text at given upper left position
 func (tx *Text) Draw(pt *Plot, pos math32.Vector2) {
 	if tx.Style.Rotation == 0 {
-		pt.Painter.TextLines(tx.PaintText, pos)
+		pt.Painter.DrawText(tx.PaintText, pos)
 		return
 	}
 	m := pt.Painter.Paint.Transform
 	rotx := math32.Rotate2DAround(math32.DegToRad(tx.Style.Rotation), pos)
 	pt.Painter.Paint.Transform = m.Mul(rotx)
-	pt.Painter.TextLines(tx.PaintText, pos)
+	pt.Painter.DrawText(tx.PaintText, pos)
 	pt.Painter.Paint.Transform = m
 }
