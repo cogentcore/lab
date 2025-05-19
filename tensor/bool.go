@@ -25,7 +25,7 @@ type Bool struct {
 	// shape contains the N-dimensional shape and indexing functionality.
 	shape Shape
 
-	//	Values is a flat 1D slice of the underlying data, using [bitslice].
+	// Values is a flat 1D slice of the underlying data, using [bitslice].
 	Values bitslice.Slice
 
 	// Meta data is used extensively for Name, Plot styles, etc.

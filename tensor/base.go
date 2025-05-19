@@ -20,7 +20,7 @@ type Base[T any] struct {
 	// shape contains the N-dimensional shape and indexing functionality.
 	shape Shape
 
-	//	Values is a flat 1D slice of the underlying data.
+	// Values is a flat 1D slice of the underlying data.
 	Values []T
 
 	// Meta data is used extensively for Name, Plot styles, etc.
