@@ -66,7 +66,7 @@ func (st *State) TranspileMath(toks Tokens, code string, fullLine bool) Tokens {
 		mp.expr(ex)
 	}
 
-	if mp.idx != len(toks) {
+	if !(mp.idx == len(toks) || mp.idx == len(toks)-1) { // -1 is for comment at end
 		fmt.Println(code)
 		fmt.Println(mp.out.Code())
 		fmt.Printf("parsing error: index: %d != len(toks): %d\n", mp.idx, len(toks))
@@ -848,7 +848,7 @@ func (mp *mathParse) arrayShape(ex []ast.Expr, sh *[]int) {
 
 // nofun = do not accept a function version, just a method
 var numpyFuncs = map[string]funWrap{
-	// "array":   {"tensor.NewFloatFromValues", ""}, // todo: probably not right, maybe don't have?
+	"array":    {"tensor.NewFromValues", ""},
 	"zeros":    {"tensor.NewFloat64", ""},
 	"full":     {"tensor.NewFloat64Full", ""},
 	"ones":     {"tensor.NewFloat64Ones", ""},

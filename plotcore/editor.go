@@ -12,6 +12,7 @@ import (
 	"image"
 	"io/fs"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -19,13 +20,14 @@ import (
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fsx"
-	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
+	"cogentcore.org/core/math32"
+	"cogentcore.org/core/paint"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/styles/states"
 	"cogentcore.org/core/system"
@@ -169,17 +171,30 @@ func (pl *Editor) SetSlice(sl any, stylers ...func(s *plot.Style)) *Editor {
 
 // SaveSVG saves the plot to an svg -- first updates to ensure that plot is current
 func (pl *Editor) SaveSVG(fname core.Filename) { //types:add
-	pl.UpdatePlot()
-	// TODO: get plot svg saving working
-	// pc := pl.PlotChild()
-	// SaveSVGView(string(fname), pl.Plot, sv, 2)
+	plt := pl.plotWidget.Plot
+	mp := plt.PaintBox.Min
+	plt.PaintBox = plt.PaintBox.Sub(mp)
+	ptr := paint.NewPainter(math32.FromPoint(plt.PaintBox.Size()))
+	ptr.Paint.UnitContext = pl.Styles.UnitContext // preserve DPI from current
+	sv := paint.RenderToSVG(plt.Draw(ptr))
+	err := os.WriteFile(string(fname), sv, 0666)
+	plt.PaintBox = plt.PaintBox.Add(mp)
+	if err != nil {
+		core.ErrorSnackbar(pl, err)
+	}
 	pl.svgFile = fname
 }
 
-// SavePNG saves the current plot to a png, capturing current render
-func (pl *Editor) SavePNG(fname core.Filename) { //types:add
-	pl.UpdatePlot()
-	imagex.Save(pl.plot.Pixels, string(fname))
+// SaveImage saves the current plot as an image (e.g., png).
+func (pl *Editor) SaveImage(fname core.Filename) { //types:add
+	plt := pl.plotWidget.Plot
+	mp := plt.PaintBox.Min
+	plt.PaintBox = plt.PaintBox.Sub(mp)
+	err := pl.plotWidget.Plot.SaveImage(string(fname))
+	plt.PaintBox = plt.PaintBox.Add(mp)
+	if err != nil {
+		core.ErrorSnackbar(pl, err)
+	}
 }
 
 // SaveCSV saves the Table data to a csv (comma-separated values) file with headers (any delim)
@@ -194,23 +209,24 @@ func (pl *Editor) SaveAll(fname core.Filename) { //types:add
 	fn := string(fname)
 	fn = strings.TrimSuffix(fn, filepath.Ext(fn))
 	pl.SaveCSV(core.Filename(fn+".tsv"), tensor.Tab)
-	pl.SavePNG(core.Filename(fn + ".png"))
+	pl.SaveImage(core.Filename(fn + ".png"))
 	pl.SaveSVG(core.Filename(fn + ".svg"))
 }
 
 // OpenCSV opens the Table data from a csv (comma-separated values) file (or any delim)
 func (pl *Editor) OpenCSV(filename core.Filename, delim tensor.Delims) { //types:add
-	pl.table.OpenCSV(fsx.Filename(filename), delim)
+	dt := table.New()
+	dt.OpenCSV(fsx.Filename(filename), delim)
 	pl.dataFile = filename
-	pl.UpdatePlot()
+	pl.SetTable(dt)
 }
 
 // OpenFS opens the Table data from a csv (comma-separated values) file (or any delim)
 // from the given filesystem.
 func (pl *Editor) OpenFS(fsys fs.FS, filename core.Filename, delim tensor.Delims) {
-	pl.table.OpenFS(fsys, string(filename), delim)
-	pl.dataFile = filename
-	pl.UpdatePlot()
+	dt := table.New()
+	dt.OpenFS(fsys, string(filename), delim)
+	pl.SetTable(dt)
 }
 
 // GoUpdatePlot updates the display based on current Indexed view into table.
@@ -278,8 +294,13 @@ func (pl *Editor) genPlot() {
 	if pl.plot != nil && pl.plot.Style.ShowErrors && err != nil {
 		core.ErrorSnackbar(pl, fmt.Errorf("%s: %w", pl.PlotStyle.Title, err))
 	}
-	pl.plotWidget.SetPlot(pl.plot)
-	pl.plotWidget.updatePlot()
+	if pl.plot != nil {
+		pl.plotWidget.SetPlot(pl.plot)
+		// } else {
+		// errors.Log(fmt.Errorf("%s: nil plot: %w", pl.PlotStyle.Title, err))
+	}
+	// pl.plotWidget.updatePlot()
+	pl.plotWidget.NeedsRender()
 	pl.inPlot = false
 }
 
@@ -569,8 +590,8 @@ func (pl *Editor) MakeToolbar(p *tree.Plan) {
 		w.SetText("Update").SetIcon(icons.Update).
 			SetTooltip("update fully redraws display, reflecting any new settings etc").
 			OnClick(func(e events.Event) {
-				pl.UpdateWidget()
 				pl.UpdatePlot()
+				pl.Update()
 			})
 	})
 	tree.Add(p, func(w *core.Button) {
@@ -603,7 +624,7 @@ func (pl *Editor) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.Button) {
 		w.SetText("Save").SetIcon(icons.Save).SetMenu(func(m *core.Scene) {
 			core.NewFuncButton(m).SetFunc(pl.SaveSVG).SetIcon(icons.Save)
-			core.NewFuncButton(m).SetFunc(pl.SavePNG).SetIcon(icons.Save)
+			core.NewFuncButton(m).SetFunc(pl.SaveImage).SetIcon(icons.Save)
 			core.NewFuncButton(m).SetFunc(pl.SaveCSV).SetIcon(icons.Save)
 			core.NewSeparator(m)
 			core.NewFuncButton(m).SetFunc(pl.SaveAll).SetIcon(icons.Save)

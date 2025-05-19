@@ -29,7 +29,7 @@ func (tk *Tick) IsMinor() bool {
 type Ticker interface {
 	// Ticks returns Ticks in a specified range, with desired number of ticks,
 	// which can be ignored depending on the ticker type.
-	Ticks(min, max float64, nticks int) []Tick
+	Ticks(mn, mx float64, nticks int) []Tick
 }
 
 // DefaultTicks is suitable for the Ticker field of an Axis,
@@ -39,15 +39,15 @@ type DefaultTicks struct{}
 var _ Ticker = DefaultTicks{}
 
 // Ticks returns Ticks in the specified range.
-func (DefaultTicks) Ticks(min, max float64, nticks int) []Tick {
-	if max <= min {
+func (DefaultTicks) Ticks(mn, mx float64, nticks int) []Tick {
+	if mx <= mn {
 		panic("illegal range")
 	}
 	if nticks < 2 {
 		return nil
 	}
 
-	labels, step, q, mag := talbotLinHanrahan(min, max, nticks, withinData, nil, nil, nil)
+	labels, step, q, mag := talbotLinHanrahan(mn, mx, nticks, withinData, nil, nil, nil)
 	majorDelta := step * math.Pow10(mag)
 	if q == 0 {
 		// Simple fall back was chosen, so
@@ -63,10 +63,11 @@ func (DefaultTicks) Ticks(min, max float64, nticks int) []Tick {
 		off = 1
 		fc = 'g'
 	}
-	if math.Trunc(q) != q {
+	mag10 := math.Pow10(mag)
+	if math.Trunc(q*mag10) != q*mag10 {
 		off += 2
 	}
-	prec := minInt(6, maxInt(off, -mag))
+	prec := min(6, max(off, -mag))
 	ticks := make([]Tick, len(labels))
 	for i, v := range labels {
 		ticks[i] = Tick{Value: v, Label: strconv.FormatFloat(float64(v), fc, prec, 64)}
@@ -89,7 +90,7 @@ func (DefaultTicks) Ticks(min, max float64, nticks int) []Tick {
 	// Find the first minor tick not greater
 	// than the lowest data value.
 	var i float64
-	for labels[0]+(i-1)*minorDelta > min {
+	for labels[0]+(i-1)*minorDelta > mn {
 		i--
 	}
 	// Add ticks at minorDelta intervals when
@@ -97,7 +98,7 @@ func (DefaultTicks) Ticks(min, max float64, nticks int) []Tick {
 	// labelled tick.
 	for {
 		val := labels[0] + i*minorDelta
-		if val > max {
+		if val > mx {
 			break
 		}
 		found := false
@@ -115,20 +116,6 @@ func (DefaultTicks) Ticks(min, max float64, nticks int) []Tick {
 	return ticks
 }
 
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 // LogTicks is suitable for the Ticker field of an Axis,
 // it returns tick marks suitable for a log-scale axis.
 type LogTicks struct {
@@ -140,18 +127,18 @@ type LogTicks struct {
 var _ Ticker = LogTicks{}
 
 // Ticks returns Ticks in a specified range
-func (t LogTicks) Ticks(min, max float64, nticks int) []Tick {
-	if min <= 0 || max <= 0 {
+func (t LogTicks) Ticks(mn, mx float64, nticks int) []Tick {
+	if mn <= 0 || mx <= 0 {
 		panic("Values must be greater than 0 for a log scale.")
 	}
 	if nticks < 2 {
 		return nil
 	}
 
-	val := math.Pow10(int(math.Log10(min)))
-	max = math.Pow10(int(math.Ceil(math.Log10(max))))
+	val := math.Pow10(int(math.Log10(mn)))
+	mx = math.Pow10(int(math.Ceil(math.Log10(mx))))
 	var ticks []Tick
-	for val < max {
+	for val < mx {
 		for i := 1; i < 10; i++ {
 			if i == 1 {
 				ticks = append(ticks, Tick{Value: val, Label: formatFloatTick(val, t.Prec)})
@@ -204,7 +191,7 @@ type TimeTicks struct {
 var _ Ticker = TimeTicks{}
 
 // Ticks implements plot.Ticker.
-func (t TimeTicks) Ticks(min, max float64, nticks int) []Tick {
+func (t TimeTicks) Ticks(mn, mx float64, nticks int) []Tick {
 	if t.Ticker == nil {
 		t.Ticker = DefaultTicks{}
 	}
@@ -218,7 +205,7 @@ func (t TimeTicks) Ticks(min, max float64, nticks int) []Tick {
 		return nil
 	}
 
-	ticks := t.Ticker.Ticks(min, max, nticks)
+	ticks := t.Ticker.Ticks(mn, mx, nticks)
 	for i := range ticks {
 		tick := &ticks[i]
 		if tick.Label == "" {

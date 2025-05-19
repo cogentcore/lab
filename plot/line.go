@@ -71,15 +71,15 @@ func (ls *LineStyle) SetStroke(pt *Plot) bool {
 	if ls.On == Off || ls.Color == nil {
 		return false
 	}
-	pc := pt.Paint
-	uc := &pc.UnitContext
+	pc := pt.Painter
+	uc := pt.UnitContext()
 	ls.Width.ToDots(uc)
 	if ls.Width.Dots == 0 {
 		return false
 	}
-	pc.StrokeStyle.Width = ls.Width
-	pc.StrokeStyle.Color = ls.Color
-	pc.StrokeStyle.ToDots(uc)
+	pc.Stroke.Width = ls.Width
+	pc.Stroke.Color = ls.Color
+	pc.Stroke.ToDots(uc)
 	return true
 }
 
@@ -100,10 +100,10 @@ func (ls *LineStyle) Draw(pt *Plot, start, end math32.Vector2) bool {
 	if !ls.SetStroke(pt) {
 		return false
 	}
-	pc := pt.Paint
+	pc := pt.Painter
 	pc.MoveTo(start.X, start.Y)
 	pc.LineTo(end.X, end.Y)
-	pc.Stroke()
+	pc.Draw()
 	return true
 }
 

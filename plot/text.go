@@ -9,14 +9,17 @@ import (
 
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/paint"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/styles/units"
+	"cogentcore.org/core/text/htmltext"
+	"cogentcore.org/core/text/rich"
+	"cogentcore.org/core/text/shaped"
+	"cogentcore.org/core/text/text"
 )
 
-// DefaultFontFamily specifies a default font for plotting.
+// DefaultFontFamily specifies a default font family for plotting.
 // if not set, the standard Cogent Core default font is used.
-var DefaultFontFamily = ""
+var DefaultFontFamily = rich.SansSerif
 
 // TextStyle specifies styling parameters for Text elements.
 type TextStyle struct { //types:add -setters
@@ -25,7 +28,7 @@ type TextStyle struct { //types:add -setters
 
 	// Family name for font (inherited): ordered list of comma-separated names
 	// from more general to more specific to use. Use split on, to parse.
-	Family string
+	Family rich.Family
 
 	// Color of text.
 	Color image.Image
@@ -49,9 +52,7 @@ func (ts *TextStyle) Defaults() {
 	ts.Size.Dp(16)
 	ts.Color = colors.Scheme.OnSurface
 	ts.Align = styles.Center
-	if DefaultFontFamily != "" {
-		ts.Family = DefaultFontFamily
-	}
+	ts.Family = DefaultFontFamily
 }
 
 // Text specifies a single text element in a plot
@@ -63,11 +64,14 @@ type Text struct {
 	// styling for this text element
 	Style TextStyle
 
-	// font has the full font rendering styles.
-	font styles.FontRender
+	// font has the font rendering styles.
+	font rich.Style
 
-	// PaintText is the [paint.Text] for the text.
-	PaintText paint.Text
+	// textStyle has the text rendering styles.
+	textStyle text.Style
+
+	// PaintText is the [shaped.Lines] for painting the text.
+	PaintText *shaped.Lines
 }
 
 func (tx *Text) Defaults() {
@@ -76,52 +80,64 @@ func (tx *Text) Defaults() {
 
 // config is called during the layout of the plot, prior to drawing
 func (tx *Text) Config(pt *Plot) {
-	uc := &pt.Paint.UnitContext
+	uc := pt.UnitContext()
+	ts := &tx.textStyle
 	fs := &tx.font
-	fs.Size = tx.Style.Size
+	fs.Defaults()
+	ts.Defaults()
+	ts.FontSize = tx.Style.Size
+	ts.WhiteSpace = text.WrapNever
 	fs.Family = tx.Style.Family
-	fs.Color = tx.Style.Color
+	if tx.Style.Color != colors.Scheme.OnSurface {
+		fs.SetFillColor(colors.ToUniform(tx.Style.Color))
+	}
 	if math32.Abs(tx.Style.Rotation) > 10 {
 		tx.Style.Align = styles.End
 	}
-	fs.ToDots(uc)
+	ts.ToDots(uc)
+	// fmt.Printf("%p\n", pt.Painter)
+	// fmt.Println("tdots:", ts.FontSize.Dots)
 	tx.Style.Padding.ToDots(uc)
 	txln := float32(len(tx.Text))
-	fht := fs.Size.Dots
+	fht := tx.textStyle.FontHeight(fs)
 	hsz := float32(12) * txln
-	txs := &pt.StandardTextStyle
-	tx.PaintText.SetHTML(tx.Text, fs, txs, uc, nil)
-	tx.PaintText.Layout(txs, fs, uc, math32.Vector2{X: hsz, Y: fht})
-	if tx.Style.Rotation != 0 {
-		rotx := math32.Rotate2D(math32.DegToRad(tx.Style.Rotation))
-		tx.PaintText.Transform(rotx, fs, uc)
-	}
-}
+	// txs := &pt.StandardTextStyle
 
-func (tx *Text) openFont(pt *Plot) {
-	if tx.font.Face == nil {
-		paint.OpenFont(&tx.font, &pt.Paint.UnitContext) // calls SetUnContext after updating metrics
-	}
+	rt, _ := htmltext.HTMLToRich([]byte(tx.Text), fs, nil)
+	tx.PaintText = pt.TextShaper.WrapLines(rt, fs, ts, &rich.DefaultSettings, math32.Vec2(hsz, fht))
 }
 
 func (tx *Text) ToDots(uc *units.Context) {
-	tx.font.ToDots(uc)
+	tx.textStyle.ToDots(uc)
 	tx.Style.Padding.ToDots(uc)
+}
+
+// Size returns the actual render size of the text.
+func (tx *Text) Size() math32.Vector2 {
+	if tx.PaintText == nil {
+		return math32.Vector2{}
+	}
+	bb := tx.PaintText.Bounds
+	if tx.Style.Rotation != 0 {
+		bb = bb.MulMatrix2(math32.Rotate2D(math32.DegToRad(tx.Style.Rotation)))
+	}
+	return bb.Size().Ceil()
 }
 
 // PosX returns the starting position for a horizontally-aligned text element,
 // based on given width.  Text must have been config'd already.
 func (tx *Text) PosX(width float32) math32.Vector2 {
+	rsz := tx.Size()
 	pos := math32.Vector2{}
 	pos.X = styles.AlignFactor(tx.Style.Align) * width
 	switch tx.Style.Align {
 	case styles.Center:
-		pos.X -= 0.5 * tx.PaintText.BBox.Size().X
+		pos.X -= 0.5 * rsz.X
 	case styles.End:
-		pos.X -= tx.PaintText.BBox.Size().X
+		pos.X -= rsz.X
 	}
 	if math32.Abs(tx.Style.Rotation) > 10 {
-		pos.Y += 0.5 * tx.PaintText.BBox.Size().Y
+		pos.Y += 0.5 * rsz.Y
 	}
 	return pos
 }
@@ -129,18 +145,27 @@ func (tx *Text) PosX(width float32) math32.Vector2 {
 // PosY returns the starting position for a vertically-rotated text element,
 // based on given height.  Text must have been config'd already.
 func (tx *Text) PosY(height float32) math32.Vector2 {
+	rsz := tx.Size() // rotated size
 	pos := math32.Vector2{}
 	pos.Y = styles.AlignFactor(tx.Style.Align) * height
 	switch tx.Style.Align {
 	case styles.Center:
-		pos.Y -= 0.5 * tx.PaintText.BBox.Size().Y
+		pos.Y -= 0.5 * rsz.Y
 	case styles.End:
-		pos.Y -= tx.PaintText.BBox.Size().Y
+		pos.Y -= rsz.Y
 	}
 	return pos
 }
 
 // Draw renders the text at given upper left position
 func (tx *Text) Draw(pt *Plot, pos math32.Vector2) {
-	tx.PaintText.Render(pt.Paint, pos)
+	if tx.Style.Rotation == 0 {
+		pt.Painter.DrawText(tx.PaintText, pos)
+		return
+	}
+	m := pt.Painter.Paint.Transform
+	rotx := math32.Rotate2DAround(math32.DegToRad(tx.Style.Rotation), pos)
+	pt.Painter.Paint.Transform = m.Mul(rotx)
+	pt.Painter.DrawText(tx.PaintText, pos)
+	pt.Painter.Paint.Transform = m
 }

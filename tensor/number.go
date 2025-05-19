@@ -296,7 +296,7 @@ func (tsr *Number[T]) AppendFrom(frm Values) Values {
 		copy(tsr.Values[st:st+fsz], fsm.Values)
 		return tsr
 	}
-	for i := 0; i < fsz; i++ {
+	for i := range fsz {
 		tsr.Values[st+i] = T(frm.Float1D(i))
 	}
 	return tsr

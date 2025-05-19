@@ -13,14 +13,27 @@ package plot
 
 import (
 	"image"
+	"sync"
 
-	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/paint"
+	"cogentcore.org/core/paint/render"
+	_ "cogentcore.org/core/paint/renderers"
 	"cogentcore.org/core/styles"
+	"cogentcore.org/core/styles/sides"
 	"cogentcore.org/core/styles/units"
+	"cogentcore.org/core/text/shaped"
+	"cogentcore.org/core/text/text"
+)
+
+var (
+	// plotShaper is a shared text shaper.
+	plotShaper shaped.Shaper
+
+	// mutex for sharing the plotShaper.
+	shaperMu sync.Mutex
 )
 
 // XAxisStyle has overall plot level styling properties for the XAxis.
@@ -171,26 +184,18 @@ type Plot struct {
 	Style PlotStyle
 
 	// standard text style with default options
-	StandardTextStyle styles.Text
+	StandardTextStyle text.Style
 
-	// X, Y, and Z are the horizontal, vertical, and depth axes
+	// X, Y, YR, and Z are the horizontal, vertical, right vertical, and depth axes
 	// of the plot respectively. These are the actual compiled
 	// state data and should not be used for styling: use Style.
-	X, Y, Z Axis
+	X, Y, YR, Z Axis
 
 	// Legend is the plot's legend.
 	Legend Legend
 
 	// Plotters are drawn by calling their Plot method after the axes are drawn.
 	Plotters []Plotter
-
-	// Size is the target size of the image to render to.
-	Size image.Point
-
-	// DPI is the dots per inch for rendering the image.
-	// Larger numbers result in larger scaling of the plot contents
-	// which is strongly recommended for print (e.g., use 300 for print)
-	DPI float32 `default:"96,160,300"`
 
 	// PanZoom provides post-styling pan and zoom range factors.
 	PanZoom PanZoom
@@ -202,14 +207,25 @@ type Plot struct {
 	// HighlightIndex is the index of the data point to highlight, for HighlightPlotter.
 	HighlightIndex int
 
-	// pixels that we render into
-	Pixels *image.RGBA `copier:"-" json:"-" xml:"-" edit:"-"`
+	// TextShaper for shaping text. Can set to a shared external one,
+	// or else the shared plotShaper is used under a mutex lock during Render.
+	TextShaper shaped.Shaper
 
-	// Paint is the painter for rendering
-	Paint *paint.Context
+	// PaintBox is the bounding box for the plot within the Paint.
+	// For standalone, it is the size of the image.
+	PaintBox image.Rectangle
 
-	// Current plot bounding box in image coordinates, for plotting coordinates
+	// Current local plot bounding box in image coordinates, for computing
+	// plotting coordinates.
 	PlotBox math32.Box2
+
+	// Painter is the current painter being used,
+	// which is only valid during rendering, and is set by Draw function.
+	// It needs to be exported for different plot types in other packages.
+	Painter *paint.Painter
+
+	// unitContext is current unit context, only valid during rendering.
+	unitContext *units.Context
 }
 
 // New returns a new plot with some reasonable default settings.
@@ -221,21 +237,42 @@ func New() *Plot {
 
 // Defaults sets defaults
 func (pt *Plot) Defaults() {
+	pt.SetSize(image.Point{640, 480})
 	pt.Style.Defaults()
 	pt.Title.Defaults()
 	pt.Title.Style.Size.Dp(24)
 	pt.X.Defaults(math32.X)
 	pt.Y.Defaults(math32.Y)
+	pt.YR.Defaults(math32.Y)
+	pt.YR.RightY = true
 	pt.Legend.Defaults()
-	pt.DPI = 96
 	pt.PanZoom.Defaults()
-	pt.Size = image.Point{1280, 1024}
 	pt.StandardTextStyle.Defaults()
-	pt.StandardTextStyle.WhiteSpace = styles.WhiteSpaceNowrap
+	pt.StandardTextStyle.WhiteSpace = text.WrapNever
+}
+
+// SetSize sets the size of the plot, typically in terms
+// of actual device pixels (dots).
+func (pt *Plot) SetSize(sz image.Point) {
+	pt.PaintBox.Max = sz
+}
+
+// UnitContext returns the [units.Context] to use for styling.
+// This includes the scaling factor.
+func (pt *Plot) UnitContext() *units.Context {
+	if pt.unitContext != nil {
+		return pt.unitContext
+	}
+	uc := &units.Context{}
+	*uc = pt.Painter.UnitContext
+	uc.DPI *= pt.Style.Scale
+	pt.unitContext = uc
+	return uc
 }
 
 // applyStyle applies all the style parameters
 func (pt *Plot) applyStyle() {
+	hasYright := false
 	// first update the global plot style settings
 	var st Style
 	st.Defaults()
@@ -243,14 +280,26 @@ func (pt *Plot) applyStyle() {
 	for _, plt := range pt.Plotters {
 		stlr := plt.Stylers()
 		stlr.Run(&st)
+
+		var pst Style
+		pst.Defaults()
+		stlr.Run(&pst)
+		if pst.RightY {
+			hasYright = true
+		}
+		if pst.Label != "" {
+			if pst.RightY {
+				pt.YR.Label.Text = pst.Label
+			} else {
+				pt.Y.Label.Text = pst.Label
+			}
+		}
 	}
 	pt.Style = st.Plot
 	// then apply to elements
 	for i, plt := range pt.Plotters {
 		plt.ApplyStyle(&pt.Style, i)
 	}
-	// now style plot:
-	pt.DPI *= pt.Style.Scale
 	pt.Title.Style = pt.Style.TitleStyle
 	if pt.Style.Title != "" {
 		pt.Title.Text = pt.Style.Title
@@ -258,20 +307,24 @@ func (pt *Plot) applyStyle() {
 	pt.Legend.Style = pt.Style.Legend
 	pt.X.Style = pt.Style.Axis
 	pt.X.Style.Scale = pt.Style.XAxis.Scale
-	pt.Y.Style = pt.Style.Axis
 	if pt.Style.XAxis.Label != "" {
 		pt.X.Label.Text = pt.Style.XAxis.Label
 	}
-	if pt.Style.YAxisLabel != "" {
-		pt.Y.Label.Text = pt.Style.YAxisLabel
-	}
 	pt.X.Label.Style = pt.Style.Axis.Text
-	pt.Y.Label.Style = pt.Style.Axis.Text
 	pt.X.TickText.Style = pt.Style.Axis.TickText
 	pt.X.TickText.Style.Rotation = pt.Style.XAxis.Rotation
+
+	pt.Y.Style = pt.Style.Axis
+	pt.YR.Style = pt.Style.Axis
+	pt.YR.Style.On = hasYright
+	pt.Y.Label.Style = pt.Style.Axis.Text
+	pt.YR.Label.Style = pt.Style.Axis.Text
 	pt.Y.TickText.Style = pt.Style.Axis.TickText
+	pt.YR.TickText.Style = pt.Style.Axis.TickText
 	pt.Y.Label.Style.Rotation = -90
 	pt.Y.Style.TickText.Align = styles.End
+	pt.YR.Label.Style.Rotation = 90
+	pt.YR.Style.TickText.Align = styles.Start
 	pt.UpdateRange()
 }
 
@@ -282,30 +335,14 @@ func (pt *Plot) Add(ps ...Plotter) {
 	pt.Plotters = append(pt.Plotters, ps...)
 }
 
-// SetPixels sets the backing pixels image to given image.RGBA.
-func (pt *Plot) SetPixels(img *image.RGBA) {
-	pt.Pixels = img
-	pt.Paint = paint.NewContextFromImage(pt.Pixels)
-	pt.Paint.UnitContext.DPI = pt.DPI
-	pt.Size = pt.Pixels.Bounds().Size()
+// CurBounds returns the current render bounds from Paint
+func (pt *Plot) CurBounds() image.Rectangle {
+	return pt.Painter.Context().Bounds.Rect.ToRect()
 }
 
-// Resize sets the size of the output image to given size.
-// Does nothing if already the right size.
-func (pt *Plot) Resize(sz image.Point) {
-	if pt.Pixels != nil {
-		ib := pt.Pixels.Bounds().Size()
-		if ib == sz {
-			pt.Size = sz
-			pt.Paint.UnitContext.DPI = pt.DPI
-			return // already good
-		}
-	}
-	pt.SetPixels(image.NewRGBA(image.Rectangle{Max: sz}))
-}
-
-func (pt *Plot) SaveImage(filename string) error {
-	return imagex.Save(pt.Pixels, filename)
+// PushBounds returns the current render bounds from Paint
+func (pt *Plot) PushBounds(tb image.Rectangle) {
+	pt.Painter.PushContext(nil, render.NewBoundsRect(tb, sides.Floats{}))
 }
 
 // NominalX configures the plot to have a nominal X
@@ -341,10 +378,18 @@ func (pt *Plot) HideY() {
 	pt.Y.Ticker = ConstantTicks([]Tick{})
 }
 
+// HideYR configures the YR axis so that it will not be drawn.
+func (pt *Plot) HideYR() {
+	pt.YR.Style.TickLength.Pt(0)
+	pt.YR.Style.Line.Width.Pt(0)
+	pt.YR.Ticker = ConstantTicks([]Tick{})
+}
+
 // HideAxes hides the X and Y axes.
 func (pt *Plot) HideAxes() {
 	pt.HideX()
 	pt.HideY()
+	pt.HideYR()
 }
 
 // NominalY is like NominalX, but for the Y axis.
@@ -366,6 +411,7 @@ func (pt *Plot) NominalY(names ...string) {
 func (pt *Plot) UpdateRange() {
 	pt.X.Range.SetInfinity()
 	pt.Y.Range.SetInfinity()
+	pt.YR.Range.SetInfinity()
 	pt.Z.Range.SetInfinity()
 	if pt.Style.XAxis.Range.FixMin {
 		pt.X.Range.Min = pt.Style.XAxis.Range.Min
@@ -374,10 +420,11 @@ func (pt *Plot) UpdateRange() {
 		pt.X.Range.Max = pt.Style.XAxis.Range.Max
 	}
 	for _, pl := range pt.Plotters {
-		pl.UpdateRange(pt, &pt.X.Range, &pt.Y.Range, &pt.Z.Range)
+		pl.UpdateRange(pt, &pt.X.Range, &pt.Y.Range, &pt.YR.Range, &pt.Z.Range)
 	}
 	pt.X.Range.Sanitize()
 	pt.Y.Range.Sanitize()
+	pt.YR.Range.Sanitize()
 	pt.Z.Range.Sanitize()
 
 	pt.X.Range.Min *= pt.PanZoom.XScale
@@ -389,6 +436,11 @@ func (pt *Plot) UpdateRange() {
 	pt.Y.Range.Max *= pt.PanZoom.YScale
 	pt.Y.Range.Min += pt.PanZoom.YOffset
 	pt.Y.Range.Max += pt.PanZoom.YOffset
+
+	pt.YR.Range.Min *= pt.PanZoom.YScale
+	pt.YR.Range.Max *= pt.PanZoom.YScale
+	pt.YR.Range.Min += pt.PanZoom.YOffset
+	pt.YR.Range.Max += pt.PanZoom.YOffset
 }
 
 // PX returns the X-axis plotting coordinate for given raw data value
@@ -400,6 +452,11 @@ func (pt *Plot) PX(v float64) float32 {
 // PY returns the Y-axis plotting coordinate for given raw data value
 func (pt *Plot) PY(v float64) float32 {
 	return pt.PlotBox.ProjectY(float32(1 - pt.Y.Norm(v)))
+}
+
+// PYR returns the Y-axis plotting coordinate for given raw data value
+func (pt *Plot) PYR(v float64) float32 {
+	return pt.PlotBox.ProjectY(float32(1 - pt.YR.Norm(v)))
 }
 
 // ClosestDataToPixel returns the Plotter data point closest to given pixel point,

@@ -12,9 +12,11 @@ package plot
 import (
 	"log/slog"
 	"math"
+	"reflect"
 	"strconv"
 
 	"cogentcore.org/core/base/errors"
+	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/math32/minmax"
 )
 
@@ -207,7 +209,7 @@ func (vs Values) String1D(i int) string {
 // the copied values is a Infinity.
 // NaN values are skipped in the copying process.
 func CopyValues(data Valuer) (Values, error) {
-	if data == nil {
+	if reflectx.IsNil(reflect.ValueOf(data)) {
 		return nil, ErrNoData
 	}
 	cpy := make(Values, 0, data.Len())
@@ -232,7 +234,8 @@ func MustCopyRole(data Data, role Roles) Values {
 		slog.Error("plot Data role not present, but is required", "role:", role)
 		return nil
 	}
-	return errors.Log1(CopyValues(d))
+	v, _ := CopyValues(d)
+	return v
 }
 
 // CopyRole returns Values copy of given role from given data map,
@@ -260,6 +263,15 @@ func PlotY(plt *Plot, data Valuer) []float32 {
 	py := make([]float32, data.Len())
 	for i := range py {
 		py[i] = plt.PY(data.Float1D(i))
+	}
+	return py
+}
+
+// PlotYR returns plot pixel YR right axis coordinate values for given data.
+func PlotYR(plt *Plot, data Valuer) []float32 {
+	py := make([]float32, data.Len())
+	for i := range py {
+		py[i] = plt.PYR(data.Float1D(i))
 	}
 	return py
 }

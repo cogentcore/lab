@@ -12,7 +12,8 @@ package plots
 //go:generate core generate
 
 import (
-	"cogentcore.org/core/base/errors"
+	"fmt"
+
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/lab/plot"
@@ -48,29 +49,42 @@ type XY struct {
 // Data can also include Color and / or Size for the points.
 // Styler functions are obtained from the Y metadata if present.
 func NewXY(plt *plot.Plot, data any) *XY {
-	dt := errors.Log1(plot.DataOrValuer(data, plot.Y))
-	if dt == nil {
-		return nil
-	}
-	if dt.CheckLengths() != nil {
-		return nil
-	}
 	ln := &XY{}
+	err := ln.SetData(data)
+	if err != nil {
+		// errors.Log(err) not useful actually
+		return nil
+	}
+	ln.Defaults()
+	plt.Add(ln)
+	return ln
+}
+
+// SetData sets the plot data.
+func (ln *XY) SetData(data any) error {
+	dt, err := plot.DataOrValuer(data, plot.Y)
+	if err != nil {
+		return err
+	}
+	if err := dt.CheckLengths(); err != nil {
+		return err
+	}
 	ln.Y = plot.MustCopyRole(dt, plot.Y)
 	if _, ok := dt[plot.X]; !ok {
-		ln.X = errors.Log1(plot.CopyValues(tensor.NewIntRange(len(ln.Y))))
+		ln.X, err = plot.CopyValues(tensor.NewIntRange(len(ln.Y)))
+		if err != nil {
+			return err
+		}
 	} else {
 		ln.X = plot.MustCopyRole(dt, plot.X)
 	}
 	if ln.X == nil || ln.Y == nil {
-		return nil
+		return fmt.Errorf("X or Y is nil")
 	}
 	ln.stylers = plot.GetStylersFromData(dt, plot.Y)
 	ln.Color = plot.CopyRole(dt, plot.Color)
 	ln.Size = plot.CopyRole(dt, plot.Size)
-	ln.Defaults()
-	plt.Add(ln)
-	return ln
+	return nil
 }
 
 // newXYWith is a simple helper function that creates a new XY plotter
@@ -146,15 +160,21 @@ func (ln *XY) Data() (data plot.Data, pixX, pixY []float32) {
 // Plot does the drawing, implementing the plot.Plotter interface.
 func (ln *XY) Plot(plt *plot.Plot) {
 	ln.PX = plot.PlotX(plt, ln.X)
-	ln.PY = plot.PlotY(plt, ln.Y)
+	var minY float32
+	if ln.Style.RightY {
+		ln.PY = plot.PlotYR(plt, ln.Y)
+		minY = plt.PYR(plt.YR.Range.Min)
+	} else {
+		ln.PY = plot.PlotY(plt, ln.Y)
+		minY = plt.PY(plt.Y.Range.Min)
+	}
 	np := len(ln.PX)
 	if np == 0 || len(ln.PY) == 0 {
 		return
 	}
-	pc := plt.Paint
+	pc := plt.Painter
 	if ln.Style.Line.HasFill() {
-		pc.FillStyle.Color = ln.Style.Line.Fill
-		minY := plt.PY(plt.Y.Range.Min)
+		pc.Fill.Color = ln.Style.Line.Fill
 		prevX := ln.PX[0]
 		prevY := minY
 		pc.MoveTo(prevX, prevY)
@@ -164,7 +184,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			case plot.NoStep:
 				if ptx < prevX {
 					pc.LineTo(prevX, minY)
-					pc.ClosePath()
+					pc.Close()
 					pc.MoveTo(ptx, minY)
 				}
 				pc.LineTo(ptx, pty)
@@ -174,7 +194,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 				}
 				if ptx < prevX {
 					pc.LineTo(prevX, minY)
-					pc.ClosePath()
+					pc.Close()
 					pc.MoveTo(ptx, minY)
 				} else {
 					pc.LineTo(prevX, pty)
@@ -183,7 +203,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			case plot.MidStep:
 				if ptx < prevX {
 					pc.LineTo(prevX, minY)
-					pc.ClosePath()
+					pc.Close()
 					pc.MoveTo(ptx, minY)
 				} else {
 					pc.LineTo(0.5*(prevX+ptx), prevY)
@@ -193,7 +213,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			case plot.PostStep:
 				if ptx < prevX {
 					pc.LineTo(prevX, minY)
-					pc.ClosePath()
+					pc.Close()
 					pc.MoveTo(ptx, minY)
 				} else {
 					pc.LineTo(ptx, prevY)
@@ -203,14 +223,14 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			prevX, prevY = ptx, pty
 		}
 		pc.LineTo(prevX, minY)
-		pc.ClosePath()
-		pc.Fill()
+		pc.Close()
+		pc.Draw()
 	}
-	pc.FillStyle.Color = nil
+	pc.Fill.Color = nil
 
 	if ln.Style.Line.SetStroke(plt) {
 		if plt.HighlightPlotter == ln {
-			pc.StrokeStyle.Width.Dots *= 2
+			pc.Stroke.Width.Dots *= 2
 		}
 		prevX, prevY := ln.PX[0], ln.PY[0]
 		pc.MoveTo(prevX, prevY)
@@ -238,7 +258,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			}
 			prevX, prevY = ptx, pty
 		}
-		pc.Stroke()
+		pc.Draw()
 	}
 	if ln.Style.Point.SetStroke(plt) {
 		origWidth := ln.Style.Point.Width
@@ -247,10 +267,10 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			pty := ln.PY[i]
 			if plt.HighlightPlotter == ln {
 				if i == plt.HighlightIndex {
-					pc.StrokeStyle.Width.Dots *= 2
+					pc.Stroke.Width.Dots *= 2
 					ln.Style.Point.Size.Dots *= 1.5
 				} else {
-					pc.StrokeStyle.Width = origWidth
+					pc.Stroke.Width = origWidth
 					ln.Style.Point.Size = origSize
 				}
 			}
@@ -270,20 +290,35 @@ func (ln *XY) Plot(plt *plot.Plot) {
 		ln.Style.Point.On = op
 		ln.Style.Point.Size = origSize
 	}
-	pc.FillStyle.Color = nil
+	pc.Fill.Color = nil
 }
 
 // UpdateRange updates the given ranges.
-func (ln *XY) UpdateRange(plt *plot.Plot, xr, yr, zr *minmax.F64) {
-	// todo: include point sizes!
-	plot.Range(ln.X, xr)
-	plot.RangeClamp(ln.Y, yr, &ln.Style.Range)
+func (ln *XY) UpdateRange(plt *plot.Plot, x, y, yr, z *minmax.F64) {
+	if ln.Style.RightY {
+		y = yr
+	}
+	plot.Range(ln.X, x)
+	if !ln.Style.Point.IsOn(plt) {
+		plot.RangeClamp(ln.Y, y, &ln.Style.Range)
+		return
+	}
+	plot.Range(ln.Y, y)
+	psz := ln.Style.Point.Size.Dots
+	ptb := plt.PaintBox
+	dy := (float64(psz) / float64(ptb.Size().Y)) * y.Range()
+	y.Min -= dy
+	y.Max += dy
+	y.Min, y.Max = ln.Style.Range.Clamp(y.Min, y.Max)
+	dx := (float64(psz) / float64(ptb.Size().X)) * x.Range()
+	x.Min -= dx
+	x.Max += dx
 }
 
 // Thumbnail returns the thumbnail, implementing the plot.Thumbnailer interface.
 func (ln *XY) Thumbnail(plt *plot.Plot) {
-	pc := plt.Paint
-	ptb := pc.Bounds
+	pc := plt.Painter
+	ptb := plt.CurBounds()
 	midY := 0.5 * float32(ptb.Min.Y+ptb.Max.Y)
 
 	if ln.Style.Line.Fill != nil {
@@ -297,12 +332,12 @@ func (ln *XY) Thumbnail(plt *plot.Plot) {
 	if ln.Style.Line.SetStroke(plt) {
 		pc.MoveTo(float32(ptb.Min.X), midY)
 		pc.LineTo(float32(ptb.Max.X), midY)
-		pc.Stroke()
+		pc.Draw()
 	}
 
 	if ln.Style.Point.SetStroke(plt) {
 		midX := 0.5 * float32(ptb.Min.X+ptb.Max.X)
 		ln.Style.Point.DrawShape(pc, math32.Vec2(midX, midY))
 	}
-	pc.FillStyle.Color = nil
+	pc.Fill.Color = nil
 }

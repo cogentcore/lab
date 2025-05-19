@@ -58,28 +58,39 @@ func (ps *PointStyle) SpacedColor(idx int) {
 	}
 }
 
+// IsOn returns true if points are to be drawn.
+// Also computes the dots sizes at this point.
+func (ps *PointStyle) IsOn(pt *Plot) bool {
+	uc := pt.UnitContext()
+	ps.Width.ToDots(uc)
+	ps.Size.ToDots(uc)
+	if ps.On == Off || ps.Color == nil || ps.Width.Dots == 0 || ps.Size.Dots == 0 {
+		return false
+	}
+	return true
+}
+
 // SetStroke sets the stroke style in plot paint to current line style.
 // returns false if either the Width = 0 or Color is nil
 func (ps *PointStyle) SetStroke(pt *Plot) bool {
-	if ps.On == Off || ps.Color == nil {
+	if !ps.IsOn(pt) {
 		return false
 	}
-	pc := pt.Paint
-	uc := &pc.UnitContext
-	ps.Width.ToDots(uc)
-	ps.Size.ToDots(uc)
-	if ps.Width.Dots == 0 || ps.Size.Dots == 0 {
-		return false
+	uc := pt.UnitContext()
+	pc := pt.Painter
+	pc.Stroke.Width = ps.Width
+	pc.Stroke.Color = ps.Color
+	pc.Stroke.ToDots(uc)
+	if ps.Shape <= Pyramid {
+		pc.Fill.Color = ps.Fill
+	} else {
+		pc.Fill.Color = nil
 	}
-	pc.StrokeStyle.Width = ps.Width
-	pc.StrokeStyle.Color = ps.Color
-	pc.StrokeStyle.ToDots(uc)
-	pc.FillStyle.Color = ps.Fill
 	return true
 }
 
 // DrawShape draws the given shape
-func (ps *PointStyle) DrawShape(pc *paint.Context, pos math32.Vector2) {
+func (ps *PointStyle) DrawShape(pc *paint.Painter, pos math32.Vector2) {
 	size := ps.Size.Dots
 	if size == 0 {
 		return
@@ -104,92 +115,83 @@ func (ps *PointStyle) DrawShape(pc *paint.Context, pos math32.Vector2) {
 	}
 }
 
-func DrawRing(pc *paint.Context, pos math32.Vector2, size float32) {
-	pc.DrawCircle(pos.X, pos.Y, size)
-	pc.Stroke()
+func DrawRing(pc *paint.Painter, pos math32.Vector2, size float32) {
+	pc.Circle(pos.X, pos.Y, size)
+	pc.Draw()
 }
 
-func DrawCircle(pc *paint.Context, pos math32.Vector2, size float32) {
-	pc.DrawCircle(pos.X, pos.Y, size)
-	pc.FillStrokeClear()
+func DrawCircle(pc *paint.Painter, pos math32.Vector2, size float32) {
+	pc.Circle(pos.X, pos.Y, size)
+	pc.Draw()
 }
 
-func DrawSquare(pc *paint.Context, pos math32.Vector2, size float32) {
+func DrawSquare(pc *paint.Painter, pos math32.Vector2, size float32) {
 	x := size * 0.9
 	pc.MoveTo(pos.X-x, pos.Y-x)
 	pc.LineTo(pos.X+x, pos.Y-x)
 	pc.LineTo(pos.X+x, pos.Y+x)
 	pc.LineTo(pos.X-x, pos.Y+x)
-	pc.ClosePath()
-	pc.Stroke()
+	pc.Close()
+	pc.Draw()
 }
 
-func DrawBox(pc *paint.Context, pos math32.Vector2, size float32) {
+func DrawBox(pc *paint.Painter, pos math32.Vector2, size float32) {
 	x := size * 0.9
 	pc.MoveTo(pos.X-x, pos.Y-x)
 	pc.LineTo(pos.X+x, pos.Y-x)
 	pc.LineTo(pos.X+x, pos.Y+x)
 	pc.LineTo(pos.X-x, pos.Y+x)
-	pc.ClosePath()
-	pc.FillStrokeClear()
+	pc.Close()
+	pc.Draw()
 }
 
-func DrawTriangle(pc *paint.Context, pos math32.Vector2, size float32) {
+func DrawTriangle(pc *paint.Painter, pos math32.Vector2, size float32) {
 	x := size * 0.9
 	pc.MoveTo(pos.X, pos.Y-x)
 	pc.LineTo(pos.X-x, pos.Y+x)
 	pc.LineTo(pos.X+x, pos.Y+x)
-	pc.ClosePath()
-	pc.Stroke()
+	pc.Close()
+	pc.Draw()
 }
 
-func DrawPyramid(pc *paint.Context, pos math32.Vector2, size float32) {
+func DrawPyramid(pc *paint.Painter, pos math32.Vector2, size float32) {
 	x := size * 0.9
 	pc.MoveTo(pos.X, pos.Y-x)
 	pc.LineTo(pos.X-x, pos.Y+x)
 	pc.LineTo(pos.X+x, pos.Y+x)
-	pc.ClosePath()
-	pc.FillStrokeClear()
+	pc.Close()
+	pc.Draw()
 }
 
-func DrawPlus(pc *paint.Context, pos math32.Vector2, size float32) {
+func DrawPlus(pc *paint.Painter, pos math32.Vector2, size float32) {
 	x := size * 1.05
 	pc.MoveTo(pos.X-x, pos.Y)
 	pc.LineTo(pos.X+x, pos.Y)
 	pc.MoveTo(pos.X, pos.Y-x)
 	pc.LineTo(pos.X, pos.Y+x)
-	pc.ClosePath()
-	pc.Stroke()
+	pc.Close()
+	pc.Draw()
 }
 
-func DrawCross(pc *paint.Context, pos math32.Vector2, size float32) {
+func DrawCross(pc *paint.Painter, pos math32.Vector2, size float32) {
 	x := size * 0.9
 	pc.MoveTo(pos.X-x, pos.Y-x)
 	pc.LineTo(pos.X+x, pos.Y+x)
 	pc.MoveTo(pos.X+x, pos.Y-x)
 	pc.LineTo(pos.X-x, pos.Y+x)
-	pc.ClosePath()
-	pc.Stroke()
+	pc.Close()
+	pc.Draw()
 }
 
 // Shapes has the options for how to draw points in the plot.
 type Shapes int32 //enums:enum
 
 const (
-	// Ring is the outline of a circle
-	Ring Shapes = iota
-
 	// Circle is a solid circle
-	Circle
-
-	// Square is the outline of a square
-	Square
+	Circle Shapes = iota
 
 	// Box is a filled square
 	Box
-
-	// Triangle is the outline of a triangle
-	Triangle
 
 	// Pyramid is a filled triangle
 	Pyramid
@@ -199,4 +201,13 @@ const (
 
 	// Cross is a big X
 	Cross
+
+	// Ring is the outline of a circle
+	Ring
+
+	// Square is the outline of a square
+	Square
+
+	// Triangle is the outline of a triangle
+	Triangle
 )

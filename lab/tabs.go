@@ -6,11 +6,13 @@ package lab
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/styles"
-	"cogentcore.org/core/texteditor"
+	"cogentcore.org/core/text/textcore"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/plotcore"
 	"cogentcore.org/lab/table"
@@ -134,9 +136,15 @@ func (ts *Tabs) TensorGrid(label string, tsr tensor.Tensor) *tensorcore.TensorGr
 	return tv
 }
 
+// DirAndFileNoSlash returns [fsx.DirAndFile] with slashes replaced with spaces.
+// Slashes are also used in core Widget paths, so spaces are safer.
+func DirAndFileNoSlash(fpath string) string {
+	return strings.ReplaceAll(fsx.DirAndFile(fpath), string(filepath.Separator), " ")
+}
+
 // GridTensorFS recycles a tab with a Grid of given [tensorfs.Node].
 func (ts *Tabs) GridTensorFS(dfs *tensorfs.Node) *tensorcore.TensorGrid {
-	label := fsx.DirAndFile(dfs.Path()) + " Grid"
+	label := DirAndFileNoSlash(dfs.Path()) + " Grid"
 	if dfs.IsDir() {
 		core.MessageSnackbar(ts, "Use Edit instead of Grid to view a directory")
 		return nil
@@ -165,7 +173,7 @@ func (ts *Tabs) PlotTable(label string, dt *table.Table) *plotcore.Editor {
 
 // PlotTensorFS recycles a tab with a Plot of given [tensorfs.Node].
 func (ts *Tabs) PlotTensorFS(dfs *tensorfs.Node) *plotcore.Editor {
-	label := fsx.DirAndFile(dfs.Path()) + " Plot"
+	label := DirAndFileNoSlash(dfs.Path()) + " Plot"
 	if dfs.IsDir() {
 		return ts.PlotTable(label, tensorfs.DirTable(dfs, nil))
 	}
@@ -231,32 +239,32 @@ func (ts *Tabs) SliceTable(label string, slc any) *core.Table {
 	return tv
 }
 
-// EditorString recycles a [texteditor.Editor] tab, displaying given string.
-func (ts *Tabs) EditorString(label, content string) *texteditor.Editor {
-	ed := NewTab(ts, label, func(tab *core.Frame) *texteditor.Editor {
-		ed := texteditor.NewEditor(tab)
+// EditorString recycles a [textcore.Editor] tab, displaying given string.
+func (ts *Tabs) EditorString(label, content string) *textcore.Editor {
+	ed := NewTab(ts, label, func(tab *core.Frame) *textcore.Editor {
+		ed := textcore.NewEditor(tab)
 		ed.Styler(func(s *styles.Style) {
 			s.Grow.Set(1, 1)
 		})
 		return ed
 	})
 	if content != "" {
-		ed.Buffer.SetText([]byte(content))
+		ed.Lines.SetText([]byte(content))
 	}
 	ts.Update()
 	return ed
 }
 
 // EditorFile opens an editor tab for given file.
-func (ts *Tabs) EditorFile(label, filename string) *texteditor.Editor {
-	ed := NewTab(ts, label, func(tab *core.Frame) *texteditor.Editor {
-		ed := texteditor.NewEditor(tab)
+func (ts *Tabs) EditorFile(label, filename string) *textcore.Editor {
+	ed := NewTab(ts, label, func(tab *core.Frame) *textcore.Editor {
+		ed := textcore.NewEditor(tab)
 		ed.Styler(func(s *styles.Style) {
 			s.Grow.Set(1, 1)
 		})
 		return ed
 	})
-	ed.Buffer.Open(core.Filename(filename))
+	ed.Lines.Open(filename)
 	ts.Update()
 	return ed
 }

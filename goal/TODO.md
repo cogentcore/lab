@@ -1,5 +1,14 @@
 This is a list of all the stuff that doesn't work in goal.
 
+## converting between go / tensor
+
+* `for range` expression that deals with iterating over tensors, in math mode
+
+* CCN temporal-derivative.md: 
+
+```
+    for t := range #totalTime[0]# { // or something even simpler?
+```
 
 ## `compression-tutorial`
 

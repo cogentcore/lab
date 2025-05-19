@@ -145,9 +145,9 @@ func (bc *Bar) StackOn(on *Bar) {
 
 // Plot implements the plot.Plotter interface.
 func (bc *Bar) Plot(plt *plot.Plot) {
-	pc := plt.Paint
+	pc := plt.Painter
 	bc.Style.Line.SetStroke(plt)
-	pc.FillStyle.Color = bc.Style.Line.Fill
+	pc.Fill.Color = bc.Style.Line.Fill
 	bw := bc.Style.Width
 
 	nv := len(bc.Y)
@@ -191,8 +191,8 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 			box.Max.Set(catMax, valMax)
 		}
 
-		pc.DrawRectangle(box.Min.X, box.Min.Y, box.Size().X, box.Size().Y)
-		pc.FillStrokeClear()
+		pc.Rectangle(box.Min.X, box.Min.Y, box.Size().X, box.Size().Y)
+		pc.Draw()
 
 		if i < len(bc.Err) {
 			errval := math.Abs(bc.Err[i])
@@ -209,17 +209,20 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 				pc.MoveTo(plt.PX(cat-ew), eVal)
 				pc.LineTo(plt.PX(cat+ew), eVal)
 			}
-			pc.Stroke()
+			pc.Draw()
 		}
 	}
-	pc.FillStyle.Color = nil
+	pc.Fill.Color = nil
 }
 
 // UpdateRange updates the given ranges.
-func (bc *Bar) UpdateRange(plt *plot.Plot, xr, yr, zr *minmax.F64) {
+func (bc *Bar) UpdateRange(plt *plot.Plot, x, y, yr, z *minmax.F64) {
 	bw := bc.Style.Width
 	catMin := bw.Offset - bw.Pad
 	catMax := bw.Offset + float64(len(bc.Y)-1)*bw.Stride + bw.Pad
+	if bc.Style.RightY {
+		y = yr
+	}
 
 	for i, val := range bc.Y {
 		valBot := bc.StackedOn.BarHeight(i)
@@ -228,29 +231,29 @@ func (bc *Bar) UpdateRange(plt *plot.Plot, xr, yr, zr *minmax.F64) {
 			valTop += math.Abs(bc.Err[i])
 		}
 		if bc.Horizontal {
-			xr.FitValInRange(valBot)
-			xr.FitValInRange(valTop)
+			x.FitValInRange(valBot)
+			x.FitValInRange(valTop)
 		} else {
-			yr.FitValInRange(valBot)
-			yr.FitValInRange(valTop)
+			y.FitValInRange(valBot)
+			y.FitValInRange(valTop)
 		}
 	}
 	if bc.Horizontal {
-		xr.Min, xr.Max = bc.Style.Range.Clamp(xr.Min, xr.Max)
-		yr.FitInRange(minmax.F64{catMin, catMax})
+		x.Min, x.Max = bc.Style.Range.Clamp(x.Min, x.Max)
+		y.FitInRange(minmax.F64{catMin, catMax})
 	} else {
-		yr.Min, yr.Max = bc.Style.Range.Clamp(yr.Min, yr.Max)
-		xr.FitInRange(minmax.F64{catMin, catMax})
+		y.Min, y.Max = bc.Style.Range.Clamp(y.Min, y.Max)
+		x.FitInRange(minmax.F64{catMin, catMax})
 	}
 }
 
 // Thumbnail fulfills the plot.Thumbnailer interface.
 func (bc *Bar) Thumbnail(plt *plot.Plot) {
-	pc := plt.Paint
+	pc := plt.Painter
 	bc.Style.Line.SetStroke(plt)
-	pc.FillStyle.Color = bc.Style.Line.Fill
-	ptb := pc.Bounds
-	pc.DrawRectangle(float32(ptb.Min.X), float32(ptb.Min.Y), float32(ptb.Size().X), float32(ptb.Size().Y))
-	pc.FillStrokeClear()
-	pc.FillStyle.Color = nil
+	pc.Fill.Color = bc.Style.Line.Fill
+	ptb := plt.CurBounds()
+	pc.Rectangle(float32(ptb.Min.X), float32(ptb.Min.Y), float32(ptb.Size().X), float32(ptb.Size().Y))
+	pc.Draw()
+	pc.Fill.Color = nil
 }

@@ -103,7 +103,7 @@ func (eb *YErrorBars) Data() (data plot.Data, pixX, pixY []float32) {
 }
 
 func (eb *YErrorBars) Plot(plt *plot.Plot) {
-	pc := plt.Paint
+	pc := plt.Painter
 	uc := &pc.UnitContext
 
 	eb.Style.Width.Cap.ToDots(uc)
@@ -128,18 +128,21 @@ func (eb *YErrorBars) Plot(plt *plot.Plot) {
 
 		pc.MoveTo(x-cw, yhigh)
 		pc.LineTo(x+cw, yhigh)
-		pc.Stroke()
+		pc.Draw()
 	}
 }
 
 // UpdateRange updates the given ranges.
-func (eb *YErrorBars) UpdateRange(plt *plot.Plot, xr, yr, zr *minmax.F64) {
-	plot.Range(eb.X, xr)
-	plot.RangeClamp(eb.Y, yr, &eb.Style.Range)
-	for i, y := range eb.Y {
-		ylow := y - math.Abs(eb.Low[i])
-		yhigh := y + math.Abs(eb.High[i])
-		yr.FitInRange(minmax.F64{ylow, yhigh})
+func (eb *YErrorBars) UpdateRange(plt *plot.Plot, x, y, yr, z *minmax.F64) {
+	if eb.Style.RightY {
+		y = yr
+	}
+	plot.Range(eb.X, x)
+	plot.RangeClamp(eb.Y, y, &eb.Style.Range)
+	for i, yv := range eb.Y {
+		ylow := yv - math.Abs(eb.Low[i])
+		yhigh := yv + math.Abs(eb.High[i])
+		y.FitInRange(minmax.F64{ylow, yhigh})
 	}
 	return
 }
@@ -223,7 +226,7 @@ func (eb *XErrorBars) Data() (data plot.Data, pixX, pixY []float32) {
 }
 
 func (eb *XErrorBars) Plot(plt *plot.Plot) {
-	pc := plt.Paint
+	pc := plt.Painter
 	uc := &pc.UnitContext
 
 	eb.Style.Width.Cap.ToDots(uc)
@@ -248,18 +251,21 @@ func (eb *XErrorBars) Plot(plt *plot.Plot) {
 
 		pc.MoveTo(xhigh, y-cw)
 		pc.LineTo(xhigh, y+cw)
-		pc.Stroke()
+		pc.Draw()
 	}
 }
 
 // UpdateRange updates the given ranges.
-func (eb *XErrorBars) UpdateRange(plt *plot.Plot, xr, yr, zr *minmax.F64) {
-	plot.RangeClamp(eb.X, xr, &eb.Style.Range)
-	plot.RangeClamp(eb.Y, yr, &eb.yrange)
+func (eb *XErrorBars) UpdateRange(plt *plot.Plot, x, y, yr, z *minmax.F64) {
+	if eb.Style.RightY {
+		y = yr
+	}
+	plot.RangeClamp(eb.X, x, &eb.Style.Range)
+	plot.RangeClamp(eb.Y, y, &eb.yrange)
 	for i, xv := range eb.X {
 		xlow := xv - math.Abs(eb.Low[i])
 		xhigh := xv + math.Abs(eb.High[i])
-		xr.FitInRange(minmax.F64{xlow, xhigh})
+		x.FitInRange(minmax.F64{xlow, xhigh})
 	}
 	return
 }

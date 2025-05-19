@@ -101,7 +101,7 @@ func (lb *Labels) Data() (data plot.Data, pixX, pixY []float32) {
 
 // Plot implements the Plotter interface, drawing labels.
 func (lb *Labels) Plot(plt *plot.Plot) {
-	pc := plt.Paint
+	pc := plt.Painter
 	uc := &pc.UnitContext
 	lb.PX = plot.PlotX(plt, lb.X)
 	lb.PY = plot.PlotY(plt, lb.Y)
@@ -121,19 +121,22 @@ func (lb *Labels) Plot(plt *plot.Plot) {
 		skip = 0
 		ltxt.Text = label
 		ltxt.Config(plt)
-		tht := ltxt.PaintText.BBox.Size().Y
+		tht := ltxt.Size().Y
 		ltxt.Draw(plt, math32.Vec2(lb.PX[i]+st.Offset.X.Dots, lb.PY[i]+st.Offset.Y.Dots-tht))
 	}
 }
 
 // UpdateRange updates the given ranges.
-func (lb *Labels) UpdateRange(plt *plot.Plot, xr, yr, zr *minmax.F64) {
+func (lb *Labels) UpdateRange(plt *plot.Plot, x, y, yr, z *minmax.F64) {
+	if lb.Style.RightY {
+		y = yr
+	}
 	// todo: include point sizes!
-	plot.Range(lb.X, xr)
-	plot.RangeClamp(lb.Y, yr, &lb.Style.Range)
-	pxToData := math32.FromPoint(plt.Size)
-	pxToData.X = float32(xr.Range()) / pxToData.X
-	pxToData.Y = float32(yr.Range()) / pxToData.Y
+	plot.Range(lb.X, x)
+	plot.RangeClamp(lb.Y, y, &lb.Style.Range)
+	pxToData := math32.FromPoint(plt.PaintBox.Size())
+	pxToData.X = float32(x.Range()) / pxToData.X
+	pxToData.Y = float32(y.Range()) / pxToData.Y
 	st := &lb.Style.Text
 	var ltxt plot.Text
 	ltxt.Style = *st
@@ -143,13 +146,13 @@ func (lb *Labels) UpdateRange(plt *plot.Plot, xr, yr, zr *minmax.F64) {
 		}
 		ltxt.Text = label
 		ltxt.Config(plt)
-		tht := pxToData.Y * ltxt.PaintText.BBox.Size().Y
-		twd := 1.1 * pxToData.X * ltxt.PaintText.BBox.Size().X
-		x := lb.X[i]
-		y := lb.Y[i]
-		maxx := x + float64(pxToData.X*st.Offset.X.Dots+twd)
-		maxy := y + float64(pxToData.Y*st.Offset.Y.Dots+tht) // y is up here
-		xr.FitInRange(minmax.F64{x, maxx})
-		yr.FitInRange(minmax.F64{y, maxy})
+		tht := pxToData.Y * ltxt.Size().Y
+		twd := 1.1 * pxToData.X * ltxt.Size().X
+		xv := lb.X[i]
+		yv := lb.Y[i]
+		maxx := xv + float64(pxToData.X*st.Offset.X.Dots+twd)
+		maxy := yv + float64(pxToData.Y*st.Offset.Y.Dots+tht) // y is up here
+		x.FitInRange(minmax.F64{xv, maxx})
+		y.FitInRange(minmax.F64{yv, maxy})
 	}
 }
