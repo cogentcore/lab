@@ -86,7 +86,7 @@ type ServerParams struct {
 	Name string
 
 	// Root is the root path from user home dir on server.
-	// is auto-set to: filepath.Join("simdata", Project, User)
+	// is auto-set to: filepath.Join("simserver", Project, User)
 	Root string
 	
 	// Slurm uses the slurm job manager. Otherwise uses a bare job manager.
@@ -195,7 +195,7 @@ func (cf *Configuration) Defaults() {
 
 func (cf *Configuration) Update() {
 	cf.UserShort = cf.User[:3]
-	cf.Server.Root = filepath.Join("simdata", cf.Project, cf.User)
+	cf.Server.Root = filepath.Join("simserver", cf.Project, cf.User)
 }
 
 // Result has info for one loaded result, as a table.Table
