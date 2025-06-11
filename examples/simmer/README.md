@@ -8,7 +8,7 @@ The local data goes into paths like this:
 
 `~/simdata/simname/user` with `jobs` and `labscripts` subdirectories
 
-The server data goes into similar paths but starting with `~/serverdata` instead.
+The server data goes into similar paths but starting with `~/simserver` instead.
 
 # Server types
 
