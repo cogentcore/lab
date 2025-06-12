@@ -28,13 +28,12 @@ func AllFiles(dir string, exclude ...string) ([]string, error) {
 		if !d.Type().IsRegular() {
 			return nil
 		}
-		fn := d.Name()
 		for _, ex := range exclude {
-			if errors.Log1(filepath.Match(ex, fn)) {
+			if errors.Log1(filepath.Match(ex, path)) {
 				return nil
 			}
 		}
-		files = append(files, fn)
+		files = append(files, path)
 		return nil
 	})
 	return files, err
