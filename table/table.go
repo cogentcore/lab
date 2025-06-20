@@ -151,7 +151,7 @@ func (dt *Table) ColumnIndexList(names ...string) []int {
 // AddColumn adds a new column to the table, of given type and column name
 // (which must be unique). If no cellSizes are specified, it holds scalar values,
 // otherwise the cells are n-dimensional tensors of given size.
-func AddColumn[T tensor.DataTypes](dt *Table, name string, cellSizes ...int) tensor.Tensor {
+func AddColumn[T tensor.DataTypes](dt *Table, name string, cellSizes ...int) tensor.Tensor { //yaegi:add
 	rows := dt.Columns.Rows
 	sz := append([]int{rows}, cellSizes...)
 	tsr := tensor.New[T](sz...)
@@ -164,7 +164,7 @@ func AddColumn[T tensor.DataTypes](dt *Table, name string, cellSizes ...int) ten
 // (which must be unique), at given index.
 // If no cellSizes are specified, it holds scalar values,
 // otherwise the cells are n-dimensional tensors of given size.
-func InsertColumn[T tensor.DataTypes](dt *Table, name string, idx int, cellSizes ...int) tensor.Tensor {
+func InsertColumn[T tensor.DataTypes](dt *Table, name string, idx int, cellSizes ...int) tensor.Tensor { //yaegi:add
 	rows := dt.Columns.Rows
 	sz := append([]int{rows}, cellSizes...)
 	tsr := tensor.New[T](sz...)

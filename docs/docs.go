@@ -9,6 +9,7 @@ import (
 
 	"cogentcore.org/core/content"
 	"cogentcore.org/core/core"
+	"cogentcore.org/core/htmlcore"
 	_ "cogentcore.org/lab/yaegilab"
 )
 
@@ -18,6 +19,8 @@ var econtent embed.FS
 func main() {
 	b := core.NewBody("Cogent Lab")
 	ct := content.NewContent(b).SetContent(econtent)
+	ctx := ct.Context
+	ctx.AddWikilinkHandler(htmlcore.GoDocWikilink("doc", "cogentcore.org/lab"))
 	b.AddTopBar(func(bar *core.Frame) {
 		core.NewToolbar(bar).Maker(ct.MakeToolbar)
 	})

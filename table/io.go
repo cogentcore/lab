@@ -6,6 +6,7 @@ package table
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -49,6 +50,13 @@ func (dt *Table) SaveCSV(filename fsx.Filename, delim tensor.Delims, headers boo
 	err = dt.WriteCSV(bw, delim, headers)
 	bw.Flush()
 	return err
+}
+
+// String returns a string of the CSV formatted file for the table.
+func (dt *Table) String() string {
+	var b bytes.Buffer
+	dt.WriteCSV(&b, tensor.Tab, true)
+	return b.String()
 }
 
 // OpenCSV reads a table from a comma-separated-values (CSV) file
