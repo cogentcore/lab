@@ -12,6 +12,8 @@ A tensor can be constructed from a Go slice, and accessed using a 1D index into 
 x := tensor.NewFromValues(0, 1, 2, 3)
 val := x.Float1D(2)
 
+fmt.Println(val)
+
 core.NewText(b).SetText(fmt.Sprint(val))
 ```
 

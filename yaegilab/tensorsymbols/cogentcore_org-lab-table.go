@@ -4,12 +4,14 @@ package tensorsymbols
 
 import (
 	"cogentcore.org/lab/table"
+	"github.com/cogentcore/yaegi/interp"
 	"reflect"
 )
 
 func init() {
 	Symbols["cogentcore.org/lab/table/table"] = map[string]reflect.Value{
 		// function, constant and variable definitions
+		"AddColumn":              reflect.ValueOf(interp.GenericFunc("func AddColumn[T tensor.DataTypes](dt *Table, name string, cellSizes ...int) tensor.Tensor { //yaegi:add\n\trows := dt.Columns.Rows\n\tsz := append([]int{rows}, cellSizes...)\n\ttsr := tensor.New[T](sz...)\n\t// tsr.SetNames(\"Row\")\n\tdt.AddColumn(name, tsr)\n\treturn tsr\n}")),
 		"CleanCatTSV":            reflect.ValueOf(table.CleanCatTSV),
 		"ConfigFromDataValues":   reflect.ValueOf(table.ConfigFromDataValues),
 		"ConfigFromHeaders":      reflect.ValueOf(table.ConfigFromHeaders),
@@ -18,6 +20,7 @@ func init() {
 		"ErrLogNoNewRows":        reflect.ValueOf(&table.ErrLogNoNewRows).Elem(),
 		"Headers":                reflect.ValueOf(table.Headers),
 		"InferDataType":          reflect.ValueOf(table.InferDataType),
+		"InsertColumn":           reflect.ValueOf(interp.GenericFunc("func InsertColumn[T tensor.DataTypes](dt *Table, name string, idx int, cellSizes ...int) tensor.Tensor { //yaegi:add\n\trows := dt.Columns.Rows\n\tsz := append([]int{rows}, cellSizes...)\n\ttsr := tensor.New[T](sz...)\n\t// tsr.SetNames(\"Row\")\n\tdt.InsertColumn(idx, name, tsr)\n\treturn tsr\n}")),
 		"New":                    reflect.ValueOf(table.New),
 		"NewColumns":             reflect.ValueOf(table.NewColumns),
 		"NewSliceTable":          reflect.ValueOf(table.NewSliceTable),

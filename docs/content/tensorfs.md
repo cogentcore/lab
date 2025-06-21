@@ -13,7 +13,7 @@ There are type-specific accessor methods for the standard high-frequency data ty
 dir, _ := tensorfs.NewDir("root")
 x := dir.Float64("data", 5, 5)
 
-core.NewText(b).SetText(dir.ListLong(true, true))
+core.NewText(b).SetText(dir.ListLong(true, 4))
 core.NewText(b).SetText(x.String()).Styler(func(s *styles.Style) {
     s.Text.WhiteSpace = text.WhiteSpacePre
     s.Font.Family = rich.Monospace
@@ -49,7 +49,7 @@ dir, _ := tensorfs.NewDir("root")
 subdir := dir.Dir("sub")
 x := subdir.Float64("data", 5, 5)
 
-core.NewText(b).SetText(dir.ListLong(true, true))
+core.NewText(b).SetText(dir.ListLong(true, 4))
 core.NewText(b).SetText(x.String()).Styler(func(s *styles.Style) {
     s.Text.WhiteSpace = text.WhiteSpacePre
     s.Font.Family = rich.Monospace

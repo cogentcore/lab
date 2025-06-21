@@ -7,9 +7,12 @@
 package yaegilab
 
 import (
+	"bytes"
 	"reflect"
 
 	"cogentcore.org/core/base/errors"
+	"cogentcore.org/core/styles"
+	"cogentcore.org/core/text/textcore"
 	"cogentcore.org/core/yaegicore"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/yaegilab/labsymbols"
@@ -17,8 +20,13 @@ import (
 	"github.com/cogentcore/yaegi/interp"
 )
 
+var (
+	InterpOutput bytes.Buffer
+)
+
 func init() {
 	yaegicore.Interpreters["Goal"] = func(options interp.Options) yaegicore.Interpreter {
+		options.Stdout = &InterpOutput
 		return NewInterpreter(options)
 	}
 }
@@ -45,5 +53,14 @@ func (in *Interpreter) ImportUsed() {
 
 func (in *Interpreter) Eval(src string) (res reflect.Value, err error) {
 	res, _, err = in.Interpreter.Eval(src)
+	ostr := InterpOutput.String()
+	if len(ostr) > 0 {
+		out := textcore.NewEditor(yaegicore.CurrentParent)
+		out.Styler(func(s *styles.Style) {
+			s.SetReadOnly(true)
+		})
+		out.Lines.Settings.LineNumbers = false
+		out.Lines.SetText([]byte(ostr))
+	}
 	return
 }
