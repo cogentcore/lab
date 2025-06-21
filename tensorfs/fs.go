@@ -40,16 +40,12 @@ func (nd *Node) Sub(dir string) (fs.FS, error) {
 	if err := nd.mustDir("Sub", dir); err != nil {
 		return nil, err
 	}
-	if dir == ".." || dir == "../" {
-		if nd.Parent != nil {
-			return nd.Parent, nil
-		}
-		return nil, &fs.PathError{Op: "Sub", Path: dir, Err: errors.New("already at root")}
-	}
-	if !fs.ValidPath(dir) {
-		return nil, &fs.PathError{Op: "Sub", Path: dir, Err: errors.New("invalid name")}
-	}
-	if dir == "." || dir == "" {
+	// todo: this does not allow .. expressions, so we can't use it:
+	// if !fs.ValidPath(dir) {
+	// 	return nil, &fs.PathError{Op: "Sub", Path: dir, Err: errors.New("invalid path")}
+	// }
+	if dir == "." || dir == "" || dir == nd.name { // todo: this last condition seems bad.
+		// need tests
 		return nd, nil
 	}
 	cd := dir
@@ -67,6 +63,14 @@ func (nd *Node) Sub(dir string) (fs.FS, error) {
 			return cur, nil
 		}
 		cd = rest
+		if root == ".." {
+			if cur.Parent != nil {
+				cur = cur.Parent
+				continue
+			} else {
+				return nil, &fs.PathError{Op: "Sub", Path: dir, Err: errors.New("already at root")}
+			}
+		}
 		sd, ok := cur.nodes.AtTry(root)
 		if !ok {
 			return nil, &fs.PathError{Op: "Sub", Path: dir, Err: errors.New("directory not found")}
