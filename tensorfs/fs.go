@@ -40,10 +40,16 @@ func (nd *Node) Sub(dir string) (fs.FS, error) {
 	if err := nd.mustDir("Sub", dir); err != nil {
 		return nil, err
 	}
+	if dir == ".." || dir == "../" {
+		if nd.Parent != nil {
+			return nd.Parent, nil
+		}
+		return nil, &fs.PathError{Op: "Sub", Path: dir, Err: errors.New("already at root")}
+	}
 	if !fs.ValidPath(dir) {
 		return nil, &fs.PathError{Op: "Sub", Path: dir, Err: errors.New("invalid name")}
 	}
-	if dir == "." || dir == "" || dir == nd.name {
+	if dir == "." || dir == "" {
 		return nd, nil
 	}
 	cd := dir

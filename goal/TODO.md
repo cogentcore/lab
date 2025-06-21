@@ -1,5 +1,9 @@
 This is a list of all the stuff that doesn't work in goal.
 
+## tensor.NewIndexed not supported
+
+in the new math.md docs, indexed case is not working.
+
 ## converting between go / tensor
 
 * `for range` expression that deals with iterating over tensors, in math mode

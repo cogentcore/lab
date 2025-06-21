@@ -1,7 +1,9 @@
 +++
 +++
 
-**tensorfs** provides a virtual filesystem for [[tensor]] data. It implements the Go `fs` interface, and can be accessed using fs-general tools, including the cogent core `filetree` and the `goal` shell.
+**tensorfs** provides a virtual filesystem for [[tensor]] data, which can be accessed for example in [[Goal]] [[math]] mode expressions, like the variable storage system in [IPython / Jupyter](https://ipython.readthedocs.io/en/stable/interactive/tutorial.html), with the advantage that the hierarchical structure of a filesystem allows data to be organized in more intuitive and effective ways. For example, data at different time scales can be put into different directories, or multiple different statistics computed on a given set of data can be put into a subdirectory. [[stats#Groups]] creates pivot-table style groups of values as directories, for example.
+
+`tensorfs` implements the Go [fs](https://pkg.go.dev/io/fs) interface, and can be accessed using fs-general tools, including the cogent core `filetree` and the [[Goal]] shell. 
 
 There are two main APIs, one for direct usage within Go, and another that is used by the [[Goal]] framework for interactive shell-based access, which always operates relative to a current working directory.
 
@@ -67,22 +69,21 @@ As in a real filesystem, names must be unique within each directory, which creat
 
 In addition, if you really need to know if there is an existing item, you can use the `Node` method to check for yourself -- it will return `nil` if no node of that name exists. Furthermore, the global `NewDir` function returns an `fs.ErrExist` error for existing items (e.g., use `errors.Is(fs.ErrExist)`), as used in various `os` package functions.
 
-## `goal` Command API
+## Goal Command API
 
-The following shell command style functions always operate relative to the global `CurDir` current directory and `CurRoot` root, and `goal` in math mode exposes these methods directly. Goal operates on tensor valued variables always.
+The following shell command style functions always operate relative to the global `CurDir` current directory and `CurRoot` root, and `goal` in [[math]] mode exposes these methods directly (see [[math#Tensorfs]]).
 
 * `Chdir("subdir")` change current directory to subdir.
 * `Mkdir("subdir")` make a new directory.
 * `List()` print a list of nodes.
 * `tsr := Get("mydata")` get tensor value at "mydata" node.
-* `Set("mydata", tsr)` set tensor to "mydata" node.
+* `Set("mydata", tsr)` set tensor to "mydata" node (node points to tensor, is updated when tensor is).
+* `SetCopy("mydata", tsr)` set tensor to a copy "mydata" node (data is preserved from time of call).
 
 A given `Node` in the file system is either:
 * A _Value_, with a tensor encoding its value. These are terminal "leaves" in the hierarchical data tree, equivalent to "files" in a standard filesystem.
 * A _Directory_, with an ordered map of other Node nodes under it.
 
 Each Node has a name which must be unique within the directory. The nodes in a directory are processed in the order of its ordered map list, which initially reflects the order added, and can be re-ordered as needed. An alphabetical sort is also available with the `Alpha` versions of methods, and is the default sort for standard FS operations.
-
-The hierarchical structure of a filesystem naturally supports various kinds of functions, such as various time scales of logging, with lower-level data aggregated into upper levels.  Or hierarchical splits for a pivot-table effect.
 
 

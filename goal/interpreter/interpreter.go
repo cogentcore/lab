@@ -262,7 +262,7 @@ func (in *Interpreter) Interactive() error {
 		in.Goal.Errors = nil
 		v, hasPrint, err := in.Eval(line)
 		if err == nil && !hasPrint && v.IsValid() && !v.IsZero() && v.Kind() != reflect.Func {
-			fmt.Println(v.Interface())
+			in.Goal.Config.StdIO.Println(v.Interface())
 		}
 	}
 }

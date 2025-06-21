@@ -859,6 +859,7 @@ var numpyFuncs = map[string]funWrap{
 	"copy":     {"tensor.Clone", ""},
 	"get":      {"tensorfs.Get", ""},
 	"set":      {"tensorfs.Set", ""},
+	"setcp":    {"tensorfs.SetCopy", ""},
 	"flatten":  {"tensor.Flatten", "nofun"},
 	"squeeze":  {"tensor.Squeeze", "nofun"},
 }

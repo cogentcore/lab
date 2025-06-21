@@ -38,6 +38,8 @@ See the info below on [[#Alignment of shapes]] for the rules governing the way t
 
 Parallel goroutines will be used for implementing these computations if the tensors are sufficiently large to make it generally beneficial to do so.
 
+There are also `*Out` versions of each function, which take an additional output tensor to store the results into, instead of creating a new one. For computationally-intensive pipelines, it can be significantly more efficient to re-use pre-allocated outputs (which are automatically and efficiently resized to the proper capacity if not already).
+
 ## Alignment of shapes
 
 The NumPy concept of [broadcasting](https://numpy.org/doc/stable/user/basics.broadcasting.html) is critical for flexibly defining the semantics for how functions taking two n-dimensional Tensor arguments behave when they have different shapes. Ultimately, the computation operates by iterating over the length of the longest tensor, and the question is how to _align_ the shapes so that a meaningful computation results from this.

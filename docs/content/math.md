@@ -2,7 +2,208 @@
 Categories = ["Goal"]
 +++
 
-## Tensor shape
+**Math** mode in [[Goal]] provides a [NumPy](https://numpy.org/doc/stable/index.html)-like language for mathematical expressions involving [[tensor]] data elements (see [[#Reference tables]]), which are transpiled into Go code for compilation or interactive interpretation. It is activated by a `#` character on a line, which is otherwise not a recognized symbol in Go, and `##` starts and stops multi-line blocks of math mode.
+
+The most important thing to remember about math mode is that everything must be a tensor! Any variables created in math mode are automatically tensors, but anything created outside of math mode must be converted to a tensor using the `array` function.
+
+```Goal
+fv := 42.0 // this is a float64
+
+// now we enter math mode:
+##
+tv := 42.0 // this is a tensor.Float64
+tfv := array(fv) // as is this
+##
+
+fmt.Printf("fv: %v %T\n", fv, fv)
+fmt.Printf("tv: %v %T\n", tv, tv)
+fmt.Printf("tfv: %v %T\n", tfv, tfv)
+```
+
+## Basics
+
+Here's how you can create, inspect, and manipulate tensor data:
+
+```Goal
+##
+a := [[1., 2., 3.], [4., 5., 6.]] 
+aShape := a.shape  // tensor of sizes of each dim
+b := zeros(aShape) // which can be used to make a new one
+c := a.reshape(3,2) // preserves data while reshaping
+d := arange(1, 11)  // like a for loop from 1..11 (exclusive max)
+e := linspace(1., 3., 11, true) // floats over a range: final arg = inclusive
+##
+
+fmt.Println("a:", a)
+fmt.Println("aShape:", aShape)
+fmt.Println("b:", b)
+fmt.Println("c:", c)
+fmt.Println("d:", d)
+fmt.Println("e:", e)
+```
+
+(go ahead and play around with any of the above expressions to explore the effects!)
+
+Note that, as in Python, you do need to add a decimal point to have a number treated as a floating point value in most cases -- otherwise it will be an int.
+
+You can perform math operations directly using standard operators:
+
+```Goal
+##
+a := [[1., 2., 3.], [4., 5., 6.]] 
+b := a * a
+c := sin(a)
+d := a * [3., 2., 1.] // smaller dims apply repeatedly
+##
+
+fmt.Println("a:", a)
+fmt.Println("b:", b)
+fmt.Println("c:", c)
+fmt.Println("d:", d)
+```
+
+See [[tensor math#Alignment of shapes]] for more details on [[tensor math]] operations, using the NumPy [broadcasting](https://numpy.org/doc/stable/user/basics.broadcasting.html) logic.
+
+### Tensorfs
+
+In an interactive Goal shell (which we simulate here in the docs), variables in math mode are automatically saved to the [[tensorfs]] virtual data filesystem:
+
+```Goal
+##
+// make a new tensorfs directory for this example
+mkdir tfs
+cd tfs
+a := [[1., 2., 3.], [4., 5., 6.]]
+setcp("a_copy", a) // this will preserve values
+
+b := a * a
+a += a
+
+// list the current directory:
+ls -l
+// go back to root (all vars from this page are there!)
+cd ..
+// (add another ls -l here to see them all..)
+##
+
+fmt.Println("a:", a)
+fmt.Println("a get:", # get("tfs/a") #)
+fmt.Println("a copy:", # get("tfs/a_copy") #)
+fmt.Println("b:", b)
+```
+
+Note that the filesystem variables are pointers to the live variables, so they always reflect the latest changes, so the `setcp` command is useful for saving a copy that does not get further updated.
+
+## Slicing and indexing
+
+Math mode provides NumPy-like ways of extracting data from a tensor (examples follow Go versions in [[tensor#Views and values]]).
+
+```Goal
+##
+x := linspace(0., 12., 12., false).reshape(3,4)
+
+row1 := x[1]
+col1 := x[:,1]
+##
+
+fmt.Println("x:", x)
+fmt.Println("row1:", row1)
+fmt.Println("col:", col1)
+```
+
+Where `:` is an empty `slice` expression that indicates all values in that dimension.
+
+To get the column as a column vector, use `newaxis`:
+
+```Goal
+##
+x := linspace(0., 12., 12., false).reshape(3,4)
+
+col1 := x[:, 1, newaxis]
+##
+
+fmt.Println("col1:", col1)
+```
+
+To get ranges within each dimension, or reorder, use `slice` expressions similar to those used in accessing Go slices, but with a 3rd `Step` value, as in a standard Go `for` loop:
+
+```Goal
+##
+x := linspace(0., 12., 12., false).reshape(3,4)
+
+row1 := x[1, 1:3]  // only a subset of columns
+col1 := x[::-1, 1] // reverse order of rows dimension
+##
+
+fmt.Println("row1:", row1)
+fmt.Println("col1:", col1)
+```
+
+Ellipsis (`...`) makes it easy to get the last dimension(s):
+
+```Goal
+##
+x := linspace(0., 12., 12., false).reshape(3,2,2)
+
+last1 := x[..., 1]
+##
+
+fmt.Println("x", x)
+fmt.Println("last1:", last1)
+```
+
+As in [NumPy](https://numpy.org/doc/stable/index.html) (and standard Go slices), indexed subsets of a tensor are _views_ onto the original tensor, so that changes to the original values are immediately seen in these views. Use `copy` to make a new separate copy of the values to break this connection.
+
+```Goal
+##
+x := linspace(0., 12., 12., false).reshape(3,2,2)
+
+last1 := x[..., 1]
+cp1 := copy(last1)
+
+x[..., 1, 1] = 3.14 // note how we assign to all rows
+##
+
+fmt.Println("x", x)
+fmt.Println("last1:", last1)
+fmt.Println("cp1:", cp1)
+```
+
+### Masked by booleans
+
+```Goal
+##
+x := linspace(0., 12., 12., false).reshape(3,4)
+
+m := x[x>=6]
+mi := x >= 6
+##
+
+fmt.Println("m:", m)
+fmt.Println("mi:", mi)
+```
+
+### Arbitrary indexes
+
+```Goal
+##
+x := linspace(0., 12., 12., false).reshape(3,4)
+
+ixs := [[0, 1], [0, 1], [0, 2], [0, 2], [1, 1], [1, 1], [2, 2], [2, 2]].reshape(2,4,2)
+
+ix := x[ixs]
+##
+
+fmt.Println("ix:", ix)
+fmt.Println("ixs:", ixs)
+```
+
+
+## Reference tables
+
+The following tables summarize Goal math-mode syntax in terms of [NumPy](https://numpy.org/doc/stable/index.html) and the underlying Go code generated.
+
+### Tensor shape
 
 | `tensor` Go  |   Goal      | NumPy   | Notes            |
 | ------------ | ----------- | ------  | ---------------- |
@@ -18,7 +219,7 @@ Categories = ["Goal"]
 | `tensor.Squeeze(a)` | same: |`a.squeeze()` | remove singleton dimensions of tensor `a`. |
 
 
-## Constructing
+### Constructing
 
 | `tensor` Go  |   Goal      | NumPy  | Notes            |
 | ------------ | ----------- | ------ | ---------------- |
@@ -35,7 +236,7 @@ Categories = ["Goal"]
 | TODO: | TODO: |`np.tile(a, (m, n))`   | create m by n copies of a |
 | TODO: | TODO: |`a[np.r_[:len(a),0]]`  | `a` with copy of the first row appended to the end |
 
-## Ranges and grids
+### Ranges and grids
 
 See [NumPy](https://numpy.org/doc/stable/user/how-to-partition.html) docs for details.
 
@@ -50,7 +251,7 @@ See [NumPy](https://numpy.org/doc/stable/user/how-to-partition.html) docs for de
 | . | . |`np.meshgrid([1,2,4],` `[2,4,5])` | . |  ??
 | . | . |`np.ix_([1,2,4],` `[2,4,5])`    |  the best way to eval functions on a grid |
 
-## Basic indexing
+### Basic indexing
 
 See [NumPy basic indexing](https://numpy.org/doc/stable/user/basics.indexing.html#basic-indexing). Tensor Go uses the `Reslice` function for all cases (repeated `tensor.` prefix replaced with `t.` to take less space). Here you can clearly see the advantage of Goal in allowing significantly more succinct expressions to be written for accomplishing critical tensor functionality.
 
@@ -70,7 +271,7 @@ See [NumPy basic indexing](https://numpy.org/doc/stable/user/basics.indexing.htm
 | `tmath.Assign(` `t.Reslice(a,` `Slice{Stop:5}),` `t.NewIntScalar(2))` | same: |`a[:5] = 2` | assign the value 2 to 0..4 rows of `a` |
 | (you get the idea) | same: |`a[:5] = b[:, :5]` | assign the values in the first 5 columns of `b` to the first 5 rows of `a` |
 
-## Boolean tensors and indexing
+### Boolean tensors and indexing
 
 See [NumPy boolean indexing](https://numpy.org/doc/stable/user/basics.indexing.html#boolean-array-indexing).
 
@@ -86,7 +287,7 @@ Note that Goal only supports boolean logical operators (`&&` and `||`) on boolea
 | `tensor.Flatten(` `tensor.Mask(a,` `tmath.Less(a, 0.5)))` | same: |`a[a < 0.5].flatten()` | a 1D list of the elements of `a` < 0.5 (as a copy, not a view) |
 | `tensor.Mul(a,` `tmath.Greater(a, 0.5))` | same: |`a * (a > 0.5)` | `a` with elements less than 0.5 zeroed out |
 
-## Advanced index-based indexing
+### Advanced index-based indexing
 
 See [NumPy integer indexing](https://numpy.org/doc/stable/user/basics.indexing.html#integer-array-indexing).  Note that the current NumPy version of indexed is rather complex and difficult for many people to understand, as articulated in this [NEP 21 proposal](https://numpy.org/neps/nep-0021-advanced-indexing.html). 
 
@@ -104,7 +305,7 @@ See [NumPy integer indexing](https://numpy.org/doc/stable/user/basics.indexing.h
 | . | . |`I = np.argsort(a[:, 0]); b = a[I,:]` | save the tensor `a` as tensor `b` with rows sorted by the first column |
 | . | . |`np.unique(a)` | a vector of unique values in tensor `a` |
 
-## Basic math operations (add, multiply, etc)
+### Basic math operations (add, multiply, etc)
 
 In Goal and NumPy, the standard `+, -, *, /` operators perform _element-wise_ operations because those are well-defined for all dimensionalities and are consistent across the different operators, whereas matrix multiplication is specifically used in a 2D linear algebra context, and is not well defined for the other operators.
 
@@ -117,7 +318,7 @@ In Goal and NumPy, the standard `+, -, *, /` operators perform _element-wise_ op
 | `tmath.Pow(a,3)` | same: | `a**3`  | element-wise exponentiation |
 | `tmath.Cos(a)`   | same: | `cos(a)` | element-wise function application |
 
-## 2D Matrix Linear Algebra
+### 2D Matrix Linear Algebra
 
 | `tensor` Go  |   Goal      | NumPy  | Notes            |
 | ------------ | ----------- | ------ | ---------------- |
@@ -145,7 +346,7 @@ In Goal and NumPy, the standard `+, -, *, /` operators perform _element-wise_ op
 | . | . |`P,L,U = linalg.lu(a)` where `a == P@L@U` | LU decomposition with partial pivoting (note: P(MATLAB) == transpose(P(NumPy))) | 
 | . | . |`x = linalg.lstsq(Z, y)` | perform a linear regression of the form |
 
-## Statistics
+### Statistics
 
 | `tensor` Go  |   Goal      | NumPy  | Notes            |
 | ------------ | ----------- | ------ | ---------------- |
@@ -156,7 +357,7 @@ In Goal and NumPy, the standard `+, -, *, /` operators perform _element-wise_ op
 | `stats.L2Norm(a)` | . | `np.sqrt(v @ v)` or `np.linalg.norm(v)` | L2 norm of vector v |
 | . | . |`cg`  | conjugate gradients solver |
 
-## FFT and complex numbers
+### FFT and complex numbers
 
 todo: huge amount of work needed to support complex numbers throughout!
 

@@ -25,6 +25,8 @@ fmt.Println(dt.String())
 fmt.Printf("val: %v\n", val))
 ```
 
+The `Column` method creates a [[doc:tensor.Rows]] for the underlying column values, with a list of indexes used for the row-level access, which enables efficient sorting and filtering by row, as only these indexes need to be updated, not the underlying data values. The indexes are maintained on the table, which provides an indexed view onto the underlying data values that are stored in a separate [[doc:table.Columns]] structure. Thus, there can be multiple different such table views onto the same underlying columns data.
+
 ## Sorting and Filtering
 
 ## Splits ("pivot tables" etc), Aggregation
@@ -46,7 +48,7 @@ desc := agg.DescAll(ix) // summary stats of all columns
 mean := desc.Float("ColNm", desc.RowsByString("Agg", "Mean", etable.Equals, etable.UseCase)[0])
 ```
 
-# CSV / TSV file format
+## CSV / TSV file format
 
 Tables can be saved and loaded from CSV (comma separated values) or TSV (tab separated values) files.  See the next section for special formatting of header strings in these files to record the type and tensor cell shapes.
 

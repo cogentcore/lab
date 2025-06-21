@@ -12,6 +12,7 @@ import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/yaegicore"
 	"cogentcore.org/lab/goal/interpreter"
+	"cogentcore.org/lab/tensorfs"
 	"cogentcore.org/lab/yaegilab/labsymbols"
 	"cogentcore.org/lab/yaegilab/tensorsymbols"
 	"github.com/cogentcore/yaegi/interp"
@@ -44,6 +45,9 @@ func (in *Interpreter) ImportUsed() {
 }
 
 func (in *Interpreter) Eval(src string) (res reflect.Value, err error) {
+	tensorfs.ListOutput = in.Goal.Config.StdIO.Out
+	in.Interpreter.Goal.TrState.MathRecord = true
 	res, _, err = in.Interpreter.Eval(src)
+	tensorfs.ListOutput = nil
 	return
 }

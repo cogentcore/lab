@@ -68,7 +68,7 @@ func (dir *Node) ListLong(recursive bool, ident int) string {
 				b.WriteString(it.ListLong(recursive, ident+1))
 			}
 		} else {
-			b.WriteString(it.String() + "\n")
+			b.WriteString(it.name + " \t" + it.String() + "\n")
 		}
 	}
 	return b.String()

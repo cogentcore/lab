@@ -4,7 +4,7 @@ Categories = ["Tensor"]
 
 The **tensor.Tensor** represents n-dimensional data of various types, providing similar functionality to the widely used [NumPy](https://numpy.org/doc/stable/index.html) libraries in Python, and the commercial MATLAB framework.
 
-The [[Goal]] [[math]] mode operates on tensor data exclusively: see documentation there for convenient shortcut expressions for common tensor operations. This page documents the underlying Go language implementation of tensors. See [[doc:tensor]] for the basic Go API docs, and [[tensor math]] for basic math operations that can be performed on tensors.
+The [[Goal]] [[math]] mode operates on tensor data exclusively: see documentation there for convenient shortcut expressions for common tensor operations. This page documents the underlying Go language implementation of tensors. See [[doc:tensor]] for the Go API docs, [[tensor math]] for basic math operations that can be performed on tensors, and [[stats]] for statistics functions operating on tensor data.
 
 A tensor can be constructed from a Go slice, and accessed using a 1D index into that slice:
 
@@ -112,6 +112,7 @@ Using the [[doc:tensor.Reslice]] function, you can extract any subset from this 
 ```Goal
 x := tensor.NewFloat64(3, 4)
 x.CopyFrom(tensor.NewIntRange(12))
+
 row1 := tensor.Reslice(x, 1) // row is first index; column index is unspecified = all
 col1 := tensor.Reslice(x, tensor.FullAxis, 1) // explicitly request all rows
 
@@ -119,12 +120,13 @@ fmt.Println("row1:", row1.String())
 fmt.Println("col1:", col1.String())
 ```
 
-Note that the column values got turned into a 1D tensor in this process -- to keep it as a column vector, you need to add a "blank" row dimension, which can be done using the `tensor.NewAxis` value:
+Note that the column values got turned into a 1D tensor in this process -- to keep it as a column vector (2D with 1 column and 3 rows), you need to add an extra "blank" dimension, which can be done using the `tensor.NewAxis` value:
 
 ```Goal
 x := tensor.NewFloat64(3, 4)
 x.CopyFrom(tensor.NewIntRange(12))
-col1 := tensor.Reslice(x, tensor.NewAxis, tensor.FullAxis, 1)
+
+col1 := tensor.Reslice(x, tensor.FullAxis, 1, tensor.NewAxis)
 
 fmt.Println("col1:", col1.String())
 ```
@@ -134,6 +136,7 @@ You can also specify sub-ranges along each dimension, or even reorder the values
 ```Goal
 x := tensor.NewFloat64(3, 4)
 x.CopyFrom(tensor.NewIntRange(12))
+
 col1 := tensor.Reslice(x, tensor.Slice{Step: -1}, 1)
 
 fmt.Println("col1:", col1.String())
@@ -144,17 +147,19 @@ You can use `tensor.Ellipsis` to specify `FullAxis` for all the dimensions up to
 ```Goal
 x := tensor.NewFloat64(3, 2, 2)
 x.CopyFrom(tensor.NewIntRange(12))
+
 last1 := tensor.Reslice(x, tensor.Ellipsis, 1)
 
-fmt.Println("values:", x.String())
+fmt.Println("x:", x.String())
 fmt.Println("last1:", last1.String())
 ```
 
-As in [NumPy](https://numpy.org/doc/stable/index.html), the [[doc:tensor.Sliced]] view wraps the original source tensor, so that if you change a value in that original source, _the value automatically changes in the view_ as well. Use the `AsValues()` method on a view to get a new concrete [[doc:tensor.Values]] representation of the view (equivalent to the NumPy `copy` function).
+As in [NumPy](https://numpy.org/doc/stable/index.html) (and standard Go slices), the [[doc:tensor.Sliced]] view wraps the original source tensor, so that if you change a value in that original source, _the value automatically changes in the view_ as well. Use the `AsValues()` method on a view to get a new concrete [[doc:tensor.Values]] representation of the view (equivalent to the NumPy `copy` function).
 
 ```Goal
 x := tensor.NewFloat64(3, 2, 2)
 x.CopyFrom(tensor.NewIntRange(12))
+
 last1 := tensor.Reslice(x, tensor.Ellipsis, 1)
 
 fmt.Println("values:", x.String())
@@ -168,7 +173,7 @@ fmt.Println("last1:", last1.String())
 fmt.Println("values:", values.String())
 ```
 
-### Masked by boolean values
+### Masked by booleans
 
 You can apply a boolean mask to a tensor, to extract arbitrary values where the boolean value is true:
 
@@ -187,7 +192,7 @@ fmt.Println("vals: ", vals.String())
 
 Note that missing values are encoded as `NaN`, which allows the resulting [[doc:tensor.Masked]] view to retain the shape of the original, and all of the other math functions operating on tensors properly treat `NaN` as a missing value that is ignored. You can also get the concrete values as shown, but this reduces the shape to 1D by default.
 
-### Arbirary indexed values
+### Arbirary indexes
 
 You can extract arbitrary values from a tensor using a list of indexes (as a tensor), where the shape of that list then determines the shape of the resulting view:
 
