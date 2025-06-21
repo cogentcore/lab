@@ -21,11 +21,8 @@ dt.Column("Data").SetFloatRow(37, 2, 3)
 
 val := dt.Column("Data").FloatRow(2, 3)
 
-core.NewText(b).SetText(dt.String()).Styler(func(s *styles.Style) {
-    s.Text.WhiteSpace = text.WhiteSpacePre
-    s.Font.Family = rich.Monospace
-})
-core.NewText(b).SetText(fmt.Sprintf("val: %v", val))
+fmt.Println(dt.String())
+fmt.Printf("val: %v\n", val))
 ```
 
 ## Sorting and Filtering

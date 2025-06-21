@@ -13,22 +13,10 @@ sub := tmath.Sub(x, x)
 mul := tmath.Mul(x, x)
 div := tmath.Div(x, x)
 
-core.NewText(b).SetText("add: " + add.String()).Styler(func(s *styles.Style) {
-    s.Text.WhiteSpace = text.WhiteSpacePre
-    s.Font.Family = rich.Monospace
-})
-core.NewText(b).SetText("sub: " + sub.String()).Styler(func(s *styles.Style) {
-    s.Text.WhiteSpace = text.WhiteSpacePre
-    s.Font.Family = rich.Monospace
-})
-core.NewText(b).SetText("mul: " + mul.String()).Styler(func(s *styles.Style) {
-    s.Text.WhiteSpace = text.WhiteSpacePre
-    s.Font.Family = rich.Monospace
-})
-core.NewText(b).SetText("div: " + div.String()).Styler(func(s *styles.Style) {
-    s.Text.WhiteSpace = text.WhiteSpacePre
-    s.Font.Family = rich.Monospace
-})
+fmt.Println("add:", add.String())
+fmt.Pritnln("sub:", sub.String())
+fmt.Println("mul:", mul.String())
+fmt.Println("div:", div.String())
 ```
 
 As you can see, the operations are performed element-wise; see the [[matrix]] package for 2D matrix multiplication and related operations.
@@ -41,18 +29,9 @@ sin := tmath.Sin(x)
 atan := tmath.Atan2(x, tensor.NewFromValues(3.0))
 pow := tmath.Pow(x, tensor.NewFromValues(2.0))
 
-core.NewText(b).SetText("sin: " + sin.String()).Styler(func(s *styles.Style) {
-    s.Text.WhiteSpace = text.WhiteSpacePre
-    s.Font.Family = rich.Monospace
-})
-core.NewText(b).SetText("atan: " + atan.String()).Styler(func(s *styles.Style) {
-    s.Text.WhiteSpace = text.WhiteSpacePre
-    s.Font.Family = rich.Monospace
-})
-core.NewText(b).SetText("pow: " + pow.String()).Styler(func(s *styles.Style) {
-    s.Text.WhiteSpace = text.WhiteSpacePre
-    s.Font.Family = rich.Monospace
-})
+fmt.Println("sin:", sin.String())
+fmt.Println("atan:", atan.String())
+fmt.Println("pow:", pow.String())
 ```
 
 See the info below on [[#Alignment of shapes]] for the rules governing the way that different-shaped tensors are aligned for these computations.

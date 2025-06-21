@@ -13,11 +13,8 @@ There are type-specific accessor methods for the standard high-frequency data ty
 dir, _ := tensorfs.NewDir("root")
 x := dir.Float64("data", 5, 5)
 
-core.NewText(b).SetText(dir.ListLong(true, 4))
-core.NewText(b).SetText(x.String()).Styler(func(s *styles.Style) {
-    s.Text.WhiteSpace = text.WhiteSpacePre
-    s.Font.Family = rich.Monospace
-})
+fmt.Println(dir.ListLong(true, 4))
+fmt.Println(x.String())
 ```
 
 Which are wrappers around the underlying Generic `Value` method:
@@ -49,11 +46,8 @@ dir, _ := tensorfs.NewDir("root")
 subdir := dir.Dir("sub")
 x := subdir.Float64("data", 5, 5)
 
-core.NewText(b).SetText(dir.ListLong(true, 4))
-core.NewText(b).SetText(x.String()).Styler(func(s *styles.Style) {
-    s.Text.WhiteSpace = text.WhiteSpacePre
-    s.Font.Family = rich.Monospace
-})
+fmt.Println(dir.ListLong(true, 4))
+fmt.Println(x.String())
 ```
 
 If the subdirectory doesn't exist yet, it will be made, and otherwise it is returned. Any errors will be logged and a nil returned, likely causing a panic unless you expect it to fail and check for that.
