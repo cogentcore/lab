@@ -1,8 +1,9 @@
 This is a list of all the stuff that doesn't work in goal.
 
-## tensor.NewIndexed not supported
+## docs issues
 
-in the new math.md docs, indexed case is not working.
+* for loop max in metric.md doesn't work..
+* matrix.EigSym return 2 values not working -- only 1
 
 ## converting between go / tensor
 

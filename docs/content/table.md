@@ -27,13 +27,37 @@ fmt.Printf("val: %v\n", val))
 
 The `Column` method creates a [[doc:tensor.Rows]] for the underlying column values, with a list of indexes used for the row-level access, which enables efficient sorting and filtering by row, as only these indexes need to be updated, not the underlying data values. The indexes are maintained on the table, which provides an indexed view onto the underlying data values that are stored in a separate [[doc:table.Columns]] structure. Thus, there can be multiple different such table views onto the same underlying columns data.
 
-## Sorting and Filtering
+## Sorting and filtering
+
+```go
+dt := table.New()
+dt.AddStringColumn("Name")
+dt.AddFloat64Column("Data")
+dt.SetNumRows(3)
+
+fruits := []string{"peach", "apple", "orange"}
+
+for i := range 3 {
+	dt.Column("Name").SetStringRow(fruits[i], i, 0)
+	dt.Column("Data").SetFloatRow(float64(i+1), i, 0)
+}
+
+dt.Sequential()
+dt.SortColumn("Data", tensor.Descending)
+fmt.Println(dt.String())
+
+dt.Sequential()
+dt.Filter(func(dt *table.Table, row int) bool {
+	return dt.Column("Data").FloatRow(row, 0) > 1
+})
+fmt.Println(dt.String())
+```
 
 ## Splits ("pivot tables" etc), Aggregation
 
 Create a table of mean values of "Data" column grouped by unique entries in "Name" column, resulting table will be called "DataMean":
 
-```Go
+```go
 byNm := split.GroupBy(ix, []string{"Name"}) // column name(s) to group by
 split.Agg(byNm, "Data", agg.AggMean) // 
 gps := byNm.AggsToTable(etable.AddAggName) // etable.AddAggName or etable.ColNameOnly for naming cols
@@ -41,7 +65,7 @@ gps := byNm.AggsToTable(etable.AddAggName) // etable.AddAggName or etable.ColNam
 
 Describe (basic stats) all columns in a table:
 
-```Go
+```go
 ix := etable.NewRows(et) // new view with all rows
 desc := agg.DescAll(ix) // summary stats of all columns
 // get value at given column name (from original table), row "Mean"
@@ -57,7 +81,7 @@ Tables can be saved and loaded from CSV (comma separated values) or TSV (tab sep
 To capture the type and shape of the columns, we support the following header formatting.  We weren't able to find any other widely supported standard (please let us know if there is one that we've missed!)
 
 Here is the mapping of special header prefix characters to standard types:
-```Go
+```go
 '$': etensor.STRING,
 '%': etensor.FLOAT32,
 '#': etensor.FLOAT64,
