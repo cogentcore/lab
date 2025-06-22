@@ -15,7 +15,7 @@ There are type-specific accessor methods for the standard high-frequency data ty
 dir, _ := tensorfs.NewDir("root")
 x := dir.Float64("data", 5, 5)
 
-fmt.Println(dir.ListLong(true, 4))
+fmt.Println(dir.ListLong(true, 2))
 fmt.Println(x.String())
 ```
 

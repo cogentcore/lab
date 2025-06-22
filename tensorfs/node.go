@@ -71,7 +71,7 @@ func newNode(dir *Node, name string) (*Node, error) {
 // type or sizes provided, for efficiency -- if there is doubt, check!),
 // otherwise a new tensor is created. It is fine to not pass any sizes and
 // use `SetShapeSizes` method later to set the size.
-func Value[T tensor.DataTypes](dir *Node, name string, sizes ...int) tensor.Values { //yaegi:add
+func Value[T tensor.DataTypes](dir *Node, name string, sizes ...int) tensor.Values {
 	it := dir.Node(name)
 	if it != nil {
 		return it.Tensor.(tensor.Values)
@@ -91,7 +91,7 @@ func Value[T tensor.DataTypes](dir *Node, name string, sizes ...int) tensor.Valu
 // Any existing nodes with the same names are recycled without checking
 // or updating the data type or sizes.
 // See the [Value] documentation for more info.
-func NewValues[T tensor.DataTypes](dir *Node, shape []int, names ...string) { //yaegi:add
+func NewValues[T tensor.DataTypes](dir *Node, shape []int, names ...string) {
 	for _, nm := range names {
 		Value[T](dir, nm, shape...)
 	}
@@ -101,7 +101,7 @@ func NewValues[T tensor.DataTypes](dir *Node, shape []int, names ...string) { //
 // of given data type, in given directory and name.
 // If it already exists, it is returned without checking against args,
 // else a new one is made. See the [Value] documentation for more info.
-func Scalar[T tensor.DataTypes](dir *Node, name string) tensor.Values { //yaegi:add
+func Scalar[T tensor.DataTypes](dir *Node, name string) tensor.Values {
 	return Value[T](dir, name, 1)
 }
 

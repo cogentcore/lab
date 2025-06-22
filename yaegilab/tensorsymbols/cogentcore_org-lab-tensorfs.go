@@ -4,7 +4,6 @@ package tensorsymbols
 
 import (
 	"cogentcore.org/lab/tensorfs"
-	"github.com/cogentcore/yaegi/interp"
 	"reflect"
 )
 
@@ -23,17 +22,14 @@ func init() {
 		"Long":         reflect.ValueOf(tensorfs.Long),
 		"Mkdir":        reflect.ValueOf(tensorfs.Mkdir),
 		"NewDir":       reflect.ValueOf(tensorfs.NewDir),
-		"NewValues":    reflect.ValueOf(interp.GenericFunc("func NewValues[T tensor.DataTypes](dir *Node, shape []int, names ...string) { //yaegi:add\n\tfor _, nm := range names {\n\t\tValue[T](dir, nm, shape...)\n\t}\n}")),
 		"Overwrite":    reflect.ValueOf(tensorfs.Overwrite),
 		"Preserve":     reflect.ValueOf(tensorfs.Preserve),
 		"Record":       reflect.ValueOf(tensorfs.Record),
 		"Recursive":    reflect.ValueOf(tensorfs.Recursive),
-		"Scalar":       reflect.ValueOf(interp.GenericFunc("func Scalar[T tensor.DataTypes](dir *Node, name string) tensor.Values { //yaegi:add\n\treturn Value[T](dir, name, 1)\n}")),
 		"Set":          reflect.ValueOf(tensorfs.Set),
 		"SetCopy":      reflect.ValueOf(tensorfs.SetCopy),
 		"SetTensor":    reflect.ValueOf(tensorfs.SetTensor),
 		"Short":        reflect.ValueOf(tensorfs.Short),
-		"Value":        reflect.ValueOf(interp.GenericFunc("func Value[T tensor.DataTypes](dir *Node, name string, sizes ...int) tensor.Values { //yaegi:add\n\tit := dir.Node(name)\n\tif it != nil {\n\t\treturn it.Tensor.(tensor.Values)\n\t}\n\ttsr := tensor.New[T](sizes...)\n\tmetadata.SetName(tsr, name)\n\tnd, err := newNode(dir, name)\n\tif errors.Log(err) != nil {\n\t\treturn nil\n\t}\n\tnd.Tensor = tsr\n\treturn tsr\n}")),
 		"ValueType":    reflect.ValueOf(tensorfs.ValueType),
 
 		// type definitions
