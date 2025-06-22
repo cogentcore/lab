@@ -1,5 +1,4 @@
 +++
-Categories = ["Tensor"]
 +++
 
 The **tensor.Tensor** represents n-dimensional data of various types, providing similar functionality to the widely used [NumPy](https://numpy.org/doc/stable/index.html) libraries in Python, and the commercial MATLAB framework.

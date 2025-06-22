@@ -32,7 +32,7 @@ type Metrics int32 //enums:enum -trim-prefix Metric
 
 const (
 	// L2Norm is the square root of the sum of squares differences
-	// between tensor values, aka the L2 Norm.
+	// between tensor values, aka the Euclidean distance.
 	MetricL2Norm Metrics = iota
 
 	// SumSquares is the sum of squares differences between tensor values.

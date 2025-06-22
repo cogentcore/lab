@@ -15,6 +15,7 @@ func init() {
 		"AddShapes":               reflect.ValueOf(tensor.AddShapes),
 		"AlignForAssign":          reflect.ValueOf(tensor.AlignForAssign),
 		"AlignShapes":             reflect.ValueOf(tensor.AlignShapes),
+		"AnySlice":                reflect.ValueOf(tensor.AnySlice),
 		"As1D":                    reflect.ValueOf(tensor.As1D),
 		"AsFloat32":               reflect.ValueOf(tensor.AsFloat32),
 		"AsFloat64":               reflect.ValueOf(tensor.AsFloat64),
