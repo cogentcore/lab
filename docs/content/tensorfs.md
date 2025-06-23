@@ -13,7 +13,7 @@ There are type-specific accessor methods for the standard high-frequency data ty
 
 ```Goal
 dir, _ := tensorfs.NewDir("root")
-x := dir.Float64("data", 5, 5)
+x := dir.Float64("data", 3, 3)
 
 fmt.Println(dir.ListLong(true, 2))
 fmt.Println(x.String())
@@ -22,7 +22,7 @@ fmt.Println(x.String())
 Which are wrappers around the underlying Generic `Value` method:
 
 ```go
-x := tensorfs.Value[float64](dir, "data", 5, 5)
+x := tensorfs.Value[float64](dir, "data", 3, 3)
 ```
 
 These methods create the given tensor if it does not yet exist, and otherwise return it, providing a robust order-independent way of accessing / constructing the relevant data.
@@ -46,13 +46,56 @@ To make a new subdirectory:
 ```Goal
 dir, _ := tensorfs.NewDir("root")
 subdir := dir.Dir("sub")
-x := subdir.Float64("data", 5, 5)
+x := subdir.Float64("data", 3, 3)
 
-fmt.Println(dir.ListLong(true, 4))
+fmt.Println(dir.ListLong(true, 2))
 fmt.Println(x.String())
 ```
 
 If the subdirectory doesn't exist yet, it will be made, and otherwise it is returned. Any errors will be logged and a nil returned, likely causing a panic unless you expect it to fail and check for that.
+
+## Operating over values across directories
+
+The `ValuesFunc` method on a directory node allows you to easily extract a list of values across any number of subdirectories (it only returns the final value "leaves" of the filetree):
+
+```Goal
+dir, _ := tensorfs.NewDir("root")
+subdir := dir.Dir("sub")
+x := subdir.Float64("x", 3, 3)
+subsub := subdir.Dir("stats")
+y := subsub.Float64("y", 1)
+z := subsub.Float64("z", 1)
+
+fmt.Println(dir.ListLong(true, 2))
+
+vals := dir.ValuesFunc(nil) // nil = get everything
+for _, v := range vals {
+	fmt.Println(v.String())
+}
+```
+
+Thus, even if you have statistics or other data nested down deep, this will "flatten" the hierarchy and allow you to process it. Here's a version that actually filters the nodes:
+
+```Goal
+dir, _ := tensorfs.NewDir("root")
+subdir := dir.Dir("sub")
+x := subdir.Float64("x", 5, 5)
+subsub := subdir.Dir("stats")
+y := subsub.Float64("y", 1)
+z := subsub.Float64("z", 1)
+
+fmt.Println(dir.ListLong(true, 2))
+
+vals := dir.ValuesFunc(func(n *tensorfs.Node) bool {
+    if n.IsDir() { // can filter by dirs here too (get to see everything)
+        return true
+    }
+    return n.Tensor.NumDims() == 1
+})
+for _, v := range vals {
+	fmt.Println(v.String())
+}
+```
 
 There are parallel `Node` and `Value` access methods for directory nodes, with the Value ones being:
 
@@ -60,9 +103,5 @@ There are parallel `Node` and `Value` access methods for directory nodes, with t
 * `tsrs, err := dir.Values("name1", "name2")` returns a slice of tensor values within directory by name. a plain `.Values()` returns all values.
 * `tsrs := dir.ValuesFunc(<filter func>)` walks down directories (unless filtered) and returns a flat list of all tensors found. Goes in "directory order" = order nodes were added.
 * `tsrs := dir.ValuesAlphaFunc(<filter func>)` is like `ValuesFunc` but traverses in alpha order at each node.
-
-TODO: examples of Values usage!
-
-Each Node has a name which must be unique within the directory. The nodes in a directory are processed in the order of its ordered map list, which initially reflects the order added, and can be re-ordered as needed. An alphabetical sort is also available with the `Alpha` versions of methods, and is the default sort for standard FS operations.
 
 
