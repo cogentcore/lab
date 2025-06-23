@@ -43,7 +43,7 @@ func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 			tree.Add(p, func(w *core.Button) {
 				w.SetText("README").SetIcon(icons.FileMarkdown).
 					SetTooltip("open README help file").OnClick(func(e events.Event) {
-					core.TheApp.OpenURL("https://github.com/cogentcore/lab/blob/main/examples/planets/README.md")
+					core.TheApp.OpenURL("https://github.com/cogentcore/lab/blob/main/examples/pca/README.md")
 				})
 			})
 		})
