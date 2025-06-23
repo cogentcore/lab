@@ -61,28 +61,7 @@ There are parallel `Node` and `Value` access methods for directory nodes, with t
 * `tsrs := dir.ValuesFunc(<filter func>)` walks down directories (unless filtered) and returns a flat list of all tensors found. Goes in "directory order" = order nodes were added.
 * `tsrs := dir.ValuesAlphaFunc(<filter func>)` is like `ValuesFunc` but traverses in alpha order at each node.
 
-## Existing items and unique names
-
-As in a real filesystem, names must be unique within each directory, which creates issues for how to manage conflicts between existing and new items. To make the overall framework maximally robust and eliminate the need for a controlled initialization-then-access ordering, we generally adopt the "Recycle" logic:
-
-* _Return an existing item of the same name, or make a new one._
-
-In addition, if you really need to know if there is an existing item, you can use the `Node` method to check for yourself -- it will return `nil` if no node of that name exists. Furthermore, the global `NewDir` function returns an `fs.ErrExist` error for existing items (e.g., use `errors.Is(fs.ErrExist)`), as used in various `os` package functions.
-
-## Goal Command API
-
-The following shell command style functions always operate relative to the global `CurDir` current directory and `CurRoot` root, and `goal` in [[math]] mode exposes these methods directly (see [[math#Tensorfs]]).
-
-* `Chdir("subdir")` change current directory to subdir.
-* `Mkdir("subdir")` make a new directory.
-* `List()` print a list of nodes.
-* `tsr := Get("mydata")` get tensor value at "mydata" node.
-* `Set("mydata", tsr)` set tensor to "mydata" node (node points to tensor, is updated when tensor is).
-* `SetCopy("mydata", tsr)` set tensor to a copy "mydata" node (data is preserved from time of call).
-
-A given `Node` in the file system is either:
-* A _Value_, with a tensor encoding its value. These are terminal "leaves" in the hierarchical data tree, equivalent to "files" in a standard filesystem.
-* A _Directory_, with an ordered map of other Node nodes under it.
+TODO: examples of Values usage!
 
 Each Node has a name which must be unique within the directory. The nodes in a directory are processed in the order of its ordered map list, which initially reflects the order added, and can be re-ordered as needed. An alphabetical sort is also available with the `Alpha` versions of methods, and is the default sort for standard FS operations.
 

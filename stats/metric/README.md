@@ -5,6 +5,8 @@
 type MetricFunc func(a, b, out tensor.Tensor) error
 ```
 
+See the [Cogent Lab Docs](https://cogentcore.org/lab/metric) for full documentation.
+
 The metric functions always operate on the outermost _row_ dimension, and it is up to the caller to reshape the tensors to accomplish the desired results. The two tensors must have the same shape.
 
 * To obtain a single summary metric across all values, use `tensor.As1D`.

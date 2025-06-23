@@ -1,5 +1,9 @@
 # Plot
 
+See the [Cogent Lab Docs](https://cogentcore.org/lab/plot) for full documentation.
+
+Design discussion here:
+
 The `plot` package generates 2D plots of data using the Cogent Core `paint` rendering system.  The `plotcore` sub-package has Cogent Core Widgets that can be used in applications.  
 * `Plot` is just a wrapper around a `plot.Plot`, for code-generated plots.
 * `Editor` is an interactive plot viewer that supports selection of which data to plot, and GUI configuration of plot parameters.

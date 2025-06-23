@@ -201,7 +201,11 @@ fmt.Println("ixs:", ixs)
 
 ## Reference tables
 
-The following tables summarize Goal math-mode syntax in terms of [NumPy](https://numpy.org/doc/stable/index.html) and the underlying Go code generated.
+The following tables summarize Goal math-mode syntax in terms of [NumPy](https://numpy.org/doc/stable/index.html) and the underlying Go code generated. For MATLAB equivalents, see [numpy-for-matlab-users](https://numpy.org/doc/stable/user/numpy-for-matlab-users.html).
+
+* The _same:_ in Goal means that the same NumPy syntax works in Goal, minus the `np.` prefix, and likewise for _or:_ (where Goal also has additional syntax).
+* In the `tensor.Go` code, we sometimes just write a scalar number for simplicity, but these are actually `tensor.NewFloat64Scalar` etc.
+* Goal also has support for `string` tensors, e.g., for labels, and operators such as addition that make sense for strings are supported. Otherwise, strings are automatically converted to numbers using the `tensor.Float` interface. If you have any doubt about whether you've got a `tensor.Float64` when you expect one, use `tensor.AsFloat64Tensor` which makes sure.
 
 ### Tensor shape
 
@@ -366,4 +370,24 @@ todo: huge amount of work needed to support complex numbers throughout!
 | . | . |`np.fft.fft(a)` | Fourier transform of `a` |
 | . | . |`np.fft.ifft(a)` | inverse Fourier transform of `a` |
 | . | . |`signal.resample(x, np.ceil(len(x)/q))` |  downsample with low-pass filtering |
+
+### Tensorfs 
+
+The [[tensorfs]] data filesystem provides a global filesystem-like workspace for storing tensor data, and [[Goal]] has special commands and functions to facilitate interacting with it.
+
+In an interactive `goal` shell, when you do `##` to switch into math mode, the prompt changes to show your current directory in the tensorfs, not the regular OS filesystem, and the final prompt character turns into a `#`.
+
+Use `get` and `set` (aliases for `tensorfs.Get` and `tensorfs.Set`) to retrieve and store data in the tensorfs:
+
+* `x := get("path/to/item")` retrieves the tensor data value at given path, which can then be used directly in an expression or saved to a new variable as in this example.
+
+* `set("path/to/item", x)` saves tensor data to given path, overwriting any existing value for that item if it already exists, and creating a new one if not. `x` can be any data expression.
+
+You can use the standard shell commands to navigate around the data filesystem:
+
+* `cd <dir>` to change the current working directory. By default, new variables created in the shell are also recorded into the current working directory for later access.
+
+* `ls [-l,r] [dir]` list the contents of a directory; without arguments, it shows the current directory. The `-l` option shows each element on a separate line with its shape. `-r` does a recursive list through subdirectories.
+
+* `mkdir <dir>` makes a new subdirectory.
 
