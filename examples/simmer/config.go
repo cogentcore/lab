@@ -16,7 +16,7 @@ import (
 
 // FilterResults specifies which results files to open.
 type FilterResults struct {
-	// File name contains this string, e.g., "_epc" or "_run"
+	// File name contains this string, e.g., "_epoch" or "_run"
 	FileContains string `width:"60"`
 
 	// extension of files, e.g., .tsv
@@ -70,6 +70,14 @@ type JobParams struct {
 
 	// Qos is the queue "quality of service" name.
 	Qos string
+
+	// If true, the executable is in a cmd subdirectory, filename main.go,
+	// to allow the primary directory to be imported into other apps.
+	// Manages the copying and building of this sub-command.
+	SubCmd bool
+
+	// BuildArgs are extra arts to pass during building, such as -tags mpi for mpi
+	BuildArgs string
 }
 
 func (jp *JobParams) Defaults() {
@@ -89,7 +97,7 @@ type ServerParams struct {
 	Name string
 
 	// Root is the root path from user home dir on server.
-	// is auto-set to: filepath.Join("simdata", Project, User)
+	// is auto-set to: filepath.Join("simserver", Project, User)
 	Root string
 
 	// Slurm uses the slurm job manager. Otherwise uses a bare job manager.
@@ -198,7 +206,7 @@ func (cf *Configuration) Defaults() {
 
 func (cf *Configuration) Update() {
 	cf.UserShort = cf.User[:3]
-	cf.Server.Root = filepath.Join("simdata", cf.Project, cf.User)
+	cf.Server.Root = filepath.Join("simserver", cf.Project, cf.User)
 }
 
 // Result has info for one loaded result, as a table.Table

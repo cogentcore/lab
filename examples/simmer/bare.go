@@ -31,7 +31,7 @@ func (sr *Simmer) SubmitBare(jid, args string) string {
 	f.Close()
 	goalrun.Run("chmod", "+x", script)
 
-	files, err := baremetal.AllFiles("./", ".*")
+	files, err := baremetal.AllFiles("./", ".*") // no .DS_Store etc
 	if errors.Log(err) != nil {
 		return ""
 	}
@@ -73,8 +73,14 @@ func (sr *Simmer) WriteBare(w io.Writer, jid, args string) {
 		fmt.Fprintln(w, sr.Config.SetupScript)
 	}
 
-	// fmt.Fprintf(w, "go build -mod=mod -tags mpi\n")
-	fmt.Fprintf(w, "go build -mod=mod\n")
+	if sr.Config.Job.SubCmd {
+		fmt.Fprintf(w, "cd cmd\n")
+		fmt.Fprintf(w, "go build -mod=mod %s\n", sr.Config.Job.BuildArgs)
+		fmt.Fprintf(w, "mv cmd ../%s\n", sr.Config.Project)
+		fmt.Fprintf(w, "cd ../\n")
+	} else {
+		fmt.Fprintf(w, "go build -mod=mod %s\n", sr.Config.Job.BuildArgs)
+	}
 	cmd := `date '+%Y-%m-%d %T %Z' > job.start`
 	fmt.Fprintln(w, cmd)
 

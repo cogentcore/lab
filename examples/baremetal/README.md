@@ -8,7 +8,11 @@ There is no attempt to prioritize jobs: it is just FIFO. The main function is ju
 
 Each job consumes one GPU, as key a simplification to minimize resource management complexity.
 
-## Environment variables
+## State and config files
+
+The baremetal program itself uses a `config.html` file for configuration, and saves a record of all jobs and active state in a `state.json` file, both of which are saved in the "app data" location for the app (e.g., `~/Library/BareMetal` on mac). The state file allows the baremetal program to be fully restartable.
+
+## Environment variables for running job
 
 * `BARE_GPU` = the allocated GPU number (0..N]
 
@@ -22,6 +26,10 @@ Each job consumes one GPU, as key a simplification to minimize resource manageme
 ## Configuring a new "bare metal" linux compute server
 
 ```sh
-sudo apt install golang gcc libgl1-mesa-dev libegl1-mesa-dev mesa-vulkan-drivers xorg-dev vulkan-tools nvidia-driver-565-server nvidia-utils-565-server
+sudo apt install gcc libgl1-mesa-dev libegl1-mesa-dev mesa-vulkan-drivers xorg-dev vulkan-tools nvidia-driver-550-server nvidia-utils-550-server
 ```
+
+Note: the nvidia-* packages are critical for vulkaninfo to see the GPUs. No additional DISPLAY variable or anything should be necessary. 550 is the stable branch (recommended) while 565 is a more advanced "new features" branch.
+
+Typically have to install Go manually from https://go.dev/doc/install to get an up-to-date version.
 

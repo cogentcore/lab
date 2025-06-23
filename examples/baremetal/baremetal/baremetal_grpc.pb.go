@@ -21,8 +21,8 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	BareMetal_Submit_FullMethodName       = "/baremetal.BareMetal/Submit"
-	BareMetal_CancelJobs_FullMethodName   = "/baremetal.BareMetal/CancelJobs"
 	BareMetal_JobStatus_FullMethodName    = "/baremetal.BareMetal/JobStatus"
+	BareMetal_CancelJobs_FullMethodName   = "/baremetal.BareMetal/CancelJobs"
 	BareMetal_FetchResults_FullMethodName = "/baremetal.BareMetal/FetchResults"
 	BareMetal_UpdateJobs_FullMethodName   = "/baremetal.BareMetal/UpdateJobs"
 )
@@ -32,8 +32,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BareMetalClient interface {
 	Submit(ctx context.Context, in *Submission, opts ...grpc.CallOption) (*Job, error)
-	CancelJobs(ctx context.Context, in *JobIDList, opts ...grpc.CallOption) (*Error, error)
 	JobStatus(ctx context.Context, in *JobIDList, opts ...grpc.CallOption) (*JobList, error)
+	CancelJobs(ctx context.Context, in *JobIDList, opts ...grpc.CallOption) (*Error, error)
 	FetchResults(ctx context.Context, in *JobIDList, opts ...grpc.CallOption) (*JobList, error)
 	UpdateJobs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -56,20 +56,20 @@ func (c *bareMetalClient) Submit(ctx context.Context, in *Submission, opts ...gr
 	return out, nil
 }
 
-func (c *bareMetalClient) CancelJobs(ctx context.Context, in *JobIDList, opts ...grpc.CallOption) (*Error, error) {
+func (c *bareMetalClient) JobStatus(ctx context.Context, in *JobIDList, opts ...grpc.CallOption) (*JobList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Error)
-	err := c.cc.Invoke(ctx, BareMetal_CancelJobs_FullMethodName, in, out, cOpts...)
+	out := new(JobList)
+	err := c.cc.Invoke(ctx, BareMetal_JobStatus_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *bareMetalClient) JobStatus(ctx context.Context, in *JobIDList, opts ...grpc.CallOption) (*JobList, error) {
+func (c *bareMetalClient) CancelJobs(ctx context.Context, in *JobIDList, opts ...grpc.CallOption) (*Error, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(JobList)
-	err := c.cc.Invoke(ctx, BareMetal_JobStatus_FullMethodName, in, out, cOpts...)
+	out := new(Error)
+	err := c.cc.Invoke(ctx, BareMetal_CancelJobs_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +101,8 @@ func (c *bareMetalClient) UpdateJobs(ctx context.Context, in *emptypb.Empty, opt
 // for forward compatibility.
 type BareMetalServer interface {
 	Submit(context.Context, *Submission) (*Job, error)
-	CancelJobs(context.Context, *JobIDList) (*Error, error)
 	JobStatus(context.Context, *JobIDList) (*JobList, error)
+	CancelJobs(context.Context, *JobIDList) (*Error, error)
 	FetchResults(context.Context, *JobIDList) (*JobList, error)
 	UpdateJobs(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedBareMetalServer()
@@ -118,11 +118,11 @@ type UnimplementedBareMetalServer struct{}
 func (UnimplementedBareMetalServer) Submit(context.Context, *Submission) (*Job, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Submit not implemented")
 }
-func (UnimplementedBareMetalServer) CancelJobs(context.Context, *JobIDList) (*Error, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CancelJobs not implemented")
-}
 func (UnimplementedBareMetalServer) JobStatus(context.Context, *JobIDList) (*JobList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method JobStatus not implemented")
+}
+func (UnimplementedBareMetalServer) CancelJobs(context.Context, *JobIDList) (*Error, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelJobs not implemented")
 }
 func (UnimplementedBareMetalServer) FetchResults(context.Context, *JobIDList) (*JobList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FetchResults not implemented")
@@ -169,24 +169,6 @@ func _BareMetal_Submit_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _BareMetal_CancelJobs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(JobIDList)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(BareMetalServer).CancelJobs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: BareMetal_CancelJobs_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BareMetalServer).CancelJobs(ctx, req.(*JobIDList))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _BareMetal_JobStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(JobIDList)
 	if err := dec(in); err != nil {
@@ -201,6 +183,24 @@ func _BareMetal_JobStatus_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BareMetalServer).JobStatus(ctx, req.(*JobIDList))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BareMetal_CancelJobs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JobIDList)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BareMetalServer).CancelJobs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BareMetal_CancelJobs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BareMetalServer).CancelJobs(ctx, req.(*JobIDList))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -253,12 +253,12 @@ var BareMetal_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _BareMetal_Submit_Handler,
 		},
 		{
-			MethodName: "CancelJobs",
-			Handler:    _BareMetal_CancelJobs_Handler,
-		},
-		{
 			MethodName: "JobStatus",
 			Handler:    _BareMetal_JobStatus_Handler,
+		},
+		{
+			MethodName: "CancelJobs",
+			Handler:    _BareMetal_CancelJobs_Handler,
 		},
 		{
 			MethodName: "FetchResults",
