@@ -16,7 +16,7 @@ import (
 
 // FilterResults specifies which results files to open.
 type FilterResults struct {
-	// File name contains this string, e.g., "_epc" or "_run"
+	// File name contains this string, e.g., "_epoch" or "_run"
 	FileContains string `width:"60"`
 
 	// extension of files, e.g., .tsv
