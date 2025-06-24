@@ -146,7 +146,8 @@ func (sr *Simmer) Plot() { //types:add
 }
 
 // PlotMean concatenates selected Results data files and generates a plot
-// of the resulting data, computing the mean of each run.
+// of the resulting data, computing the mean over the values in
+// [Config.GroupColumns] to group values (e.g., across Epochs).
 func (sr *Simmer) PlotMean() { //types:add
 	ts := sr.Tabs.AsLab()
 	tv := sr.ResultsTableView
