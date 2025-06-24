@@ -126,10 +126,9 @@ func AvgCat(files []string) {
 		fmt.Println("No files or files are empty, exiting")
 		return
 	}
-	// todo: need meantables
-	// avgdt := stats.MeanTables(dts)
-	// tensor.SetPrecision(avgdt, LogPrec)
-	// avgdt.SaveCSV(core.Filename(Output), tensor.Tab, table.Headers)
+	avgdt := stats.MeanTables(dts)
+	tensor.SetPrecision(avgdt, LogPrec)
+	avgdt.SaveCSV(core.Filename(Output), tensor.Tab, table.Headers)
 }
 
 // AvgByColumn computes average by given column for given files

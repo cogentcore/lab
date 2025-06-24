@@ -140,6 +140,9 @@ type Configuration struct {
 	// Server has server parameters.
 	Server ServerParams
 
+	// GroupColumns are the columns to use for grouping result data, for PlotMean.
+	GroupColumns []string
+
 	// FetchFiles is a glob expression for files to fetch from server,
 	// for Fetch command. Is *.tsv by default.
 	FetchFiles string
@@ -202,6 +205,7 @@ func (cf *Configuration) Defaults() {
 	cf.FetchFiles = "*.tsv"
 	cf.Filter.Defaults()
 	cf.TimeFormat = "2006-01-02 15:04:05 MST"
+	cf.GroupColumns = []string{"Run", "Epoch"}
 }
 
 func (cf *Configuration) Update() {
