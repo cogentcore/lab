@@ -91,6 +91,14 @@ func (sr *Simmer) Results() { //types:add
 		sr.Config.Filter.Ext = ".tsv"
 	}
 	lab.PromptStruct(sr, &sr.Config.Filter, "Open results data for files", func() {
+		if sr.Config.Filter.Fetch {
+			core.MessageSnackbar(sr, "Fetching jobs..")
+			for _, jid := range jobs {
+				sr.FetchJob(jid, false)
+			}
+			core.MessageSnackbar(sr, "Fetch Jobs completed")
+			sr.UpdateSims()
+		}
 		sr.OpenResultFiles(jobs, sr.Config.Filter)
 	})
 }

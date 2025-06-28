@@ -21,11 +21,15 @@ type FilterResults struct {
 
 	// extension of files, e.g., .tsv
 	Ext string
+
+	// if true, fetch results before opening.
+	Fetch bool
 }
 
 func (fp *FilterResults) Defaults() {
 	fp.FileContains = "_epc"
 	fp.Ext = ".tsv"
+	fp.Fetch = true
 }
 
 // SubmitParams specifies the parameters for submitting a job.
