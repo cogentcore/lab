@@ -11,7 +11,7 @@ import (
 	"cogentcore.org/lab/tensorcore"
 )
 
-var _ = types.AddType(&types.Type{Name: "main.FilterResults", IDName: "filter-results", Doc: "FilterResults specifies which results files to open.", Fields: []types.Field{{Name: "FileContains", Doc: "File name contains this string, e.g., \"_epoch\" or \"_run\""}, {Name: "Ext", Doc: "extension of files, e.g., .tsv"}}})
+var _ = types.AddType(&types.Type{Name: "main.FilterResults", IDName: "filter-results", Doc: "FilterResults specifies which results files to open.", Fields: []types.Field{{Name: "FileContains", Doc: "File name contains this string, e.g., \"_epoch\" or \"_run\""}, {Name: "Ext", Doc: "extension of files, e.g., .tsv"}, {Name: "Fetch", Doc: "if true, fetch results before opening."}}})
 
 var _ = types.AddType(&types.Type{Name: "main.SubmitParams", IDName: "submit-params", Doc: "SubmitParams specifies the parameters for submitting a job.", Fields: []types.Field{{Name: "Message", Doc: "Message describing the simulation:\nthis is key info for what is special about this job, like a github commit message"}, {Name: "Label", Doc: "Label is brief, unique label used for plots to label this job"}, {Name: "Args", Doc: "\targuments to pass on the command line.\n\n-nogui is already passed by default"}}})
 
