@@ -34,7 +34,8 @@ func (st *State) GenKernelHeader(sy *System, kn *Kernel, avars map[string]*Var) 
 			b.WriteString("@group(0) @binding(0)\n")
 			b.WriteString(fmt.Sprintf("var<%s%s> TensorStrides: array<u32>;\n", str, access))
 		}
-		for vi, vr := range gp.Vars {
+		gidx := viOff
+		for _, vr := range gp.Vars {
 			access := ", read_write"
 			if vr.ReadOnly && !vr.ReadOrWrite {
 				access = ", read"
@@ -45,12 +46,22 @@ func (st *State) GenKernelHeader(sy *System, kn *Kernel, avars map[string]*Var) 
 			if vr.Doc != "" {
 				b.WriteString("// " + vr.Doc + "\n")
 			}
-			b.WriteString(fmt.Sprintf("@group(%d) @binding(%d)\n", gi, vi+viOff))
-			b.WriteString(fmt.Sprintf("var<%s%s> %s: ", str, access, vr.Name))
-			if _, ok := avars[vr.Name]; ok {
-				b.WriteString(fmt.Sprintf("array<atomic<%s>>;\n", vr.SLType()))
-			} else {
+			if vr.NBuffs <= 1 {
+				b.WriteString(fmt.Sprintf("@group(%d) @binding(%d)\n", gi, gidx))
+				b.WriteString(fmt.Sprintf("var<%s%s> %s: ", str, access, vr.Name))
+				if _, ok := avars[vr.Name]; ok {
+					b.WriteString(fmt.Sprintf("array<atomic<%s>>;\n", vr.SLType()))
+				} else {
+					b.WriteString(fmt.Sprintf("array<%s>;\n", vr.SLType()))
+				}
+				gidx++
+				continue
+			}
+			for bi := range vr.NBuffs {
+				b.WriteString(fmt.Sprintf("@group(%d) @binding(%d)\n", gi, gidx))
+				b.WriteString(fmt.Sprintf("var<%s%s> %s%d: ", str, access, vr.Name, bi))
 				b.WriteString(fmt.Sprintf("array<%s>;\n", vr.SLType()))
+				gidx++
 			}
 		}
 	}
@@ -78,6 +89,10 @@ func (st *State) GenTensorFuncs(sy *System) string {
 			if !vr.Tensor {
 				continue
 			}
+			if vr.NBuffs > 1 {
+				b.WriteString(st.GenNBuffFuncs(sy, vr))
+			}
+
 			fn := vr.IndexFunc()
 			if _, ok := done[fn]; ok {
 				continue
@@ -105,5 +120,54 @@ func (st *State) GenTensorFuncs(sy *System) string {
 			b.WriteString(";\n}\n")
 		}
 	}
+	return b.String()
+}
+
+// GenNBuffFuncs returns the generated WGSL code
+// for accessing data in multi-buffer variables.
+func (st *State) GenNBuffFuncs(sy *System, vr *Var) string {
+	var b strings.Builder
+	b.WriteString("\nfn " + vr.Name + "Get(ix: u32) -> " + vr.SLType() + " {\n")
+	bsz := st.Config.MaxBufferSize / 4 // assume 4 bytes per
+	b.WriteString(fmt.Sprintf("\tlet ii = ix / %d;\n", bsz))
+	b.WriteString("\tswitch ii {\n")
+	for bi := range vr.NBuffs {
+		if bi == vr.NBuffs-1 {
+			b.WriteString("\tdefault: {\n")
+		} else {
+			b.WriteString(fmt.Sprintf("\tcase u32(%d): {\n", bi))
+		}
+		if bi > 0 {
+			b.WriteString(fmt.Sprintf("\t\treturn %s%d[ix - %d];\n", vr.Name, bi, bsz*uint32(bi)))
+		} else {
+			b.WriteString(fmt.Sprintf("\t\treturn %s%d[ix];\n", vr.Name, bi))
+		}
+		b.WriteString("\t}\n")
+	}
+	b.WriteString("\t}\n}\n")
+
+	methNames := []string{"Set", "SetAdd", "SetSub", "SetMul", "SetDiv"}
+	methOps := []string{"=", "+=", "-=", "*=", "/="}
+	for mi, mn := range methNames {
+		mop := methOps[mi]
+		b.WriteString("\nfn " + vr.Name + mn + "(vl: " + vr.SLType() + ", ix: u32) {\n")
+		b.WriteString(fmt.Sprintf("\tlet ii = ix / %d;\n", bsz))
+		b.WriteString("\tswitch ii {\n")
+		for bi := range vr.NBuffs {
+			if bi == vr.NBuffs-1 {
+				b.WriteString("\tdefault: {\n")
+			} else {
+				b.WriteString(fmt.Sprintf("\tcase u32(%d): {\n", bi))
+			}
+			if bi > 0 {
+				b.WriteString(fmt.Sprintf("\t\t%s%d[ix - %d] %s vl;\n", vr.Name, bi, bsz*uint32(bi), mop))
+			} else {
+				b.WriteString(fmt.Sprintf("\t\t%s%d[ix] %s vl;\n", vr.Name, bi, mop))
+			}
+			b.WriteString("\t}\n")
+		}
+		b.WriteString("\t}\n}\n")
+	}
+
 	return b.String()
 }

@@ -33,6 +33,13 @@ type Config struct {
 
 	// Debug enables debugging messages while running.
 	Debug bool
+
+	// MaxBufferSize is the maximum size for any buffer.
+	// This is often platform-dependent, but is needed for
+	// accessing variables that have multiple buffers.
+	// It is compiled into the kernel code as a constant,
+	// and must fit in a uint32 number.
+	MaxBufferSize uint32 `default:"2147483648"`
 }
 
 //cli:cmd -root

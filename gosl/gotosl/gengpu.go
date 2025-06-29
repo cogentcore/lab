@@ -46,12 +46,13 @@ import (
 //go:embed %s/*.wgsl
 var shaders embed.FS
 
-// ComputeGPU is the compute gpu device
-var ComputeGPU *gpu.GPU
+var (
+	// ComputeGPU is the compute gpu device
+	ComputeGPU *gpu.GPU
 
-// UseGPU indicates whether to use GPU vs. CPU.
-var UseGPU bool
-
+	// UseGPU indicates whether to use GPU vs. CPU.
+	UseGPU bool
+)
 `
 
 	b.WriteString(fmt.Sprintf(header, st.Package, st.Config.Output))
