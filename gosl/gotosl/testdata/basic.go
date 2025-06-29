@@ -36,7 +36,6 @@ var (
 	// Big is a big data buffer that uses multiple buffers.
 	// 2D: outer index is data, inner index is: Raw, Integ, Exp vars.
 	//
-	//gosl:group Data
 	//gosl:dims 2
 	//gosl:nbuffs 3
 	Big *tensor.Float32

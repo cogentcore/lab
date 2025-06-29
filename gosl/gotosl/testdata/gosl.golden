@@ -4,6 +4,8 @@ package test
 
 import (
 	"embed"
+	"fmt"
+	"math"
 	"unsafe"
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/lab/tensor"
@@ -67,13 +69,9 @@ func GPUInit() {
 			var vr *gpu.Var
 			_ = vr
 			vr = sgp.Add("Data", gpu.Float32, 1, gpu.ComputeShader)
-			sgp.SetNValues(1)
-		}
-		{
-			sgp := vars.AddGroup(gpu.Storage, "Data")
-			var vr *gpu.Var
-			_ = vr
-			vr = sgp.Add("Big", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("Big0", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("Big1", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("Big2", gpu.Float32, 1, gpu.ComputeShader)
 			sgp.SetNValues(1)
 		}
 		sy.Config()
@@ -213,8 +211,15 @@ func ToGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(1, "Data", 0)
 			gpu.SetValueFrom(v, Data.Values)
 		case BigVar:
-			v, _ := syVars.ValueByIndex(2, "Big", 0)
-			gpu.SetValueFrom(v, Big.Values)
+			bsz := 536870912
+			n := Big.Len()
+			nb := int(math.Ceil(float64(n) / float64(bsz)))
+			for bi := range nb {
+				v, _ := syVars.ValueByIndex(1, fmt.Sprintf("Big%d", bi), 0)
+				st := bsz * bi
+				ed := min(bsz * (bi+1), n)
+				gpu.SetValueFrom(v, Big.Values[st:ed])
+			}
 		}
 	}
 }
@@ -261,8 +266,13 @@ func ReadFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(1, "Data", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case BigVar:
-			v, _ := syVars.ValueByIndex(2, "Big", 0)
-			v.GPUToRead(sy.CommandEncoder)
+			bsz := 536870912
+			n := Big.Len()
+			nb := int(math.Ceil(float64(n) / float64(bsz)))
+			for bi := range nb {
+				v, _ := syVars.ValueByIndex(1, fmt.Sprintf("Big%d", bi), 0)
+				v.GPUToRead(sy.CommandEncoder)
+			}
 		}
 	}
 }
@@ -286,9 +296,16 @@ func SyncFromGPU(vars ...GPUVars) {
 			v.ReadSync()
 			gpu.ReadToBytes(v, Data.Values)
 		case BigVar:
-			v, _ := syVars.ValueByIndex(2, "Big", 0)
-			v.ReadSync()
-			gpu.ReadToBytes(v, Big.Values)
+			bsz := 536870912
+			n := Big.Len()
+			nb := int(math.Ceil(float64(n) / float64(bsz)))
+			for bi := range nb {
+				v, _ := syVars.ValueByIndex(1, fmt.Sprintf("Big%d", bi), 0)
+				v.ReadSync()
+				st := bsz * bi
+				ed := min(bsz * (bi+1), n)
+				gpu.ReadToBytes(v, Big.Values[st:ed])
+			}
 		}
 	}
 }

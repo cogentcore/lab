@@ -39,6 +39,7 @@ type Config struct {
 	// accessing variables that have multiple buffers.
 	// It is compiled into the kernel code as a constant,
 	// and must fit in a uint32 number.
+	// For web, the number is 134217728 = 128 MiB.
 	MaxBufferSize uint32 `default:"2147483648"`
 }
 

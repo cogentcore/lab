@@ -11,12 +11,11 @@ var<storage, read_write> Ctx: array<Context>;
 // // Data is the data on which the computation operates. // 2D: outer index is data, inner index is: Raw, Integ, Exp vars. // 
 @group(1) @binding(0)
 var<storage, read_write> Data: array<f32>;
-// // Big is a big data buffer that uses multiple buffers. // 2D: outer index is data, inner index is: Raw, Integ, Exp vars. // 
-@group(2) @binding(0)
+@group(1) @binding(1)
 var<storage, read_write> Big0: array<f32>;
-@group(2) @binding(1)
+@group(1) @binding(2)
 var<storage, read_write> Big1: array<f32>;
-@group(2) @binding(2)
+@group(1) @binding(3)
 var<storage, read_write> Big2: array<f32>;
 
 alias GPUVars = i32;
