@@ -1,8 +1,4 @@
-+++
-Categories = ["Plots"]
-+++
-
-**Plots** allow you to graphically plot data. See [[plot editor]] for interactive customization of plots.
+You can graphically **Plot** data using the [[doc:plots]] package. See [[plot editor]] for interactive customization of plots.
 
 You can plot a [[vector]]:
 
@@ -156,4 +152,6 @@ TODO: add a Data scatter that plots points to overlay on top of Violin or Box.
 ## Range
 
 ## Cluster
+
+## Plot pages
 

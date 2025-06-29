@@ -1,5 +1,5 @@
 +++
-Categories = ["Plots"]
+Categories = ["Plot"]
 +++
 
 A **plot editor** allows you to create data plots that users can customize interactively.

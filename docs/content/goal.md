@@ -1,6 +1,3 @@
-+++
-+++
-
 **Goal** is the _Go augmented language_ with support for two additional modes, in addition to standard Go:
 
 * [[shell|$ shell mode $]] that operates like a standard command-line shell (e.g., `bash`), with space-separated elements and standard shell functionality including input / output redirection. Goal automatically detects most instances of shell mode based on the syntax of the line, but it can always be explicitly indicated with surrounding `$`s.
