@@ -1,6 +1,3 @@
-+++
-+++
-
 **table** provides a DataTable / DataFrame structure similar to [pandas](https://pandas.pydata.org/) and [xarray](http://xarray.pydata.org/en/stable/) in Python, and [Apache Arrow Table](https://github.com/apache/arrow/tree/master/go/arrow/array/table.go), using [[tensor]] n-dimensional columns aligned by common outermost row dimension.
 
 Data in the table is accessed by first getting the `Column` tensor (typically by name), and then using the [[doc:tensor.RowMajor]] methods to access data within that tensor in a row-wise manner:
@@ -21,7 +18,7 @@ dt.Column("Data").SetFloatRow(37, 2, 3)
 
 val := dt.Column("Data").FloatRow(2, 3)
 
-fmt.Println(dt.String())
+fmt.Println(dt)
 fmt.Printf("val: %v\n", val)
 ```
 
@@ -44,13 +41,13 @@ for i := range 3 {
 
 dt.Sequential()
 dt.SortColumn("Data", tensor.Descending)
-fmt.Println(dt.String())
+fmt.Println(dt)
 
 dt.Sequential()
 dt.Filter(func(dt *table.Table, row int) bool {
 	return dt.Column("Data").FloatRow(row, 0) > 1
 })
-fmt.Println(dt.String())
+fmt.Println(dt)
 ```
 
 ## CSV / TSV file format
