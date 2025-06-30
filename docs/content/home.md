@@ -11,7 +11,7 @@ Cogent Lab is still under development, but the basic API should be somewhat stab
 
 Features include:
 
-* The [[goal]] language transpiler (generates standard Go code) that supports more concise [[math]], [[matrix]], and [[stats]] expressions that are largely compatible with the widely used [NumPy](https://numpy.org/doc/stable/index.html) framework, in addition to [[shell]] command syntax, so it can be used as a replacement for a command-line shell.
+* The [[Goal]] language transpiler (generates standard Go code) that supports more concise [[math]], [[matrix]], and [[stats]] expressions that are largely compatible with the widely used [NumPy](https://numpy.org/doc/stable/index.html) framework, in addition to [[shell]] command syntax, so it can be used as a replacement for a command-line shell.
 
     + The [[Gosl]] (_Go shader language_) that allows you to write Go (and [[Goal]]) functions that run on either the CPU or the [[GPU]], using the WebGPU framework that supports full GPU compute functionality in the web browser and on desktop platforms.
 

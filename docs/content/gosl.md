@@ -1,7 +1,3 @@
-+++
-Categories = ["Gosl"]
-+++
-
 **Gosl** allows you to write Go programs that run on [[GPU]] hardware, by transpiling Go into the WGSL shader language used by [WebGPU](https://www.w3.org/TR/webgpu/), thereby establishing the _Go shader language_.
 
 Gosl uses the [core gpu](https://github.com/cogentcore/core/tree/main/gpu) compute shader system, and operates within the overall [[Goal]] framework of an augmented version of the Go language.
@@ -252,4 +248,5 @@ See [[doc:gosl/slrand]] for a shader-optimized random number generation package,
 
 With sufficiently large N, and ignoring the data copying setup time, around ~80x speedup is typical on a Macbook Pro with M1 processor.  The `rand` example produces a 175x speedup!
 
+## Gosl pages
 
