@@ -32,7 +32,7 @@ There are also a few other variants of the `Value` functionality:
 * `ValueType` takes a `reflect.Kind` arg for the data type, which can then be a variable.
 * `SetTensor` sets a tensor to a node of given name, creating the node if needed. This is also available as the `Set` method on a directory node.
 
-`DirTable` returns a [[table]] with all the tensors under a given directory node, which can then be used for making plots or doing other forms of data analysis. This works best when each tensor has the same outer-most row dimension. The table is persistent and very efficient, using direct pointers to the underlying tensor values.
+`tensorfs.DirTable` returns a [[table]] with all the tensors under a given directory node, which can then be used for making plots or doing other forms of data analysis. This works best when each tensor has the same outer-most row dimension. The table is persistent and very efficient, using direct pointers to the underlying tensor values.
 
 ## Directories
 

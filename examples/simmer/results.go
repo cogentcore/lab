@@ -9,6 +9,7 @@ package main
 import (
 	"fmt"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"cogentcore.org/core/base/fsx"
@@ -16,8 +17,10 @@ import (
 	"cogentcore.org/core/styles"
 	"cogentcore.org/lab/lab"
 	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
+	"cogentcore.org/lab/tensorfs"
 )
 
 // FindResult finds an existing result record for given job id and path,
@@ -88,6 +91,14 @@ func (sr *Simmer) Results() { //types:add
 		sr.Config.Filter.Ext = ".tsv"
 	}
 	lab.PromptStruct(sr, &sr.Config.Filter, "Open results data for files", func() {
+		if sr.Config.Filter.Fetch {
+			core.MessageSnackbar(sr, "Fetching jobs..")
+			for _, jid := range jobs {
+				sr.FetchJob(jid, false)
+			}
+			core.MessageSnackbar(sr, "Fetch Jobs completed")
+			sr.UpdateSims()
+		}
 		sr.OpenResultFiles(jobs, sr.Config.Filter)
 	})
 }
@@ -129,6 +140,51 @@ func (sr *Simmer) Plot() { //types:add
 		jid := res.JobID
 		label := res.Label
 		dt := res.Table.InsertKeyColumns("JobID", jid, "JobLabel", label) // this clones the table
+		if AggTable == nil {
+			AggTable = dt
+			plot.SetFirstStyler(dt.Columns.Values[0], func(s *plot.Style) {
+				s.Role = plot.Split
+				s.On = true
+			})
+		} else {
+			AggTable.AppendRows(dt)
+		}
+	}
+	ts.PlotTable("Plot", AggTable)
+}
+
+// PlotMean concatenates selected Results data files and generates a plot
+// of the resulting data, computing the mean over the values in
+// [Config.GroupColumns] to group values (e.g., across Epochs).
+func (sr *Simmer) PlotMean() { //types:add
+	ts := sr.Tabs.AsLab()
+	tv := sr.ResultsTableView
+	jis := tv.SelectedIndexesList(false)
+	if len(jis) == 0 {
+		fmt.Println("No Results rows selected")
+		return
+	}
+	nc := len(sr.Config.GroupColumns)
+	rdir := "Stats/" + sr.Config.GroupColumns[nc-1] // results dir
+	var AggTable *table.Table
+	for _, i := range jis {
+		res := sr.ResultsList[i]
+		jid := res.JobID
+		label := res.Label
+		dir, _ := tensorfs.NewDir("root")
+		rdt := res.Table
+		stats.TableGroups(dir, rdt, sr.Config.GroupColumns...)
+		var fcols []string
+		for ci, cl := range rdt.Columns.Values {
+			if cl.DataType() != reflect.Float32 && cl.DataType() != reflect.Float64 {
+				continue
+			}
+			fcols = append(fcols, rdt.Columns.Keys[ci])
+		}
+		stats.TableGroupStats(dir, stats.StatMean, rdt, fcols...)
+		edir := dir.Dir(rdir)
+		sdt := tensorfs.DirTable(edir, nil)
+		dt := sdt.InsertKeyColumns("JobID", jid, "JobLabel", label) // this clones the table
 		if AggTable == nil {
 			AggTable = dt
 			plot.SetFirstStyler(dt.Columns.Values[0], func(s *plot.Style) {

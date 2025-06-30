@@ -247,6 +247,9 @@ func (sr *Simmer) MakeToolbar(p *tree.Plan) {
 		w.SetFunc(sr.Plot).SetIcon(icons.ShowChart)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(sr.PlotMean).SetIcon(icons.ShowChart)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(sr.Cancel).SetIcon(icons.Refresh)
 	})
 	tree.Add(p, func(w *core.FuncButton) {

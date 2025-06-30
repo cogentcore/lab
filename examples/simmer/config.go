@@ -21,11 +21,15 @@ type FilterResults struct {
 
 	// extension of files, e.g., .tsv
 	Ext string
+
+	// if true, fetch results before opening.
+	Fetch bool
 }
 
 func (fp *FilterResults) Defaults() {
 	fp.FileContains = "_epc"
 	fp.Ext = ".tsv"
+	fp.Fetch = true
 }
 
 // SubmitParams specifies the parameters for submitting a job.
@@ -140,6 +144,10 @@ type Configuration struct {
 	// Server has server parameters.
 	Server ServerParams
 
+	// GroupColumns are the column(s) to use for grouping result data, for PlotMean.
+	// e.g., Epoch for epoch-level results.
+	GroupColumns []string
+
 	// FetchFiles is a glob expression for files to fetch from server,
 	// for Fetch command. Is *.tsv by default.
 	FetchFiles string
@@ -202,6 +210,7 @@ func (cf *Configuration) Defaults() {
 	cf.FetchFiles = "*.tsv"
 	cf.Filter.Defaults()
 	cf.TimeFormat = "2006-01-02 15:04:05 MST"
+	cf.GroupColumns = []string{"Epoch"}
 }
 
 func (cf *Configuration) Update() {

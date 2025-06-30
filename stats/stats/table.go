@@ -4,8 +4,13 @@
 
 package stats
 
-/*
-// MeanTables returns an table.Table with the mean values across all float
+import (
+	"reflect"
+
+	"cogentcore.org/lab/table"
+)
+
+// MeanTables returns a [table.Table] with the mean values across all float
 // columns of the input tables, which must have the same columns but not
 // necessarily the same number of rows.
 func MeanTables(dts []*table.Table) *table.Table {
@@ -16,8 +21,9 @@ func MeanTables(dts []*table.Table) *table.Table {
 	maxRows := 0
 	var maxdt *table.Table
 	for _, dt := range dts {
-		if dt.Rows > maxRows {
-			maxRows = dt.Rows
+		nr := dt.NumRows()
+		if nr > maxRows {
+			maxRows = nr
 			maxdt = dt
 		}
 	}
@@ -29,13 +35,14 @@ func MeanTables(dts []*table.Table) *table.Table {
 	// N samples per row
 	rns := make([]int, maxRows)
 	for _, dt := range dts {
-		dnr := dt.Rows
+		dnr := dt.NumRows()
 		mx := min(dnr, maxRows)
 		for ri := 0; ri < mx; ri++ {
 			rns[ri]++
 		}
 	}
-	for ci, cl := range ot.Columns {
+	for ci := range ot.Columns.Values {
+		cl := ot.ColumnByIndex(ci)
 		if cl.DataType() != reflect.Float32 && cl.DataType() != reflect.Float64 {
 			continue
 		}
@@ -44,31 +51,26 @@ func MeanTables(dts []*table.Table) *table.Table {
 			if di == 0 {
 				continue
 			}
-			dc := dt.Columns[ci]
-			dnr := dt.Rows
+			dc := dt.ColumnByIndex(ci)
+			dnr := dt.NumRows()
 			mx := min(dnr, maxRows)
 			for ri := 0; ri < mx; ri++ {
-				si := ri * cells
 				for j := 0; j < cells; j++ {
-					ci := si + j
-					cv := cl.Float1D(ci)
-					cv += dc.Float1D(ci)
-					cl.SetFloat1D(cv, ci)
+					cv := cl.FloatRow(ri, j)
+					cv += dc.FloatRow(ri, j)
+					cl.SetFloatRow(cv, ri, j)
 				}
 			}
 		}
 		for ri := 0; ri < maxRows; ri++ {
-			si := ri * cells
 			for j := 0; j < cells; j++ {
-				ci := si + j
-				cv := cl.Float1D(ci)
+				cv := cl.FloatRow(ri, j)
 				if rns[ri] > 0 {
 					cv /= float64(rns[ri])
-					cl.SetFloat1D(cv, ci)
+					cl.SetFloatRow(cv, ri, j)
 				}
 			}
 		}
 	}
 	return ot
 }
-*/
