@@ -22,7 +22,11 @@ const (
 
 func (nd *Node) String() string {
 	if !nd.IsDir() {
-		return nd.Tensor.Label()
+		lb := nd.Tensor.Label()
+		if !strings.HasPrefix(lb, nd.name) {
+			lb = nd.name + " " + lb
+		}
+		return lb
 	}
 	return nd.List(Short, DirOnly)
 }

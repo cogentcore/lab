@@ -1,5 +1,10 @@
 This is a list of all the stuff that doesn't work in goal.
 
+## docs issues
+
+* for loop max in metric.md doesn't work..
+* matrix.EigSym return 2 values not working -- only 1
+
 ## converting between go / tensor
 
 * `for range` expression that deals with iterating over tensors, in math mode

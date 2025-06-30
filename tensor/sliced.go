@@ -51,6 +51,31 @@ func NewSliced(tsr Tensor, idxs ...[]int) *Sliced {
 	return sl
 }
 
+// AnySlice returns a new Tensor view using the given index
+// variables to be used for Sliced, Masked, or Indexed
+// depending on what is present.
+//   - If a [Bool] tensor is provided then [NewMasked] is called.
+//   - If a single tensor is provided with Len > max(1, tsr.NumDims()),
+//     [NewIndexed] is called.
+//   - Otherwise, [Reslice] is called with the args.
+func AnySlice(tsr Tensor, idx ...any) Tensor {
+	n := len(idx)
+	if n == 0 {
+		return tsr
+	}
+	if n == 1 {
+		if b, ok := idx[0].(*Bool); ok {
+			return NewMasked(tsr, b)
+		}
+		if i, ok := idx[0].(Tensor); ok {
+			if i.Len() > 1 && i.Len() > tsr.NumDims() {
+				return NewIndexed(tsr, AsInt(i))
+			}
+		}
+	}
+	return Reslice(tsr, idx...)
+}
+
 // Reslice returns a new [Sliced] (and potentially [Reshaped]) view of given tensor,
 // with given slice expressions for each dimension, which can be:
 //   - an integer, indicating a specific index value along that dimension.
@@ -77,6 +102,20 @@ func Reslice(tsr Tensor, sls ...any) Tensor {
 	ci := 0
 	for d := range ns {
 		s := sls[d]
+		if st, ok := s.(Tensor); ok {
+			doReshape = true // doesn't add to new shape.
+			ni := st.Len()
+			for i := range ni {
+				ix := st.Int1D(i)
+				if ix < 0 {
+					ixs[ci] = []int{tsr.DimSize(ci) + ix}
+				} else {
+					ixs[ci] = []int{ix}
+				}
+				ci++
+			}
+			continue
+		}
 		switch x := s.(type) {
 		case int:
 			doReshape = true // doesn't add to new shape.

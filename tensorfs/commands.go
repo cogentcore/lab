@@ -6,6 +6,7 @@ package tensorfs
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"path"
 	"strings"
@@ -21,6 +22,10 @@ var (
 	// CurRoot is the current root tensorfs system.
 	// A default root tensorfs is created at startup.
 	CurRoot *Node
+
+	// ListOutput is where to send the output of List commands,
+	// if non-nil (otherwise os.Stdout).
+	ListOutput io.Writer
 )
 
 func init() {
@@ -93,7 +98,11 @@ func List(opts ...string) error {
 		}
 	}
 	ls := dir.List(long, recursive)
-	fmt.Println(ls)
+	if ListOutput != nil {
+		fmt.Fprintln(ListOutput, ls)
+	} else {
+		fmt.Println(ls)
+	}
 	return nil
 }
 
@@ -155,4 +164,12 @@ func Set(name string, tsr tensor.Tensor) error {
 	}
 	SetTensor(cd, tsr, name)
 	return nil
+}
+
+// SetCopy sets tensor to given name or path relative to the
+// current working directory.
+// Unlike [Set], this version saves a [tensor.Clone] of the tensor,
+// so future changes to the tensor do not affect this value.
+func SetCopy(name string, tsr tensor.Tensor) error {
+	return Set(name, tensor.Clone(tsr))
 }

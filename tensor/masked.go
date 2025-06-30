@@ -253,11 +253,12 @@ func (ms *Masked) SetInt1D(val int, i int) {
 
 // Filter sets the mask values using given Filter function.
 // The filter function gets the 1D index into the source tensor.
-func (ms *Masked) Filter(filterer func(tsr Tensor, idx int) bool) {
+func (ms *Masked) Filter(filterer func(tsr Tensor, idx int) bool) *Masked {
 	n := ms.Tensor.Len()
 	for i := range n {
 		ms.Mask.SetBool1D(filterer(ms.Tensor, i), i)
 	}
+	return ms
 }
 
 // check for interface impl

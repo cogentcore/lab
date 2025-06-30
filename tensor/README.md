@@ -4,6 +4,10 @@ Tensor and related sub-packages provide a simple yet powerful framework for repr
 
 The [Goal](../goal) augmented version of the _Go_ language directly supports NumPy-like operations on tensors. A `Tensor` is comparable to the NumPy `ndarray` type, and it provides the universal representation of a homogenous data type throughout all the packages here, from scalar to vector, matrix and beyond. All functions take and return `Tensor` arguments.
 
+See the [Cogent Lab Docs](https://cogentcore.org/lab/tensor) for full documentation.
+
+## Design discussion
+
 The `Tensor` interface is implemented at the basic level with n-dimensional indexing into flat Go slices of any numeric data type (by `Number`), along with `String`, and `Bool` (which uses [bitslice](bitslice) for maximum efficiency). These implementations satisfy the `Values` sub-interface of Tensor, which supports the most direct and efficient operations on contiguous memory data. The `Shape` type provides all the n-dimensional indexing with arbitrary strides to allow any ordering, although _row major_ is the default and other orders have to be manually imposed.
 
 In addition, there are five important "view" implementations of `Tensor` that wrap another "source" Tensor to provide more flexible and efficient access to the data, consistent with the NumPy functionality.  See [Basic and Advanced Indexing](#basic-and-advanced-indexing) below for more info.
@@ -73,117 +77,6 @@ There are various standard shapes of tensor data that different functions expect
 ## Dynamic row sizing (e.g., for logs)
 
 The `SetNumRows` function can be used to progressively increase the number of rows to fit more data, as is typically the case when logging data (often using a [table](table)). You can set the row dimension to 0 to start -- that is (now) safe. However, for greatest efficiency, it is best to set the number of rows to the largest expected size first, and _then_ set it back to 0. The underlying slice of data retains its capacity when sized back down. During incremental increasing of the slice size, if it runs out of capacity, all the elements need to be copied, so it is more efficient to establish the capacity up front instead of having multiple incremental re-allocations.
-
-# Cheat Sheet
-
-TODO: update
-
-`ix` is the `Rows` tensor for these examples:
-
-## Tensor Access
-
-### 1D
-
-```Go
-// 5th element in tensor regardless of shape:
-val := ix.Float1D(5)
-```
-
-```Go
-// value as a string regardless of underlying data type; numbers converted to strings.
-str := ix.String1D(2)
-```
-
-### 2D Row, Cell
-
-```Go
-// value at row 3, cell 2 (flat index into entire `SubSpace` tensor for this row)
-// The row index will be indirected through any `Indexes` present on the Rows view.
-val := ix.FloatRow(3, 2)
-// string value at row 2, cell 0. this is safe for 1D and 2D+ shapes
-// and is a robust way to get 1D data from tensors of unknown shapes.
-str := ix.FloatRow(2, 0)
-```
-
-```Go
-// get the whole n-dimensional tensor of data cells at given row.
-// row is indirected through indexes.
-// the resulting tensor is a "subslice" view into the underlying data
-// so changes to it will automatically update the parent tensor.
-tsr := ix.RowTensor(4)
-....
-// set all n-dimensional tensor values at given row from given tensor.
-ix.SetRowTensor(tsr, 4) 
-```
-
-```Go
-// returns a flat, 1D Rows view into n-dimensional tensor values at 
-// given row. This is used in compute routines that operate generically
-// on the entire row as a flat pattern.
-ci := tensor.Cells1D(ix, 5)
-```
-
-### Full N-dimensional Indexes
-
-```Go
-// for 3D data
-val := ix.Float(3,2,1)
-```
-
-# `Tensor` vs. Python NumPy
-
-The [Goal](../goal) language provides a reasonably faithful translation of NumPy `ndarray` syntax into the corresponding Go tensor package implementations. For those already familiar with NumPy, it should mostly "just work", but the following provides a more in-depth explanation for how the two relate, and when you might get different results.
-
-## Basic and Advanced Indexing
-
-NumPy distinguishes between _basic indexing_ (using a single index or sliced ranges of indexes along each dimension) versus _advanced indexing_ (using an array of indexes or bools). Basic indexing returns a **view** into the original data (where changes to the view directly affect the underlying type), while advanced indexing returns a **copy**.
-
-However, rather confusingly (per this [stack overflow question](https://stackoverflow.com/questions/15691740/does-assignment-with-advanced-indexing-copy-array-data)), you can do direct assignment through advanced indexing (more on this below):
-```Python
-a[np.array([1,2])] = 5  # or:
-a[a > 0.5] = 1          # boolean advanced indexing
-```
-
-Although powerful, the semantics of all of this is a bit confusing. In the `tensor` package, we provide what are hopefully more clear and concrete _view_ types that have well-defined semantics, and cover the relevant functionality, while perhaps being a bit easier to reason with. These were described at the start of this README.  The correspondence to NumPy indexing is as follows:
-
-* Basic indexing by individual integer index coordinate values is supported by the `Number`, `String`, `Bool` `Values` Tensors.  For example, `Float(3,1,2)` returns the value at the given coordinates.  The `Sliced` (and `Rows`) and `Reshaped` views then complete the basic indexing with arbitrary reordering and filtering along entire dimension values, and reshaping dimensions. As noted above, `Reslice` supports the full NumPy basic indexing syntax, and `Reshape` implements the NumPy `reshape` function.
-
-* The `Masked` view corresponds to the NumPy _advanced_ indexing using a same-shape boolean mask, although in the NumPy case it makes a copy (although practically it is widely used for direct assignment as shown above.) Critically, you can always extract just the `true` values from a Masked view by using the `AsValues` method on the view, which returns a 1D tensor of those values, similar to what the boolean advanced indexing produces in NumPy. In addition, the `SourceIndexes` method returns a 1D list of indexes of the `true` (or `false`) values, which can be used for the `Indexed` view.
-    
-* The `Indexed` view corresponds to the array-based advanced indexing case in NumPy, but again it is a view, not a copy, so the assignment semantics are as expected from a view (and how NumPy behaves some of the time). Note that the NumPy version uses `n` separate index tensors, where each such tensor specifies the value of a corresponding dimension index, and all such tensors _must have the same shape_; that form can be converted into the single Indexes form with a utility function.  Also, NumPy advanced indexing has a somewhat confusing property where it de-duplicates index references during some operations, such that `a+=1` only increments +1 even when there are multiple elements in the view. The tensor version does not implement that special case, due to its direct view semantics.
-
-To reiterate, all view tensors have a `AsValues` function, equivalent to the `copy` function in NumPy, which turns the view into a corresponding basic concrete value Tensor, so the copy semantics of advanced indexing (modulo the direct assignment behavior) can be achieved when assigning to a new variable.
-
-## Alignment of shapes for computations ("broadcasting")
-
-The NumPy concept of [broadcasting](https://numpy.org/doc/stable/user/basics.broadcasting.html) is critical for flexibly defining the semantics for how functions taking two n-dimensional Tensor arguments behave when they have different shapes. Ultimately, the computation operates by iterating over the length of the longest tensor, and the question is how to _align_ the shapes so that a meaningful computation results from this.
-
-If both tensors are 1D and the same length, then a simple matched iteration over both can take place. However, the broadcasting logic defines what happens when there is a systematic relationship between the two, enabling powerful (but sometimes difficult to understand) computations to be specified.
-
-The following examples demonstrate the logic:
-
-Innermost dimensions that match in dimension are iterated over as you'd expect:
-```
-Image  (3d array): 256 x 256 x 3
-Scale  (1d array):             3
-Result (3d array): 256 x 256 x 3
-```
-
-Anything with a dimension size of 1 (a "singleton") will match against any other sized dimension:
-```
-A      (4d array):  8 x 1 x 6 x 1
-B      (3d array):      7 x 1 x 5
-Result (4d array):  8 x 7 x 6 x 5
-```
-In the innermost dimension here, the single value in A acts like a "scalar" in relationship to the 5 values in B along that same dimension, operating on each one in turn. Likewise for the singleton second-to-last dimension in B.
-
-Any non-1 mismatch represents an error:
-```
-A      (2d array):      2 x 1
-B      (3d array):  8 x 4 x 3 # second from last dimensions mismatched
-```
-
-The `AlignShapes` function performs this shape alignment logic, and the `WrapIndex1D` function is used to compute a 1D index into a given shape, based on the total output shape sizes, wrapping any singleton dimensions around as needed. These are used in the [tmath](tmath) package for example to implement the basic binary math operators.
 
 # Printing format
 

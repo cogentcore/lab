@@ -4,7 +4,9 @@ The `stats` package provides standard statistic computations operating on the `t
 ```Go
 type StatsFunc func(in, out tensor.Tensor) error
 ```
-n
+
+See the [Cogent Lab Docs](https://cogentcore.org/lab/stats) for full documentation.
+
 The stats functions always operate on the outermost _row_ dimension, and it is up to the caller to reshape the tensor to accomplish the desired results.
 
 * To obtain a single summary statistic across all values, use `tensor.As1D`.

@@ -12,6 +12,7 @@ func init() {
 	Symbols["cogentcore.org/lab/lab/lab"] = map[string]reflect.Value{
 		// function, constant and variable definitions
 		"AsDataTree":         reflect.ValueOf(lab.AsDataTree),
+		"DirAndFileNoSlash":  reflect.ValueOf(lab.DirAndFileNoSlash),
 		"FirstComment":       reflect.ValueOf(lab.FirstComment),
 		"IsTableFile":        reflect.ValueOf(lab.IsTableFile),
 		"Lab":                reflect.ValueOf(&lab.Lab).Elem(),

@@ -59,6 +59,7 @@ func init() {
 		"On":                 reflect.ValueOf(plot.On),
 		"PlotX":              reflect.ValueOf(plot.PlotX),
 		"PlotY":              reflect.ValueOf(plot.PlotY),
+		"PlotYR":             reflect.ValueOf(plot.PlotYR),
 		"PlotterByType":      reflect.ValueOf(plot.PlotterByType),
 		"Plotters":           reflect.ValueOf(&plot.Plotters).Elem(),
 		"Plus":               reflect.ValueOf(plot.Plus),
@@ -159,7 +160,7 @@ type _cogentcore_org_lab_plot_Plotter struct {
 	WData        func() (data plot.Data, pixX []float32, pixY []float32)
 	WPlot        func(pt *plot.Plot)
 	WStylers     func() *plot.Stylers
-	WUpdateRange func(plt *plot.Plot, xr *minmax.F64, yr *minmax.F64, zr *minmax.F64)
+	WUpdateRange func(plt *plot.Plot, x *minmax.F64, y *minmax.F64, yr *minmax.F64, z *minmax.F64)
 }
 
 func (W _cogentcore_org_lab_plot_Plotter) ApplyStyle(plotStyle *plot.PlotStyle, idx int) {
@@ -170,8 +171,8 @@ func (W _cogentcore_org_lab_plot_Plotter) Data() (data plot.Data, pixX []float32
 }
 func (W _cogentcore_org_lab_plot_Plotter) Plot(pt *plot.Plot)     { W.WPlot(pt) }
 func (W _cogentcore_org_lab_plot_Plotter) Stylers() *plot.Stylers { return W.WStylers() }
-func (W _cogentcore_org_lab_plot_Plotter) UpdateRange(plt *plot.Plot, xr *minmax.F64, yr *minmax.F64, zr *minmax.F64) {
-	W.WUpdateRange(plt, xr, yr, zr)
+func (W _cogentcore_org_lab_plot_Plotter) UpdateRange(plt *plot.Plot, x *minmax.F64, y *minmax.F64, yr *minmax.F64, z *minmax.F64) {
+	W.WUpdateRange(plt, x, y, yr, z)
 }
 
 // _cogentcore_org_lab_plot_Thumbnailer is an interface wrapper for Thumbnailer type
@@ -185,11 +186,11 @@ func (W _cogentcore_org_lab_plot_Thumbnailer) Thumbnail(pt *plot.Plot) { W.WThum
 // _cogentcore_org_lab_plot_Ticker is an interface wrapper for Ticker type
 type _cogentcore_org_lab_plot_Ticker struct {
 	IValue interface{}
-	WTicks func(min float64, max float64, nticks int) []plot.Tick
+	WTicks func(mn float64, mx float64, nticks int) []plot.Tick
 }
 
-func (W _cogentcore_org_lab_plot_Ticker) Ticks(min float64, max float64, nticks int) []plot.Tick {
-	return W.WTicks(min, max, nticks)
+func (W _cogentcore_org_lab_plot_Ticker) Ticks(mn float64, mx float64, nticks int) []plot.Tick {
+	return W.WTicks(mn, mx, nticks)
 }
 
 // _cogentcore_org_lab_plot_Valuer is an interface wrapper for Valuer type

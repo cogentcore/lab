@@ -368,7 +368,7 @@ func (mp *mathParse) expr(ex ast.Expr) {
 
 	case *ast.Ellipsis:
 		cfun := mp.funcs.Peek()
-		if cfun != nil && cfun.Name == "tensor.Reslice" {
+		if cfun != nil && cfun.Name == "tensor.AnySlice" {
 			mp.out.Add(token.IDENT, "tensor.Ellipsis")
 			mp.idx++
 		} else {
@@ -725,10 +725,7 @@ func (mp *mathParse) indexExpr(il *ast.IndexExpr) {
 
 func (mp *mathParse) basicSlicingExpr(il *ast.IndexExpr) {
 	iil := il.Index.(*ast.IndexListExpr)
-	fun := "tensor.Reslice"
-	if mp.exprsAreBool(iil.Indices) {
-		fun = "tensor.Mask"
-	}
+	fun := "tensor.AnySlice"
 	mp.startFunc(fun)
 	mp.out.Add(token.LPAREN)
 	mp.expr(il.X)
@@ -859,6 +856,7 @@ var numpyFuncs = map[string]funWrap{
 	"copy":     {"tensor.Clone", ""},
 	"get":      {"tensorfs.Get", ""},
 	"set":      {"tensorfs.Set", ""},
+	"setcp":    {"tensorfs.SetCopy", ""},
 	"flatten":  {"tensor.Flatten", "nofun"},
 	"squeeze":  {"tensor.Squeeze", "nofun"},
 }
