@@ -1,6 +1,3 @@
-+++
-+++
-
 **tensorfs** provides a virtual filesystem for [[tensor]] data, which can be accessed for example in [[Goal]] [[math]] mode expressions, like the variable storage system in [IPython / Jupyter](https://ipython.readthedocs.io/en/stable/interactive/tutorial.html), with the advantage that the hierarchical structure of a filesystem allows data to be organized in more intuitive and effective ways. For example, data at different time scales can be put into different directories, or multiple different statistics computed on a given set of data can be put into a subdirectory. [[stats#Groups]] creates pivot-table style groups of values as directories, for example.
 
 `tensorfs` implements the Go [fs](https://pkg.go.dev/io/fs) interface, and can be accessed using fs-general tools, including the cogent core `filetree` and the [[Goal]] shell. 
@@ -16,7 +13,7 @@ dir, _ := tensorfs.NewDir("root")
 x := dir.Float64("data", 3, 3)
 
 fmt.Println(dir.ListLong(true, 2))
-fmt.Println(x.String())
+fmt.Println(x)
 ```
 
 Which are wrappers around the underlying Generic `Value` method:
@@ -49,7 +46,7 @@ subdir := dir.Dir("sub")
 x := subdir.Float64("data", 3, 3)
 
 fmt.Println(dir.ListLong(true, 2))
-fmt.Println(x.String())
+fmt.Println(x)
 ```
 
 If the subdirectory doesn't exist yet, it will be made, and otherwise it is returned. Any errors will be logged and a nil returned, likely causing a panic unless you expect it to fail and check for that.
@@ -70,7 +67,7 @@ fmt.Println(dir.ListLong(true, 2))
 
 vals := dir.ValuesFunc(nil) // nil = get everything
 for _, v := range vals {
-	fmt.Println(v.String())
+	fmt.Println(v)
 }
 ```
 
@@ -93,7 +90,7 @@ vals := dir.ValuesFunc(func(n *tensorfs.Node) bool {
     return n.Tensor.NumDims() == 1
 })
 for _, v := range vals {
-	fmt.Println(v.String())
+	fmt.Println(v)
 }
 ```
 

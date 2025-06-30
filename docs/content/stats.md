@@ -1,6 +1,3 @@
-+++
-+++
-
 In addition to the basic statistics functions described below, there are several packages for computing **statistics** on [[tensor]] and [[table]] data:
 
 * [[metric]] computes similarity / distance metrics for comparing two tensors, and associated distance / similarity matrix functions.
@@ -55,11 +52,11 @@ stats.TableGroups(dir, dt, "Name")
 stats.TableGroupStats(dir, stats.StatMean, dt, "Value")
 gdt := stats.GroupStatsAsTableNoStatName(dir)
 
-fmt.Println("dt:", dt.String())
+fmt.Println("dt:", dt)
 fmt.Println("tensorfs listing:")
 fmt.Println(dir.ListLong(true, 2))
 
-fmt.Println("gdt:", gdt.String())
+fmt.Println("gdt:", gdt)
 ```
 
 ## Stats pages

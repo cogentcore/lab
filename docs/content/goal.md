@@ -1,8 +1,4 @@
-+++
-Categories = ["Goal"]
-+++
-
-**Goal** is the _Go augmented language_ with support for two additional _modes_, in addition to standard Go:
+**Goal** is the _Go augmented language_ with support for two additional modes, in addition to standard Go:
 
 * [[shell|$ shell mode $]] that operates like a standard command-line shell (e.g., `bash`), with space-separated elements and standard shell functionality including input / output redirection. Goal automatically detects most instances of shell mode based on the syntax of the line, but it can always be explicitly indicated with surrounding `$`s.
 
@@ -32,7 +28,7 @@ for _, x := range #[1,2,3]# {
 
 Goal can be used in an interpreted mode by using the [yaegi](https://github.com/traefik/yaegi) Go interpreter (and can be used as your shell executable in a terminal), and it can also replace the standard `go` compiler in command-line mode, to build compiled executables using the extended Goal syntax.
 
-A key design feature of Goal is that it always _transpiles directly to Go_ in a purely syntactically-driven way, so the output of Goal is pure Go code.
+A key design feature of Goal is that it always _transpiles directly to Go_ in a purely syntactically driven way, so the output of Goal is pure Go code.
 
 Goal can also be used in conjunction with [[gosl]] to build programs that transparently run on GPU hardware in addition to standard CPUs (as standard Go programs).
 

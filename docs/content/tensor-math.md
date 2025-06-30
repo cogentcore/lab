@@ -13,10 +13,10 @@ sub := tmath.Sub(x, x)
 mul := tmath.Mul(x, x)
 div := tmath.Div(x, x)
 
-fmt.Println("add:", add.String())
-fmt.Pritnln("sub:", sub.String())
-fmt.Println("mul:", mul.String())
-fmt.Println("div:", div.String())
+fmt.Println("add:", add)
+fmt.Println("sub:", sub)
+fmt.Println("mul:", mul)
+fmt.Println("div:", div)
 ```
 
 As you can see, the operations are performed element-wise; see the [[matrix]] package for 2D matrix multiplication and related operations.
@@ -29,9 +29,9 @@ sin := tmath.Sin(x)
 atan := tmath.Atan2(x, tensor.NewFromValues(3.0))
 pow := tmath.Pow(x, tensor.NewFromValues(2.0))
 
-fmt.Println("sin:", sin.String())
-fmt.Println("atan:", atan.String())
-fmt.Println("pow:", pow.String())
+fmt.Println("sin:", sin)
+fmt.Println("atan:", atan)
+fmt.Println("pow:", pow)
 ```
 
 See the info below on [[#Alignment of shapes]] for the rules governing the way that different-shaped tensors are aligned for these computations.
