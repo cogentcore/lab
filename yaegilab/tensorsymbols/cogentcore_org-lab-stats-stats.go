@@ -44,6 +44,7 @@ func init() {
 		"Mean":                        reflect.ValueOf(stats.Mean),
 		"MeanOut":                     reflect.ValueOf(stats.MeanOut),
 		"MeanOut64":                   reflect.ValueOf(stats.MeanOut64),
+		"MeanTables":                  reflect.ValueOf(stats.MeanTables),
 		"Median":                      reflect.ValueOf(stats.Median),
 		"MedianOut":                   reflect.ValueOf(stats.MedianOut),
 		"Min":                         reflect.ValueOf(stats.Min),
