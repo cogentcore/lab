@@ -14,7 +14,7 @@ mul := tmath.Mul(x, x)
 div := tmath.Div(x, x)
 
 fmt.Println("add:", add)
-fmt.Pritnln("sub:", sub)
+fmt.Println("sub:", sub)
 fmt.Println("mul:", mul)
 fmt.Println("div:", div)
 ```
