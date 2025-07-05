@@ -60,7 +60,7 @@ require (
 	github.com/tdewolff/test v1.0.11-0.20240106005702-7de5f7df4739 // indirect
 	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/image v0.25.0 // indirect
-	golang.org/x/mod v0.19.0 // indirect
+	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/sync v0.14.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
