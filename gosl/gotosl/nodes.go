@@ -1821,7 +1821,17 @@ func (p *printer) tensorMethod(x *ast.CallExpr, vr *Var, methName string) {
 			}
 		}
 	}
-	p.print(vr.Name, token.LBRACK)
+	if vr.NBuffs > 1 {
+		if stArg == 0 {
+			p.print(vr.Name+"Get", token.LPAREN)
+		} else {
+			p.print(vr.Name+methName, token.LPAREN)
+			p.expr(args[0])
+			p.print(token.COMMA, blank)
+		}
+	} else {
+		p.print(vr.Name, token.LBRACK)
+	}
 	p.print(vr.IndexFunc(), token.LPAREN)
 	nd := vr.TensorDims
 	for d := range nd {
@@ -1844,23 +1854,27 @@ func (p *printer) tensorMethod(x *ast.CallExpr, vr *Var, methName string) {
 			p.print(token.COMMA, blank)
 		}
 	}
-	p.print(token.RPAREN, token.RBRACK)
-	if strings.HasPrefix(methName, "Set") {
-		opnm := strings.TrimPrefix(methName, "Set")
-		tok := token.ASSIGN
-		switch opnm {
-		case "Add":
-			tok = token.ADD_ASSIGN
-		case "Sub":
-			tok = token.SUB_ASSIGN
-		case "Mul":
-			tok = token.MUL_ASSIGN
-		case "Div":
-			tok = token.QUO_ASSIGN
-		}
+	if vr.NBuffs > 1 {
+		p.print(token.RPAREN, token.RPAREN)
+	} else {
+		p.print(token.RPAREN, token.RBRACK)
+		if strings.HasPrefix(methName, "Set") {
+			opnm := strings.TrimPrefix(methName, "Set")
+			tok := token.ASSIGN
+			switch opnm {
+			case "Add":
+				tok = token.ADD_ASSIGN
+			case "Sub":
+				tok = token.SUB_ASSIGN
+			case "Mul":
+				tok = token.MUL_ASSIGN
+			case "Div":
+				tok = token.QUO_ASSIGN
+			}
 
-		p.print(blank, tok, blank)
-		p.expr(args[0])
+			p.print(blank, tok, blank)
+			p.expr(args[0])
+		}
 	}
 }
 
@@ -2767,13 +2781,21 @@ func (p *printer) systemVars(d *ast.GenDecl, sysname string) {
 				p.userError(err)
 				continue
 			}
-			dims, err := strconv.Atoi(dstr)
-			if !ok {
+			if dims, err := strconv.Atoi(dstr); err == nil {
+				vr.SetTensorKind()
+				vr.TensorDims = dims
+			} else {
 				err = fmt.Errorf("gosl: system %q: variable %q tensor dims parse error: %s", sysname, nm, err.Error())
 				p.userError(err)
 			}
-			vr.SetTensorKind()
-			vr.TensorDims = dims
+			if nbufstr, ok := directiveAfter(dirs, "nbuffs"); ok {
+				if nbuf, err := strconv.Atoi(nbufstr); err == nil {
+					vr.NBuffs = nbuf
+				} else {
+					err = fmt.Errorf("gosl: system %q: variable %q tensor nbuffs parse error: %s", sysname, nm, err.Error())
+					p.userError(err)
+				}
+			}
 		}
 		gp.Vars = append(gp.Vars, vr)
 		if p.GoToSL.Config.Debug {

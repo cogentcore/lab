@@ -29,7 +29,8 @@ func main() {
 
 	rand.Seed(0)
 	// gpu.NumThreads = 1 // to restrict to sequential for loop
-	n := 16_000_000
+	n := 160_000_000 // nbuffs = 8
+	// n := 16_000_000 // fits in 1 buffer
 	// n := 2_000_000
 
 	Params = make([]ParamStruct, 1)

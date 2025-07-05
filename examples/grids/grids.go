@@ -36,5 +36,15 @@ func main() {
 		core.NewToolbar(bar).Maker(etv.MakeToolbar)
 	})
 
+	lt, _ := tv.NewTab("Labels")
+	gv := tensorcore.NewTensorGrid(lt)
+	tsr := pats.Column("Input").RowTensor(0).Clone()
+	tensorcore.AddGridStylerTo(tsr, func(s *tensorcore.GridStyle) {
+		s.ColumnRotation = 45
+	})
+	gv.SetTensor(tsr)
+	gv.RowLabels = []string{"Row 0", "Row 1,2", "", "Row 3", "Row 4"}
+	gv.ColumnLabels = []string{"Col 0,1", "", "Col 2", "Col 3", "Col 4"}
+
 	b.RunMainWindow()
 }
