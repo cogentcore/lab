@@ -469,3 +469,19 @@ func (tg *TensorGrid) renderImage() {
 		}
 	}
 }
+
+// RepeatsToBlank returns string slice with any sequentially repeated strings
+// set to blank (empty string), which drives grouping in the TensorGrid labels.
+func RepeatsToBlank(str []string) []string {
+	sz := len(str)
+	br := make([]string, sz)
+	last := ""
+	for r, s := range str {
+		if s == last {
+			continue
+		}
+		br[r] = s
+		last = s
+	}
+	return br
+}
