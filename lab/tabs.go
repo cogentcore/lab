@@ -126,9 +126,9 @@ func (ts *Tabs) TensorEditor(label string, tsr tensor.Tensor) *tensorcore.Tensor
 // to view given Tensor.
 func (ts *Tabs) TensorGrid(label string, tsr tensor.Tensor) *tensorcore.TensorGrid {
 	tv := NewTab(ts, label, func(tab *core.Frame) *tensorcore.TensorGrid {
-		// tb := core.NewToolbar(tab)
+		tb := core.NewToolbar(tab)
 		tv := tensorcore.NewTensorGrid(tab)
-		// tb.Maker(tv.MakeToolbar)
+		tb.Maker(tv.MakeToolbar)
 		return tv
 	})
 	tv.SetTensor(tsr)
