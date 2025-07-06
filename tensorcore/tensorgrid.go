@@ -20,6 +20,7 @@ import (
 	"cogentcore.org/core/styles/abilities"
 	"cogentcore.org/core/styles/units"
 	"cogentcore.org/core/text/rich"
+	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/tensor"
 )
 
@@ -83,6 +84,15 @@ func (tg *TensorGrid) Init() {
 	tg.AddContextMenu(func(m *core.Scene) {
 		core.NewFuncButton(m).SetFunc(tg.TensorEditor).SetIcon(icons.Edit)
 		core.NewFuncButton(m).SetFunc(tg.EditStyle).SetIcon(icons.Edit)
+	})
+}
+
+func (tg *TensorGrid) MakeToolbar(p *tree.Plan) {
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(tg.TensorEditor).SetIcon(icons.Edit)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(tg.EditStyle).SetIcon(icons.Edit)
 	})
 }
 
@@ -168,18 +178,18 @@ func (tg *TensorGrid) SizeLabel(lbs []string, col bool) (minBlank, ngps int, sz 
 		l := len(lb)
 		if l == 0 {
 			curblk++
-		} else {
-			if curblk > 0 {
-				ngps++
-			}
-			if i > 0 {
-				minBlank = min(minBlank, curblk)
-			}
-			curblk = 0
-			if l > mx {
-				mx = l
-				mxi = i
-			}
+			continue
+		}
+		if curblk > 0 {
+			ngps++
+		}
+		if i > 0 {
+			minBlank = min(minBlank, curblk)
+		}
+		curblk = 0
+		if l > mx {
+			mx = l
+			mxi = i
 		}
 	}
 	minBlank = min(minBlank, curblk)

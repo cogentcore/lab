@@ -95,7 +95,7 @@ type Var struct {
 	// The index still has to fit in a uint32 variable, so 4g max value.
 	// Assuming 4 bytes per element, that means a total of 16g max total storage.
 	// The Config.MaxBufferSize (set at compile time, defaults to 2g) determines
-	// how any buffers: if 2g, then 16 / 2 = 8 max buffers.
+	// how many buffers: if 2g, then 16 / 2 = 8 max buffers.
 	NBuffs int
 }
 
