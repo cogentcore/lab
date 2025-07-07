@@ -6,6 +6,7 @@ package tensorfs
 
 import (
 	"io/fs"
+	"path"
 	"reflect"
 	"time"
 
@@ -189,8 +190,15 @@ func DirTable(dir *Node, fun func(node *Node) bool) *table.Table {
 func DirFromTable(dir *Node, dt *table.Table) {
 	for i, cl := range dt.Columns.Values {
 		nm := dt.Columns.Keys[i]
-		nd, err := newNode(dir, nm)
+		dr, fn := path.Split(nm)
+		pdir := dir
+		if dr != "" {
+			dr = path.Dir(nm)
+			pdir = dir.Dir(dr)
+		}
+		nd, err := newNode(pdir, fn)
 		if err == nil || err == fs.ErrExist {
+			metadata.SetName(cl, fn)
 			nd.Tensor = cl
 		}
 	}
