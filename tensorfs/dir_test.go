@@ -5,6 +5,7 @@
 package tensorfs
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -70,4 +71,43 @@ func TestDirTable(t *testing.T) {
 	nls := ndir.ListLong(true, 2)
 	// fmt.Println(nls)
 	assert.Equal(t, ll, nls)
+}
+
+func TestDirTar(t *testing.T) {
+	dir, err := NewDir("root")
+	assert.NoError(t, err)
+
+	mdir := dir.Dir("multi/path/deep")
+	mdir.Float64("data", 3, 3)
+	bdir := dir.Dir("multi/path/next")
+	bdir.Float64("dat", 3)
+
+	ls := dir.ListLong(true, 2)
+	// fmt.Println(ls)
+	lsc := `		multi/
+			path/
+				deep/
+					data [3 3]
+				next/
+					dat [3]
+`
+	assert.Equal(t, lsc, ls)
+
+	gz := true
+
+	var b bytes.Buffer
+	err = Tar(&b, dir, gz, nil)
+	assert.NoError(t, err)
+
+	// fmt.Println(b.Len())
+
+	ndir, err := NewDir("root")
+	assert.NoError(t, err)
+
+	err = Untar(&b, ndir, gz)
+	assert.NoError(t, err)
+
+	nls := ndir.ListLong(true, 2)
+	// fmt.Println(nls)
+	assert.Equal(t, lsc, nls)
 }

@@ -13,7 +13,6 @@ import (
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/num"
 	"cogentcore.org/core/base/reflectx"
-	"cogentcore.org/core/base/slicesx"
 	"cogentcore.org/lab/tensor/bitslice"
 )
 
@@ -102,7 +101,9 @@ func (tsr *Bool) DataType() reflect.Kind { return reflect.Bool }
 
 func (tsr *Bool) Sizeof() int64 { return int64(len(tsr.Values)) }
 
-func (tsr *Bool) Bytes() []byte { return slicesx.ToBytes(tsr.Values) }
+func (tsr *Bool) Bytes() []byte { return tsr.Values }
+
+func (tsr *Bool) SetFromBytes(b []byte) { copy(tsr.Values, b) }
 
 func (tsr *Bool) Shape() *Shape { return &tsr.shape }
 

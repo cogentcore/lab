@@ -71,6 +71,13 @@ func (tsr *Base[T]) Bytes() []byte {
 	return slicesx.ToBytes(tsr.Values)
 }
 
+func (tsr *Base[T]) SetFromBytes(b []byte) {
+	var v T
+	tsz := unsafe.Sizeof(v)
+	d := unsafe.Slice((*T)(unsafe.Pointer(&b[0])), len(b)/int(tsz))
+	copy(tsr.Values, d)
+}
+
 func (tsr *Base[T]) Value(i ...int) T {
 	return tsr.Values[tsr.shape.IndexTo1D(i...)]
 }

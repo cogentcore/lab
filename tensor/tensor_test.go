@@ -611,3 +611,33 @@ func TestGrowRow(t *testing.T) {
 	bits.SetNumRows(1)
 	assert.Equal(t, 1, bits.Len())
 }
+
+func TestBinary(t *testing.T) {
+	{
+		tsr := NewFromValues(1., 2., 3., 4., 5., 6.).(*Float64)
+		tsr.SetShapeSizes(3, 2)
+		b := ToBinary(tsr)
+		nt := FromBinary(b).(*Float64)
+		assert.Equal(t, tsr.Len(), nt.Len())
+		assert.Equal(t, tsr.ShapeSizes(), nt.ShapeSizes())
+		assert.Equal(t, tsr.Values, nt.Values)
+	}
+	{
+		tsr := NewFromValues(true, false, false, true, false, false).(*Bool)
+		tsr.SetShapeSizes(2, 3)
+		b := ToBinary(tsr)
+		nt := FromBinary(b).(*Bool)
+		assert.Equal(t, tsr.Len(), nt.Len())
+		assert.Equal(t, tsr.ShapeSizes(), nt.ShapeSizes())
+		assert.Equal(t, tsr.Values, nt.Values)
+	}
+	{
+		tsr := NewFromValues("strings", "are", "hard", "because", "of", "length").(*String)
+		tsr.SetShapeSizes(2, 3)
+		b := ToBinary(tsr)
+		nt := FromBinary(b).(*String)
+		assert.Equal(t, tsr.Len(), nt.Len())
+		assert.Equal(t, tsr.ShapeSizes(), nt.ShapeSizes())
+		assert.Equal(t, tsr.Values, nt.Values)
+	}
+}

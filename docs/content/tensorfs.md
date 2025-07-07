@@ -32,7 +32,13 @@ There are also a few other variants of the `Value` functionality:
 * `ValueType` takes a `reflect.Kind` arg for the data type, which can then be a variable.
 * `SetTensor` sets a tensor to a node of given name, creating the node if needed. This is also available as the `Set` method on a directory node.
 
-`tensorfs.DirTable` returns a [[table]] with all the tensors under a given directory node, which can then be used for making plots or doing other forms of data analysis. This works best when each tensor has the same outer-most row dimension. The table is persistent and very efficient, using direct pointers to the underlying tensor values.
+## DirTable and tar files
+
+[[doc:tensorfs.DirTable]] returns a [[table]] with all the tensors under a given directory node, which can then be used for making plots or doing other forms of data analysis. This works best when each tensor has the same outer-most row dimension. The table is persistent and very efficient, using direct pointers to the underlying tensor values.
+
+Use [[doc:tensorfs.DirFromTable]] to set the contents of a directory from a table. This will also use any slashes in column names to recreate the hierarchical structure of directories and subdirectories, but note that the `DirTable` command only uses the last two levels of the path name for naming columns (i.e., the leaf name and its immediate parent).
+
+Use [[doc:tensorfs.Tar]] and [[doc:tensorfs.Untar]] if you want to save and reload a full directory structure in an efficient manner (also doesn't depend on row alignment).
 
 ## Directories
 
@@ -101,4 +107,4 @@ There are parallel `Node` and `Value` access methods for directory nodes, with t
 * `tsrs := dir.ValuesFunc(<filter func>)` walks down directories (unless filtered) and returns a flat list of all tensors found. Goes in "directory order" = order nodes were added.
 * `tsrs := dir.ValuesAlphaFunc(<filter func>)` is like `ValuesFunc` but traverses in alpha order at each node.
 
-
+## 

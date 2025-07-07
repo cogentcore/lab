@@ -34,7 +34,12 @@ type Values interface {
 	// Bytes returns the underlying byte representation of the tensor values.
 	// This is the actual underlying data, so make a copy if it can be
 	// unintentionally modified or retained more than for immediate use.
+	// For the [String] type, this is a len int + bytes encoding of each string.
 	Bytes() []byte
+
+	// SetFromBytes sets the values from given bytes. See [Values.Bytes] for
+	// the [String] encoding.
+	SetFromBytes(b []byte)
 
 	// SetZeros is a convenience function initialize all values to the
 	// zero value of the type (empty strings for string type).
@@ -78,6 +83,10 @@ func New[T DataTypes](sizes ...int) Values {
 		return NewNumber[float32](sizes...)
 	case int:
 		return NewNumber[int](sizes...)
+	case int64:
+		return NewNumber[int64](sizes...)
+	case uint64:
+		return NewNumber[uint64](sizes...)
 	case int32:
 		return NewNumber[int32](sizes...)
 	case uint32:
@@ -91,7 +100,7 @@ func New[T DataTypes](sizes ...int) Values {
 
 // NewOfType returns a new n-dimensional tensor of given reflect.Kind type
 // with the given sizes per dimension (shape).
-// Supported types are in [DataTypes].
+// Types supported are listed in [DataTypes].
 func NewOfType(typ reflect.Kind, sizes ...int) Values {
 	switch typ {
 	case reflect.String:
@@ -104,8 +113,14 @@ func NewOfType(typ reflect.Kind, sizes ...int) Values {
 		return NewNumber[float32](sizes...)
 	case reflect.Int:
 		return NewNumber[int](sizes...)
+	case reflect.Int64:
+		return NewNumber[int64](sizes...)
+	case reflect.Uint64:
+		return NewNumber[uint64](sizes...)
 	case reflect.Int32:
 		return NewNumber[int32](sizes...)
+	case reflect.Uint32:
+		return NewNumber[uint32](sizes...)
 	case reflect.Uint8:
 		return NewNumber[byte](sizes...)
 	default:

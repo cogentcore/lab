@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package baremetal
+package tensorfs
 
 import (
 	"archive/tar"
@@ -10,11 +10,12 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"os"
 	"path"
 	"path/filepath"
+	"time"
 
 	"cogentcore.org/core/base/errors"
+	"cogentcore.org/lab/tensor"
 )
 
 // AllFiles returns all file names within given directory, including subdirectory,
@@ -43,14 +44,12 @@ func AllFiles(dir string, exclude ...string) ([]string, error) {
 // note: Tar code helped significantly by Steve Domino examples:
 // https://medium.com/@skdomino/taring-untaring-files-in-go-6b07cf56bc07
 
-// TarFiles writes a tar file to given writer, from given source directory.
-// Tar file names are as listed here so it will unpack directly to those files.
+// Tar writes a tar file to given writer, from given source directory,
+// using given include function to select nodes to include (all if nil).
 // If gz is true, then tar is gzipped.
-func TarFiles(w io.Writer, dir string, gz bool, files ...string) error {
-	// ensure the src actually exists before trying to tar it
-	if _, err := os.Stat(dir); err != nil {
-		return fmt.Errorf("TarFiles: directory not accessible: %s", err.Error())
-	}
+// The tensor data is written using the [tensor.ToBinary] format, so the
+// files are effectively opaque binary files.
+func Tar(w io.Writer, dir *Node, gz bool, include func(nd *Node) bool) error {
 	ow := w
 	if gz {
 		gzw := gzip.NewWriter(w)
@@ -59,42 +58,47 @@ func TarFiles(w io.Writer, dir string, gz bool, files ...string) error {
 	}
 	tw := tar.NewWriter(ow)
 	defer tw.Close()
+	return tarWrite(tw, dir, "", include)
+}
 
+func tarWrite(w *tar.Writer, dir *Node, parPath string, include func(nd *Node) bool) error {
 	var errs []error
-	for _, fn := range files {
-		fname := path.Join(dir, fn)
-		fi, err := os.Stat(fname)
-		if err != nil {
-			errs = append(errs, err)
+	for _, it := range dir.nodes.Values {
+		if include != nil && !include(it) {
 			continue
 		}
-		hdr, err := tar.FileInfoHeader(fi, fi.Name())
-		if err != nil {
-			errs = append(errs, err)
+		if it.IsDir() {
+			tarWrite(w, it, path.Join(parPath, it.name), include)
 			continue
 		}
-		hdr.Name = fn
-		if err := tw.WriteHeader(hdr); err != nil {
+		vtsr := it.Tensor.AsValues()
+		b := tensor.ToBinary(vtsr)
+		fname := path.Join(parPath, it.name)
+		now := time.Now()
+		hdr := &tar.Header{
+			Name:       fname,
+			Mode:       0666,
+			Size:       int64(len(b)),
+			Format:     tar.FormatPAX,
+			ModTime:    now,
+			AccessTime: now,
+			ChangeTime: now,
+		}
+		if err := w.WriteHeader(hdr); err != nil {
 			errs = append(errs, err)
 			break
 		}
-		f, err := os.Open(fname)
+		_, err := w.Write(b)
 		if err != nil {
 			errs = append(errs, err)
-			continue
 		}
-		if _, err := io.Copy(tw, f); err != nil {
-			errs = append(errs, err)
-			break
-		}
-		f.Close()
 	}
 	return errors.Join(errs...)
 }
 
-// Untar extracts a tar file from given reader, into given source directory.
+// Untar extracts a tar file from given reader, into given directory node.
 // If gz is true, then tar is gzipped.
-func Untar(r io.Reader, dir string, gz bool) error {
+func Untar(r io.Reader, dir *Node, gz bool) error {
 	or := r
 	if gz {
 		gzr, err := gzip.NewReader(r)
@@ -129,23 +133,34 @@ func Untar(r io.Reader, dir string, gz bool) error {
 		case hdr == nil:
 			continue
 		}
-		fn := path.Join(dir, hdr.Name)
+		fname := hdr.Name
 		switch hdr.Typeflag {
 		case tar.TypeDir:
-			err := os.MkdirAll(fn, 0755)
-			if allErr := addErr(err); allErr != nil {
-				return allErr
-			}
+			dir.Dir(fname)
 		case tar.TypeReg:
-			f, err := os.OpenFile(fn, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(hdr.Mode))
-			if allErr := addErr(err); allErr != nil {
-				return allErr
+			b := make([]byte, hdr.Size)
+			_, err := tr.Read(b)
+			if err != nil && err != io.EOF {
+				fmt.Println("err:", err)
+				if allErr := addErr(err); allErr != nil {
+					return allErr
+				}
+				continue
 			}
-			_, err = io.Copy(f, tr)
-			f.Close()
-			if allErr := addErr(err); allErr != nil {
-				return allErr
+			dr, fn := path.Split(fname)
+			pdir := dir
+			if dr != "" {
+				dr = path.Dir(fname)
+				pdir = dir.Dir(dr)
 			}
+			nd, err := newNode(pdir, fn)
+			if err != nil && err != fs.ErrExist {
+				if allErr := addErr(err); allErr != nil {
+					return allErr
+				}
+				continue
+			}
+			nd.Tensor = tensor.FromBinary(b)
 		}
 	}
 	return errors.Join(errs...)

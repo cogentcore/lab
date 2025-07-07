@@ -144,22 +144,22 @@ func (dir *Node) Values(names ...string) ([]tensor.Tensor, error) {
 }
 
 // ValuesFunc returns all tensor Values under given directory,
-// filtered by given function, in directory order (e.g., order added),
+// filtered by given include function, in directory order (e.g., order added),
 // recursively descending into directories to return a flat list of
 // the entire subtree. The function can filter out directories to prune
 // the tree, e.g., using `IsDir` method.
 // If func is nil, all Value nodes are returned.
-func (dir *Node) ValuesFunc(fun func(nd *Node) bool) []tensor.Tensor {
+func (dir *Node) ValuesFunc(include func(nd *Node) bool) []tensor.Tensor {
 	if err := dir.mustDir("ValuesFunc", ""); err != nil {
 		return nil
 	}
 	var nds []tensor.Tensor
 	for _, it := range dir.nodes.Values {
-		if fun != nil && !fun(it) {
+		if include != nil && !include(it) {
 			continue
 		}
 		if it.IsDir() {
-			subs := it.ValuesFunc(fun)
+			subs := it.ValuesFunc(include)
 			nds = append(nds, subs...)
 		} else {
 			nds = append(nds, it.Tensor)
@@ -169,22 +169,22 @@ func (dir *Node) ValuesFunc(fun func(nd *Node) bool) []tensor.Tensor {
 }
 
 // NodesFunc returns leaf Nodes under given directory, filtered by
-// given function, recursively descending into directories
+// given include function, recursively descending into directories
 // to return a flat list of the entire subtree, in directory order
 // (e.g., order added).
 // The function can filter out directories to prune the tree.
 // If func is nil, all leaf Nodes are returned.
-func (dir *Node) NodesFunc(fun func(nd *Node) bool) []*Node {
+func (dir *Node) NodesFunc(include func(nd *Node) bool) []*Node {
 	if err := dir.mustDir("NodesFunc", ""); err != nil {
 		return nil
 	}
 	var nds []*Node
 	for _, it := range dir.nodes.Values {
-		if fun != nil && !fun(it) {
+		if include != nil && !include(it) {
 			continue
 		}
 		if it.IsDir() {
-			subs := it.NodesFunc(fun)
+			subs := it.NodesFunc(include)
 			nds = append(nds, subs...)
 		} else {
 			nds = append(nds, it)
@@ -199,7 +199,7 @@ func (dir *Node) NodesFunc(fun func(nd *Node) bool) []*Node {
 // directory level traversed in alphabetical order.
 // The function can filter out directories to prune the tree.
 // If func is nil, all Values are returned.
-func (dir *Node) ValuesAlphaFunc(fun func(nd *Node) bool) []tensor.Tensor {
+func (dir *Node) ValuesAlphaFunc(include func(nd *Node) bool) []tensor.Tensor {
 	if err := dir.mustDir("ValuesAlphaFunc", ""); err != nil {
 		return nil
 	}
@@ -207,11 +207,11 @@ func (dir *Node) ValuesAlphaFunc(fun func(nd *Node) bool) []tensor.Tensor {
 	var nds []tensor.Tensor
 	for _, nm := range names {
 		it := dir.nodes.At(nm)
-		if fun != nil && !fun(it) {
+		if include != nil && !include(it) {
 			continue
 		}
 		if it.IsDir() {
-			subs := it.ValuesAlphaFunc(fun)
+			subs := it.ValuesAlphaFunc(include)
 			nds = append(nds, subs...)
 		} else {
 			nds = append(nds, it.Tensor)
@@ -221,13 +221,13 @@ func (dir *Node) ValuesAlphaFunc(fun func(nd *Node) bool) []tensor.Tensor {
 }
 
 // NodesAlphaFunc returns leaf nodes under given directory, filtered
-// by given function, with nodes at each directory level
+// by given include function, with nodes at each directory level
 // traversed in alphabetical order, recursively descending into directories
 // to return a flat list of the entire subtree, in directory order
 // (e.g., order added).
 // The function can filter out directories to prune the tree.
 // If func is nil, all leaf Nodes are returned.
-func (dir *Node) NodesAlphaFunc(fun func(nd *Node) bool) []*Node {
+func (dir *Node) NodesAlphaFunc(include func(nd *Node) bool) []*Node {
 	if err := dir.mustDir("NodesAlphaFunc", ""); err != nil {
 		return nil
 	}
@@ -235,11 +235,11 @@ func (dir *Node) NodesAlphaFunc(fun func(nd *Node) bool) []*Node {
 	var nds []*Node
 	for _, nm := range names {
 		it := dir.nodes.At(nm)
-		if fun != nil && !fun(it) {
+		if include != nil && !include(it) {
 			continue
 		}
 		if it.IsDir() {
-			subs := it.NodesAlphaFunc(fun)
+			subs := it.NodesAlphaFunc(include)
 			nds = append(nds, subs...)
 		} else {
 			nds = append(nds, it)
