@@ -1,3 +1,7 @@
++++
+Categories = ["Table"]
++++
+
 **table** provides a DataTable / DataFrame structure similar to [pandas](https://pandas.pydata.org/) and [xarray](http://xarray.pydata.org/en/stable/) in Python, and [Apache Arrow Table](https://github.com/apache/arrow/tree/master/go/arrow/array/table.go), using [[tensor]] n-dimensional columns aligned by common outermost row dimension.
 
 Data in the table is accessed by first getting the `Column` tensor (typically by name), and then using the [[doc:tensor.RowMajor]] methods to access data within that tensor in a row-wise manner:
