@@ -16,7 +16,7 @@ There are type-specific accessor methods for the standard high-frequency data ty
 dir, _ := tensorfs.NewDir("root")
 x := dir.Float64("data", 3, 3)
 
-fmt.Println(dir.ListLong(true, 2))
+fmt.Println(dir.ListAll())
 fmt.Println(x)
 ```
 
@@ -55,7 +55,7 @@ dir, _ := tensorfs.NewDir("root")
 subdir := dir.Dir("sub")
 x := subdir.Float64("data", 3, 3)
 
-fmt.Println(dir.ListLong(true, 2))
+fmt.Println(dir.ListAll())
 fmt.Println(x)
 ```
 
@@ -73,7 +73,7 @@ subsub := subdir.Dir("stats")
 y := subsub.Float64("y", 1)
 z := subsub.Float64("z", 1)
 
-fmt.Println(dir.ListLong(true, 2))
+fmt.Println(dir.ListAll())
 
 vals := dir.ValuesFunc(nil) // nil = get everything
 for _, v := range vals {
@@ -91,7 +91,7 @@ subsub := subdir.Dir("stats")
 y := subsub.Float64("y", 1)
 z := subsub.Float64("z", 1)
 
-fmt.Println(dir.ListLong(true, 2))
+fmt.Println(dir.ListAll())
 
 vals := dir.ValuesFunc(func(n *tensorfs.Node) bool {
     if n.IsDir() { // can filter by dirs here too (get to see everything)

@@ -16,11 +16,12 @@ func TestDir(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdir := dir.Dir("multi/path/deep")
-	ls := dir.ListLong(true, 2)
+	ls := dir.ListAll()
 	// fmt.Println(ls)
-	lsc := `		multi/
-			path/
-				deep/
+	lsc :=
+		`multi/
+	path/
+		deep/
 `
 	assert.Equal(t, lsc, ls)
 	assert.Equal(t, "deep", mdir.Name())
@@ -35,14 +36,15 @@ func TestDirTable(t *testing.T) {
 	bdir := dir.Dir("multi/path/next")
 	bdir.Float64("dat", 3)
 
-	ls := dir.ListLong(true, 2)
+	ls := dir.ListAll()
 	// fmt.Println(ls)
-	lsc := `		multi/
-			path/
-				deep/
-					data [3 3]
-				next/
-					dat [3]
+	lsc :=
+		`multi/
+	path/
+		deep/
+			data [3 3]
+		next/
+			dat [3]
 `
 	assert.Equal(t, lsc, ls)
 
@@ -61,14 +63,15 @@ func TestDirTable(t *testing.T) {
 	ndir, err := NewDir("root")
 	assert.NoError(t, err)
 
-	ll := `		deep/
-			data [3 3]
-		next/
-			dat [3]
+	ll :=
+		`deep/
+	data [3 3]
+next/
+	dat [3]
 `
 
 	DirFromTable(ndir, dt)
-	nls := ndir.ListLong(true, 2)
+	nls := ndir.ListAll()
 	// fmt.Println(nls)
 	assert.Equal(t, ll, nls)
 }
@@ -82,14 +85,15 @@ func TestDirTar(t *testing.T) {
 	bdir := dir.Dir("multi/path/next")
 	bdir.Float64("dat", 3)
 
-	ls := dir.ListLong(true, 2)
+	ls := dir.ListAll()
 	// fmt.Println(ls)
-	lsc := `		multi/
-			path/
-				deep/
-					data [3 3]
-				next/
-					dat [3]
+	lsc :=
+		`multi/
+	path/
+		deep/
+			data [3 3]
+		next/
+			dat [3]
 `
 	assert.Equal(t, lsc, ls)
 
@@ -107,7 +111,7 @@ func TestDirTar(t *testing.T) {
 	err = Untar(&b, ndir, gz)
 	assert.NoError(t, err)
 
-	nls := ndir.ListLong(true, 2)
+	nls := ndir.ListAll()
 	// fmt.Println(nls)
 	assert.Equal(t, lsc, nls)
 }
