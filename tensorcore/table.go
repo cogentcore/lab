@@ -204,6 +204,7 @@ func (tb *Table) MakeHeader(p *tree.Plan) {
 	tree.AddAt(p, "header", func(w *core.Frame) {
 		core.ToolbarStyles(w)
 		w.FinalStyler(func(s *styles.Style) {
+			s.Display = styles.Flex // note: ToolbarStyles sets to None if no children, which can happen transiently in tables -- it doesn't recover from that.
 			s.Padding.Zero()
 			s.Grow.Set(0, 0)
 			s.Gap.Set(units.Em(0.5)) // matches grid default
