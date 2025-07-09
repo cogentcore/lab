@@ -32,6 +32,13 @@ var (
 	//gosl:group Data
 	//gosl:dims 2
 	Data *tensor.Float32
+
+	// Big is a big data buffer that uses multiple buffers.
+	// 2D: outer index is data, inner index is: Raw, Integ, Exp vars.
+	//
+	//gosl:dims 2
+	//gosl:nbuffs 3
+	Big *tensor.Float32
 )
 
 const (
@@ -136,6 +143,8 @@ func (ps *ParamStruct) IntegFromRaw(idx int) float32 {
 	var a float32
 	ctx := GetCtx(0)
 	ps.AnotherMeth(ctx, idx, &a)
+	bv := Big.Value(int(idx), int(Integ))
+	Big.Set(bv*2, int(idx), int(Exp))
 	return Data.Value(int(idx), int(Exp))
 }
 
@@ -156,7 +165,7 @@ func (ps *ParamStruct) AnotherMeth(ctx *Context, idx int, ptrarg *float32) {
 	case Train:
 		ab := float32(.5)
 		Data.SetMul(ab, int(idx), int(Exp))
-	default:
+	default: // and default is required!
 		ab := float32(1)
 		Data.SetMul(ab, int(idx), int(Exp))
 	}

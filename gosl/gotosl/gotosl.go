@@ -88,6 +88,15 @@ type Var struct {
 
 	// index of tensor in list of tensor variables, for indexing.
 	TensorIndex int
+
+	// NBuffs is the number of buffers to allocate to this variable; default is 1,
+	// which provides direct access. Otherwise, a wrapper function is generated
+	// that allows > max buffer size total storage.
+	// The index still has to fit in a uint32 variable, so 4g max value.
+	// Assuming 4 bytes per element, that means a total of 16g max total storage.
+	// The Config.MaxBufferSize (set at compile time, defaults to 2g) determines
+	// how many buffers: if 2g, then 16 / 2 = 8 max buffers.
+	NBuffs int
 }
 
 func (vr *Var) SetTensorKind() {
@@ -119,6 +128,21 @@ func (vr *Var) SLType() string {
 		}
 	} else {
 		return vr.Type[2:]
+	}
+	return ""
+}
+
+// GoType returns the Go type string for tensors
+func (vr *Var) GoType() string {
+	if vr.Tensor {
+		switch vr.TensorKind {
+		case reflect.Float32:
+			return "float32"
+		case reflect.Int32:
+			return "int32"
+		case reflect.Uint32:
+			return "uint32"
+		}
 	}
 	return ""
 }

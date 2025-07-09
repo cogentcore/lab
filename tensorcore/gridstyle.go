@@ -59,8 +59,11 @@ type GridStyle struct { //types:add --setters
 	// subject to the Size.Min / Max constraints, which have precedence.
 	TotalSize float32
 
-	// FontSize is the font size in standard point units for labels.
+	// FontSize is the font size in standard Dp units for labels.
 	FontSize float32
+
+	// ColumnRotation is the rotation angle in degrees for column labels
+	ColumnRotation float32 `default:"90"`
 }
 
 // Defaults sets defaults for values that are at nonsensical initial values
@@ -71,7 +74,8 @@ func (gs *GridStyle) Defaults() {
 	gs.DimExtra = 0.3
 	gs.Size.Set(2, 32)
 	gs.TotalSize = 100
-	gs.FontSize = 24
+	gs.FontSize = 16
+	gs.ColumnRotation = 90
 }
 
 // NewGridStyle returns a new GridStyle with defaults.

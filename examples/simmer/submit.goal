@@ -109,6 +109,7 @@ func (sr *Simmer) NewJob(jp SubmitParams) {
 	goalib.WriteFile("job.message", message)
 	goalib.WriteFile("job.args", args)
 	goalib.WriteFile("job.label", label)
+	goalib.WriteFile("job.version", sr.Config.Version)
 	goalib.WriteFile("job.submit", time.Now().Format(sr.Config.TimeFormat))
 	goalib.WriteFile("job.status", "Submitted")
 

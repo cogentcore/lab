@@ -8,8 +8,22 @@ var<storage, read> TensorStrides: array<u32>;
 var<storage, read> Params: array<ParamStruct>;
 // // Data is the data on which the computation operates. // 2D: outer index is data, inner index is: Raw, Integ, Exp vars. // 
 @group(1) @binding(0)
-var<storage, read_write> Data: array<f32>;
+var<storage, read_write> Data0: array<f32>;
 @group(1) @binding(1)
+var<storage, read_write> Data1: array<f32>;
+@group(1) @binding(2)
+var<storage, read_write> Data2: array<f32>;
+@group(1) @binding(3)
+var<storage, read_write> Data3: array<f32>;
+@group(1) @binding(4)
+var<storage, read_write> Data4: array<f32>;
+@group(1) @binding(5)
+var<storage, read_write> Data5: array<f32>;
+@group(1) @binding(6)
+var<storage, read_write> Data6: array<f32>;
+@group(1) @binding(7)
+var<storage, read_write> Data7: array<f32>;
+@group(1) @binding(8)
 var<storage, read_write> IntData: array<i32>;
 
 alias GPUVars = i32;
@@ -18,6 +32,186 @@ alias GPUVars = i32;
 fn main(@builtin(workgroup_id) wgid: vec3<u32>, @builtin(num_workgroups) nwg: vec3<u32>, @builtin(local_invocation_index) loci: u32) {
 	let idx = loci + (wgid.x + wgid.y * nwg.x + wgid.z * nwg.x * nwg.y) * 64;
 	Compute(idx);
+}
+
+fn DataGet(ix: u32) -> f32 {
+	let ii = ix / 536870912;
+	switch ii {
+	case u32(0): {
+		return Data0[ix];
+	}
+	case u32(1): {
+		return Data1[ix - 536870912];
+	}
+	case u32(2): {
+		return Data2[ix - 1073741824];
+	}
+	case u32(3): {
+		return Data3[ix - 1610612736];
+	}
+	case u32(4): {
+		return Data4[ix - 2147483648];
+	}
+	case u32(5): {
+		return Data5[ix - 2684354560];
+	}
+	case u32(6): {
+		return Data6[ix - 3221225472];
+	}
+	default: {
+		return Data7[ix - 3758096384];
+	}
+	}
+}
+
+fn DataSet(vl: f32, ix: u32) {
+	let ii = ix / 536870912;
+	switch ii {
+	case u32(0): {
+		Data0[ix] = vl;
+	}
+	case u32(1): {
+		Data1[ix - 536870912] = vl;
+	}
+	case u32(2): {
+		Data2[ix - 1073741824] = vl;
+	}
+	case u32(3): {
+		Data3[ix - 1610612736] = vl;
+	}
+	case u32(4): {
+		Data4[ix - 2147483648] = vl;
+	}
+	case u32(5): {
+		Data5[ix - 2684354560] = vl;
+	}
+	case u32(6): {
+		Data6[ix - 3221225472] = vl;
+	}
+	default: {
+		Data7[ix - 3758096384] = vl;
+	}
+	}
+}
+
+fn DataSetAdd(vl: f32, ix: u32) {
+	let ii = ix / 536870912;
+	switch ii {
+	case u32(0): {
+		Data0[ix] += vl;
+	}
+	case u32(1): {
+		Data1[ix - 536870912] += vl;
+	}
+	case u32(2): {
+		Data2[ix - 1073741824] += vl;
+	}
+	case u32(3): {
+		Data3[ix - 1610612736] += vl;
+	}
+	case u32(4): {
+		Data4[ix - 2147483648] += vl;
+	}
+	case u32(5): {
+		Data5[ix - 2684354560] += vl;
+	}
+	case u32(6): {
+		Data6[ix - 3221225472] += vl;
+	}
+	default: {
+		Data7[ix - 3758096384] += vl;
+	}
+	}
+}
+
+fn DataSetSub(vl: f32, ix: u32) {
+	let ii = ix / 536870912;
+	switch ii {
+	case u32(0): {
+		Data0[ix] -= vl;
+	}
+	case u32(1): {
+		Data1[ix - 536870912] -= vl;
+	}
+	case u32(2): {
+		Data2[ix - 1073741824] -= vl;
+	}
+	case u32(3): {
+		Data3[ix - 1610612736] -= vl;
+	}
+	case u32(4): {
+		Data4[ix - 2147483648] -= vl;
+	}
+	case u32(5): {
+		Data5[ix - 2684354560] -= vl;
+	}
+	case u32(6): {
+		Data6[ix - 3221225472] -= vl;
+	}
+	default: {
+		Data7[ix - 3758096384] -= vl;
+	}
+	}
+}
+
+fn DataSetMul(vl: f32, ix: u32) {
+	let ii = ix / 536870912;
+	switch ii {
+	case u32(0): {
+		Data0[ix] *= vl;
+	}
+	case u32(1): {
+		Data1[ix - 536870912] *= vl;
+	}
+	case u32(2): {
+		Data2[ix - 1073741824] *= vl;
+	}
+	case u32(3): {
+		Data3[ix - 1610612736] *= vl;
+	}
+	case u32(4): {
+		Data4[ix - 2147483648] *= vl;
+	}
+	case u32(5): {
+		Data5[ix - 2684354560] *= vl;
+	}
+	case u32(6): {
+		Data6[ix - 3221225472] *= vl;
+	}
+	default: {
+		Data7[ix - 3758096384] *= vl;
+	}
+	}
+}
+
+fn DataSetDiv(vl: f32, ix: u32) {
+	let ii = ix / 536870912;
+	switch ii {
+	case u32(0): {
+		Data0[ix] /= vl;
+	}
+	case u32(1): {
+		Data1[ix - 536870912] /= vl;
+	}
+	case u32(2): {
+		Data2[ix - 1073741824] /= vl;
+	}
+	case u32(3): {
+		Data3[ix - 1610612736] /= vl;
+	}
+	case u32(4): {
+		Data4[ix - 2147483648] /= vl;
+	}
+	case u32(5): {
+		Data5[ix - 2684354560] /= vl;
+	}
+	case u32(6): {
+		Data6[ix - 3221225472] /= vl;
+	}
+	default: {
+		Data7[ix - 3758096384] /= vl;
+	}
+	}
 }
 
 fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
@@ -44,16 +238,17 @@ struct ParamStruct {
 	Sub: SubStruct,
 }
 fn SubStruct_IntegFromRaw(ps: SubStruct, idx: i32) {
-	var integ = Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ))];
-	integ += ps.Dt * (Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Raw))] - integ);
-	Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ))] = integ;
-	Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Exp))] = FastExp(-integ);
+	var integ = DataGet(Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ)));
+	integ += ps.Dt * (DataGet(Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Raw))) - integ);
+	DataSet(integ, Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ)));
+	DataSet(FastExp(-integ), Index2D(TensorStrides[0],
+	TensorStrides[1], u32(idx), u32(Exp)));
 }
 fn ParamStruct_IntegFromRaw(ps: ParamStruct, idx: i32) {
-	var integ = Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ))];
-	integ += ps.Dt * (Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Raw))] - integ);
-	Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ))] = integ;
-	Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Exp))] = FastExp(-integ);
+	var integ = DataGet(Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ)));
+	integ += ps.Dt * (DataGet(Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Raw))) - integ);
+	DataSet(integ, Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ)));
+	DataSet(FastExp(-integ), Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Exp)));
 	SubStruct_IntegFromRaw(ps.Sub, idx);
 }
 fn Compute(i: u32) { //gosl:kernel

@@ -21,7 +21,7 @@ func NewFromValues(val ...any) Values {
 	switch val[0].(type) {
 	case string:
 		return NewStringFromValues(slicesx.As[any, string](val)...)
-	case []bool:
+	case bool:
 		return NewBoolFromValues(slicesx.As[any, bool](val)...)
 	case float64:
 		return NewNumberFromValues(slicesx.As[any, float64](val)...)

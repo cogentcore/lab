@@ -87,7 +87,7 @@ TODO:
 
 The grouped global variables can be mapped directly to a corresponding [tensorfs](../tensor/tensorfs) directory, which provides direct accessibility to this data within interactive Goal usage. Further, different sets of variable values can be easily managed by saving and loading different such directories.
 
-```Go
+```go
     gosl.ToDataFS("path/to/dir" [, system]) // set tensorfs items in given path to current global vars
     
     gosl.FromDataFS("path/to/dir" [,system]) // set global vars from given tensorfs path

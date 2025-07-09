@@ -157,7 +157,7 @@ func (sr *Simmer) JobStatus(jid string, force bool) {
 		goalib.WriteFile("job.status", "Unknown")
 	}
 	sstat := goalib.ReadFile("job.status")
-	if !force && (sstat == "Finalized" || sstat == "Fetched") {
+	if !force && (sstat == "Finalized" || sstat == "Fetched" || sstat == "Canceled") {
 		return
 	}
 	if sr.IsSlurm() {
@@ -259,7 +259,7 @@ func (sr *Simmer) GetMeta(jid string) {
 	cd {jpath}
 	// fmt.Println("getting meta for", jid)
 	jfiles := $/bin/ls -1 job.*$ // local
-	meta := fmt.Sprintf("%s = %q\n", "Version", sr.Config.Version) + fmt.Sprintf("%s = %q\n", "Server", sr.Config.Server.Name)
+	meta := fmt.Sprintf("%s = %q\n", "Server", sr.Config.Server.Name)
 	for _, jf := range goalib.SplitLines(jfiles) {
 		if strings.Contains(jf, "sbatch") || strings.HasSuffix(jf, ".out") || strings.HasSuffix(jf, ".gz") {
 			continue

@@ -88,7 +88,7 @@ Each host maintains its own working directory and environment variables, which c
 * `@name` then refers to the given host in all subsequent commands, with `@0` referring to the local host where the goal script is running. 
 
 * You can use a variable name for the server, like this (the explicit `$ $` shell mode is required because a line starting with `{` is not recognized as shell code):
-```Go
+```goal
 server := "@myserver"
 ${server} ls$
 ```

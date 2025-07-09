@@ -11,14 +11,22 @@ import (
 )
 
 const (
+	// Short is used as a named arg for the [Node.List] method
+	// for a short, name-only listing, vs. [Long].
 	Short = false
-	Long  = true
 
-	DirOnly   = false
+	// Long is used as a named arg for the [Node.List] method
+	// for a long, name and size listing, vs. [Short].
+	Long = true
+
+	// DirOnly is used as a named arg for the [Node.List] method
+	// for only listing the current directory, vs. [Recursive].
+	DirOnly = false
+
+	// Recursive is used as a named arg for the [Node.List] method
+	// for listing all directories recursively, vs. [DirOnly].
 	Recursive = true
 )
-
-// todo: list options string
 
 func (nd *Node) String() string {
 	if !nd.IsDir() {
@@ -31,25 +39,30 @@ func (nd *Node) String() string {
 	return nd.List(Short, DirOnly)
 }
 
+// ListAll returns a Long, Recursive listing of nodes in the given directory.
+func (dir *Node) ListAll() string {
+	return dir.listLong(true, 0)
+}
+
 // List returns a listing of nodes in the given directory.
 //   - long = include detailed information about each node, vs just the name.
 //   - recursive = descend into subdirectories.
 func (dir *Node) List(long, recursive bool) string {
 	if long {
-		return dir.ListLong(recursive, 0)
+		return dir.listLong(recursive, 0)
 	}
-	return dir.ListShort(recursive, 0)
+	return dir.listShort(recursive, 0)
 }
 
-// ListShort returns a name-only listing of given directory.
-func (dir *Node) ListShort(recursive bool, ident int) string {
+// listShort returns a name-only listing of given directory.
+func (dir *Node) listShort(recursive bool, ident int) string {
 	var b strings.Builder
 	nodes, _ := dir.Nodes()
 	for _, it := range nodes {
 		b.WriteString(indent.Tabs(ident))
 		if it.IsDir() {
 			if recursive {
-				b.WriteString("\n" + it.ListShort(recursive, ident+1))
+				b.WriteString("\n" + it.listShort(recursive, ident+1))
 			} else {
 				b.WriteString(it.name + "/ ")
 			}
@@ -60,8 +73,8 @@ func (dir *Node) ListShort(recursive bool, ident int) string {
 	return b.String()
 }
 
-// ListLong returns a detailed listing of given directory.
-func (dir *Node) ListLong(recursive bool, ident int) string {
+// listLong returns a detailed listing of given directory.
+func (dir *Node) listLong(recursive bool, ident int) string {
 	var b strings.Builder
 	nodes, _ := dir.Nodes()
 	for _, it := range nodes {
@@ -69,7 +82,7 @@ func (dir *Node) ListLong(recursive bool, ident int) string {
 		if it.IsDir() {
 			b.WriteString(it.name + "/\n")
 			if recursive {
-				b.WriteString(it.ListLong(recursive, ident+1))
+				b.WriteString(it.listLong(recursive, ident+1))
 			}
 		} else {
 			b.WriteString(it.String() + "\n")

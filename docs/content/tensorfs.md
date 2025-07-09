@@ -1,3 +1,7 @@
++++
+Categories = ["Tensorfs"]
++++
+
 **tensorfs** provides a virtual filesystem for [[tensor]] data, which can be accessed for example in [[Goal]] [[math]] mode expressions, like the variable storage system in [IPython / Jupyter](https://ipython.readthedocs.io/en/stable/interactive/tutorial.html), with the advantage that the hierarchical structure of a filesystem allows data to be organized in more intuitive and effective ways. For example, data at different time scales can be put into different directories, or multiple different statistics computed on a given set of data can be put into a subdirectory. [[stats#Groups]] creates pivot-table style groups of values as directories, for example.
 
 `tensorfs` implements the Go [fs](https://pkg.go.dev/io/fs) interface, and can be accessed using fs-general tools, including the cogent core `filetree` and the [[Goal]] shell. 
@@ -12,7 +16,7 @@ There are type-specific accessor methods for the standard high-frequency data ty
 dir, _ := tensorfs.NewDir("root")
 x := dir.Float64("data", 3, 3)
 
-fmt.Println(dir.ListLong(true, 2))
+fmt.Println(dir.ListAll())
 fmt.Println(x)
 ```
 
@@ -32,7 +36,13 @@ There are also a few other variants of the `Value` functionality:
 * `ValueType` takes a `reflect.Kind` arg for the data type, which can then be a variable.
 * `SetTensor` sets a tensor to a node of given name, creating the node if needed. This is also available as the `Set` method on a directory node.
 
-`tensorfs.DirTable` returns a [[table]] with all the tensors under a given directory node, which can then be used for making plots or doing other forms of data analysis. This works best when each tensor has the same outer-most row dimension. The table is persistent and very efficient, using direct pointers to the underlying tensor values.
+## DirTable and tar files
+
+[[doc:tensorfs.DirTable]] returns a [[table]] with all the tensors under a given directory node, which can then be used for making plots or doing other forms of data analysis. This works best when each tensor has the same outer-most row dimension. The table is persistent and very efficient, using direct pointers to the underlying tensor values.
+
+Use [[doc:tensorfs.DirFromTable]] to set the contents of a directory from a table. This will also use any slashes in column names to recreate the hierarchical structure of directories and subdirectories, but note that the `DirTable` command only uses the last two levels of the path name for naming columns (i.e., the leaf name and its immediate parent).
+
+Use [[doc:tensorfs.Tar]] and [[doc:tensorfs.Untar]] if you want to save and reload a full directory structure in an efficient manner (also doesn't depend on row alignment).
 
 ## Directories
 
@@ -45,7 +55,7 @@ dir, _ := tensorfs.NewDir("root")
 subdir := dir.Dir("sub")
 x := subdir.Float64("data", 3, 3)
 
-fmt.Println(dir.ListLong(true, 2))
+fmt.Println(dir.ListAll())
 fmt.Println(x)
 ```
 
@@ -63,7 +73,7 @@ subsub := subdir.Dir("stats")
 y := subsub.Float64("y", 1)
 z := subsub.Float64("z", 1)
 
-fmt.Println(dir.ListLong(true, 2))
+fmt.Println(dir.ListAll())
 
 vals := dir.ValuesFunc(nil) // nil = get everything
 for _, v := range vals {
@@ -81,7 +91,7 @@ subsub := subdir.Dir("stats")
 y := subsub.Float64("y", 1)
 z := subsub.Float64("z", 1)
 
-fmt.Println(dir.ListLong(true, 2))
+fmt.Println(dir.ListAll())
 
 vals := dir.ValuesFunc(func(n *tensorfs.Node) bool {
     if n.IsDir() { // can filter by dirs here too (get to see everything)
@@ -101,4 +111,4 @@ There are parallel `Node` and `Value` access methods for directory nodes, with t
 * `tsrs := dir.ValuesFunc(<filter func>)` walks down directories (unless filtered) and returns a flat list of all tensors found. Goes in "directory order" = order nodes were added.
 * `tsrs := dir.ValuesAlphaFunc(<filter func>)` is like `ValuesFunc` but traverses in alpha order at each node.
 
-
+## 

@@ -4,6 +4,8 @@ package main
 
 import (
 	"embed"
+	"fmt"
+	"math"
 	"unsafe"
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/lab/tensor"
@@ -12,12 +14,13 @@ import (
 //go:embed shaders/*.wgsl
 var shaders embed.FS
 
-// ComputeGPU is the compute gpu device
-var ComputeGPU *gpu.GPU
+var (
+	// ComputeGPU is the compute gpu device
+	ComputeGPU *gpu.GPU
 
-// UseGPU indicates whether to use GPU vs. CPU.
-var UseGPU bool
-
+	// UseGPU indicates whether to use GPU vs. CPU.
+	UseGPU bool
+)
 // GPUSystem is a GPU compute System with kernels operating on the
 // same set of data variables.
 var GPUSystem *gpu.ComputeSystem
@@ -63,7 +66,14 @@ func GPUInit() {
 			sgp := vars.AddGroup(gpu.Storage, "Data")
 			var vr *gpu.Var
 			_ = vr
-			vr = sgp.Add("Data", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("Data0", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("Data1", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("Data2", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("Data3", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("Data4", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("Data5", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("Data6", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("Data7", gpu.Float32, 1, gpu.ComputeShader)
 			vr = sgp.Add("IntData", gpu.Int32, 1, gpu.ComputeShader)
 			sgp.SetNValues(1)
 		}
@@ -198,8 +208,15 @@ func ToGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(0, "Params", 0)
 			gpu.SetValueFrom(v, Params)
 		case DataVar:
-			v, _ := syVars.ValueByIndex(1, "Data", 0)
-			gpu.SetValueFrom(v, Data.Values)
+			bsz := 536870912
+			n := Data.Len()
+			nb := int(math.Ceil(float64(n) / float64(bsz)))
+			for bi := range nb {
+				v, _ := syVars.ValueByIndex(1, fmt.Sprintf("Data%d", bi), 0)
+				st := bsz * bi
+				ed := min(bsz * (bi+1), n)
+				gpu.SetValueFrom(v, Data.Values[st:ed])
+			}
 		case IntDataVar:
 			v, _ := syVars.ValueByIndex(1, "IntData", 0)
 			gpu.SetValueFrom(v, IntData.Values)
@@ -243,8 +260,13 @@ func ReadFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(0, "Params", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case DataVar:
-			v, _ := syVars.ValueByIndex(1, "Data", 0)
-			v.GPUToRead(sy.CommandEncoder)
+			bsz := 536870912
+			n := Data.Len()
+			nb := int(math.Ceil(float64(n) / float64(bsz)))
+			for bi := range nb {
+				v, _ := syVars.ValueByIndex(1, fmt.Sprintf("Data%d", bi), 0)
+				v.GPUToRead(sy.CommandEncoder)
+			}
 		case IntDataVar:
 			v, _ := syVars.ValueByIndex(1, "IntData", 0)
 			v.GPUToRead(sy.CommandEncoder)
@@ -263,9 +285,16 @@ func SyncFromGPU(vars ...GPUVars) {
 			v.ReadSync()
 			gpu.ReadToBytes(v, Params)
 		case DataVar:
-			v, _ := syVars.ValueByIndex(1, "Data", 0)
-			v.ReadSync()
-			gpu.ReadToBytes(v, Data.Values)
+			bsz := 536870912
+			n := Data.Len()
+			nb := int(math.Ceil(float64(n) / float64(bsz)))
+			for bi := range nb {
+				v, _ := syVars.ValueByIndex(1, fmt.Sprintf("Data%d", bi), 0)
+				v.ReadSync()
+				st := bsz * bi
+				ed := min(bsz * (bi+1), n)
+				gpu.ReadToBytes(v, Data.Values[st:ed])
+			}
 		case IntDataVar:
 			v, _ := syVars.ValueByIndex(1, "IntData", 0)
 			v.ReadSync()

@@ -5,6 +5,7 @@
 package tensor
 
 import (
+	"encoding/binary"
 	"fmt"
 	"strconv"
 
@@ -58,6 +59,38 @@ func (tsr *String) IsString() bool {
 }
 
 func (tsr *String) AsValues() Values { return tsr }
+
+// Bytes encodes the actual string values starting with the length
+// of each string as an encoded int value. SetFromBytes decodes
+// this format to reconstruct the contents.
+func (tsr *String) Bytes() []byte {
+	n := tsr.Len()
+	lb := make([]byte, 8)
+	var b []byte
+	for i := range n {
+		s := tsr.Values[i]
+		bs := []byte(s)
+		binary.Encode(lb, binary.LittleEndian, int64(len(bs)))
+		b = append(b, lb...)
+		b = append(b, bs...)
+	}
+	return b
+}
+
+// SetFromBytes sets string values from strings encoded using
+// [String.Bytes] function.
+func (tsr *String) SetFromBytes(b []byte) {
+	n := tsr.Len()
+	si := 0
+	for i := 0; i < len(b) && si < n; {
+		var l int64
+		binary.Decode(b[i:i+8], binary.LittleEndian, &l)
+		s := string(b[i+8 : i+8+int(l)])
+		tsr.Values[si] = s
+		si++
+		i += 8 + int(l)
+	}
+}
 
 ///////  Strings
 

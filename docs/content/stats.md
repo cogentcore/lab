@@ -54,7 +54,7 @@ gdt := stats.GroupStatsAsTableNoStatName(dir)
 
 fmt.Println("dt:", dt)
 fmt.Println("tensorfs listing:")
-fmt.Println(dir.ListLong(true, 2))
+fmt.Println(dir.ListAll())
 
 fmt.Println("gdt:", gdt)
 ```

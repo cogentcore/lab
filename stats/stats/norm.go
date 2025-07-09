@@ -10,7 +10,7 @@ import (
 	"cogentcore.org/lab/tensor/tmath"
 )
 
-// ZScore computes Z-normalized values into given output tensor,
+// ZScore computes Z-normalized values into output tensor,
 // subtracting the Mean and dividing by the standard deviation.
 func ZScore(a tensor.Tensor) tensor.Values {
 	return tensor.CallOut1(ZScoreOut, a)

@@ -27,6 +27,7 @@ var (
 	//
 	//gosl:group Data
 	//gosl:dims 2
+	//gosl:nbuffs 8
 	Data *tensor.Float32
 
 	// IntData is the int data on which the computation operates.
