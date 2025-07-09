@@ -7,7 +7,6 @@ package tensorfs
 import (
 	"archive/tar"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"io/fs"
 	"path"
@@ -141,7 +140,6 @@ func Untar(r io.Reader, dir *Node, gz bool) error {
 			b := make([]byte, hdr.Size)
 			_, err := tr.Read(b)
 			if err != nil && err != io.EOF {
-				fmt.Println("err:", err)
 				if allErr := addErr(err); allErr != nil {
 					return allErr
 				}
