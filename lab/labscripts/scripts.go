@@ -13,6 +13,7 @@ import (
 )
 
 func init() {
+	lab.RunScript = RunScript
 	lab.RunScriptCode = RunScriptCode
 }
 

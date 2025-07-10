@@ -31,7 +31,11 @@ var (
 	// LabBrowser is the current Lab Browser, for yaegi / Go consistent access.
 	LabBrowser *Browser
 
-	// RunScriptCode is set if labscripts is included.
+	// RunScript is set if labscripts is imported.
+	// Runs given script name on browser's interpreter.
+	RunScript func(br *Browser, scriptName string) error
+
+	// RunScriptCode is set if labscripts is imported.
 	// Runs given code on browser's interpreter.
 	RunScriptCode func(br *Browser, code string) error
 )
@@ -146,7 +150,9 @@ func (br *Browser) MakeScriptsToolbar(p *tree.Plan) {
 		tree.AddAt(p, lbl, func(w *core.Button) {
 			w.SetText(lbl).SetIcon(icons.RunCircle).
 				OnClick(func(e events.Event) {
-					// br.RunScript(s)
+					if RunScript != nil {
+						RunScript(br, s)
+					}
 				})
 			sc := br.Scripts[s]
 			tt := FirstComment(sc)
