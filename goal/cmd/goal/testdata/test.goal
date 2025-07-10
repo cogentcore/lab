@@ -1,7 +1,6 @@
 // test file for goal cli
 
-// todo: doesn't work: #1152
-// echo {args}
+echo {goalrun.Args()}
 
 for i, fn := range goalib.SplitLines(`/bin/ls -1`) {
 	fmt.Println(i, fn)
