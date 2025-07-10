@@ -12,8 +12,10 @@ import (
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/tree"
+	"cogentcore.org/core/yaegicore/coresymbols"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/lab"
+	_ "cogentcore.org/lab/lab/labscripts"
 	"cogentcore.org/lab/tensorfs"
 	"cogentcore.org/lab/yaegilab/labsymbols"
 )
@@ -29,7 +31,9 @@ func main() {
 }
 
 func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
-	b, _ := lab.NewBasicWindow(tensorfs.CurRoot, "Data", in)
+	b, br := lab.NewBasicWindow(tensorfs.CurRoot, "Data")
+	br.Interpreter = in
+	in.Interp.Use(coresymbols.Symbols)
 	in.Interp.Use(labsymbols.Symbols)
 	in.Config()
 	b.AddTopBar(func(bar *core.Frame) {

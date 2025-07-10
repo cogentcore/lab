@@ -72,6 +72,7 @@ func init() {
 		"FloatFuncOut":            reflect.ValueOf(tensor.FloatFuncOut),
 		"FloatPromoteType":        reflect.ValueOf(tensor.FloatPromoteType),
 		"FloatSetFunc":            reflect.ValueOf(tensor.FloatSetFunc),
+		"FromBinary":              reflect.ValueOf(tensor.FromBinary),
 		"FullAxis":                reflect.ValueOf(tensor.FullAxis),
 		"FuncByName":              reflect.ValueOf(tensor.FuncByName),
 		"Funcs":                   reflect.ValueOf(&tensor.Funcs).Elem(),
@@ -165,6 +166,7 @@ func init() {
 		"StringToFloat64":         reflect.ValueOf(tensor.StringToFloat64),
 		"Tab":                     reflect.ValueOf(tensor.Tab),
 		"ThreadingThreshold":      reflect.ValueOf(&tensor.ThreadingThreshold).Elem(),
+		"ToBinary":                reflect.ValueOf(tensor.ToBinary),
 		"Transpose":               reflect.ValueOf(tensor.Transpose),
 		"UnstableSort":            reflect.ValueOf(tensor.UnstableSort),
 		"Vectorize":               reflect.ValueOf(tensor.Vectorize),
@@ -394,6 +396,7 @@ type _cogentcore_org_lab_tensor_Values struct {
 	WSetFloat        func(val float64, i ...int)
 	WSetFloat1D      func(val float64, i int)
 	WSetFloatRow     func(val float64, row int, cell int)
+	WSetFromBytes    func(b []byte)
 	WSetInt          func(val int, i ...int)
 	WSetInt1D        func(val int, i int)
 	WSetIntRow       func(val int, row int, cell int)
@@ -449,6 +452,7 @@ func (W _cogentcore_org_lab_tensor_Values) SetFloat1D(val float64, i int)   { W.
 func (W _cogentcore_org_lab_tensor_Values) SetFloatRow(val float64, row int, cell int) {
 	W.WSetFloatRow(val, row, cell)
 }
+func (W _cogentcore_org_lab_tensor_Values) SetFromBytes(b []byte)    { W.WSetFromBytes(b) }
 func (W _cogentcore_org_lab_tensor_Values) SetInt(val int, i ...int) { W.WSetInt(val, i...) }
 func (W _cogentcore_org_lab_tensor_Values) SetInt1D(val int, i int)  { W.WSetInt1D(val, i) }
 func (W _cogentcore_org_lab_tensor_Values) SetIntRow(val int, row int, cell int) {

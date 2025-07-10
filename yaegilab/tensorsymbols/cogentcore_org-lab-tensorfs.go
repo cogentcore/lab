@@ -10,6 +10,7 @@ import (
 func init() {
 	Symbols["cogentcore.org/lab/tensorfs/tensorfs"] = map[string]reflect.Value{
 		// function, constant and variable definitions
+		"AllFiles":     reflect.ValueOf(tensorfs.AllFiles),
 		"Chdir":        reflect.ValueOf(tensorfs.Chdir),
 		"CurDir":       reflect.ValueOf(&tensorfs.CurDir).Elem(),
 		"CurRoot":      reflect.ValueOf(&tensorfs.CurRoot).Elem(),
@@ -30,6 +31,8 @@ func init() {
 		"SetCopy":      reflect.ValueOf(tensorfs.SetCopy),
 		"SetTensor":    reflect.ValueOf(tensorfs.SetTensor),
 		"Short":        reflect.ValueOf(tensorfs.Short),
+		"Tar":          reflect.ValueOf(tensorfs.Tar),
+		"Untar":        reflect.ValueOf(tensorfs.Untar),
 		"ValueType":    reflect.ValueOf(tensorfs.ValueType),
 
 		// type definitions
