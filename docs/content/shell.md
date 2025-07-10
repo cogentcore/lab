@@ -41,7 +41,7 @@ cd data
 list *.tsv
 ```
 
-The `command` is transpiled into a Go function that takes `args ...string`.  In the command function body, you can use the `args...` expression to pass all of the args, or `args[1]` etc to refer to specific positional indexes, as usual.
+The `command` is transpiled into a Go function that takes `args ...string` arguments. In the command function body, you can use the `args...` expression to pass all of the args, or `args[1]` etc to refer to specific positional indexes, as usual.
 
 The command function name is registered so that the standard shell execution code can run the function, passing the args.  You can also call it directly from Go code using the standard parentheses expression.
 
@@ -53,16 +53,16 @@ As with most scripting languages, a file of goal code can be made directly execu
 #!/usr/bin/env goal
 ```
 
-When executed this way, any additional args are available via an `args []any` variable, which can be passed to a command as follows:
+When executed this way, any additional args passed on the command line invocation are available via the `goalrun.Args()` function, which can be passed to a command as follows:
 ```go
-install {args...}
+install {goalrun.Args()}
 ```
-or by referring to specific arg indexes etc.
+or by referring to specific arg indexes etc, as in `goalrun.Args()[0]`.  Note that these are not the same as the implicit `args` for command aliases, which are local function args in effect.
 
 To make a script behave like a standard Makefile, you can define different `command`s for each of the make commands, and then add the following at the end of the file to use the args to run commands:
 
 ```go
-goal.RunCommands(args)
+goal.RunCommands(goalrun.Args())
 ```
 
 See [make](cmd/goal/testdata/make) for an example, in `cmd/goal/testdata/make`, which can be run for example using:
