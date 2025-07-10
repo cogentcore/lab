@@ -4,6 +4,8 @@ package labsymbols
 
 import (
 	"cogentcore.org/lab/tensorcore"
+	"go/constant"
+	"go/token"
 	"reflect"
 )
 
@@ -12,12 +14,14 @@ func init() {
 		// function, constant and variable definitions
 		"AddGridStylerTo":    reflect.ValueOf(tensorcore.AddGridStylerTo),
 		"GetGridStylersFrom": reflect.ValueOf(tensorcore.GetGridStylersFrom),
+		"LabelSpace":         reflect.ValueOf(constant.MakeFromLiteral("8", token.INT, 0)),
 		"NewGridStyle":       reflect.ValueOf(tensorcore.NewGridStyle),
 		"NewTable":           reflect.ValueOf(tensorcore.NewTable),
 		"NewTableButton":     reflect.ValueOf(tensorcore.NewTableButton),
 		"NewTensorButton":    reflect.ValueOf(tensorcore.NewTensorButton),
 		"NewTensorEditor":    reflect.ValueOf(tensorcore.NewTensorEditor),
 		"NewTensorGrid":      reflect.ValueOf(tensorcore.NewTensorGrid),
+		"RepeatsToBlank":     reflect.ValueOf(tensorcore.RepeatsToBlank),
 		"SetGridStylersTo":   reflect.ValueOf(tensorcore.SetGridStylersTo),
 
 		// type definitions

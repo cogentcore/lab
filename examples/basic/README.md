@@ -2,6 +2,8 @@
 
 This is an example of a basic lab.Browser with the files as the left panel, and the Tabber as the right panel.
 
+You must run this from the command line, to get the interactive interpreter prompt.
+
 ## Make some data
 
 ```Go

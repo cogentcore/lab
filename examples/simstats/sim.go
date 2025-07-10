@@ -204,7 +204,7 @@ func main() {
 	ss.ConfigAll()
 	ss.Run()
 
-	b, _ := lab.NewBasicWindow(ss.Root, "Root", nil)
+	b, _ := lab.NewBasicWindow(ss.Root, "Root")
 	b.RunWindow()
 	core.Wait()
 }

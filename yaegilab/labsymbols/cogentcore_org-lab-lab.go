@@ -29,6 +29,7 @@ func init() {
 		"PromptOKCancel":     reflect.ValueOf(lab.PromptOKCancel),
 		"PromptString":       reflect.ValueOf(lab.PromptString),
 		"PromptStruct":       reflect.ValueOf(lab.PromptStruct),
+		"RunScriptCode":      reflect.ValueOf(&lab.RunScriptCode).Elem(),
 		"TensorFS":           reflect.ValueOf(lab.TensorFS),
 		"TrimOrderPrefix":    reflect.ValueOf(lab.TrimOrderPrefix),
 

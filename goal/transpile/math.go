@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"cogentcore.org/core/base/stack"
+	"cogentcore.org/lab/goal/transpile/mparser"
 	"cogentcore.org/lab/tensor"
 )
 
@@ -31,7 +32,7 @@ func (st *State) TranspileMath(toks Tokens, code string, fullLine bool) Tokens {
 	mp := mathParse{state: st, toks: toks, code: code}
 	// mp.trace = true
 
-	mods := AllErrors // | Trace
+	mods := mparser.AllErrors // | Trace
 
 	if fullLine {
 		ewords, err := ExecWords(str)
@@ -48,7 +49,7 @@ func (st *State) TranspileMath(toks Tokens, code string, fullLine bool) Tokens {
 			}
 		}
 
-		stmts, err := ParseLine(str, mods)
+		stmts, err := mparser.ParseLine(str, mods)
 		if err != nil {
 			fmt.Println("line code:", str)
 			fmt.Println("parse err:", err)
@@ -58,7 +59,7 @@ func (st *State) TranspileMath(toks Tokens, code string, fullLine bool) Tokens {
 		}
 		mp.stmtList(stmts)
 	} else {
-		ex, err := ParseExpr(str, mods)
+		ex, err := mparser.ParseExpr(str, mods)
 		if err != nil {
 			fmt.Println("expr:", str)
 			fmt.Println("parse err:", err)

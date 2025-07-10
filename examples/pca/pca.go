@@ -12,8 +12,10 @@ import (
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/tree"
+	"cogentcore.org/core/yaegicore/coresymbols"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/lab"
+	_ "cogentcore.org/lab/lab/labscripts"
 	"cogentcore.org/lab/matrix"
 	"cogentcore.org/lab/stats/metric"
 	"cogentcore.org/lab/table"
@@ -33,9 +35,11 @@ func main() {
 
 func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 	dir := tensorfs.Mkdir("Iris")
-	b, bs := lab.NewBasicWindow(tensorfs.CurRoot, "Iris", in)
+	b, br := lab.NewBasicWindow(tensorfs.CurRoot, "Iris")
+	in.Interp.Use(coresymbols.Symbols)
 	in.Interp.Use(labsymbols.Symbols)
 	in.Config()
+	br.Interpreter = in
 	b.AddTopBar(func(bar *core.Frame) {
 		tb := core.NewToolbar(bar)
 		// tb.Maker(tbv.MakeToolbar)
@@ -53,7 +57,7 @@ func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 			if c.Expr != "" {
 				in.Eval(c.Expr)
 			}
-			AnalyzeIris(dir, bs)
+			AnalyzeIris(dir, br)
 			in.Interactive()
 		}()
 	})
@@ -63,7 +67,7 @@ func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 	return nil
 }
 
-func AnalyzeIris(dir *tensorfs.Node, bs *lab.Basic) {
+func AnalyzeIris(dir *tensorfs.Node, br *lab.Basic) {
 	dt := table.New("iris")
 	err := dt.OpenCSV("iris.data", tensor.Comma)
 	if err != nil {
@@ -74,7 +78,7 @@ func AnalyzeIris(dir *tensorfs.Node, bs *lab.Basic) {
 	ddir := dir.Dir("Data")
 	tensorfs.DirFromTable(ddir, dt)
 
-	ped := bs.Tabs.PlotTable("Iris", dt)
+	ped := br.Tabs.PlotTable("Iris", dt)
 	_ = ped
 
 	cdt := table.New()
@@ -88,7 +92,7 @@ func AnalyzeIris(dir *tensorfs.Node, bs *lab.Basic) {
 	data := cdt.Column("data")
 	covar := tensor.NewFloat64()
 	err = metric.CovarianceMatrixOut(metric.Correlation, data, covar)
-	cvg := bs.Tabs.TensorGrid("Covar", covar)
+	cvg := br.Tabs.TensorGrid("Covar", covar)
 	_ = cvg
 
 	vecs, _ := matrix.EigSym(covar)

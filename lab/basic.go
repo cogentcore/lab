@@ -15,8 +15,6 @@ import (
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/tree"
-	"cogentcore.org/core/yaegicore/coresymbols"
-	"cogentcore.org/lab/goal/interpreter"
 )
 
 // Basic is a basic data browser with the files as the left panel,
@@ -63,7 +61,7 @@ func (br *Basic) Init() {
 // NewBasicWindow returns a new Lab Browser window for given
 // file system (nil for os files) and data directory.
 // do RunWindow on resulting [core.Body] to open the window.
-func NewBasicWindow(fsys fs.FS, dataDir string, in *interpreter.Interpreter) (*core.Body, *Basic) {
+func NewBasicWindow(fsys fs.FS, dataDir string) (*core.Body, *Basic) {
 	startDir, _ := os.Getwd()
 	startDir = errors.Log1(filepath.Abs(startDir))
 	b := core.NewBody("Cogent Lab: " + fsx.DirAndFile(startDir))
@@ -73,18 +71,12 @@ func NewBasicWindow(fsys fs.FS, dataDir string, in *interpreter.Interpreter) (*c
 		br.Toolbar = tb
 		tb.Maker(br.MakeToolbar)
 	})
-	br.Interpreter = in
 	br.FS = fsys
 	ddr := dataDir
 	if fsys == nil {
 		ddr = errors.Log1(filepath.Abs(dataDir))
 	}
 	br.SetDataRoot(ddr)
-	if br.Interpreter == nil {
-		br.InitInterp()
-		in = br.Interpreter
-	}
-	in.Interp.Use(coresymbols.Symbols) // gui imports
 	br.SetScriptsDir(filepath.Join(ddr, "labscripts"))
 
 	LabBrowser = &br.Browser

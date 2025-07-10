@@ -24,6 +24,8 @@ import (
 	"cogentcore.org/lab/goal"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/lab"
+	"cogentcore.org/lab/lab/labscripts"
+	_ "cogentcore.org/lab/lab/labscripts"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensorcore"
 	"cogentcore.org/lab/yaegilab/labsymbols"
@@ -134,10 +136,8 @@ func (sr *Simmer) InitSimmer(startDir string) {
 	sr.StartDir = startDir
 	ddr := errors.Log1(filepath.Abs("simdata"))
 	sr.SetDataRoot(ddr)
-	if sr.Interpreter == nil {
-		sr.InitInterp()
-	}
-	in := sr.Interpreter
+	labscripts.InitInterpreter(&sr.Browser)
+	in, _ := labscripts.Interpreter(&sr.Browser)
 	in.Interp.Use(coresymbols.Symbols) // gui imports
 	in.Interp.Use(labsymbols.Symbols)
 	in.Interp.Use(interp.Exports{
