@@ -1280,6 +1280,7 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 
 	case *ast.IndexExpr:
 		// TODO(gri): should treat[] like parentheses and undo one level of depth
+		p.globalVarBasic(x)
 		p.expr1(x.X, token.HighestPrec, 1)
 		p.setPos(x.Lbrack)
 		p.print(token.LBRACK)
@@ -1701,6 +1702,21 @@ func (p *printer) getNamedType(typ types.Type) (*types.Named, error) {
 	return nil, err
 }
 
+func (p *printer) globalVarBasic(idx *ast.IndexExpr) {
+	id, ok := idx.X.(*ast.Ident)
+	if !ok {
+		return
+	}
+	st := p.GoToSL
+	gvr := st.GlobalVar(id.Name)
+	if gvr == nil {
+		return
+	}
+	if p.curFunc != nil {
+		p.curFunc.AddVarUsed(gvr)
+	}
+}
+
 // gosl: globalVar looks up whether the id in an IndexExpr is a global gosl variable.
 // in which case it returns a temp variable name to use, and the type info.
 func (p *printer) globalVar(idx *ast.IndexExpr) (isGlobal bool, tmpVar, typName string, vtyp types.Type, isReadOnly bool) {
@@ -1712,6 +1728,9 @@ func (p *printer) globalVar(idx *ast.IndexExpr) (isGlobal bool, tmpVar, typName 
 	gvr := st.GlobalVar(id.Name)
 	if gvr == nil {
 		return
+	}
+	if p.curFunc != nil {
+		p.curFunc.AddVarUsed(gvr)
 	}
 	isGlobal = true
 	isReadOnly = gvr.ReadOnly
@@ -2260,6 +2279,9 @@ func (p *printer) stmt(stmt ast.Stmt, nextIsRBrace bool, nosemi bool) {
 				if fid, ok := ce.Fun.(*ast.Ident); ok {
 					if strings.HasPrefix(fid.Name, "Get") {
 						if gvr, ok := p.GoToSL.GetFuncs[fid.Name]; ok {
+							if p.curFunc != nil {
+								p.curFunc.AddVarUsed(gvr)
+							}
 							p.getGlobalVar(s, gvr) // replace GetVar function call with assignment of local var
 							return
 						}

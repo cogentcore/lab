@@ -35,7 +35,7 @@ func (st *State) GenKernelHeader(sy *System, kn *Kernel) string {
 		for _, vr := range gp.Vars {
 			_, isAtomic := kn.Atomics[vr.Name]
 			_, isUsed := kn.VarsUsed[vr.Name]
-			if vr.Tensor && !isUsed {
+			if !isUsed {
 				continue
 			}
 			access := ", read_write"

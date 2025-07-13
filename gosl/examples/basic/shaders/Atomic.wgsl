@@ -4,8 +4,6 @@
 // // Params are the parameters for the computation. // 
 @group(0) @binding(0)
 var<storage, read> TensorStrides: array<u32>;
-@group(0) @binding(1)
-var<storage, read> Params: array<ParamStruct>;
 // // Data is the data on which the computation operates. // 2D: outer index is data, inner index is: Raw, Integ, Exp vars. // 
 @group(1) @binding(8)
 var<storage, read_write> IntData: array<atomic<i32>>;

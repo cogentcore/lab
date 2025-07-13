@@ -79,12 +79,18 @@ func GPUInit() {
 		var pl *gpu.ComputePipeline
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/Atomic.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
-		pl.AddVarUsed(0, "Params")
 		pl.AddVarUsed(1, "IntData")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/Compute.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(1, "Data0")
+		pl.AddVarUsed(1, "Data1")
+		pl.AddVarUsed(1, "Data2")
+		pl.AddVarUsed(1, "Data3")
+		pl.AddVarUsed(1, "Data4")
+		pl.AddVarUsed(1, "Data5")
+		pl.AddVarUsed(1, "Data6")
+		pl.AddVarUsed(1, "Data7")
 		pl.AddVarUsed(0, "Params")
-		pl.AddVarUsed(1, "Data")
 		sy.Config()
 	}
 }

@@ -217,16 +217,17 @@ func (st *State) GenGPUSystemInit(sy *System) string {
 		if sy.NTensors > 0 {
 			b.WriteString(fmt.Sprintf("\t\tpl.AddVarUsed(%d, %q)\n", 0, "TensorStrides"))
 		}
-		for _, gp := range sy.Groups {
-			for _, vr := range gp.Vars {
-				if !vr.Tensor {
-					b.WriteString(fmt.Sprintf("\t\tpl.AddVarUsed(%d, %q)\n", vr.Group, vr.Name))
+		vnms := maps.Keys(kn.VarsUsed)
+		slices.Sort(vnms)
+		for _, vnm := range vnms {
+			vr := kn.VarsUsed[vnm]
+			if vr.NBuffs > 1 {
+				for bi := range vr.NBuffs {
+					b.WriteString(fmt.Sprintf("\t\tpl.AddVarUsed(%d, \"%s%d\")\n", vr.Group, vr.Name, bi))
 				}
+			} else {
+				b.WriteString(fmt.Sprintf("\t\tpl.AddVarUsed(%d, %q)\n", vr.Group, vr.Name))
 			}
-		}
-		for _, vr := range kn.VarsUsed {
-			// todo: must generate all the NBuffs instances here!
-			b.WriteString(fmt.Sprintf("\t\tpl.AddVarUsed(%d, %q)\n", vr.Group, vr.Name))
 		}
 	}
 	b.WriteString("\t\tsy.Config()\n")

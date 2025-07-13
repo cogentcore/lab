@@ -76,8 +76,10 @@ func (st *State) AllFuncs(name string) map[string]*Function {
 	return all
 }
 
-// VarsUsed returns all the atomic and used global variables used by the list of functions.
-func (st *State) VarsUsed(funcs map[string]*Function) (avars, uvars map[string]*Var) {
+// VarsUsed returns all the atomic and used global variables
+// used by the list of functions. Also the total number of used vars
+// that includes the NBuffs counts.
+func (st *State) VarsUsed(funcs map[string]*Function) (avars, uvars map[string]*Var, nvars int) {
 	avars = make(map[string]*Var)
 	uvars = make(map[string]*Var)
 	for _, fn := range funcs {
@@ -86,6 +88,14 @@ func (st *State) VarsUsed(funcs map[string]*Function) (avars, uvars map[string]*
 		}
 		for vn, v := range fn.VarsUsed {
 			uvars[vn] = v
+		}
+	}
+	nvars = 1 // assume TensorStrides always
+	for _, vr := range uvars {
+		if vr.NBuffs > 1 {
+			nvars += vr.NBuffs
+		} else {
+			nvars++
 		}
 	}
 	return
