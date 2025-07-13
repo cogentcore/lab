@@ -1807,17 +1807,18 @@ func (p *printer) tensorMethod(x *ast.CallExpr, vr *Var, methName string) {
 	if strings.HasPrefix(methName, "Set") {
 		stArg = 1
 	}
+	gv := p.GoToSL.GlobalVar(vr.Name)
+	if gv != nil && p.curFunc != nil {
+		p.curFunc.AddTensor(vr)
+	}
 	if strings.HasSuffix(methName, "Ptr") {
 		p.print(token.AND)
-		if p.curMethIsAtomic {
-			gv := p.GoToSL.GlobalVar(vr.Name)
-			if gv != nil {
-				if p.curFunc != nil {
-					if p.curFunc.Atomics == nil {
-						p.curFunc.Atomics = make(map[string]*Var)
-					}
-					p.curFunc.Atomics[vr.Name] = vr
-				}
+		gv := p.GoToSL.GlobalVar(vr.Name)
+		if gv != nil && p.curFunc != nil {
+			if p.curMethIsAtomic {
+				p.curFunc.AddAtomic(vr)
+			} else {
+				p.curFunc.AddTensor(vr)
 			}
 		}
 	}

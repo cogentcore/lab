@@ -16,10 +16,25 @@ type Function struct {
 	Name    string
 	Funcs   map[string]*Function
 	Atomics map[string]*Var // variables that have atomic operations in this function
+	Tensors map[string]*Var // all tensor global variables referenced by this function.
 }
 
 func NewFunction(name string) *Function {
 	return &Function{Name: name, Funcs: make(map[string]*Function)}
+}
+
+func (fn *Function) AddAtomic(vr *Var) {
+	if fn.Atomics == nil {
+		fn.Atomics = make(map[string]*Var)
+	}
+	fn.Atomics[vr.Name] = vr
+}
+
+func (fn *Function) AddTensor(vr *Var) {
+	if fn.Tensors == nil {
+		fn.Tensors = make(map[string]*Var)
+	}
+	fn.Tensors[vr.Name] = vr
 }
 
 // get or add a function of given name
@@ -61,19 +76,19 @@ func (st *State) AllFuncs(name string) map[string]*Function {
 	return all
 }
 
-// AtomicVars returns all the variables marked as atomic
-// within the list of functions.
-func (st *State) AtomicVars(funcs map[string]*Function) map[string]*Var {
-	avars := make(map[string]*Var)
+// VarsUsed returns all the atomic and tensor variables used by the list of functions.
+func (st *State) VarsUsed(funcs map[string]*Function) (avars, tvars map[string]*Var) {
+	avars = make(map[string]*Var)
+	tvars = make(map[string]*Var)
 	for _, fn := range funcs {
-		if fn.Atomics == nil {
-			continue
-		}
 		for vn, v := range fn.Atomics {
 			avars[vn] = v
 		}
+		for vn, v := range fn.Tensors {
+			tvars[vn] = v
+		}
 	}
-	return avars
+	return
 }
 
 func (st *State) PrintFuncGraph() {

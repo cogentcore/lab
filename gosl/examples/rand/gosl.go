@@ -4,6 +4,8 @@ package main
 
 import (
 	"embed"
+	"fmt"
+	"math"
 	"unsafe"
 	"cogentcore.org/core/gpu"
 	"cogentcore.org/lab/tensor"
@@ -12,12 +14,13 @@ import (
 //go:embed shaders/*.wgsl
 var shaders embed.FS
 
-// ComputeGPU is the compute gpu device
-var ComputeGPU *gpu.GPU
+var (
+	// ComputeGPU is the compute gpu device
+	ComputeGPU *gpu.GPU
 
-// UseGPU indicates whether to use GPU vs. CPU.
-var UseGPU bool
-
+	// UseGPU indicates whether to use GPU vs. CPU.
+	UseGPU bool
+)
 // GPUSystem is a GPU compute System with kernels operating on the
 // same set of data variables.
 var GPUSystem *gpu.ComputeSystem
@@ -43,6 +46,7 @@ func GPUInit() {
 	}
 	gp := gpu.NewComputeGPU()
 	ComputeGPU = gp
+	_ = fmt.Sprintf("%g",math.NaN()) // keep imports happy
 	{
 		sy := gpu.NewComputeSystem(gp, "Default")
 		GPUSystem = sy

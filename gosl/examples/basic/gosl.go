@@ -46,6 +46,7 @@ func GPUInit() {
 	}
 	gp := gpu.NewComputeGPU()
 	ComputeGPU = gp
+	_ = fmt.Sprintf("%g",math.NaN()) // keep imports happy
 	{
 		sy := gpu.NewComputeSystem(gp, "Default")
 		GPUSystem = sy

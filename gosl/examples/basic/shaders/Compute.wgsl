@@ -23,8 +23,6 @@ var<storage, read_write> Data5: array<f32>;
 var<storage, read_write> Data6: array<f32>;
 @group(1) @binding(7)
 var<storage, read_write> Data7: array<f32>;
-@group(1) @binding(8)
-var<storage, read_write> IntData: array<i32>;
 
 alias GPUVars = i32;
 
