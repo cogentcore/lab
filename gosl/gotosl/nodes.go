@@ -1803,23 +1803,20 @@ func (p *printer) methodIndex(idx *ast.IndexExpr) (recvPath, recvType string, pa
 func (p *printer) tensorMethod(x *ast.CallExpr, vr *Var, methName string) {
 	args := x.Args
 
+	gv := p.GoToSL.GlobalVar(vr.Name)
+	if gv != nil && p.curFunc != nil {
+		p.curFunc.AddVarUsed(vr)
+	}
+
 	stArg := 0
 	if strings.HasPrefix(methName, "Set") {
 		stArg = 1
 	}
-	gv := p.GoToSL.GlobalVar(vr.Name)
-	if gv != nil && p.curFunc != nil {
-		p.curFunc.AddTensor(vr)
-	}
 	if strings.HasSuffix(methName, "Ptr") {
 		p.print(token.AND)
 		gv := p.GoToSL.GlobalVar(vr.Name)
-		if gv != nil && p.curFunc != nil {
-			if p.curMethIsAtomic {
-				p.curFunc.AddAtomic(vr)
-			} else {
-				p.curFunc.AddTensor(vr)
-			}
+		if gv != nil && p.curFunc != nil && p.curMethIsAtomic {
+			p.curFunc.AddAtomic(vr)
 		}
 	}
 	if vr.NBuffs > 1 {

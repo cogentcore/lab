@@ -124,11 +124,11 @@ func (st *State) TranslateDir(pf string) error {
 			}
 			st.CurKernel = kn
 			var hasSlrand, hasSltype, hasR, hasT bool
-			avars, tvars := st.VarsUsed(st.KernelFuncs)
+			kn.Atomics, kn.VarsUsed = st.VarsUsed(st.KernelFuncs)
 			// if st.Config.Debug {
-			fmt.Printf("###################################\nTranslating Kernel file: %s  NVars: %d (atomic: %d)\n", kn.Name, len(avars)+len(tvars), len(avars))
+			fmt.Printf("###################################\nTranslating Kernel file: %s  NVars: %d (atomic: %d)\n", kn.Name, len(kn.Atomics)+len(kn.VarsUsed), len(kn.Atomics))
 			// }
-			hdr := st.GenKernelHeader(sy, kn, avars, tvars)
+			hdr := st.GenKernelHeader(sy, kn)
 			lines := bytes.Split([]byte(hdr), []byte("\n"))
 			for fn := range st.GoVarsFiles { // do varsFiles first!!
 				lines, hasR, hasT = doKernelFile(fn, lines)

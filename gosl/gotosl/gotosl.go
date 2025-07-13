@@ -54,6 +54,9 @@ type Kernel struct {
 
 	// ReadWriteVars are variables marked as read-write for current kernel.
 	ReadWriteVars map[string]bool
+
+	Atomics  map[string]*Var
+	VarsUsed map[string]*Var
 }
 
 // Var represents one global system buffer variable.

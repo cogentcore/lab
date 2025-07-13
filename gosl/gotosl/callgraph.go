@@ -13,10 +13,10 @@ import (
 
 // Function represents the call graph of functions
 type Function struct {
-	Name    string
-	Funcs   map[string]*Function
-	Atomics map[string]*Var // variables that have atomic operations in this function
-	Tensors map[string]*Var // all tensor global variables referenced by this function.
+	Name     string
+	Funcs    map[string]*Function
+	Atomics  map[string]*Var // variables that have atomic operations in this function
+	VarsUsed map[string]*Var // all global variables referenced by this function.
 }
 
 func NewFunction(name string) *Function {
@@ -30,11 +30,11 @@ func (fn *Function) AddAtomic(vr *Var) {
 	fn.Atomics[vr.Name] = vr
 }
 
-func (fn *Function) AddTensor(vr *Var) {
-	if fn.Tensors == nil {
-		fn.Tensors = make(map[string]*Var)
+func (fn *Function) AddVarUsed(vr *Var) {
+	if fn.VarsUsed == nil {
+		fn.VarsUsed = make(map[string]*Var)
 	}
-	fn.Tensors[vr.Name] = vr
+	fn.VarsUsed[vr.Name] = vr
 }
 
 // get or add a function of given name
@@ -76,16 +76,16 @@ func (st *State) AllFuncs(name string) map[string]*Function {
 	return all
 }
 
-// VarsUsed returns all the atomic and tensor variables used by the list of functions.
-func (st *State) VarsUsed(funcs map[string]*Function) (avars, tvars map[string]*Var) {
+// VarsUsed returns all the atomic and used global variables used by the list of functions.
+func (st *State) VarsUsed(funcs map[string]*Function) (avars, uvars map[string]*Var) {
 	avars = make(map[string]*Var)
-	tvars = make(map[string]*Var)
+	uvars = make(map[string]*Var)
 	for _, fn := range funcs {
 		for vn, v := range fn.Atomics {
 			avars[vn] = v
 		}
-		for vn, v := range fn.Tensors {
-			tvars[vn] = v
+		for vn, v := range fn.VarsUsed {
+			uvars[vn] = v
 		}
 	}
 	return
