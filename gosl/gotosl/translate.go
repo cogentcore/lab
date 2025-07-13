@@ -125,6 +125,8 @@ func (st *State) TranslateDir(pf string) error {
 			st.CurKernel = kn
 			var hasSlrand, hasSltype, hasR, hasT bool
 			kn.Atomics, kn.VarsUsed = st.VarsUsed(st.KernelFuncs)
+			// todo: VarsUsed should include all non-tensor guys so that
+			// we have an accurate total count!
 			// if st.Config.Debug {
 			fmt.Printf("###################################\nTranslating Kernel file: %s  NVars: %d (atomic: %d)\n", kn.Name, len(kn.Atomics)+len(kn.VarsUsed), len(kn.Atomics))
 			// }

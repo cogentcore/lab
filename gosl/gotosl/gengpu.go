@@ -225,6 +225,7 @@ func (st *State) GenGPUSystemInit(sy *System) string {
 			}
 		}
 		for _, vr := range kn.VarsUsed {
+			// todo: must generate all the NBuffs instances here!
 			b.WriteString(fmt.Sprintf("\t\tpl.AddVarUsed(%d, %q)\n", vr.Group, vr.Name))
 		}
 	}
