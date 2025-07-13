@@ -124,11 +124,13 @@ func (st *State) TranslateDir(pf string) error {
 			}
 			st.CurKernel = kn
 			var hasSlrand, hasSltype, hasR, hasT bool
-			avars := st.AtomicVars(st.KernelFuncs)
-			// if st.Config.Debug {
-			fmt.Printf("###################################\nTranslating Kernel file: %s\n", kn.Name)
-			// }
-			hdr := st.GenKernelHeader(sy, kn, avars)
+			nvars := 0
+			kn.Atomics, kn.VarsUsed, nvars = st.VarsUsed(st.KernelFuncs)
+			fmt.Printf("###################################\nTranslating Kernel file: %s  NVars: %d (atomic: %d)\n", kn.Name, nvars, len(kn.Atomics))
+			if nvars > 10 { // todo: change when limit is raised to 16
+				fmt.Println("WARNING: NVars exceeds maxStorageBuffersPerShaderStage min of 10")
+			}
+			hdr := st.GenKernelHeader(sy, kn)
 			lines := bytes.Split([]byte(hdr), []byte("\n"))
 			for fn := range st.GoVarsFiles { // do varsFiles first!!
 				lines, hasR, hasT = doKernelFile(fn, lines)

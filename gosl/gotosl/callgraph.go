@@ -13,13 +13,28 @@ import (
 
 // Function represents the call graph of functions
 type Function struct {
-	Name    string
-	Funcs   map[string]*Function
-	Atomics map[string]*Var // variables that have atomic operations in this function
+	Name     string
+	Funcs    map[string]*Function
+	Atomics  map[string]*Var // variables that have atomic operations in this function
+	VarsUsed map[string]*Var // all global variables referenced by this function.
 }
 
 func NewFunction(name string) *Function {
 	return &Function{Name: name, Funcs: make(map[string]*Function)}
+}
+
+func (fn *Function) AddAtomic(vr *Var) {
+	if fn.Atomics == nil {
+		fn.Atomics = make(map[string]*Var)
+	}
+	fn.Atomics[vr.Name] = vr
+}
+
+func (fn *Function) AddVarUsed(vr *Var) {
+	if fn.VarsUsed == nil {
+		fn.VarsUsed = make(map[string]*Var)
+	}
+	fn.VarsUsed[vr.Name] = vr
 }
 
 // get or add a function of given name
@@ -61,19 +76,29 @@ func (st *State) AllFuncs(name string) map[string]*Function {
 	return all
 }
 
-// AtomicVars returns all the variables marked as atomic
-// within the list of functions.
-func (st *State) AtomicVars(funcs map[string]*Function) map[string]*Var {
-	avars := make(map[string]*Var)
+// VarsUsed returns all the atomic and used global variables
+// used by the list of functions. Also the total number of used vars
+// that includes the NBuffs counts.
+func (st *State) VarsUsed(funcs map[string]*Function) (avars, uvars map[string]*Var, nvars int) {
+	avars = make(map[string]*Var)
+	uvars = make(map[string]*Var)
 	for _, fn := range funcs {
-		if fn.Atomics == nil {
-			continue
-		}
 		for vn, v := range fn.Atomics {
 			avars[vn] = v
 		}
+		for vn, v := range fn.VarsUsed {
+			uvars[vn] = v
+		}
 	}
-	return avars
+	nvars = 1 // assume TensorStrides always
+	for _, vr := range uvars {
+		if vr.NBuffs > 1 {
+			nvars += vr.NBuffs
+		} else {
+			nvars++
+		}
+	}
+	return
 }
 
 func (st *State) PrintFuncGraph() {

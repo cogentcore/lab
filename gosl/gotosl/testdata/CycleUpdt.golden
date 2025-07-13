@@ -4,19 +4,9 @@
 // // Params are the parameters for the computation. // 
 @group(0) @binding(0)
 var<storage, read> TensorStrides: array<u32>;
-@group(0) @binding(1)
-var<storage, read> Params: array<ParamStruct>;
 @group(0) @binding(2)
 var<storage, read_write> Ctx: array<Context>;
 // // Data is the data on which the computation operates. // 2D: outer index is data, inner index is: Raw, Integ, Exp vars. // 
-@group(1) @binding(0)
-var<storage, read_write> Data: array<f32>;
-@group(1) @binding(1)
-var<storage, read_write> Big0: array<f32>;
-@group(1) @binding(2)
-var<storage, read_write> Big1: array<f32>;
-@group(1) @binding(3)
-var<storage, read_write> Big2: array<f32>;
 
 alias GPUVars = i32;
 
@@ -24,100 +14,6 @@ alias GPUVars = i32;
 fn main(@builtin(workgroup_id) wgid: vec3<u32>, @builtin(num_workgroups) nwg: vec3<u32>, @builtin(local_invocation_index) loci: u32) {
 	let idx = loci + (wgid.x + wgid.y * nwg.x + wgid.z * nwg.x * nwg.y) * 64;
 	CycleUpdt(idx);
-}
-
-fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
-	return s0 * i0 + s1 * i1;
-}
-
-fn BigGet(ix: u32) -> f32 {
-	let ii = ix / 536870912;
-	switch ii {
-	case u32(0): {
-		return Big0[ix];
-	}
-	case u32(1): {
-		return Big1[ix - 536870912];
-	}
-	default: {
-		return Big2[ix - 1073741824];
-	}
-	}
-}
-
-fn BigSet(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
-	switch ii {
-	case u32(0): {
-		Big0[ix] = vl;
-	}
-	case u32(1): {
-		Big1[ix - 536870912] = vl;
-	}
-	default: {
-		Big2[ix - 1073741824] = vl;
-	}
-	}
-}
-
-fn BigSetAdd(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
-	switch ii {
-	case u32(0): {
-		Big0[ix] += vl;
-	}
-	case u32(1): {
-		Big1[ix - 536870912] += vl;
-	}
-	default: {
-		Big2[ix - 1073741824] += vl;
-	}
-	}
-}
-
-fn BigSetSub(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
-	switch ii {
-	case u32(0): {
-		Big0[ix] -= vl;
-	}
-	case u32(1): {
-		Big1[ix - 536870912] -= vl;
-	}
-	default: {
-		Big2[ix - 1073741824] -= vl;
-	}
-	}
-}
-
-fn BigSetMul(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
-	switch ii {
-	case u32(0): {
-		Big0[ix] *= vl;
-	}
-	case u32(1): {
-		Big1[ix - 536870912] *= vl;
-	}
-	default: {
-		Big2[ix - 1073741824] *= vl;
-	}
-	}
-}
-
-fn BigSetDiv(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
-	switch ii {
-	case u32(0): {
-		Big0[ix] /= vl;
-	}
-	case u32(1): {
-		Big1[ix - 536870912] /= vl;
-	}
-	default: {
-		Big2[ix - 1073741824] /= vl;
-	}
-	}
 }
 
 

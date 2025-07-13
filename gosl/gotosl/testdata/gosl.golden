@@ -51,8 +51,6 @@ func GPUInit() {
 	{
 		sy := gpu.NewComputeSystem(gp, "Default")
 		GPUSystem = sy
-		gpu.NewComputePipelineShaderFS(shaders, "shaders/Compute.wgsl", sy)
-		gpu.NewComputePipelineShaderFS(shaders, "shaders/CycleUpdt.wgsl", sy)
 		vars := sy.Vars()
 		{
 			sgp := vars.AddGroup(gpu.Storage, "Group_0")
@@ -75,6 +73,18 @@ func GPUInit() {
 			vr = sgp.Add("Big2", gpu.Float32, 1, gpu.ComputeShader)
 			sgp.SetNValues(1)
 		}
+		var pl *gpu.ComputePipeline
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/Compute.wgsl", sy)
+		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(1, "Big0")
+		pl.AddVarUsed(1, "Big1")
+		pl.AddVarUsed(1, "Big2")
+		pl.AddVarUsed(0, "Ctx")
+		pl.AddVarUsed(1, "Data")
+		pl.AddVarUsed(0, "Params")
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/CycleUpdt.wgsl", sy)
+		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(0, "Ctx")
 		sy.Config()
 	}
 }

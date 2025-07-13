@@ -54,11 +54,20 @@ type Kernel struct {
 
 	// ReadWriteVars are variables marked as read-write for current kernel.
 	ReadWriteVars map[string]bool
+
+	Atomics  map[string]*Var
+	VarsUsed map[string]*Var
 }
 
 // Var represents one global system buffer variable.
 type Var struct {
 	Name string
+
+	// Group number that we are in.
+	Group int
+
+	// Binding number within group.
+	Binding int
 
 	// comment docs about this var.
 	Doc string
@@ -358,14 +367,26 @@ func (st *State) VarsAdded() {
 	st.GetFuncs = make(map[string]*Var)
 	for _, sy := range st.Systems {
 		tensorIdx := 0
-		for _, gp := range sy.Groups {
+		for gi, gp := range sy.Groups {
+			vn := 0
+			if gi == 0 { // leave room for TensorStrides
+				vn++
+			}
 			for _, vr := range gp.Vars {
+				vr.Group = gi
+				vr.Binding = vn
 				if vr.Tensor {
 					vr.TensorIndex = tensorIdx
 					tensorIdx++
+					if vr.NBuffs > 1 {
+						vn += vr.NBuffs
+					} else {
+						vn++
+					}
 					continue
 				}
 				st.GetFuncs["Get"+vr.Name] = vr
+				vn++
 			}
 		}
 		sy.NTensors = tensorIdx

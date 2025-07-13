@@ -177,10 +177,6 @@ func (st *State) GenGPUSystemInit(sy *System) string {
 
 	kns := maps.Keys(sy.Kernels)
 	slices.Sort(kns)
-	for _, knm := range kns {
-		kn := sy.Kernels[knm]
-		b.WriteString(fmt.Sprintf("\t\tgpu.NewComputePipelineShaderFS(shaders, %q, sy)\n", kn.Filename))
-	}
 	b.WriteString("\t\tvars := sy.Vars()\n")
 	for gi, gp := range sy.Groups {
 		b.WriteString("\t\t{\n")
@@ -213,6 +209,26 @@ func (st *State) GenGPUSystemInit(sy *System) string {
 		}
 		b.WriteString("\t\t\tsgp.SetNValues(1)\n")
 		b.WriteString("\t\t}\n")
+	}
+	b.WriteString("\t\tvar pl *gpu.ComputePipeline\n")
+	for _, knm := range kns {
+		kn := sy.Kernels[knm]
+		b.WriteString(fmt.Sprintf("\t\tpl = gpu.NewComputePipelineShaderFS(shaders, %q, sy)\n", kn.Filename))
+		if sy.NTensors > 0 {
+			b.WriteString(fmt.Sprintf("\t\tpl.AddVarUsed(%d, %q)\n", 0, "TensorStrides"))
+		}
+		vnms := maps.Keys(kn.VarsUsed)
+		slices.Sort(vnms)
+		for _, vnm := range vnms {
+			vr := kn.VarsUsed[vnm]
+			if vr.NBuffs > 1 {
+				for bi := range vr.NBuffs {
+					b.WriteString(fmt.Sprintf("\t\tpl.AddVarUsed(%d, \"%s%d\")\n", vr.Group, vr.Name, bi))
+				}
+			} else {
+				b.WriteString(fmt.Sprintf("\t\tpl.AddVarUsed(%d, %q)\n", vr.Group, vr.Name))
+			}
+		}
 	}
 	b.WriteString("\t\tsy.Config()\n")
 	b.WriteString("\t}\n")
