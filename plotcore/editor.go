@@ -155,7 +155,7 @@ func (pl *Editor) SetTable(tab *table.Table) *Editor {
 
 // SetSlice sets the table to a [table.NewSliceTable] from the given slice.
 // Optional styler functions are used for each struct field in sequence,
-// and any can contain global plot style.
+// and any can contain global plot style. See [BasicStylers] for example.
 func (pl *Editor) SetSlice(sl any, stylers ...func(s *plot.Style)) *Editor {
 	dt, err := table.NewSliceTable(sl)
 	errors.Log(err)
@@ -167,6 +167,20 @@ func (pl *Editor) SetSlice(sl any, stylers ...func(s *plot.Style)) *Editor {
 		plot.SetStyler(dt.Columns.Values[i], stylers[i])
 	}
 	return pl.SetTable(dt)
+}
+
+// BasicStylers returns a basic set of [plot.Stylers] that can be used with
+// functions like [Editor.SetSlice]. They make the first column the x-axis,
+// and turn on the second column.
+func BasicStylers() plot.Stylers {
+	return plot.Stylers{
+		func(s *plot.Style) {
+			s.Role = plot.X
+		},
+		func(s *plot.Style) {
+			s.On = true
+		},
+	}
 }
 
 // SaveSVG saves the plot to an svg -- first updates to ensure that plot is current
