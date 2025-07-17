@@ -7,6 +7,7 @@ package baremetal
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"cogentcore.org/core/base/errors"
@@ -34,6 +35,16 @@ func NewClient() *Client {
 	return cl
 }
 
+// increase max call size for big data
+func maxCallRecvMessageSize() grpc.CallOption {
+	return grpc.MaxCallRecvMsgSize(16 * math.MaxInt32)
+}
+
+// increase max call size for big data
+func maxCallSendMessageSize() grpc.CallOption {
+	return grpc.MaxCallSendMsgSize(16 * math.MaxInt32)
+}
+
 // Connect connects to the server
 func (cl *Client) Connect() error {
 	conn, err := grpc.NewClient(cl.Host, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -51,7 +62,7 @@ func (cl *Client) Submit(source, path, script, resultsGlob string, files []byte)
 	defer cancel()
 
 	sub := &pb.Submission{Source: source, Path: path, Script: script, ResultsGlob: resultsGlob, Files: files}
-	job, err := cl.client.Submit(ctx, sub)
+	job, err := cl.client.Submit(ctx, sub) // todo: not working: maxCallSendMessageSize
 	if err != nil {
 		return nil, errors.Log(fmt.Errorf("could not submit: %v", err))
 	}
@@ -64,7 +75,7 @@ func (cl *Client) JobStatus(ids ...int) ([]*Job, error) {
 	defer cancel()
 
 	pids := &pb.JobIDList{JobID: JobIDsToPB(ids)}
-	jobs, err := cl.client.JobStatus(ctx, pids)
+	jobs, err := cl.client.JobStatus(ctx, pids, maxCallRecvMessageSize())
 	if err != nil {
 		return nil, errors.Log(fmt.Errorf("JobStatus failed: %v", err))
 	}
@@ -91,7 +102,7 @@ func (cl *Client) FetchResults(ids ...int) ([]*Job, error) {
 	defer cancel()
 
 	pids := &pb.JobIDList{JobID: JobIDsToPB(ids)}
-	jobs, err := cl.client.FetchResults(ctx, pids)
+	jobs, err := cl.client.FetchResults(ctx, pids, maxCallRecvMessageSize())
 	if err != nil {
 		return nil, errors.Log(fmt.Errorf("FetchResults failed: %v", err))
 	}
