@@ -102,7 +102,7 @@ func OpenFS(tsr Tensor, fsys fs.FS, filename string, delim Delims) error {
 		return errors.Log(err)
 	}
 	defer fp.Close()
-	return ReadCSV(tsr, bufio.NewReader(fp), delim)
+	return ReadCSV(tsr, fp, delim)
 }
 
 //////// WriteCSV
