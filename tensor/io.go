@@ -5,15 +5,18 @@
 package tensor
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/csv"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/base/reflectx"
@@ -72,7 +75,9 @@ func SaveCSV(tsr Tensor, filename fsx.Filename, delim Delims) error {
 		log.Println(err)
 		return err
 	}
-	WriteCSV(tsr, fp, delim)
+	bw := bufio.NewWriter(fp)
+	WriteCSV(tsr, bw, delim)
+	bw.Flush()
 	return nil
 }
 
@@ -83,12 +88,21 @@ func SaveCSV(tsr Tensor, filename fsx.Filename, delim Delims) error {
 // Reads all values and assigns as many as fit.
 func OpenCSV(tsr Tensor, filename fsx.Filename, delim Delims) error {
 	fp, err := os.Open(string(filename))
-	defer fp.Close()
 	if err != nil {
-		log.Println(err)
-		return err
+		return errors.Log(err)
 	}
-	return ReadCSV(tsr, fp, delim)
+	defer fp.Close()
+	return ReadCSV(tsr, bufio.NewReader(fp), delim)
+}
+
+// OpenFS is the version of [OpenCSV] that uses an [fs.FS] filesystem.
+func OpenFS(tsr Tensor, fsys fs.FS, filename string, delim Delims) error {
+	fp, err := fsys.Open(filename)
+	if err != nil {
+		return errors.Log(err)
+	}
+	defer fp.Close()
+	return ReadCSV(tsr, bufio.NewReader(fp), delim)
 }
 
 //////// WriteCSV
