@@ -75,8 +75,8 @@ type JobParams struct {
 	// Qos is the queue "quality of service" name.
 	Qos string
 
-	// If true, the executable is in a cmd subdirectory, filename main.go,
-	// to allow the primary directory to be imported into other apps.
+	// If true, the executable is in a subdirectory with the same name as [Config.Project],
+	// filename main.go, to allow the primary directory to be imported into other apps.
 	// Manages the copying and building of this sub-command.
 	SubCmd bool
 

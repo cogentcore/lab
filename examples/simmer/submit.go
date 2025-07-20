@@ -118,7 +118,7 @@ func (sr *Simmer) NewJob(jp SubmitParams) {
 	// need to do sub-code first and update paths in copied files
 	cdirs := sr.Config.CodeDirs
 	if sr.Config.Job.SubCmd {
-		cdirs = append(cdirs, "cmd")
+		cdirs = append(cdirs, sr.Config.Project)
 	}
 	for _, ed := range cdirs {
 		goalrun.Run("@0")

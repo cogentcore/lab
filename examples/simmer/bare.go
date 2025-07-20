@@ -73,10 +73,12 @@ func (sr *Simmer) WriteBare(w io.Writer, jid, args string) {
 		fmt.Fprintln(w, sr.Config.SetupScript)
 	}
 
+	exe := sr.Config.Project
 	if sr.Config.Job.SubCmd {
-		fmt.Fprintf(w, "cd cmd\n")
+		projname := exe
+		exe += "/" + exe
+		fmt.Fprintf(w, "cd %s\n", projname)
 		fmt.Fprintf(w, "go build -mod=mod %s\n", sr.Config.Job.BuildArgs)
-		fmt.Fprintf(w, "mv cmd ../%s\n", sr.Config.Project)
 		fmt.Fprintf(w, "cd ../\n")
 	} else {
 		fmt.Fprintf(w, "go build -mod=mod %s\n", sr.Config.Job.BuildArgs)
@@ -84,7 +86,7 @@ func (sr *Simmer) WriteBare(w io.Writer, jid, args string) {
 	cmd := `date '+%Y-%m-%d %T %Z' > job.start`
 	fmt.Fprintln(w, cmd)
 
-	fmt.Fprintf(w, "./%s -nogui -cfg config_job.toml -gpu-device $BARE_GPU %s >& job.out & echo $! > job.pid", sr.Config.Project, args)
+	fmt.Fprintf(w, "./%s -nogui -cfg config_job.toml -gpu-device $BARE_GPU %s >& job.out & echo $! > job.pid", exe, args)
 }
 
 func (sr *Simmer) QueueBare() {
