@@ -268,3 +268,15 @@ func (ts *Tabs) EditorFile(label, filename string) *textcore.Editor {
 	ts.Update()
 	return ed
 }
+
+// TabUpdateRender calls UpdateRender on content of given tab.
+// This is the best way to update display widgets during running
+// an ongoing computation.
+func (ts *Tabs) TabUpdateRender(label string) core.Widget {
+	tab := ts.TabByName(label)
+	if tab == nil {
+		return nil
+	}
+	tab.UpdateRender()
+	return tab
+}
