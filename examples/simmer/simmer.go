@@ -37,11 +37,11 @@ var goalrun *goal.Goal
 
 var defaultJobFormat = `Name, Type
 JobID, string
-Version, string
 Status, string
-Args, string
-Message, string
 Label, string
+Message, string
+Version, string
+Args, string
 Server, string
 ServerJob, string
 ServerStatus, string
