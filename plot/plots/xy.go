@@ -168,8 +168,8 @@ func (ln *XY) Plot(plt *plot.Plot) {
 		ln.PY = plot.PlotY(plt, ln.Y)
 		minY = plt.PY(plt.Y.Range.Min)
 	}
-	np := len(ln.PX)
-	if np == 0 || len(ln.PY) == 0 {
+	np := min(len(ln.PX), len(ln.PY))
+	if np == 0 {
 		return
 	}
 	pc := plt.Painter

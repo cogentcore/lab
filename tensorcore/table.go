@@ -190,11 +190,10 @@ func (tb *Table) UpdateMaxWidths() {
 			continue
 		}
 		mxw := 0
-		for _, ixi := range tb.Table.Indexes {
-			if ixi >= 0 {
-				sval := stsr.Values[ixi]
-				mxw = max(mxw, len(sval))
-			}
+		nr := tb.Table.NumRows()
+		for r := range nr {
+			sval := stsr.Values[tb.Table.RowIndex(r)]
+			mxw = max(mxw, len(sval))
 		}
 		tb.colMaxWidths[fli] = mxw
 	}
