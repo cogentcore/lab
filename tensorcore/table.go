@@ -126,7 +126,7 @@ func (tb *Table) StyleValue(w core.Widget, s *styles.Style, row, col int) {
 	if len(tb.colMaxWidths) > col {
 		hw = max(float32(tb.colMaxWidths[col]), hw)
 	}
-	hv := units.Ch(hw)
+	hv := units.Ch(1.1 * hw) // 1.1 works
 	s.Min.X.Value = max(s.Min.X.Value, hv.Convert(s.Min.X.Unit, &s.UnitContext).Value)
 	s.SetTextWrap(false)
 }
@@ -320,11 +320,14 @@ func (tb *Table) MakeRow(p *tree.Plan, i int) {
 						if isstr {
 							str = col.String1D(vi)
 							core.Bind(&str, w)
+							wb.SetTooltip(str)
 						} else {
 							fval = col.Float1D(vi)
+							wb.SetTooltip(fmt.Sprintf("%g", fval))
 							core.Bind(&fval, w)
 						}
 					} else {
+						wb.SetTooltip("")
 						if isstr {
 							core.Bind(tb.blankString, w)
 						} else {
