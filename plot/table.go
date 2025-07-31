@@ -222,16 +222,16 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		// for each unique element in pt.data.* -- the x axis is shared
 		// so we need a map to just do this once.
 		// [gp][pt.data.*]sliced
-		subd := make(map[tensor.Tensor]map[tensor.Values]*tensor.Rows)
+		subd := make(map[tensor.Tensor]map[*tensor.Rows]*tensor.Rows)
 		for _, gp := range gps {
-			sv := make(map[tensor.Values]*tensor.Rows)
+			sv := make(map[*tensor.Rows]*tensor.Rows)
 			idxs := slices.Clone(gp.(*tensor.Int).Values)
 			for _, pt := range ptrs {
 				for _, dd := range pt.data {
-					dv := dd.(tensor.Values)
+					dv := dd.(*tensor.Rows)
 					rv, ok := sv[dv]
 					if !ok {
-						rv = tensor.NewRows(dv, idxs...)
+						rv = tensor.NewRows(dv.Tensor, idxs...)
 					}
 					sv[dv] = rv
 				}
@@ -248,7 +248,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 			for _, gp := range gps {
 				nd := Data{}
 				for rl, dd := range pt.data {
-					dv := dd.(tensor.Values)
+					dv := dd.(*tensor.Rows)
 					rv := subd[gp][dv]
 					nd[rl] = rv
 				}
