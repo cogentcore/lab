@@ -85,10 +85,11 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 	var ptrs []*pitem // accumulate in case of grouping
 
 	doneGps := map[string]bool{}
-	var split tensor.Values
+	var split *tensor.Rows
 	nLegends := 0
 
-	for ci, cl := range dt.Columns.Values {
+	for ci := range dt.Columns.Values {
+		cl := dt.ColumnByIndex(ci)
 		cnm := dt.Columns.Keys[ci]
 		st := csty[ci]
 		if !st.On || st.Role == X {
@@ -126,7 +127,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		gotReq := true
 		gotX := -1
 		if globalX {
-			data[X] = dt.Columns.Values[xi]
+			data[X] = dt.ColumnByIndex(xi)
 			gotX = xi
 		}
 		for _, rl := range pt.Required {
@@ -142,7 +143,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 							continue
 						}
 					}
-					data[rl] = dt.Columns.Values[gi]
+					data[rl] = dt.ColumnByIndex(gi)
 					got = true
 					if rl == X {
 						gotX = gi // fallthrough so we get the last X
@@ -154,7 +155,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 			if !got {
 				if rl == X && xi >= 0 {
 					gotX = xi
-					data[rl] = dt.Columns.Values[xi]
+					data[rl] = dt.ColumnByIndex(xi)
 				} else {
 					err = fmt.Errorf("plot.NewTablePlot: Required Role %q not found in Group %q, Plotter %q not added for Column: %q", rl.String(), gp, ptyp, cnm)
 					errs = append(errs, err)
@@ -173,7 +174,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 			for _, gi := range gcols {
 				gst := csty[gi]
 				if gst.Role == rl {
-					data[rl] = dt.Columns.Values[gi]
+					data[rl] = dt.ColumnByIndex(gi)
 					got = true
 					if rl == X {
 						gotX = gi // fallthrough so we get the last X
@@ -184,7 +185,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 			}
 			if !got && rl == X && xi >= 0 {
 				gotX = xi
-				data[rl] = dt.Columns.Values[xi]
+				data[rl] = dt.ColumnByIndex(xi)
 			}
 		}
 		if gotX >= 0 {
@@ -221,16 +222,16 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		// for each unique element in pt.data.* -- the x axis is shared
 		// so we need a map to just do this once.
 		// [gp][pt.data.*]sliced
-		subd := make(map[tensor.Tensor]map[tensor.Values]*tensor.Rows)
+		subd := make(map[tensor.Tensor]map[*tensor.Rows]*tensor.Rows)
 		for _, gp := range gps {
-			sv := make(map[tensor.Values]*tensor.Rows)
+			sv := make(map[*tensor.Rows]*tensor.Rows)
 			idxs := slices.Clone(gp.(*tensor.Int).Values)
 			for _, pt := range ptrs {
 				for _, dd := range pt.data {
-					dv := dd.(tensor.Values)
+					dv := dd.(*tensor.Rows)
 					rv, ok := sv[dv]
 					if !ok {
-						rv = tensor.NewRows(dv, idxs...)
+						rv = tensor.NewRows(dv.Tensor, idxs...)
 					}
 					sv[dv] = rv
 				}
@@ -247,7 +248,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 			for _, gp := range gps {
 				nd := Data{}
 				for rl, dd := range pt.data {
-					dv := dd.(tensor.Values)
+					dv := dd.(*tensor.Rows)
 					rv := subd[gp][dv]
 					nd[rl] = rv
 				}

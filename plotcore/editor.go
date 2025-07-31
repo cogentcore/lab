@@ -299,7 +299,7 @@ func (pl *Editor) genPlot() {
 		pl.table.Sequential()
 	} else {
 		lsti := pl.table.Indexes[pl.table.NumRows()-1]
-		if lsti >= pl.table.NumRows() { // out of date
+		if lsti >= pl.table.Columns.Rows { // out of date
 			pl.table.Sequential()
 		}
 	}
