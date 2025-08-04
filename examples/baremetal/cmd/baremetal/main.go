@@ -60,7 +60,7 @@ func (s *server) CancelJobs(_ context.Context, in *pb.JobIDList) (*pb.Error, err
 // Results are available as job.Results as a compressed tar file.
 func (s *server) FetchResults(_ context.Context, in *pb.JobIDList) (*pb.JobList, error) {
 	slog.Info("FetchResults")
-	jobs, err := s.bm.FetchResults(baremetal.JobIDsFromPB(in.JobID)...)
+	jobs, err := s.bm.FetchResults("", baremetal.JobIDsFromPB(in.JobID)...)
 	errors.Log(err)
 	return baremetal.JobsToPB(jobs), nil
 }

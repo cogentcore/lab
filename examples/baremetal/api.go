@@ -61,11 +61,11 @@ func (bm *BareMetal) CancelJobs(ids ...int) error {
 
 // FetchResults gets job results back from server for given job id(s).
 // Results are available as job.Results as a compressed tar file.
-func (bm *BareMetal) FetchResults(ids ...int) ([]*Job, error) {
+func (bm *BareMetal) FetchResults(resultsGlob string, ids ...int) ([]*Job, error) {
 	bm.Lock()
 	defer bm.Unlock()
 
-	return bm.fetchResults(ids...)
+	return bm.fetchResults(resultsGlob, ids...)
 }
 
 // UpdateJobs runs any pending jobs if there are available GPUs to run on.
