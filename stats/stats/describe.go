@@ -15,14 +15,14 @@ import (
 
 // DescriptiveStats are the standard descriptive stats used in Describe function.
 // Cannot apply the final 3 sort-based stats to higher-dimensional data.
-var DescriptiveStats = []Stats{StatCount, StatMean, StatStd, StatSem, StatMin, StatMax, StatQ1, StatMedian, StatQ3}
+var DescriptiveStats = []Stats{StatCount, StatMean, StatStd, StatSem, StatMin, StatQ1, StatMedian, StatQ3, StatMax}
 
 // Describe adds standard descriptive statistics for given tensor
 // to the given [tensorfs] directory, adding a directory for each tensor
 // and result tensor stats for each result.
 // This is an easy way to provide a comprehensive description of data.
 // The [DescriptiveStats] list is: [Count], [Mean], [Std], [Sem],
-// [Min], [Max], [Q1], [Median], [Q3]
+// [Min], [Q1], [Median], [Q3], [Max]
 func Describe(dir *tensorfs.Node, tsrs ...tensor.Tensor) {
 	dd := dir.Dir("Describe")
 	for i, tsr := range tsrs {

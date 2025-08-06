@@ -24,7 +24,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-func ExampleLine() {
+func ExampleXY() {
 	xd, yd := make(plot.Values, 21), make(plot.Values, 21)
 	for i := range xd {
 		xd[i] = float64(i * 5)
@@ -54,7 +54,7 @@ func ExampleLine() {
 	// Output:
 }
 
-func ExampleStylerMetadata() {
+func ExampleStyler() {
 	tx, ty := tensor.NewFloat64(21), tensor.NewFloat64(21)
 	for i := range tx.DimSize(0) {
 		tx.SetFloat1D(float64(i*5), i)
