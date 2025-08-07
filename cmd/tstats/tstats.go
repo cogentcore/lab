@@ -36,7 +36,7 @@ func Run(c *Config) error {
 
 	for _, f := range c.Files {
 		if ok, err := fsx.FileExists(f); !ok {
-			errs = append(errs, err)
+			errs = append(errs, err, fmt.Errorf("file %q not found", f))
 			continue
 		}
 		dt := table.New()
