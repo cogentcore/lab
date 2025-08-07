@@ -114,7 +114,7 @@ func (sr *Simmer) FetchJobBare(jid string, force bool) {
 	}
 	sjob := sr.ValueForJob(jid, "ServerJob")
 	sj := errors.Log1(strconv.Atoi(sjob))
-	jobs, err := sr.BareMetal.FetchResults(sj)
+	jobs, err := sr.BareMetal.FetchResults(sr.Config.FetchFiles, sj)
 	if err != nil {
 		core.ErrorSnackbar(sr, err)
 		return

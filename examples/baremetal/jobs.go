@@ -331,7 +331,7 @@ func (bm *BareMetal) jobDone(job *Job, sv *Server) {
 
 // fetchResults gets job results back from server for given job id(s).
 // Results are available as job.Results as a compressed tar file.
-func (bm *BareMetal) fetchResults(ids ...int) ([]*Job, error) {
+func (bm *BareMetal) fetchResults(resultsGlob string, ids ...int) ([]*Job, error) {
 	var errs []error
 	var jobs []*Job
 	for _, id := range ids {
@@ -344,6 +344,9 @@ func (bm *BareMetal) fetchResults(ids ...int) ([]*Job, error) {
 		if err != nil {
 			errs = append(errs, err)
 			continue
+		}
+		if resultsGlob != "" {
+			job.ResultsGlob = resultsGlob
 		}
 		err = bm.fetchResultsJob(job, sv)
 		if err != nil {
@@ -364,12 +367,16 @@ func (bm *BareMetal) fetchResultsJob(job *Job, sv *Server) error {
 	sv.Use()
 	goalrun.Run("cd")
 	goalrun.Run("cd", job.Path)
-	res := goalrun.OutputErrOK("/bin/ls", "-1", job.ResultsGlob)
+	jglob := job.ResultsGlob
+	if !strings.Contains(jglob, "job.label") {
+		jglob += " job.label"
+	}
+	res := goalrun.OutputErrOK("/bin/ls", "-1", jglob)
 	if strings.Contains(res, "No such file") {
 		res = ""
 	}
 	ress := goalib.SplitLines(res)
-	fmt.Println("results:", ress)
+	fmt.Println("results for:", jglob, ress)
 	goalrun.Run("tar", "-czf", "job.results.tar.gz", "job.out", "nohup.out", ress)
 	var b bytes.Buffer
 	sshcl, err := goalrun.SSHByHost(sv.Name)

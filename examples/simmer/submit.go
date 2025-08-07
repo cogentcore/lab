@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/lab/goal/goalib"
 	"cogentcore.org/lab/lab"
@@ -216,12 +217,57 @@ func (sr *Simmer) NewJob(jp SubmitParams) {
 	sr.UpdateSimsAsync()
 }
 
-// Submit submits a job to SLURM on the server, using an array
-// structure, with an outer startup job that calls the main array
-// jobs and a final cleanup job.  Creates a new job dir based on
-// incrementing counter, synchronizing the job files.
+// Submit submits a job on the server.
+// Creates a new job dir based on incrementing counter,
+// synchronizing the job files.
 func (sr *Simmer) Submit() { //types:add
 	lab.PromptStruct(sr, &sr.Config.Submit, "Submit a new job", func() {
 		go sr.NewJob(sr.Config.Submit)
 	})
+}
+
+// Search runs parameter search jobs, one for each parameter.
+// The number of parameters is obtained by running the currently built
+// simulation executable locally with the -search-n argument, which
+// returns the total number of parameter searches to run.
+// THUS, YOU MUST BUILD THE LOCAL SIM WITH THE PARAM SEARCH CONFIGURED.
+// Then, it launches that number of jobs with -search-at values from 1..n.
+// The jobs should write a job.label file for the searched parameter.
+func (sr *Simmer) Search() { //types:add
+	lab.PromptStruct(sr, &sr.Config.Submit, "Submit a new param search: make sure local sim has been built with search configured!", func() {
+		go sr.NewSearch(sr.Config.Submit)
+	})
+}
+
+// NewSearch runs a new parameter search with given parameters.
+// This is run as a separate goroutine!
+func (sr *Simmer) NewSearch(jp SubmitParams) {
+	goalrun.Run("@0")
+	goalrun.Run("cd", sr.StartDir)
+	proj := sr.Config.Project
+	lsim := filepath.Join(proj, proj)
+	nss := goalrun.Output(lsim, "-nogui", "-search-n")
+	sl := goalib.SplitLines(nss)
+	if len(sl) == 0 {
+		fmt.Println("Search: no output")
+		return
+	}
+	ns, err := strconv.Atoi(sl[0])
+	if errors.Log(err) != nil {
+		return
+	}
+	if ns <= 0 {
+		fmt.Println("Number of search params <= 0:", ns)
+		return
+	}
+	fmt.Println("Param search launching jobs:", ns)
+	sarg := jp.Args
+	if sarg != "" {
+		sarg += " "
+	}
+	for i := range ns {
+		cjp := jp
+		cjp.Args = sarg + fmt.Sprintf("-search-at %d", i+1)
+		sr.NewJob(cjp)
+	}
 }

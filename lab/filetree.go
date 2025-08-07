@@ -152,6 +152,10 @@ func (fn *FileNode) OpenFile() error {
 			ts.AsLab().TensorEditor(df, d.Tensor)
 		case fileinfo.Number:
 			dv := TensorFS(ofn)
+			if dv.Tensor.Len() == 0 {
+				core.MessageSnackbar(fn, "No data in tensor")
+				break
+			}
 			v := dv.Tensor.Float1D(0)
 			d := core.NewBody(df)
 			core.NewText(d).SetType(core.TextSupporting).SetText(df)
@@ -165,6 +169,10 @@ func (fn *FileNode) OpenFile() error {
 			d.RunDialog(fn)
 		case fileinfo.String:
 			dv := TensorFS(ofn)
+			if dv.Tensor.Len() == 0 {
+				core.MessageSnackbar(fn, "No data in tensor")
+				break
+			}
 			v := dv.Tensor.String1D(0)
 			d := core.NewBody(df)
 			core.NewText(d).SetType(core.TextSupporting).SetText(df)

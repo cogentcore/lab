@@ -97,7 +97,7 @@ func (cl *Client) CancelJobs(ids ...int) error {
 
 // FetchResults gets job results back from server for given job id(s).
 // Results are available as job.Results as a compressed tar file.
-func (cl *Client) FetchResults(ids ...int) ([]*Job, error) {
+func (cl *Client) FetchResults(resultsGlob string, ids ...int) ([]*Job, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), cl.Timeout)
 	defer cancel()
 
