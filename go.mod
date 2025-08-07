@@ -8,16 +8,16 @@ go 1.23.4
 // https://github.com/googleapis/go-genproto/issues/1015
 
 require (
-	cogentcore.org/core v0.3.12
+	cogentcore.org/core v0.3.13-0.20250807185047-1bd7b2b389bc
 	github.com/cogentcore/readline v0.1.3
 	github.com/cogentcore/yaegi v0.0.0-20250622201820-b7838bdd95eb
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/nsf/termbox-go v1.1.1
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
-	golang.org/x/tools v0.33.0
+	golang.org/x/tools v0.34.0
 	gonum.org/v1/gonum v0.15.0
-	google.golang.org/grpc v1.73.0
+	google.golang.org/grpc v1.74.2
 	google.golang.org/protobuf v1.36.6
 )
 
@@ -58,14 +58,14 @@ require (
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/tdewolff/parse/v2 v2.7.19 // indirect
 	github.com/tdewolff/test v1.0.11-0.20240106005702-7de5f7df4739 // indirect
-	golang.org/x/crypto v0.39.0 // indirect
+	golang.org/x/crypto v0.40.0 // indirect
 	golang.org/x/image v0.25.0 // indirect
 	golang.org/x/mod v0.25.0 // indirect
-	golang.org/x/net v0.41.0 // indirect
-	golang.org/x/sync v0.15.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.26.0 // indirect
-	google.golang.org/genproto v0.0.0-20250715232539-7130f93afb79 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
+	golang.org/x/net v0.42.0 // indirect
+	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/sys v0.34.0 // indirect
+	golang.org/x/text v0.27.0 // indirect
+	google.golang.org/genproto v0.0.0-20250804133106-a7a43d27e69b // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250728155136-f173205681a0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
