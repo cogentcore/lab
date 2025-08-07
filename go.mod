@@ -8,7 +8,7 @@ go 1.23.4
 // https://github.com/googleapis/go-genproto/issues/1015
 
 require (
-	cogentcore.org/core v0.3.13-0.20250807185047-1bd7b2b389bc
+	cogentcore.org/core v0.3.13-0.20250807231547-ae1e4f43215b
 	github.com/cogentcore/readline v0.1.3
 	github.com/cogentcore/yaegi v0.0.0-20250622201820-b7838bdd95eb
 	github.com/mitchellh/go-homedir v1.1.0
