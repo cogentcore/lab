@@ -1,6 +1,5 @@
 +++
 Categories = ["Gosl"]
-Title = "GPU"
 Name = "GPU"
 +++
 
