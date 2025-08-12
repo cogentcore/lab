@@ -17,7 +17,6 @@ func init() {
 		"CheckFloats":        reflect.ValueOf(plot.CheckFloats),
 		"CheckNaNs":          reflect.ValueOf(plot.CheckNaNs),
 		"Circle":             reflect.ValueOf(plot.Circle),
-		"Color":              reflect.ValueOf(plot.Color),
 		"CopyRole":           reflect.ValueOf(plot.CopyRole),
 		"CopyValues":         reflect.ValueOf(plot.CopyValues),
 		"Cross":              reflect.ValueOf(plot.Cross),
@@ -93,46 +92,48 @@ func init() {
 		"Z":                  reflect.ValueOf(plot.Z),
 
 		// type definitions
-		"Axis":           reflect.ValueOf((*plot.Axis)(nil)),
-		"AxisScales":     reflect.ValueOf((*plot.AxisScales)(nil)),
-		"AxisStyle":      reflect.ValueOf((*plot.AxisStyle)(nil)),
-		"ConstantTicks":  reflect.ValueOf((*plot.ConstantTicks)(nil)),
-		"Data":           reflect.ValueOf((*plot.Data)(nil)),
-		"DefaultOffOn":   reflect.ValueOf((*plot.DefaultOffOn)(nil)),
-		"DefaultTicks":   reflect.ValueOf((*plot.DefaultTicks)(nil)),
-		"InvertedScale":  reflect.ValueOf((*plot.InvertedScale)(nil)),
-		"Labels":         reflect.ValueOf((*plot.Labels)(nil)),
-		"Legend":         reflect.ValueOf((*plot.Legend)(nil)),
-		"LegendEntry":    reflect.ValueOf((*plot.LegendEntry)(nil)),
-		"LegendPosition": reflect.ValueOf((*plot.LegendPosition)(nil)),
-		"LegendStyle":    reflect.ValueOf((*plot.LegendStyle)(nil)),
-		"LineStyle":      reflect.ValueOf((*plot.LineStyle)(nil)),
-		"LinearScale":    reflect.ValueOf((*plot.LinearScale)(nil)),
-		"LogScale":       reflect.ValueOf((*plot.LogScale)(nil)),
-		"LogTicks":       reflect.ValueOf((*plot.LogTicks)(nil)),
-		"Normalizer":     reflect.ValueOf((*plot.Normalizer)(nil)),
-		"PanZoom":        reflect.ValueOf((*plot.PanZoom)(nil)),
-		"Plot":           reflect.ValueOf((*plot.Plot)(nil)),
-		"PlotStyle":      reflect.ValueOf((*plot.PlotStyle)(nil)),
-		"Plotter":        reflect.ValueOf((*plot.Plotter)(nil)),
-		"PlotterName":    reflect.ValueOf((*plot.PlotterName)(nil)),
-		"PlotterType":    reflect.ValueOf((*plot.PlotterType)(nil)),
-		"PointStyle":     reflect.ValueOf((*plot.PointStyle)(nil)),
-		"Roles":          reflect.ValueOf((*plot.Roles)(nil)),
-		"Shapes":         reflect.ValueOf((*plot.Shapes)(nil)),
-		"StepKind":       reflect.ValueOf((*plot.StepKind)(nil)),
-		"Style":          reflect.ValueOf((*plot.Style)(nil)),
-		"Stylers":        reflect.ValueOf((*plot.Stylers)(nil)),
-		"Text":           reflect.ValueOf((*plot.Text)(nil)),
-		"TextStyle":      reflect.ValueOf((*plot.TextStyle)(nil)),
-		"Thumbnailer":    reflect.ValueOf((*plot.Thumbnailer)(nil)),
-		"Tick":           reflect.ValueOf((*plot.Tick)(nil)),
-		"Ticker":         reflect.ValueOf((*plot.Ticker)(nil)),
-		"TimeTicks":      reflect.ValueOf((*plot.TimeTicks)(nil)),
-		"Valuer":         reflect.ValueOf((*plot.Valuer)(nil)),
-		"Values":         reflect.ValueOf((*plot.Values)(nil)),
-		"WidthStyle":     reflect.ValueOf((*plot.WidthStyle)(nil)),
-		"XAxisStyle":     reflect.ValueOf((*plot.XAxisStyle)(nil)),
+		"Axis":             reflect.ValueOf((*plot.Axis)(nil)),
+		"AxisScales":       reflect.ValueOf((*plot.AxisScales)(nil)),
+		"AxisStyle":        reflect.ValueOf((*plot.AxisStyle)(nil)),
+		"ConstantTicks":    reflect.ValueOf((*plot.ConstantTicks)(nil)),
+		"Data":             reflect.ValueOf((*plot.Data)(nil)),
+		"DefaultOffOn":     reflect.ValueOf((*plot.DefaultOffOn)(nil)),
+		"DefaultTicks":     reflect.ValueOf((*plot.DefaultTicks)(nil)),
+		"InvertedScale":    reflect.ValueOf((*plot.InvertedScale)(nil)),
+		"Labels":           reflect.ValueOf((*plot.Labels)(nil)),
+		"Legend":           reflect.ValueOf((*plot.Legend)(nil)),
+		"LegendEntry":      reflect.ValueOf((*plot.LegendEntry)(nil)),
+		"LegendPosition":   reflect.ValueOf((*plot.LegendPosition)(nil)),
+		"LegendStyle":      reflect.ValueOf((*plot.LegendStyle)(nil)),
+		"LineStyle":        reflect.ValueOf((*plot.LineStyle)(nil)),
+		"LinearScale":      reflect.ValueOf((*plot.LinearScale)(nil)),
+		"LogScale":         reflect.ValueOf((*plot.LogScale)(nil)),
+		"LogTicks":         reflect.ValueOf((*plot.LogTicks)(nil)),
+		"Normalizer":       reflect.ValueOf((*plot.Normalizer)(nil)),
+		"PanZoom":          reflect.ValueOf((*plot.PanZoom)(nil)),
+		"Plot":             reflect.ValueOf((*plot.Plot)(nil)),
+		"PlotStyle":        reflect.ValueOf((*plot.PlotStyle)(nil)),
+		"Plotter":          reflect.ValueOf((*plot.Plotter)(nil)),
+		"PlotterName":      reflect.ValueOf((*plot.PlotterName)(nil)),
+		"PlotterType":      reflect.ValueOf((*plot.PlotterType)(nil)),
+		"PointStyle":       reflect.ValueOf((*plot.PointStyle)(nil)),
+		"Roles":            reflect.ValueOf((*plot.Roles)(nil)),
+		"Shapes":           reflect.ValueOf((*plot.Shapes)(nil)),
+		"StepKind":         reflect.ValueOf((*plot.StepKind)(nil)),
+		"Style":            reflect.ValueOf((*plot.Style)(nil)),
+		"Stylers":          reflect.ValueOf((*plot.Stylers)(nil)),
+		"Text":             reflect.ValueOf((*plot.Text)(nil)),
+		"TextStyle":        reflect.ValueOf((*plot.TextStyle)(nil)),
+		"Thumbnailer":      reflect.ValueOf((*plot.Thumbnailer)(nil)),
+		"Tick":             reflect.ValueOf((*plot.Tick)(nil)),
+		"Ticker":           reflect.ValueOf((*plot.Ticker)(nil)),
+		"TimeTicks":        reflect.ValueOf((*plot.TimeTicks)(nil)),
+		"Valuer":           reflect.ValueOf((*plot.Valuer)(nil)),
+		"Values":           reflect.ValueOf((*plot.Values)(nil)),
+		"VirtualAxis":      reflect.ValueOf((*plot.VirtualAxis)(nil)),
+		"VirtualAxisStyle": reflect.ValueOf((*plot.VirtualAxisStyle)(nil)),
+		"WidthStyle":       reflect.ValueOf((*plot.WidthStyle)(nil)),
+		"XAxisStyle":       reflect.ValueOf((*plot.XAxisStyle)(nil)),
 
 		// interface wrapper definitions
 		"_Normalizer":  reflect.ValueOf((*_cogentcore_org_lab_plot_Normalizer)(nil)),
@@ -160,7 +161,7 @@ type _cogentcore_org_lab_plot_Plotter struct {
 	WData        func() (data plot.Data, pixX []float32, pixY []float32)
 	WPlot        func(pt *plot.Plot)
 	WStylers     func() *plot.Stylers
-	WUpdateRange func(plt *plot.Plot, x *minmax.F64, y *minmax.F64, yr *minmax.F64, z *minmax.F64)
+	WUpdateRange func(plt *plot.Plot, x *minmax.F64, y *minmax.F64, yr *minmax.F64, z *minmax.F64, size *minmax.F64)
 }
 
 func (W _cogentcore_org_lab_plot_Plotter) ApplyStyle(plotStyle *plot.PlotStyle, idx int) {
@@ -171,8 +172,8 @@ func (W _cogentcore_org_lab_plot_Plotter) Data() (data plot.Data, pixX []float32
 }
 func (W _cogentcore_org_lab_plot_Plotter) Plot(pt *plot.Plot)     { W.WPlot(pt) }
 func (W _cogentcore_org_lab_plot_Plotter) Stylers() *plot.Stylers { return W.WStylers() }
-func (W _cogentcore_org_lab_plot_Plotter) UpdateRange(plt *plot.Plot, x *minmax.F64, y *minmax.F64, yr *minmax.F64, z *minmax.F64) {
-	W.WUpdateRange(plt, x, y, yr, z)
+func (W _cogentcore_org_lab_plot_Plotter) UpdateRange(plt *plot.Plot, x *minmax.F64, y *minmax.F64, yr *minmax.F64, z *minmax.F64, size *minmax.F64) {
+	W.WUpdateRange(plt, x, y, yr, z, size)
 }
 
 // _cogentcore_org_lab_plot_Thumbnailer is an interface wrapper for Thumbnailer type
