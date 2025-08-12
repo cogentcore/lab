@@ -199,7 +199,7 @@ func TestLine(t *testing.T) {
 
 	l1 := NewLine(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	plt.Legend.Add("Sine", l1)
 	plt.Legend.Add("Cos", l1)
@@ -234,7 +234,7 @@ func TestLineYRight(t *testing.T) {
 
 	l1 := NewLine(plt, sin)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l1.Styler(func(s *plot.Style) {
 		s.Range.SetMin(10)
@@ -243,7 +243,7 @@ func TestLineYRight(t *testing.T) {
 	})
 	l2 := NewLine(plt, cos)
 	if l2 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l2.Styler(func(s *plot.Style) {
 		s.RightY = true
@@ -272,7 +272,7 @@ func TestScatter(t *testing.T) {
 
 	l1 := NewScatter(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 
 	shs := plot.ShapesValues()
@@ -298,7 +298,7 @@ func TestBubble(t *testing.T) {
 
 	l1 := NewScatter(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	imagex.Assert(t, plt.RenderImage(), "bubble.png")
 }
@@ -324,14 +324,14 @@ func TestLabels(t *testing.T) {
 
 	l1 := NewLine(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l1.Style.Point.On = plot.On
 	plt.Legend.Add("Sine", l1)
 
 	l2 := NewLabels(plt, data)
 	if l2 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l2.Style.Text.Offset.X.Dp(6)
 	l2.Style.Text.Offset.Y.Dp(-6)
@@ -352,7 +352,7 @@ func TestBar(t *testing.T) {
 
 	l1 := NewBar(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l1.Style.Line.Fill = colors.Uniform(colors.Red)
 	plt.Legend.Add("Sine", l1)
@@ -361,7 +361,7 @@ func TestBar(t *testing.T) {
 
 	l2 := NewBar(plt, cos)
 	if l2 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l2.Style.Line.Fill = colors.Uniform(colors.Blue)
 	plt.Legend.Add("Cosine", l2)
@@ -387,7 +387,7 @@ func TestBarErr(t *testing.T) {
 
 	l1 := NewBar(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l1.Style.Line.Fill = colors.Uniform(colors.Red)
 	plt.Legend.Add("Sine", l1)
@@ -414,14 +414,14 @@ func TestBarStack(t *testing.T) {
 
 	l1 := NewBar(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l1.Style.Line.Fill = colors.Uniform(colors.Red)
 	plt.Legend.Add("Sine", l1)
 
 	l2 := NewBar(plt, cos)
 	if l2 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l2.Style.Line.Fill = colors.Uniform(colors.Blue)
 	l2.StackedOn = l1
@@ -456,13 +456,13 @@ func TestErrBar(t *testing.T) {
 
 	l1 := NewLine(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	plt.Legend.Add("Sine", l1)
 
 	l2 := NewYErrorBars(plt, data)
 	if l2 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 
 	imagex.Assert(t, plt.RenderImage(), "errbar.png")
