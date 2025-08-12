@@ -71,7 +71,7 @@ func (ps *PointStyle) IsOn(pt *Plot) bool {
 	uc := pt.UnitContext()
 	ps.Width.ToDots(uc)
 	ps.Size.ToDots(uc)
-	if ps.On == Off || ps.Color == nil || ps.Width.Dots == 0 || ps.Size.Dots == 0 {
+	if ps.On == Off || (ps.Color == nil && ps.Fill == nil && ps.ColorFunc == nil && ps.FillFunc == nil) || ps.Width.Dots == 0 || ps.Size.Dots == 0 {
 		return false
 	}
 	return true
@@ -94,6 +94,18 @@ func (ps *PointStyle) SetStroke(pt *Plot) bool {
 		pc.Fill.Color = nil
 	}
 	return true
+}
+
+// SetStrokeIndex sets the stroke and fill colors based on index-specific
+// color functions if applicable ([PointStyle.ColorFunc] and
+// [PointStyle.FillFunc]).
+func (ps *PointStyle) SetStrokeIndex(pc *paint.Painter, i int) {
+	if ps.ColorFunc != nil {
+		pc.Stroke.Color = ps.ColorFunc(i)
+	}
+	if ps.FillFunc != nil && ps.Shape <= Pyramid {
+		pc.Fill.Color = ps.FillFunc(i)
+	}
 }
 
 // DrawShape draws the given shape
