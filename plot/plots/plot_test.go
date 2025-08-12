@@ -282,6 +282,27 @@ func TestScatter(t *testing.T) {
 	}
 }
 
+func TestBubble(t *testing.T) {
+	data := sinDataXY()
+	data[plot.Size] = data[plot.Y]
+
+	plt := plot.New()
+	plt.Title.Text = "Test Bubble"
+	plt.X.Range.Min = 0
+	plt.X.Range.Max = 100
+	plt.X.Label.Text = "X Axis"
+	plt.Y.Range.Min = 0
+	plt.Y.Range.Max = 100
+	plt.Y.Label.Text = "Y Axis"
+	plt.Style.PointSize.Px(10)
+
+	l1 := NewScatter(plt, data)
+	if l1 == nil {
+		t.Error("bad data")
+	}
+	imagex.Assert(t, plt.RenderImage(), "bubble.png")
+}
+
 func TestLabels(t *testing.T) {
 	plt := plot.New()
 	plt.Title.Text = "Test Labels"
@@ -508,7 +529,7 @@ func TestTable(t *testing.T) {
 	n := 21
 	tx, ty := tensor.NewFloat64(n), tensor.NewFloat64(n)
 	tl, th := tensor.NewFloat64(n), tensor.NewFloat64(n)
-	ts, tc := tensor.NewFloat64(n), tensor.NewFloat64(n)
+	ts := tensor.NewFloat64(n)
 	lbls := tensor.NewString(n)
 	for i := range n {
 		tx.SetFloat1D(float64(i*5), i)
@@ -516,7 +537,6 @@ func TestTable(t *testing.T) {
 		tl.SetFloat1D(5*rand.Float64(), i)
 		th.SetFloat1D(5*rand.Float64(), i)
 		ts.SetFloat1D(1+5*rand.Float64(), i)
-		tc.SetFloat1D(float64(i), i)
 		lbls.SetString1D(strconv.Itoa(i), i)
 	}
 	ptyps := maps.Keys(plot.Plotters)
@@ -556,10 +576,6 @@ func TestTable(t *testing.T) {
 			s.Role = plot.Size
 			s.Group = "Y"
 		})
-		plot.SetStyler(tc, func(s *plot.Style) {
-			s.Role = plot.Color
-			s.Group = "Y"
-		})
 		plot.SetStyler(lbls, genst, func(s *plot.Style) {
 			s.On = true
 			s.Role = plot.Label
@@ -571,7 +587,6 @@ func TestTable(t *testing.T) {
 		dt.AddColumn("Low", tl)
 		dt.AddColumn("High", th)
 		dt.AddColumn("Size", ts)
-		dt.AddColumn("Color", tc)
 		dt.AddColumn("Labels", lbls)
 
 		plt, err := plot.NewTablePlot(dt)

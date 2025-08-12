@@ -127,7 +127,7 @@ func (lb *Labels) Plot(plt *plot.Plot) {
 }
 
 // UpdateRange updates the given ranges.
-func (lb *Labels) UpdateRange(plt *plot.Plot, x, y, yr, z *minmax.F64) {
+func (lb *Labels) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
 	if lb.Style.RightY {
 		y = yr
 	}

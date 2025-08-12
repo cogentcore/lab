@@ -216,7 +216,7 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 }
 
 // UpdateRange updates the given ranges.
-func (bc *Bar) UpdateRange(plt *plot.Plot, x, y, yr, z *minmax.F64) {
+func (bc *Bar) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
 	bw := bc.Style.Width
 	catMin := bw.Offset - bw.Pad
 	catMax := bw.Offset + float64(len(bc.Y)-1)*bw.Stride + bw.Pad

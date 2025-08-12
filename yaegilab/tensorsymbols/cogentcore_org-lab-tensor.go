@@ -128,6 +128,7 @@ func init() {
 		"OnedColumn":              reflect.ValueOf(tensor.OnedColumn),
 		"OnedRow":                 reflect.ValueOf(tensor.OnedRow),
 		"OpenCSV":                 reflect.ValueOf(tensor.OpenCSV),
+		"OpenFS":                  reflect.ValueOf(tensor.OpenFS),
 		"Precision":               reflect.ValueOf(tensor.Precision),
 		"Projection2DCoords":      reflect.ValueOf(tensor.Projection2DCoords),
 		"Projection2DDimShapes":   reflect.ValueOf(tensor.Projection2DDimShapes),

@@ -36,6 +36,20 @@ const (
 	InverseLog
 )
 
+func (as AxisScales) Normalizer() Normalizer {
+	switch as {
+	case Linear:
+		return LinearScale{}
+	case Log:
+		return LogScale{}
+	case InverseLinear:
+		return InvertedScale{LinearScale{}}
+	case InverseLog:
+		return InvertedScale{LogScale{}}
+	}
+	return LinearScale{}
+}
+
 // AxisStyle has style properties for the axis.
 type AxisStyle struct { //types:add -setters
 
@@ -102,7 +116,8 @@ type Axis struct {
 	// Label for the axis.
 	Label Text
 
-	// Style has the style parameters for the Axis.
+	// Style has the style parameters for the Axis,
+	// copied from [PlotStyle] source.
 	Style AxisStyle
 
 	// TickText is used for rendering the tick text labels.
@@ -145,16 +160,7 @@ func (ax *Axis) Defaults(dim math32.Dims) {
 
 // drawConfig configures for drawing.
 func (ax *Axis) drawConfig() {
-	switch ax.Style.Scale {
-	case Linear:
-		ax.Scale = LinearScale{}
-	case Log:
-		ax.Scale = LogScale{}
-	case InverseLinear:
-		ax.Scale = InvertedScale{LinearScale{}}
-	case InverseLog:
-		ax.Scale = InvertedScale{LogScale{}}
-	}
+	ax.Scale = ax.Style.Scale.Normalizer()
 }
 
 // SanitizeRange ensures that the range of the axis makes sense.
@@ -219,5 +225,45 @@ func (is InvertedScale) Normalize(min, max, x float64) float64 {
 // range of this axis.  For example, if x is a.Min then the return
 // value is 0, and if x is a.Max then the return value is 1.
 func (ax *Axis) Norm(x float64) float64 {
+	return ax.Scale.Normalize(ax.Range.Min, ax.Range.Max, x)
+}
+
+//////// VirtualAxis
+
+// VirtualAxisStyle has style properties for a virtual (non-plotted) axis.
+type VirtualAxisStyle struct { //types:add -setters
+	// Scale specifies how values are scaled along the axis:
+	// Linear, Log, Inverted
+	Scale AxisScales
+}
+
+// VirtualAxis represents a data role that is not plotted as a visible axis,
+// such as the Size role controlling size of points.
+// This is the "internal" data structure and should not be used for styling.
+type VirtualAxis struct {
+
+	// Range has the Min, Max range of values for the axis (in raw data units.)
+	Range minmax.F64
+
+	// Style has the style parameters for the Axis,
+	// copied from [PlotStyle] source.
+	Style VirtualAxisStyle
+
+	// Scale transforms a value given in the data coordinate system
+	// to the normalized coordinate system of the axis—its distance
+	// along the axis as a fraction of the axis range.
+	Scale Normalizer
+}
+
+// drawConfig configures for drawing.
+func (ax *VirtualAxis) drawConfig() {
+	ax.Scale = ax.Style.Scale.Normalizer()
+}
+
+// Norm returns the value of x, given in the data coordinate
+// system, normalized to its distance as a fraction of the
+// range of this axis.  For example, if x is a.Min then the return
+// value is 0, and if x is a.Max then the return value is 1.
+func (ax *VirtualAxis) Norm(x float64) float64 {
 	return ax.Scale.Normalize(ax.Range.Min, ax.Range.Max, x)
 }

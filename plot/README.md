@@ -18,11 +18,21 @@ The GUI constraint requires a more systematic, factorial organization of the spa
 
 * Plot content is driven by `Plotter` elements that each consume one or more sets of data, which is provided by a `Valuer` interface that maps onto a minimal subset of the `tensor.Tensor` interface, so a tensor directly satisfies the interface.
 
-* Each `Plotter` element can generally handle multiple different data elements, that are index-aligned. For example, the basic `XY` plotter requires a `Y` Valuer, and typically an `X`, but indexes will be used if it is not present. It optionally uses `Size` or `Color` Valuers that apply to the Point elements. A `Bar` gets at least a `Y` but also optionally a `High` Valuer for an error bar.  The `plot.Data` = `map[Roles]Valuer` is used to create new Plotter elements, allowing an unordered and explicit way of specifying the `Roles` of each `Valuer` item. Each Plotter also allows a single `Valuer` (i.e., Tensor) argument instead of the data, for a convenient minimal plot cse.  There are also shortcut methods for `NewXY` and `NewY`.
+* Each `Plotter` element can generally handle multiple different data elements, that are index-aligned. For example, the basic `XY` plotter requires a `Y` Valuer, and typically an `X`, but indexes will be used if it is not present. It optionally uses `Size` Valuer that applies to the Point elements. A `Bar` gets at least a `Y` but also optionally a `High` Valuer for an error bar.  The `plot.Data` = `map[Roles]Valuer` is used to create new Plotter elements, allowing an unordered and explicit way of specifying the `Roles` of each `Valuer` item. Each Plotter also allows a single `Valuer` (i.e., Tensor) argument instead of the data, for a convenient minimal plot cse.  There are also shortcut methods for `NewXY` and `NewY`.
 
 The table-driven plotting case uses a `Group` name along with the `Roles` type (`X`, `Y` etc) and Plotter type names to organize different plots based on `Style` settings.  Columns with the same Group name all provide data to the same plotter using their different Roles, making it easy to configure various statistical plots of multiple series of grouped data.
 
 Different plotter types (including custom ones) are registered along with their accepted input roles, to allow any type of plot to be generated.
+
+## Styling logic
+
+Styling data is a bit confusing because there are multiple places that style data is stored, as it is assembled from different components.
+
+The primary source of styling data is the `Style` struct that is set by `Stylers` functions. It contains data specific to a given `Role`, in addition to global `PlotStyle` settings, which configure the overall plot. Any styler can also configure global plot settings, which makes it a bit confusing, but is critical for actual usage, where stylers are associated with the Tensor data for example.
+
+The style data is cached in the specific elements, e.g., Axis.Style has its own copy of AxisStyle, but the source of this comes from the Stylers.
+
+The `ApplyStyle` functions have the logic for distributing Style source style info to the specific elements.
 
 # History
 

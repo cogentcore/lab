@@ -24,7 +24,7 @@ import (
 const XYType = "XY"
 
 func init() {
-	plot.RegisterPlotter(XYType, "draws lines between and / or points for X,Y data values, using optional Size and Color data for the points, for a bubble plot.", []plot.Roles{plot.Y}, []plot.Roles{plot.X, plot.Size, plot.Color}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
+	plot.RegisterPlotter(XYType, "draws lines between and / or points for X,Y data values, using optional Size data for the points, for a bubble plot.", []plot.Roles{plot.Y}, []plot.Roles{plot.X, plot.Size}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
 		return NewXY(plt, data)
 	})
 }
@@ -32,7 +32,7 @@ func init() {
 // XY draws lines between and / or points for XY data values.
 type XY struct {
 	// copies of data for this line
-	X, Y, Color, Size plot.Values
+	X, Y, Size plot.Values
 
 	// PX, PY are the actual pixel plotting coordinates for each XY value.
 	PX, PY []float32
@@ -46,7 +46,7 @@ type XY struct {
 // NewXY adds a new XY plotter to given plot for given data,
 // which can either by a [plot.Valuer] (e.g., Tensor) with the Y values,
 // or a [plot.Data] with roles, and values defined.
-// Data can also include Color and / or Size for the points.
+// Data can also include Size for the points.
 // Styler functions are obtained from the Y metadata if present.
 func NewXY(plt *plot.Plot, data any) *XY {
 	ln := &XY{}
@@ -82,7 +82,6 @@ func (ln *XY) SetData(data any) error {
 		return fmt.Errorf("X or Y is nil")
 	}
 	ln.stylers = plot.GetStylersFromData(dt, plot.Y)
-	ln.Color = plot.CopyRole(dt, plot.Color)
 	ln.Size = plot.CopyRole(dt, plot.Size)
 	return nil
 }
@@ -150,9 +149,6 @@ func (ln *XY) Data() (data plot.Data, pixX, pixY []float32) {
 	data[plot.Y] = ln.Y
 	if ln.Size != nil {
 		data[plot.Size] = ln.Size
-	}
-	if ln.Color != nil {
-		data[plot.Color] = ln.Color
 	}
 	return
 }
@@ -265,14 +261,16 @@ func (ln *XY) Plot(plt *plot.Plot) {
 		origSize := ln.Style.Point.Size
 		for i, ptx := range ln.PX {
 			pty := ln.PY[i]
+			pc.Stroke.Width = origWidth
+			ln.Style.Point.Size = origSize
 			if plt.HighlightPlotter == ln {
 				if i == plt.HighlightIndex {
 					pc.Stroke.Width.Dots *= 2
 					ln.Style.Point.Size.Dots *= 1.5
-				} else {
-					pc.Stroke.Width = origWidth
-					ln.Style.Point.Size = origSize
 				}
+			}
+			if ln.Size != nil {
+				ln.Style.Point.Size.Dots *= float32(plt.SizeAxis.Norm(ln.Size.Float1D(i)))
 			}
 			ln.Style.Point.DrawShape(pc, math32.Vec2(ptx, pty))
 		}
@@ -294,7 +292,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 }
 
 // UpdateRange updates the given ranges.
-func (ln *XY) UpdateRange(plt *plot.Plot, x, y, yr, z *minmax.F64) {
+func (ln *XY) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
 	if ln.Style.RightY {
 		y = yr
 	}
@@ -313,6 +311,7 @@ func (ln *XY) UpdateRange(plt *plot.Plot, x, y, yr, z *minmax.F64) {
 	dx := (float64(psz) / float64(ptb.Size().X)) * x.Range()
 	x.Min -= dx
 	x.Max += dx
+	plot.Range(ln.Size, size)
 }
 
 // Thumbnail returns the thumbnail, implementing the plot.Thumbnailer interface.
