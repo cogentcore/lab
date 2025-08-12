@@ -17,6 +17,7 @@ import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/colors"
+	"cogentcore.org/core/colors/cam/hct"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
@@ -301,6 +302,38 @@ func TestBubble(t *testing.T) {
 		t.Fatal("bad data")
 	}
 	imagex.Assert(t, plt.RenderImage(), "bubble")
+}
+
+func TestScatterColor(t *testing.T) {
+	data := sinDataXY()
+
+	plt := plot.New()
+	plt.Title.Text = "Test Scatter Color"
+	plt.X.Range.Min = 0
+	plt.X.Range.Max = 100
+	plt.X.Label.Text = "X Axis"
+	plt.Y.Range.Min = 0
+	plt.Y.Range.Max = 100
+	plt.Y.Label.Text = "Y Axis"
+	plt.Style.PointSize.Px(10)
+
+	l1 := NewScatter(plt, data)
+	if l1 == nil {
+		t.Fatal("bad data")
+	}
+
+	x := data[plot.X]
+	y := data[plot.Y]
+	l1.Styler(func(s *plot.Style) {
+		s.Point.ColorFunc = func(i int) image.Image {
+			xi, yi := float32(x.Float1D(i)), float32(y.Float1D(i))
+			c := hct.New(xi*3.6, yi, 50)
+			return colors.Uniform(c.AsRGBA())
+		}
+		s.Point.FillFunc = s.Point.ColorFunc
+	})
+
+	imagex.Assert(t, plt.RenderImage(), "scatter-color")
 }
 
 func TestLabels(t *testing.T) {
