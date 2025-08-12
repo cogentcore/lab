@@ -22,13 +22,20 @@ type PointStyle struct { //types:add -setters
 	Shape Shapes
 
 	// Color is the stroke color image specification.
-	// Setting to nil turns line off.
+	// Setting to nil turns stroke off. See also [PointStyle.ColorFunc].
 	Color image.Image
 
-	// Fill is the color to fill solid regions, in a plot-specific
-	// way (e.g., the area below a Line plot, the bar color).
-	// Use nil to disable filling.
+	// Fill is the color to fill points.
+	// Use nil to disable filling. See also [PointStyle.FillFunc].
 	Fill image.Image
+
+	// ColorFunc, if non-nil, is used instead of [PointStyle.Color].
+	// The function returns the stroke color to use for a given point index.
+	ColorFunc func(i int) image.Image
+
+	// FillFunc, if non-nil, is used instead of [PointStyle.Fill].
+	// The function returns the fill color to use for a given point index.
+	FillFunc func(i int) image.Image
 
 	// Width is the line width for point glyphs, with a default of 1 Pt (point).
 	// Setting to 0 turns line off.
