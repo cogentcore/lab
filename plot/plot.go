@@ -92,6 +92,9 @@ type PlotStyle struct { //types:add -setters
 	// YAxisLabel is the optional label to use for the YAxis instead of the default.
 	YAxisLabel string
 
+	// SizeAxis has plot-level properties specific to the Size virtual axis.
+	SizeAxis VirtualAxisStyle
+
 	// LinesOn determines whether lines are plotted by default at the overall,
 	// Plot level, for elements that plot lines (e.g., plots.XY).
 	LinesOn DefaultOffOn
@@ -190,6 +193,9 @@ type Plot struct {
 	// of the plot respectively. These are the actual compiled
 	// state data and should not be used for styling: use Style.
 	X, Y, YR, Z Axis
+
+	// SizeAxis is a virtual axis for the Size data role.
+	SizeAxis VirtualAxis
 
 	// Legend is the plot's legend.
 	Legend Legend
@@ -314,6 +320,8 @@ func (pt *Plot) applyStyle() {
 	pt.X.TickText.Style = pt.Style.Axis.TickText
 	pt.X.TickText.Style.Rotation = pt.Style.XAxis.Rotation
 
+	pt.SizeAxis.Style = st.Plot.SizeAxis
+
 	pt.Y.Style = pt.Style.Axis
 	pt.YR.Style = pt.Style.Axis
 	pt.YR.Style.On = hasYright
@@ -413,6 +421,8 @@ func (pt *Plot) UpdateRange() {
 	pt.Y.Range.SetInfinity()
 	pt.YR.Range.SetInfinity()
 	pt.Z.Range.SetInfinity()
+	pt.SizeAxis.Range.SetInfinity()
+	// note: putting this after allows it to override
 	if pt.Style.XAxis.Range.FixMin {
 		pt.X.Range.Min = pt.Style.XAxis.Range.Min
 	}
@@ -420,7 +430,7 @@ func (pt *Plot) UpdateRange() {
 		pt.X.Range.Max = pt.Style.XAxis.Range.Max
 	}
 	for _, pl := range pt.Plotters {
-		pl.UpdateRange(pt, &pt.X.Range, &pt.Y.Range, &pt.YR.Range, &pt.Z.Range)
+		pl.UpdateRange(pt, &pt.X.Range, &pt.Y.Range, &pt.YR.Range, &pt.Z.Range, &pt.SizeAxis.Range)
 	}
 	pt.X.Range.Sanitize()
 	pt.Y.Range.Sanitize()

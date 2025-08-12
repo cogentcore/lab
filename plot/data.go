@@ -100,9 +100,6 @@ const (
 	// Size controls the size of points etc.
 	Size
 
-	// Color controls the color of points or other elements.
-	Color
-
 	// Label renders a label, typically from string data,
 	// but can also be used for values.
 	Label

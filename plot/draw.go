@@ -50,6 +50,7 @@ func (pt *Plot) drawConfig() {
 	pt.Y.drawConfig()
 	pt.YR.drawConfig()
 	pt.Z.drawConfig()
+	pt.SizeAxis.drawConfig()
 	pt.Painter.ToDots()
 }
 

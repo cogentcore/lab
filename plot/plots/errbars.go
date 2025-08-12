@@ -133,7 +133,7 @@ func (eb *YErrorBars) Plot(plt *plot.Plot) {
 }
 
 // UpdateRange updates the given ranges.
-func (eb *YErrorBars) UpdateRange(plt *plot.Plot, x, y, yr, z *minmax.F64) {
+func (eb *YErrorBars) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
 	if eb.Style.RightY {
 		y = yr
 	}
@@ -256,7 +256,7 @@ func (eb *XErrorBars) Plot(plt *plot.Plot) {
 }
 
 // UpdateRange updates the given ranges.
-func (eb *XErrorBars) UpdateRange(plt *plot.Plot, x, y, yr, z *minmax.F64) {
+func (eb *XErrorBars) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
 	if eb.Style.RightY {
 		y = yr
 	}
