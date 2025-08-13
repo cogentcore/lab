@@ -96,10 +96,10 @@ func (ps *PointStyle) SetStroke(pt *Plot) bool {
 	return true
 }
 
-// SetStrokeIndex sets the stroke and fill colors based on index-specific
+// SetColorIndex sets the stroke and fill colors based on index-specific
 // color functions if applicable ([PointStyle.ColorFunc] and
 // [PointStyle.FillFunc]).
-func (ps *PointStyle) SetStrokeIndex(pc *paint.Painter, i int) {
+func (ps *PointStyle) SetColorIndex(pc *paint.Painter, i int) {
 	if ps.ColorFunc != nil {
 		pc.Stroke.Color = ps.ColorFunc(i)
 	}
