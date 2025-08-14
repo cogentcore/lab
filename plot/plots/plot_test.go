@@ -17,6 +17,7 @@ import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/colors"
+	"cogentcore.org/core/colors/cam/hct"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
@@ -199,29 +200,29 @@ func TestLine(t *testing.T) {
 
 	l1 := NewLine(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	plt.Legend.Add("Sine", l1)
 	plt.Legend.Add("Cos", l1)
 
-	imagex.Assert(t, plt.RenderImage(), "line.png")
+	imagex.Assert(t, plt.RenderImage(), "line")
 
 	l1.Style.Line.Fill = colors.Uniform(colors.Yellow)
-	imagex.Assert(t, plt.RenderImage(), "line-fill.png")
+	imagex.Assert(t, plt.RenderImage(), "line-fill")
 
 	l1.Style.Line.Step = plot.PreStep
-	imagex.Assert(t, plt.RenderImage(), "line-prestep.png")
+	imagex.Assert(t, plt.RenderImage(), "line-prestep")
 
 	l1.Style.Line.Step = plot.MidStep
-	imagex.Assert(t, plt.RenderImage(), "line-midstep.png")
+	imagex.Assert(t, plt.RenderImage(), "line-midstep")
 
 	l1.Style.Line.Step = plot.PostStep
-	imagex.Assert(t, plt.RenderImage(), "line-poststep.png")
+	imagex.Assert(t, plt.RenderImage(), "line-poststep")
 
 	l1.Style.Line.Step = plot.NoStep
 	l1.Style.Line.Fill = nil
 	l1.Style.Line.NegativeX = true
-	imagex.Assert(t, plt.RenderImage(), "line-negx.png")
+	imagex.Assert(t, plt.RenderImage(), "line-negx")
 }
 
 func TestLineYRight(t *testing.T) {
@@ -234,7 +235,7 @@ func TestLineYRight(t *testing.T) {
 
 	l1 := NewLine(plt, sin)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l1.Styler(func(s *plot.Style) {
 		s.Range.SetMin(10)
@@ -243,7 +244,7 @@ func TestLineYRight(t *testing.T) {
 	})
 	l2 := NewLine(plt, cos)
 	if l2 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l2.Styler(func(s *plot.Style) {
 		s.RightY = true
@@ -255,7 +256,7 @@ func TestLineYRight(t *testing.T) {
 	plt.Legend.Add("Sine", l1)
 	plt.Legend.Add("Cos", l2)
 
-	imagex.Assert(t, plt.RenderImage(), "line-righty.png")
+	imagex.Assert(t, plt.RenderImage(), "line-righty")
 }
 
 func TestScatter(t *testing.T) {
@@ -272,13 +273,13 @@ func TestScatter(t *testing.T) {
 
 	l1 := NewScatter(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 
 	shs := plot.ShapesValues()
 	for _, sh := range shs {
 		l1.Style.Point.Shape = sh
-		imagex.Assert(t, plt.RenderImage(), "scatter-"+sh.String()+".png")
+		imagex.Assert(t, plt.RenderImage(), "scatter-"+sh.String()+"")
 	}
 }
 
@@ -298,9 +299,41 @@ func TestBubble(t *testing.T) {
 
 	l1 := NewScatter(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
-	imagex.Assert(t, plt.RenderImage(), "bubble.png")
+	imagex.Assert(t, plt.RenderImage(), "bubble")
+}
+
+func TestScatterColor(t *testing.T) {
+	data := sinDataXY()
+
+	plt := plot.New()
+	plt.Title.Text = "Test Scatter Color"
+	plt.X.Range.Min = 0
+	plt.X.Range.Max = 100
+	plt.X.Label.Text = "X Axis"
+	plt.Y.Range.Min = 0
+	plt.Y.Range.Max = 100
+	plt.Y.Label.Text = "Y Axis"
+	plt.Style.PointSize.Px(10)
+
+	l1 := NewScatter(plt, data)
+	if l1 == nil {
+		t.Fatal("bad data")
+	}
+
+	x := data[plot.X]
+	y := data[plot.Y]
+	l1.Styler(func(s *plot.Style) {
+		s.Point.ColorFunc = func(i int) image.Image {
+			xi, yi := float32(x.Float1D(i)), float32(y.Float1D(i))
+			c := hct.New(xi*3.6, yi, 50)
+			return colors.Uniform(c.AsRGBA())
+		}
+		s.Point.FillFunc = s.Point.ColorFunc
+	})
+
+	imagex.Assert(t, plt.RenderImage(), "scatter-color")
 }
 
 func TestLabels(t *testing.T) {
@@ -324,19 +357,19 @@ func TestLabels(t *testing.T) {
 
 	l1 := NewLine(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l1.Style.Point.On = plot.On
 	plt.Legend.Add("Sine", l1)
 
 	l2 := NewLabels(plt, data)
 	if l2 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l2.Style.Text.Offset.X.Dp(6)
 	l2.Style.Text.Offset.Y.Dp(-6)
 
-	imagex.Assert(t, plt.RenderImage(), "labels.png")
+	imagex.Assert(t, plt.RenderImage(), "labels")
 }
 
 func TestBar(t *testing.T) {
@@ -352,16 +385,16 @@ func TestBar(t *testing.T) {
 
 	l1 := NewBar(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l1.Style.Line.Fill = colors.Uniform(colors.Red)
 	plt.Legend.Add("Sine", l1)
 
-	imagex.Assert(t, plt.RenderImage(), "bar.png")
+	imagex.Assert(t, plt.RenderImage(), "bar")
 
 	l2 := NewBar(plt, cos)
 	if l2 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l2.Style.Line.Fill = colors.Uniform(colors.Blue)
 	plt.Legend.Add("Cosine", l2)
@@ -370,7 +403,7 @@ func TestBar(t *testing.T) {
 	l2.Style.Width.Stride = 2
 	l2.Style.Width.Offset = 2
 
-	imagex.Assert(t, plt.RenderImage(), "bar-cos.png")
+	imagex.Assert(t, plt.RenderImage(), "bar-cos")
 }
 
 func TestBarErr(t *testing.T) {
@@ -387,18 +420,18 @@ func TestBarErr(t *testing.T) {
 
 	l1 := NewBar(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l1.Style.Line.Fill = colors.Uniform(colors.Red)
 	plt.Legend.Add("Sine", l1)
 
-	imagex.Assert(t, plt.RenderImage(), "bar-err.png")
+	imagex.Assert(t, plt.RenderImage(), "bar-err")
 
 	l1.Horizontal = true
 	plt.UpdateRange()
 	plt.X.Range.Min = 0
 	plt.X.Range.Max = 100
-	imagex.Assert(t, plt.RenderImage(), "bar-err-horiz.png")
+	imagex.Assert(t, plt.RenderImage(), "bar-err-horiz")
 }
 
 func TestBarStack(t *testing.T) {
@@ -414,20 +447,20 @@ func TestBarStack(t *testing.T) {
 
 	l1 := NewBar(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l1.Style.Line.Fill = colors.Uniform(colors.Red)
 	plt.Legend.Add("Sine", l1)
 
 	l2 := NewBar(plt, cos)
 	if l2 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	l2.Style.Line.Fill = colors.Uniform(colors.Blue)
 	l2.StackedOn = l1
 	plt.Legend.Add("Cos", l2)
 
-	imagex.Assert(t, plt.RenderImage(), "bar-stacked.png")
+	imagex.Assert(t, plt.RenderImage(), "bar-stacked")
 }
 
 func TestErrBar(t *testing.T) {
@@ -456,16 +489,16 @@ func TestErrBar(t *testing.T) {
 
 	l1 := NewLine(plt, data)
 	if l1 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 	plt.Legend.Add("Sine", l1)
 
 	l2 := NewYErrorBars(plt, data)
 	if l2 == nil {
-		t.Error("bad data")
+		t.Fatal("bad data")
 	}
 
-	imagex.Assert(t, plt.RenderImage(), "errbar.png")
+	imagex.Assert(t, plt.RenderImage(), "errbar")
 }
 
 func TestStyle(t *testing.T) {
@@ -495,7 +528,7 @@ func TestStyle(t *testing.T) {
 	plt.Legend.Add("Sine", l1) // todo: auto-add!
 	plt.Legend.Add("Cos", l1)
 
-	imagex.Assert(t, plt.RenderImage(), "style_line_point.png")
+	imagex.Assert(t, plt.RenderImage(), "style_line_point")
 
 	plt = plot.New()
 	tdy := tensor.NewFloat64FromValues(data[plot.Y].(plot.Values)...)
@@ -505,7 +538,7 @@ func TestStyle(t *testing.T) {
 	l1 = NewLine(plt, plot.Data{plot.X: tdx, plot.Y: tdy})
 	plt.Legend.Add("Sine", l1) // todo: auto-add!
 	plt.Legend.Add("Cos", l1)
-	imagex.Assert(t, plt.RenderImage(), "style_line_point_auto.png")
+	imagex.Assert(t, plt.RenderImage(), "style_line_point_auto")
 }
 
 func TestTicks(t *testing.T) {
@@ -519,7 +552,7 @@ func TestTicks(t *testing.T) {
 	plt.Legend.Add("Sine", l1)
 	plt.Legend.Add("Cos", l1)
 
-	imagex.Assert(t, plt.RenderImage(), "style_noticks.png")
+	imagex.Assert(t, plt.RenderImage(), "style_noticks")
 }
 
 // todo: move into statplot and test everything

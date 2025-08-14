@@ -22,13 +22,20 @@ type PointStyle struct { //types:add -setters
 	Shape Shapes
 
 	// Color is the stroke color image specification.
-	// Setting to nil turns line off.
+	// Setting to nil turns stroke off. See also [PointStyle.ColorFunc].
 	Color image.Image
 
-	// Fill is the color to fill solid regions, in a plot-specific
-	// way (e.g., the area below a Line plot, the bar color).
-	// Use nil to disable filling.
+	// Fill is the color to fill points.
+	// Use nil to disable filling. See also [PointStyle.FillFunc].
 	Fill image.Image
+
+	// ColorFunc, if non-nil, is used instead of [PointStyle.Color].
+	// The function returns the stroke color to use for a given point index.
+	ColorFunc func(i int) image.Image
+
+	// FillFunc, if non-nil, is used instead of [PointStyle.Fill].
+	// The function returns the fill color to use for a given point index.
+	FillFunc func(i int) image.Image
 
 	// Width is the line width for point glyphs, with a default of 1 Pt (point).
 	// Setting to 0 turns line off.
@@ -64,7 +71,7 @@ func (ps *PointStyle) IsOn(pt *Plot) bool {
 	uc := pt.UnitContext()
 	ps.Width.ToDots(uc)
 	ps.Size.ToDots(uc)
-	if ps.On == Off || ps.Color == nil || ps.Width.Dots == 0 || ps.Size.Dots == 0 {
+	if ps.On == Off || (ps.Color == nil && ps.Fill == nil && ps.ColorFunc == nil && ps.FillFunc == nil) || ps.Width.Dots == 0 || ps.Size.Dots == 0 {
 		return false
 	}
 	return true
@@ -87,6 +94,18 @@ func (ps *PointStyle) SetStroke(pt *Plot) bool {
 		pc.Fill.Color = nil
 	}
 	return true
+}
+
+// SetColorIndex sets the stroke and fill colors based on index-specific
+// color functions if applicable ([PointStyle.ColorFunc] and
+// [PointStyle.FillFunc]).
+func (ps *PointStyle) SetColorIndex(pc *paint.Painter, i int) {
+	if ps.ColorFunc != nil {
+		pc.Stroke.Color = ps.ColorFunc(i)
+	}
+	if ps.FillFunc != nil && ps.Shape <= Pyramid {
+		pc.Fill.Color = ps.FillFunc(i)
+	}
 }
 
 // DrawShape draws the given shape

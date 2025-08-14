@@ -272,6 +272,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			if ln.Size != nil {
 				ln.Style.Point.Size.Dots *= float32(plt.SizeAxis.Norm(ln.Size.Float1D(i)))
 			}
+			ln.Style.Point.SetColorIndex(pc, i)
 			ln.Style.Point.DrawShape(pc, math32.Vec2(ptx, pty))
 		}
 		ln.Style.Point.Size = origSize
