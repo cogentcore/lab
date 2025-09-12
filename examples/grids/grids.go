@@ -10,6 +10,10 @@ import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/core"
+	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/plotcore"
+	"cogentcore.org/lab/stats/cluster"
+	"cogentcore.org/lab/stats/metric"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorcore"
@@ -45,6 +49,20 @@ func main() {
 	gv.SetTensor(tsr)
 	gv.RowLabels = []string{"Row 0", "Row 1,2", "", "Row 3", "Row 4"}
 	gv.ColumnLabels = []string{"Col 0,1", "", "Col 2", "Col 3", "Col 4"}
+
+	ct, _ := tv.NewTab("Cluster")
+	ctb := core.NewToolbar(ct)
+	plt := plotcore.NewEditor(ct)
+	ctb.Maker(plt.MakeToolbar)
+
+	dm := metric.Matrix(metric.L2Norm, pats.Column("Input"))
+	cnd := cluster.Cluster("Min", dm, pats.Column("Name"))
+	pdt := table.New()
+	cluster.Plot(pdt, cnd, dm, pats.Column("Name"))
+	stys := plotcore.BasicStylers()
+	plot.Styler(pdt.Columns.At("X"), stys[0])
+	plot.Styler(pdt.Columns.At("Y"), stys[1])
+	plt.SetTable(pdt)
 
 	b.RunMainWindow()
 }
