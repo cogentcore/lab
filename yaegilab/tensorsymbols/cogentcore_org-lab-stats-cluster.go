@@ -12,11 +12,9 @@ func init() {
 		// function, constant and variable definitions
 		"Avg":           reflect.ValueOf(cluster.Avg),
 		"AvgFunc":       reflect.ValueOf(cluster.AvgFunc),
-		"Call":          reflect.ValueOf(cluster.Call),
 		"Cluster":       reflect.ValueOf(cluster.Cluster),
 		"Contrast":      reflect.ValueOf(cluster.Contrast),
 		"ContrastFunc":  reflect.ValueOf(cluster.ContrastFunc),
-		"Funcs":         reflect.ValueOf(&cluster.Funcs).Elem(),
 		"Glom":          reflect.ValueOf(cluster.Glom),
 		"InitAllLeaves": reflect.ValueOf(cluster.InitAllLeaves),
 		"Max":           reflect.ValueOf(cluster.Max),
@@ -27,6 +25,7 @@ func init() {
 		"MinFunc":       reflect.ValueOf(cluster.MinFunc),
 		"NewNode":       reflect.ValueOf(cluster.NewNode),
 		"Plot":          reflect.ValueOf(cluster.Plot),
+		"PlotFromTable": reflect.ValueOf(cluster.PlotFromTable),
 
 		// type definitions
 		"MetricFunc": reflect.ValueOf((*cluster.MetricFunc)(nil)),

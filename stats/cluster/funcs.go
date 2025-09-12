@@ -5,11 +5,18 @@
 package cluster
 
 import (
-	"log/slog"
 	"math"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/lab/tensor"
 )
+
+func init() {
+	tensor.AddFunc(Min.FuncName(), MinFunc)
+	tensor.AddFunc(Max.FuncName(), MaxFunc)
+	tensor.AddFunc(Avg.FuncName(), AvgFunc)
+	tensor.AddFunc(Contrast.FuncName(), ContrastFunc)
+}
 
 // Metrics are standard clustering distance metric functions,
 // specifying how a node computes its distance based on its leaves.
@@ -36,26 +43,22 @@ const (
 // ContrastDist function and perhaps others.
 type MetricFunc func(aix, bix []int, ntot int, maxd float64, dmat tensor.Tensor) float64
 
-// Funcs is a registry of clustering metric functions,
-// initialized with the standard options.
-var Funcs map[string]MetricFunc
-
-func init() {
-	Funcs = make(map[string]MetricFunc)
-	Funcs[Min.String()] = MinFunc
-	Funcs[Max.String()] = MaxFunc
-	Funcs[Avg.String()] = AvgFunc
-	Funcs[Contrast.String()] = ContrastFunc
+// FuncName returns the package-qualified function name to use
+// in tensor.Call to call this function.
+func (m Metrics) FuncName() string {
+	return "cluster." + m.String()
 }
 
-// Call calls a cluster metric function by name.
-func Call(funcName string, aix, bix []int, ntot int, maxd float64, dmat tensor.Tensor) float64 {
-	fun, ok := Funcs[funcName]
-	if !ok {
-		slog.Error("cluster.Call: function not found", "function:", funcName)
-		return 0
-	}
-	return fun(aix, bix, ntot, maxd, dmat)
+// Func returns function for given metric.
+func (m Metrics) Func() MetricFunc {
+	fn := errors.Log1(tensor.FuncByName(m.FuncName()))
+	return fn.Fun.(func(aix, bix []int, ntot int, maxd float64, dmat tensor.Tensor) float64)
+}
+
+// Call calls a standard Metrics enum function on given tensors.
+// Output results are in the out tensor.
+func (m Metrics) Call(aix, bix []int, ntot int, maxd float64, dmat tensor.Tensor) float64 {
+	return m.Func()(aix, bix, ntot, maxd, dmat)
 }
 
 // MinFunc is the minimum-distance or single-linkage weighting function for comparing

@@ -15,6 +15,7 @@ func init() {
 		"NewPlot":           reflect.ValueOf(plotcore.NewPlot),
 		"NewPlotterChooser": reflect.ValueOf(plotcore.NewPlotterChooser),
 		"NewSubPlot":        reflect.ValueOf(plotcore.NewSubPlot),
+		"SetBasicStylers":   reflect.ValueOf(plotcore.SetBasicStylers),
 
 		// type definitions
 		"Editor":         reflect.ValueOf((*plotcore.Editor)(nil)),
