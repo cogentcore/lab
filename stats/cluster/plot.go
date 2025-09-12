@@ -5,9 +5,27 @@
 package cluster
 
 import (
+	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/plotcore"
+	"cogentcore.org/lab/stats/metric"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 )
+
+func PlotFromTable(plt *plotcore.Editor, dt *table.Table, distMetric metric.Metrics, clustMetric Metrics, dataColumn, labelColumn string) {
+	dm := metric.Matrix(distMetric.Func(), dt.Column(dataColumn))
+	labels := dt.Column(labelColumn)
+	cnd := Cluster(clustMetric, dm, labels)
+	pdt := table.New()
+	Plot(pdt, cnd, dm, labels)
+	stys := plotcore.BasicStylers()
+	plot.Styler(pdt.Columns.At("X"), stys[0])
+	plot.Styler(pdt.Columns.At("Y"), stys[1])
+	plot.Styler(pdt.Columns.At("Label"), func(s *plot.Style) {
+		s.On = true
+	})
+	plt.SetTable(pdt)
+}
 
 // Plot sets the rows of given data table to trace out lines with labels that
 // will render cluster plot starting at root node when plotted with a standard plotting package.

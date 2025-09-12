@@ -81,7 +81,7 @@ func NewNode(na, nb *Node, dst float64) *Node {
 // not sure how one might pack Node into a tensor
 
 // Cluster implements agglomerative clustering, based on a
-// distance matrix dmat, e.g., as computed by metric.Matrix method,
+// distance matrix dmat, e.g., as computed by [metric.Matrix] method,
 // using a metric that increases in value with greater dissimilarity.
 // labels provides an optional String tensor list of labels for the elements
 // of the distance matrix.
@@ -89,10 +89,10 @@ func NewNode(na, nb *Node, dst float64) *Node {
 // and then Glom to do the iterative agglomerative clustering process.
 // If you want to start with pre-defined initial clusters,
 // then call Glom with a root node so-initialized.
-func Cluster(funcName string, dmat, labels tensor.Tensor) *Node {
+func Cluster(metric Metrics, dmat, labels tensor.Tensor) *Node {
 	ntot := dmat.DimSize(0) // number of leaves
 	root := InitAllLeaves(ntot)
-	return Glom(root, funcName, dmat)
+	return Glom(root, metric, dmat)
 }
 
 // InitAllLeaves returns a standard root node initialized with all of the leaves.
@@ -111,7 +111,7 @@ func InitAllLeaves(ntot int) *Node {
 // with the starting clusters, which is all of the
 // leaves by default, but could be anything if you want
 // to start with predefined clusters.
-func Glom(root *Node, funcName string, dmat tensor.Tensor) *Node {
+func Glom(root *Node, metric Metrics, dmat tensor.Tensor) *Node {
 	ntot := dmat.DimSize(0) // number of leaves
 	mout := tensor.NewFloat64Scalar(0)
 	stats.MaxOut(tensor.As1D(dmat), mout)
@@ -131,7 +131,7 @@ func Glom(root *Node, funcName string, dmat tensor.Tensor) *Node {
 				bctr := 0
 				kb.Indexes(bidx, &bctr)
 				bix := bidx[0:bctr]
-				dv := Call(funcName, aix, bix, ntot, maxd, dmat)
+				dv := metric.Call(aix, bix, ntot, maxd, dmat)
 				if dv < mval {
 					mval = dv
 					ma = []int{ai}

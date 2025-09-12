@@ -10,7 +10,6 @@ import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/core"
-	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/plotcore"
 	"cogentcore.org/lab/stats/cluster"
 	"cogentcore.org/lab/stats/metric"
@@ -55,14 +54,7 @@ func main() {
 	plt := plotcore.NewEditor(ct)
 	ctb.Maker(plt.MakeToolbar)
 
-	dm := metric.Matrix(metric.L2Norm, pats.Column("Input"))
-	cnd := cluster.Cluster("Min", dm, pats.Column("Name"))
-	pdt := table.New()
-	cluster.Plot(pdt, cnd, dm, pats.Column("Name"))
-	stys := plotcore.BasicStylers()
-	plot.Styler(pdt.Columns.At("X"), stys[0])
-	plot.Styler(pdt.Columns.At("Y"), stys[1])
-	plt.SetTable(pdt)
+	cluster.PlotFromTable(plt, pats, metric.MetricL2Norm, cluster.Min, "Input", "Name")
 
 	b.RunMainWindow()
 }
