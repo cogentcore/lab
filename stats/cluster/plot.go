@@ -12,6 +12,9 @@ import (
 	"cogentcore.org/lab/tensor"
 )
 
+// PlotFromTable creates a cluster plot in given [plotcore.Editor]
+// using data from given data table, in column dataColumn, and labels from labelColumn,
+// with given distance metric and cluster metric functions.
 func PlotFromTable(plt *plotcore.Editor, dt *table.Table, distMetric metric.Metrics, clustMetric Metrics, dataColumn, labelColumn string) {
 	dm := metric.Matrix(distMetric.Func(), dt.Column(dataColumn))
 	labels := dt.Column(labelColumn)
