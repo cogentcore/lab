@@ -171,6 +171,21 @@ func (ts *Tabs) PlotTable(label string, dt *table.Table) *plotcore.Editor {
 	return pl
 }
 
+// NewPlot recycles a tab with a plotcore.Editor.
+func (ts *Tabs) NewPlot(label string) *plotcore.Editor {
+	pl := NewTab(ts, label, func(tab *core.Frame) *plotcore.Editor {
+		tb := core.NewToolbar(tab)
+		pl := plotcore.NewEditor(tab)
+		tab.Styler(func(s *styles.Style) {
+			s.Direction = styles.Column
+			s.Grow.Set(1, 1)
+		})
+		tb.Maker(pl.MakeToolbar)
+		return pl
+	})
+	return pl
+}
+
 // PlotTensorFS recycles a tab with a Plot of given [tensorfs.Node].
 func (ts *Tabs) PlotTensorFS(dfs *tensorfs.Node) *plotcore.Editor {
 	label := DirAndFileNoSlash(dfs.Path()) + " Plot"
