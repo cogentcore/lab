@@ -18,9 +18,7 @@ func PlotFromTable(plt *plotcore.Editor, dt *table.Table, distMetric metric.Metr
 	cnd := Cluster(clustMetric, dm, labels)
 	pdt := table.New()
 	Plot(pdt, cnd, dm, labels)
-	stys := plotcore.BasicStylers()
-	plot.Styler(pdt.Columns.At("X"), stys[0])
-	plot.Styler(pdt.Columns.At("Y"), stys[1])
+	plotcore.SetBasicStylers(pdt)
 	plot.Styler(pdt.Columns.At("Label"), func(s *plot.Style) {
 		s.On = true
 	})
