@@ -36,7 +36,7 @@ func TestClust(t *testing.T) {
 	in := dt.Column("Input")
 	out := metric.Matrix(metric.L2Norm, in)
 
-	cl := Cluster(Avg.String(), out, dt.Column("Name"))
+	cl := Cluster(Avg, out, dt.Column("Name"))
 
 	var dists []float64
 
