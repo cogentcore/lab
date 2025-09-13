@@ -20,9 +20,20 @@ func PlotFromTable(pt *table.Table, dt *table.Table, distMetric metric.Metrics, 
 	labels := dt.Column(labelColumn)
 	cnd := Cluster(clustMetric, dm, labels)
 	Plot(pt, cnd, dm, labels)
-	plot.SetBasicStylers(pt)
+	plot.Styler(pt.Columns.Values[0], func(s *plot.Style) {
+		s.Role = plot.X
+		s.Plot.PointsOn = plot.Off
+	})
+	plot.Styler(pt.Columns.Values[1], func(s *plot.Style) {
+		s.On = true
+		s.Role = plot.Y
+		s.Plot.PointsOn = plot.Off
+	})
 	plot.Styler(pt.Columns.At("Label"), func(s *plot.Style) {
 		s.On = true
+		s.Role = plot.Label
+		s.Plotter = "Labels"
+		s.Plot.PointsOn = plot.Off
 	})
 }
 

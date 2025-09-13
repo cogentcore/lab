@@ -205,9 +205,9 @@ func BasicStylers() Stylers {
 	return Stylers{
 		func(s *Style) {
 			s.Role = X
-			s.Plotter = PlotterName("XY")
 		},
 		func(s *Style) {
+			s.Role = Y
 			s.On = true
 		},
 	}
