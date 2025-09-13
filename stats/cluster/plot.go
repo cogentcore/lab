@@ -20,21 +20,6 @@ func PlotFromTable(pt *table.Table, dt *table.Table, distMetric metric.Metrics, 
 	labels := dt.Column(labelColumn)
 	cnd := Cluster(clustMetric, dm, labels)
 	Plot(pt, cnd, dm, labels)
-	plot.Styler(pt.Columns.Values[0], func(s *plot.Style) {
-		s.Role = plot.X
-		s.Plot.PointsOn = plot.Off
-	})
-	plot.Styler(pt.Columns.Values[1], func(s *plot.Style) {
-		s.On = true
-		s.Role = plot.Y
-		s.Plot.PointsOn = plot.Off
-	})
-	plot.Styler(pt.Columns.At("Label"), func(s *plot.Style) {
-		s.On = true
-		s.Role = plot.Label
-		s.Plotter = "Labels"
-		s.Plot.PointsOn = plot.Off
-	})
 }
 
 // Plot sets the rows of given data table to trace out lines with labels that
@@ -49,6 +34,26 @@ func Plot(pt *table.Table, root *Node, dmat, labels tensor.Tensor) {
 	root.SetYs(&nextY)
 	root.SetParDist(0.0)
 	root.Plot(pt, dmat, labels)
+
+	plot.SetFirstStyler(pt.Columns.Values[0], func(s *plot.Style) {
+		s.Role = plot.X
+		s.Plot.PointsOn = plot.Off
+	})
+	plot.SetFirstStyler(pt.Columns.Values[1], func(s *plot.Style) {
+		s.On = true
+		s.Role = plot.Y
+		s.Plot.PointsOn = plot.Off
+		s.Range.FixMin = true
+		s.NoLegend = true
+	})
+	plot.SetFirstStyler(pt.Columns.At("Label"), func(s *plot.Style) {
+		s.On = true
+		s.Role = plot.Label
+		s.Plotter = "Labels"
+		s.Plot.PointsOn = plot.Off
+		s.Text.Offset.Y.Dp(8)
+		s.Text.Offset.X.Dp(2)
+	})
 }
 
 // Plot sets the rows of given data table to trace out lines with labels that

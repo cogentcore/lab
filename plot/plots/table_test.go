@@ -141,3 +141,29 @@ func TestTableSplit(t *testing.T) {
 	fnm := "table_split.png"
 	imagex.Assert(t, plt.RenderImage(), fnm)
 }
+
+func TestTableBarXLabels(t *testing.T) {
+	dt := table.New()
+	err := dt.OpenCSV("testdata/table_bar_data.tsv", tensor.Tab)
+	assert.NoError(t, err)
+
+	// attach stylers to the Y axis data: that is where plotter looks for it
+	genst := func(s *plot.Style) {
+		s.Plot.Title = "Test Bar Data"
+		// s.Plot.XAxis.Column = "JobLabel"
+		s.Plotter = "Bar"
+	}
+	plot.SetStyler(dt.Columns.At("EpochsToCrit"), genst, func(s *plot.Style) {
+		s.On = true
+		s.Plotter = "Bar"
+		s.Role = plot.Y
+	})
+	plot.SetStyler(dt.Columns.At("JobLabel"), func(s *plot.Style) {
+		s.Plotter = "Bar"
+		s.Role = plot.X
+	})
+	plt, err := plot.NewTablePlot(dt)
+	assert.NoError(t, err)
+	fnm := "table_bar_x_labels.png"
+	imagex.Assert(t, plt.RenderImage(), fnm)
+}

@@ -551,3 +551,15 @@ func TestTicks(t *testing.T) {
 
 	imagex.Assert(t, plt.RenderImage(), "style_noticks")
 }
+
+func TestBarXLabels(t *testing.T) {
+	yd := make(plot.Values, 3)
+	xl := plot.Labels{"xv1", "xv2", "xv3"}
+	for i := range yd {
+		yd[i] = float64(5) + float64(i)*2
+	}
+	plt := plot.New()
+	NewBar(plt, plot.Data{plot.X: xl, plot.Y: yd})
+	fnm := "bar-x-labels.png"
+	imagex.Assert(t, plt.RenderImage(), fnm)
+}
