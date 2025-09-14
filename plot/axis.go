@@ -174,6 +174,13 @@ func (ax *Axis) SanitizeRange() {
 	}
 }
 
+func (ax *Axis) SetTickLabel(i int, lbl string) {
+	if len(ax.ticks) <= i {
+		return
+	}
+	ax.ticks[i].Label = lbl
+}
+
 // Normalizer rescales values from the data coordinate system to the
 // normalized coordinate system.
 type Normalizer interface {

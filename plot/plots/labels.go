@@ -114,7 +114,10 @@ func (lb *Labels) Plot(plt *plot.Plot) {
 	nskip := lb.Style.LabelSkip
 	skip := nskip // start with label
 	for i, label := range lb.Labels {
-		if label == "" || skip != nskip {
+		if label == "" {
+			continue
+		}
+		if skip != nskip {
 			skip++
 			continue
 		}

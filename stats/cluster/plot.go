@@ -6,26 +6,20 @@ package cluster
 
 import (
 	"cogentcore.org/lab/plot"
-	"cogentcore.org/lab/plotcore"
 	"cogentcore.org/lab/stats/metric"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 )
 
-// PlotFromTable creates a cluster plot in given [plotcore.Editor]
-// using data from given data table, in column dataColumn, and labels from labelColumn,
-// with given distance metric and cluster metric functions.
-func PlotFromTable(plt *plotcore.Editor, dt *table.Table, distMetric metric.Metrics, clustMetric Metrics, dataColumn, labelColumn string) {
+// PlotFromTable creates a cluster plot in given plot data table
+// using data from given data table, in column dataColumn,
+// and labels from labelColumn, with given distance metric
+// and cluster metric functions.
+func PlotFromTable(pt *table.Table, dt *table.Table, distMetric metric.Metrics, clustMetric Metrics, dataColumn, labelColumn string) {
 	dm := metric.Matrix(distMetric.Func(), dt.Column(dataColumn))
 	labels := dt.Column(labelColumn)
 	cnd := Cluster(clustMetric, dm, labels)
-	pdt := table.New()
-	Plot(pdt, cnd, dm, labels)
-	plotcore.SetBasicStylers(pdt)
-	plot.Styler(pdt.Columns.At("Label"), func(s *plot.Style) {
-		s.On = true
-	})
-	plt.SetTable(pdt)
+	Plot(pt, cnd, dm, labels)
 }
 
 // Plot sets the rows of given data table to trace out lines with labels that
@@ -40,6 +34,26 @@ func Plot(pt *table.Table, root *Node, dmat, labels tensor.Tensor) {
 	root.SetYs(&nextY)
 	root.SetParDist(0.0)
 	root.Plot(pt, dmat, labels)
+
+	plot.SetFirstStyler(pt.Columns.Values[0], func(s *plot.Style) {
+		s.Role = plot.X
+		s.Plot.PointsOn = plot.Off
+	})
+	plot.SetFirstStyler(pt.Columns.Values[1], func(s *plot.Style) {
+		s.On = true
+		s.Role = plot.Y
+		s.Plot.PointsOn = plot.Off
+		s.Range.FixMin = true
+		s.NoLegend = true
+	})
+	plot.SetFirstStyler(pt.Columns.At("Label"), func(s *plot.Style) {
+		s.On = true
+		s.Role = plot.Label
+		s.Plotter = "Labels"
+		s.Plot.PointsOn = plot.Off
+		s.Text.Offset.Y.Dp(8)
+		s.Text.Offset.X.Dp(2)
+	})
 }
 
 // Plot sets the rows of given data table to trace out lines with labels that

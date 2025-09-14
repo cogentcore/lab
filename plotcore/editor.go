@@ -169,28 +169,6 @@ func (pl *Editor) SetSlice(sl any, stylers ...func(s *plot.Style)) *Editor {
 	return pl.SetTable(dt)
 }
 
-// BasicStylers returns a basic set of [plot.Stylers] that can be used with
-// functions like [Editor.SetSlice]. They make the first column the x-axis,
-// and turn on the second column.
-func BasicStylers() plot.Stylers {
-	return plot.Stylers{
-		func(s *plot.Style) {
-			s.Role = plot.X
-		},
-		func(s *plot.Style) {
-			s.On = true
-		},
-	}
-}
-
-// SetBasicStylers applies [BasicStylers] to the first two columns of the given
-// table.
-func SetBasicStylers(dt *table.Table) {
-	bs := BasicStylers()
-	plot.Styler(dt.Columns.Values[0], bs[0])
-	plot.Styler(dt.Columns.Values[1], bs[1])
-}
-
 // SaveSVG saves the plot to an svg -- first updates to ensure that plot is current
 func (pl *Editor) SaveSVG(fname core.Filename) { //types:add
 	plt := pl.plotWidget.Plot
