@@ -62,7 +62,7 @@ func TestTableCluster(t *testing.T) {
 	assert.NoError(t, err)
 
 	pt := table.New()
-	PlotFromTable(pt, dt, metric.MetricL2Norm, Min, "Input", "Name")
+	PlotFromTableToTable(pt, dt, metric.MetricL2Norm, Min, "Input", "Name")
 	plt, err := plot.NewTablePlot(pt)
 	assert.NoError(t, err)
 	fnm := "table_cluster.png"

@@ -54,9 +54,7 @@ func main() {
 	plt := plotcore.NewEditor(ct)
 	ctb.Maker(plt.MakeToolbar)
 
-	pt := table.New()
-	cluster.PlotFromTable(pt, pats, metric.MetricL2Norm, cluster.Min, "Input", "Name")
-	plt.SetTable(pt)
+	cluster.PlotFromTable(plt, pats, metric.MetricL2Norm, cluster.Min, "Input", "Name")
 
 	b.RunMainWindow()
 }

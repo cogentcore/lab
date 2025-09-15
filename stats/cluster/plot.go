@@ -6,16 +6,27 @@ package cluster
 
 import (
 	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/plotcore"
 	"cogentcore.org/lab/stats/metric"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 )
 
-// PlotFromTable creates a cluster plot in given plot data table
+// PlotFromTable creates a cluster plot in given [plotcore.Editor] plot
 // using data from given data table, in column dataColumn,
 // and labels from labelColumn, with given distance metric
 // and cluster metric functions.
-func PlotFromTable(pt *table.Table, dt *table.Table, distMetric metric.Metrics, clustMetric Metrics, dataColumn, labelColumn string) {
+func PlotFromTable(plt *plotcore.Editor, dt *table.Table, distMetric metric.Metrics, clustMetric Metrics, dataColumn, labelColumn string) {
+	pt := table.New()
+	PlotFromTableToTable(pt, dt, distMetric, clustMetric, dataColumn, labelColumn)
+	plt.SetTable(pt)
+}
+
+// PlotFromTableToTable creates a cluster plot data to output data table (pt)
+// using data from given data table (dt), in column dataColumn,
+// and labels from labelColumn, with given distance metric
+// and cluster metric functions.
+func PlotFromTableToTable(pt *table.Table, dt *table.Table, distMetric metric.Metrics, clustMetric Metrics, dataColumn, labelColumn string) {
 	dm := metric.Matrix(distMetric.Func(), dt.Column(dataColumn))
 	labels := dt.Column(labelColumn)
 	cnd := Cluster(clustMetric, dm, labels)
