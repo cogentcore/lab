@@ -31,91 +31,91 @@ fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
 }
 
 fn BigGet(ix: u32) -> f32 {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		return Big0[ix];
 	}
 	case u32(1): {
-		return Big1[ix - 536870912];
+		return Big1[ix - 536870904];
 	}
 	default: {
-		return Big2[ix - 1073741824];
+		return Big2[ix - 1073741808];
 	}
 	}
 }
 
 fn BigSet(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		Big0[ix] = vl;
 	}
 	case u32(1): {
-		Big1[ix - 536870912] = vl;
+		Big1[ix - 536870904] = vl;
 	}
 	default: {
-		Big2[ix - 1073741824] = vl;
+		Big2[ix - 1073741808] = vl;
 	}
 	}
 }
 
 fn BigSetAdd(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		Big0[ix] += vl;
 	}
 	case u32(1): {
-		Big1[ix - 536870912] += vl;
+		Big1[ix - 536870904] += vl;
 	}
 	default: {
-		Big2[ix - 1073741824] += vl;
+		Big2[ix - 1073741808] += vl;
 	}
 	}
 }
 
 fn BigSetSub(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		Big0[ix] -= vl;
 	}
 	case u32(1): {
-		Big1[ix - 536870912] -= vl;
+		Big1[ix - 536870904] -= vl;
 	}
 	default: {
-		Big2[ix - 1073741824] -= vl;
+		Big2[ix - 1073741808] -= vl;
 	}
 	}
 }
 
 fn BigSetMul(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		Big0[ix] *= vl;
 	}
 	case u32(1): {
-		Big1[ix - 536870912] *= vl;
+		Big1[ix - 536870904] *= vl;
 	}
 	default: {
-		Big2[ix - 1073741824] *= vl;
+		Big2[ix - 1073741808] *= vl;
 	}
 	}
 }
 
 fn BigSetDiv(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		Big0[ix] /= vl;
 	}
 	case u32(1): {
-		Big1[ix - 536870912] /= vl;
+		Big1[ix - 536870904] /= vl;
 	}
 	default: {
-		Big2[ix - 1073741824] /= vl;
+		Big2[ix - 1073741808] /= vl;
 	}
 	}
 }
