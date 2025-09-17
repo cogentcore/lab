@@ -232,7 +232,6 @@ func (bc *Bar) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
 	var ticks plot.ConstantTicks
 	if bc.XLabels != nil {
 		ticks = make(plot.ConstantTicks, len(bc.Y))
-		fmt.Println("ticks:", bc.XLabels)
 	}
 
 	for i, val := range bc.Y {
