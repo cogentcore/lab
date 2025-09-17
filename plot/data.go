@@ -246,6 +246,20 @@ func CopyRole(data Data, role Roles) Values {
 	return v
 }
 
+// CopyRoleLabels returns Labels copy of given role from given data map,
+// returning nil if role not present.
+func CopyRoleLabels(data Data, role Roles) Labels {
+	d, ok := data[role]
+	if !ok {
+		return nil
+	}
+	l := make(Labels, d.Len())
+	for i := range l {
+		l[i] = d.String1D(i)
+	}
+	return l
+}
+
 // PlotX returns plot pixel X coordinate values for given data.
 func PlotX(plt *Plot, data Valuer) []float32 {
 	px := make([]float32, data.Len())

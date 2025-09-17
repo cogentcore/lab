@@ -8,6 +8,7 @@ import (
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/styles/units"
+	"cogentcore.org/lab/table"
 )
 
 // Style contains the plot styling properties relevant across
@@ -195,6 +196,29 @@ func GetStylersFromData(data Data, role Roles) Stylers {
 		return nil
 	}
 	return GetStylers(vr)
+}
+
+// BasicStylers returns a basic set of [Stylers] that can be used with
+// functions like [Editor.SetSlice]. They make the first column the x-axis,
+// and turn on the second column.
+func BasicStylers() Stylers {
+	return Stylers{
+		func(s *Style) {
+			s.Role = X
+		},
+		func(s *Style) {
+			s.Role = Y
+			s.On = true
+		},
+	}
+}
+
+// SetBasicStylers applies [BasicStylers] to the first two columns of the given
+// table.
+func SetBasicStylers(dt *table.Table) {
+	bs := BasicStylers()
+	Styler(dt.Columns.Values[0], bs[0])
+	Styler(dt.Columns.Values[1], bs[1])
 }
 
 ////////

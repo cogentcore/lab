@@ -10,7 +10,6 @@ import (
 func init() {
 	Symbols["cogentcore.org/lab/plotcore/plotcore"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"BasicStylers":      reflect.ValueOf(plotcore.BasicStylers),
 		"NewEditor":         reflect.ValueOf(plotcore.NewEditor),
 		"NewPlot":           reflect.ValueOf(plotcore.NewPlot),
 		"NewPlotterChooser": reflect.ValueOf(plotcore.NewPlotterChooser),

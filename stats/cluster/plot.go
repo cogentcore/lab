@@ -5,9 +5,33 @@
 package cluster
 
 import (
+	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/plotcore"
+	"cogentcore.org/lab/stats/metric"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 )
+
+// PlotFromTable creates a cluster plot in given [plotcore.Editor] plot
+// using data from given data table, in column dataColumn,
+// and labels from labelColumn, with given distance metric
+// and cluster metric functions.
+func PlotFromTable(plt *plotcore.Editor, dt *table.Table, distMetric metric.Metrics, clustMetric Metrics, dataColumn, labelColumn string) {
+	pt := table.New()
+	PlotFromTableToTable(pt, dt, distMetric, clustMetric, dataColumn, labelColumn)
+	plt.SetTable(pt)
+}
+
+// PlotFromTableToTable creates a cluster plot data to output data table (pt)
+// using data from given data table (dt), in column dataColumn,
+// and labels from labelColumn, with given distance metric
+// and cluster metric functions.
+func PlotFromTableToTable(pt *table.Table, dt *table.Table, distMetric metric.Metrics, clustMetric Metrics, dataColumn, labelColumn string) {
+	dm := metric.Matrix(distMetric.Func(), dt.Column(dataColumn))
+	labels := dt.Column(labelColumn)
+	cnd := Cluster(clustMetric, dm, labels)
+	Plot(pt, cnd, dm, labels)
+}
 
 // Plot sets the rows of given data table to trace out lines with labels that
 // will render cluster plot starting at root node when plotted with a standard plotting package.
@@ -21,6 +45,26 @@ func Plot(pt *table.Table, root *Node, dmat, labels tensor.Tensor) {
 	root.SetYs(&nextY)
 	root.SetParDist(0.0)
 	root.Plot(pt, dmat, labels)
+
+	plot.SetFirstStyler(pt.Columns.Values[0], func(s *plot.Style) {
+		s.Role = plot.X
+		s.Plot.PointsOn = plot.Off
+	})
+	plot.SetFirstStyler(pt.Columns.Values[1], func(s *plot.Style) {
+		s.On = true
+		s.Role = plot.Y
+		s.Plot.PointsOn = plot.Off
+		s.Range.FixMin = true
+		s.NoLegend = true
+	})
+	plot.SetFirstStyler(pt.Columns.At("Label"), func(s *plot.Style) {
+		s.On = true
+		s.Role = plot.Label
+		s.Plotter = "Labels"
+		s.Plot.PointsOn = plot.Off
+		s.Text.Offset.Y.Dp(8)
+		s.Text.Offset.X.Dp(2)
+	})
 }
 
 // Plot sets the rows of given data table to trace out lines with labels that

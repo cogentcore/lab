@@ -12,6 +12,7 @@
 package plots
 
 import (
+	"fmt"
 	"math"
 
 	"cogentcore.org/core/base/errors"
@@ -24,7 +25,7 @@ import (
 const BarType = "Bar"
 
 func init() {
-	plot.RegisterPlotter(BarType, "A Bar presents ordinally-organized data with rectangular bars with lengths proportional to the data values, and an optional error bar at the top of the bar using the High data role.", []plot.Roles{plot.Y}, []plot.Roles{plot.High}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
+	plot.RegisterPlotter(BarType, "A Bar presents ordinally-organized data with rectangular bars with lengths proportional to the data values, and an optional error bar at the top of the bar using the High data role.", []plot.Roles{plot.Y}, []plot.Roles{plot.High, plot.X}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
 		return NewBar(plt, data)
 	})
 }
@@ -43,6 +44,9 @@ type Bar struct {
 
 	// actual plotting X, Y values in data coordinates, taking into account stacking etc.
 	X, Yp plot.Values
+
+	// optional labels for X axis.
+	XLabels plot.Labels
 
 	// PX, PY are the actual pixel plotting coordinates for each XY value.
 	PX, PY []float32
@@ -82,6 +86,7 @@ func NewBar(plt *plot.Plot, data any) *Bar {
 	if bc.Y == nil {
 		return nil
 	}
+	bc.XLabels = plot.CopyRoleLabels(dt, plot.X)
 	bc.stylers = plot.GetStylersFromData(dt, plot.Y)
 	bc.Err = plot.CopyRole(dt, plot.High)
 	bc.Defaults()
@@ -224,6 +229,11 @@ func (bc *Bar) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
 		y = yr
 	}
 
+	var ticks plot.ConstantTicks
+	if bc.XLabels != nil {
+		ticks = make(plot.ConstantTicks, len(bc.Y))
+	}
+
 	for i, val := range bc.Y {
 		valBot := bc.StackedOn.BarHeight(i)
 		valTop := valBot + val
@@ -237,13 +247,28 @@ func (bc *Bar) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
 			y.FitValInRange(valBot)
 			y.FitValInRange(valTop)
 		}
+		if bc.XLabels != nil {
+			cat := bw.Offset + float64(i)*bw.Stride
+			ticks[i].Value = cat
+			if bc.XLabels.Len() > i {
+				ticks[i].Label = bc.XLabels[i]
+			} else {
+				ticks[i].Label = fmt.Sprintf("%d", i)
+			}
+		}
 	}
 	if bc.Horizontal {
 		x.Min, x.Max = bc.Style.Range.Clamp(x.Min, x.Max)
 		y.FitInRange(minmax.F64{catMin, catMax})
+		if ticks != nil {
+			plt.Y.Ticker = ticks
+		}
 	} else {
 		y.Min, y.Max = bc.Style.Range.Clamp(y.Min, y.Max)
 		x.FitInRange(minmax.F64{catMin, catMax})
+		if ticks != nil {
+			plt.X.Ticker = ticks
+		}
 	}
 }
 
