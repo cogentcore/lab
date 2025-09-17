@@ -222,7 +222,7 @@ func ToGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(1, "Data", 0)
 			gpu.SetValueFrom(v, Data.Values)
 		case BigVar:
-			bsz := 536870912
+			bsz := 536870904
 			n := Big.Len()
 			nb := int(math.Ceil(float64(n) / float64(bsz)))
 			for bi := range nb {
@@ -277,7 +277,7 @@ func ReadFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(1, "Data", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case BigVar:
-			bsz := 536870912
+			bsz := 536870904
 			n := Big.Len()
 			nb := int(math.Ceil(float64(n) / float64(bsz)))
 			for bi := range nb {
@@ -307,7 +307,7 @@ func SyncFromGPU(vars ...GPUVars) {
 			v.ReadSync()
 			gpu.ReadToBytes(v, Data.Values)
 		case BigVar:
-			bsz := 536870912
+			bsz := 536870904
 			n := Big.Len()
 			nb := int(math.Ceil(float64(n) / float64(bsz)))
 			for bi := range nb {

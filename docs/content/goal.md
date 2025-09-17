@@ -32,5 +32,12 @@ A key design feature of Goal is that it always _transpiles directly to Go_ in a 
 
 Goal can also be used in conjunction with [[gosl]] to build programs that transparently run on GPU hardware in addition to standard CPUs (as standard Go programs).
 
+## Install
+
+```shell
+go install cogentcore.org/lab/goal/cmd/goal@latest
+```
+
+
 ## Goal pages
 
