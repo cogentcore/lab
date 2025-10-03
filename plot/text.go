@@ -104,7 +104,7 @@ func (tx *Text) Config(pt *Plot) {
 	// txs := &pt.StandardTextStyle
 
 	rt, _ := htmltext.HTMLToRich([]byte(tx.Text), fs, nil)
-	tx.PaintText = pt.TextShaper.WrapLines(rt, fs, ts, &rich.DefaultSettings, math32.Vec2(hsz, fht))
+	tx.PaintText = pt.TextShaper.WrapLines(rt, fs, ts, math32.Vec2(hsz, fht))
 }
 
 func (tx *Text) ToDots(uc *units.Context) {
