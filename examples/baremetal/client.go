@@ -114,3 +114,17 @@ func (cl *Client) FetchResults(resultsGlob string, ids ...int) ([]*Job, error) {
 func (cl *Client) UpdateJobs() {
 	return
 }
+
+// RecoverJob recovers a job which has been lost somehow.
+// It just adds the given job to the job table.
+func (cl *Client) RecoverJob(job *Job) (*Job, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), cl.Timeout)
+	defer cancel()
+
+	pjob := JobToPB(job)
+	rjob, err := cl.client.RecoverJob(ctx, pjob)
+	if err != nil {
+		return nil, errors.Log(fmt.Errorf("RecoverJob failed: %v", err))
+	}
+	return JobFromPB(rjob), nil
+}

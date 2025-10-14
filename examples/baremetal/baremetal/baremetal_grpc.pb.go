@@ -25,6 +25,7 @@ const (
 	BareMetal_CancelJobs_FullMethodName   = "/baremetal.BareMetal/CancelJobs"
 	BareMetal_FetchResults_FullMethodName = "/baremetal.BareMetal/FetchResults"
 	BareMetal_UpdateJobs_FullMethodName   = "/baremetal.BareMetal/UpdateJobs"
+	BareMetal_RecoverJob_FullMethodName   = "/baremetal.BareMetal/RecoverJob"
 )
 
 // BareMetalClient is the client API for BareMetal service.
@@ -36,6 +37,7 @@ type BareMetalClient interface {
 	CancelJobs(ctx context.Context, in *JobIDList, opts ...grpc.CallOption) (*Error, error)
 	FetchResults(ctx context.Context, in *JobIDList, opts ...grpc.CallOption) (*JobList, error)
 	UpdateJobs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RecoverJob(ctx context.Context, in *Job, opts ...grpc.CallOption) (*Job, error)
 }
 
 type bareMetalClient struct {
@@ -96,6 +98,16 @@ func (c *bareMetalClient) UpdateJobs(ctx context.Context, in *emptypb.Empty, opt
 	return out, nil
 }
 
+func (c *bareMetalClient) RecoverJob(ctx context.Context, in *Job, opts ...grpc.CallOption) (*Job, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Job)
+	err := c.cc.Invoke(ctx, BareMetal_RecoverJob_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BareMetalServer is the server API for BareMetal service.
 // All implementations must embed UnimplementedBareMetalServer
 // for forward compatibility.
@@ -105,6 +117,7 @@ type BareMetalServer interface {
 	CancelJobs(context.Context, *JobIDList) (*Error, error)
 	FetchResults(context.Context, *JobIDList) (*JobList, error)
 	UpdateJobs(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	RecoverJob(context.Context, *Job) (*Job, error)
 	mustEmbedUnimplementedBareMetalServer()
 }
 
@@ -129,6 +142,9 @@ func (UnimplementedBareMetalServer) FetchResults(context.Context, *JobIDList) (*
 }
 func (UnimplementedBareMetalServer) UpdateJobs(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateJobs not implemented")
+}
+func (UnimplementedBareMetalServer) RecoverJob(context.Context, *Job) (*Job, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecoverJob not implemented")
 }
 func (UnimplementedBareMetalServer) mustEmbedUnimplementedBareMetalServer() {}
 func (UnimplementedBareMetalServer) testEmbeddedByValue()                   {}
@@ -241,6 +257,24 @@ func _BareMetal_UpdateJobs_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BareMetal_RecoverJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Job)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BareMetalServer).RecoverJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BareMetal_RecoverJob_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BareMetalServer).RecoverJob(ctx, req.(*Job))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // BareMetal_ServiceDesc is the grpc.ServiceDesc for BareMetal service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -267,6 +301,10 @@ var BareMetal_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateJobs",
 			Handler:    _BareMetal_UpdateJobs_Handler,
+		},
+		{
+			MethodName: "RecoverJob",
+			Handler:    _BareMetal_RecoverJob_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

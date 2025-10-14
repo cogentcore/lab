@@ -210,7 +210,9 @@ func (bm *BareMetal) runPendingJobs() (int, error) {
 	return nRun, errors.Join(errs...)
 }
 
-// cancelJobs cancels list of job IDs. Returns error for jobs not found.
+// cancelJobs cancels list of job IDs.
+// This is robust to jobs that are not found, and will 
+// create data for them, as a way of recovering the status of these jobs.
 func (bm *BareMetal) cancelJobs(jobs ...int) error {
 	var errs []error
 	for _, jid := range jobs {
@@ -411,5 +413,14 @@ func (bm *BareMetal) setServerUsedFromJobs() error {
 		sv.Used[job.ServerGPU] = true
 	}
 	return errors.Join(errs...)
+}
+
+// recoverJob attempts to recover the job information 
+// from given job, using remote or local data.
+func (bm *BareMetal) recoverJob(job *Job) (*Job, error) {
+	// do we need to do anything actually?
+	bm.Active.Add(job.ID, job)
+	bm.saveState()
+	return job, nil
 }
 

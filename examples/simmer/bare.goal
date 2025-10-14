@@ -10,6 +10,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 	"os"
 	
 	"cogentcore.org/core/base/errors"
@@ -144,5 +145,34 @@ func (sr *Simmer) CancelJobsBare(jobs []string) {
 		}
 	}
 	sr.BareMetal.CancelJobs(jnos...)
+}
+
+func (sr *Simmer) RecoverJobsBare(jobs []string) {
+	for _, jid := range jobs {
+		jno := 0
+		sjob := sr.ValueForJob(jid, "ServerJob")
+		if sjob != "" {
+			jno = errors.Log1(strconv.Atoi(sjob))
+		} else {
+			fmt.Println("job does not have a ServerJob id")
+		}
+		job := &baremetal.Job{ID: jno}
+		job.Status.SetString(sr.ValueForJob(jid, "Status"))
+		job.Path = sr.ServerJobPath(jid)
+		job.Source = sr.Config.Project
+		job.Script = "job.sbatch"
+		job.ResultsGlob = sr.Config.FetchFiles
+		job.Submit = errors.Log1(time.Parse(sr.Config.TimeFormat, sr.ValueForJob(jid, "Submit")))
+		job.Start = errors.Log1(time.Parse(sr.Config.TimeFormat, sr.ValueForJob(jid, "Start")))
+		job.End = errors.Log1(time.Parse(sr.Config.TimeFormat, sr.ValueForJob(jid, "End")))
+		job.ServerName = sr.ValueForJob(jid, "Server")
+		// todo: PID
+		// jpath := sr.JobPath(jid)
+		// @0
+		// cd {jpath}
+		// job.Status = goalib.ReadFile("job.status")
+		// job.Label = goalib.ReadFile("job.label")
+		sr.BareMetal.RecoverJob(job)
+	}
 }
 

@@ -262,6 +262,9 @@ func (sr *Simmer) MakeToolbar(p *tree.Plan) {
 		w.SetFunc(sr.Archive).SetIcon(icons.Archive)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(sr.Recover).SetIcon(icons.Archive)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(sr.EditConfig).SetIcon(icons.Edit)
 	})
 	tree.Add(p, func(w *core.Button) {

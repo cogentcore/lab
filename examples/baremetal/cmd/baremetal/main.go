@@ -73,6 +73,14 @@ func (s *server) UpdateJobs(_ context.Context, in *emptypb.Empty) (*emptypb.Empt
 	return &emptypb.Empty{}, nil
 }
 
+// RecoverJob
+func (s *server) RecoverJob(_ context.Context, in *pb.Job) (*pb.Job, error) {
+	slog.Info("RecoverJob")
+	job, err := s.bm.RecoverJob(baremetal.JobFromPB(in))
+	errors.Log(err)
+	return baremetal.JobToPB(job), err
+}
+
 func main() {
 	logx.UserLevel = slog.LevelInfo
 	opts := cli.DefaultOptions("baremetal", "Bare metal server for job running on bare servers over ssh")
