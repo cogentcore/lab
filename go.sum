@@ -1,5 +1,5 @@
-cogentcore.org/core v0.3.13-0.20251009125244-9993be515523 h1:vbmBkuQJcMoKyxa+yH/BMT0p7ikX3Zz9paQ2ySzGizE=
-cogentcore.org/core v0.3.13-0.20251009125244-9993be515523/go.mod h1:bVZvk2HinEs96r3d16y4BlxS/K6jN/SJlkR5MGjOVLY=
+cogentcore.org/core v0.3.13-0.20251014131306-9996ffd52fd8 h1:p4wJuqxRDXAjv9uY3WhgFdWvxXKhkgivDi2AXM+wdAg=
+cogentcore.org/core v0.3.13-0.20251014131306-9996ffd52fd8/go.mod h1:eDHnTCy1sBhAKN9NPsSCnBW3VAnwQBNA9nbGMo9r+Xs=
 github.com/Bios-Marcel/wastebasket/v2 v2.0.3 h1:TkoDPcSqluhLGE+EssHu7UGmLgUEkWg7kNyHyyJ3Q9g=
 github.com/Bios-Marcel/wastebasket/v2 v2.0.3/go.mod h1:769oPCv6eH7ugl90DYIsWwjZh4hgNmMS3Zuhe1bH6KU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
@@ -83,6 +83,8 @@ github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
+github.com/jeandeaual/go-locale v0.0.0-20250612000132-0ef82f21eade h1:FmusiCI1wHw+XQbvL9M+1r/C3SPqKrmBaIOYwVfQoDE=
+github.com/jeandeaual/go-locale v0.0.0-20250612000132-0ef82f21eade/go.mod h1:ZDXo8KHryOWSIqnsb/CiDq7hQUYryCgdVnxbj8tDG7o=
 github.com/jinzhu/copier v0.4.0 h1:w3ciUoD19shMCRargcpm0cm91ytaBhDvuRpz1ODO/U8=
 github.com/jinzhu/copier v0.4.0/go.mod h1:DfbEm0FYsaqBcKcFuvmOZb218JkPGtvSHsKg8S8hyyg=
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=

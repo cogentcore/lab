@@ -10,7 +10,7 @@ go 1.23.4
 // https://github.com/googleapis/go-genproto/issues/1015
 
 require (
-	cogentcore.org/core v0.3.13-0.20251009125244-9993be515523
+	cogentcore.org/core v0.3.13-0.20251014131306-9996ffd52fd8
 	github.com/alecthomas/assert/v2 v2.6.0
 	github.com/cogentcore/readline v0.1.3
 	github.com/cogentcore/yaegi v0.0.0-20250622201820-b7838bdd95eb
@@ -51,6 +51,7 @@ require (
 	github.com/hack-pad/hackpadfs v0.2.1 // indirect
 	github.com/hack-pad/safejs v0.1.1 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
+	github.com/jeandeaual/go-locale v0.0.0-20250612000132-0ef82f21eade // indirect
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
