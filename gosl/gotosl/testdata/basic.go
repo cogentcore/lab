@@ -8,6 +8,7 @@ import (
 
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/gosl/slbool"
+	"cogentcore.org/lab/gosl/slvec"
 	"cogentcore.org/lab/tensor"
 )
 
@@ -126,6 +127,9 @@ type ParamStruct struct {
 
 	pad float32 // comment this out to trigger alignment warning
 
+	VXYf slvec.Vector2  // translates to vec4<f32>
+	VXYi slvec.Vector2i // translates to vec4<i32>
+
 	// extra parameters
 	Subs SubParamStruct
 }
@@ -140,7 +144,9 @@ func (ps *ParamStruct) IntegFromRaw(idx int) float32 {
 	integ += newVal
 	Data.Set(integ, int(idx), int(Integ))
 	Data.Set(math32.Exp(-integ), int(idx), int(Exp))
-	var a float32
+
+	a := ps.VXYf.X
+
 	ctx := GetCtx(0)
 	ps.AnotherMeth(ctx, idx, &a)
 	bv := Big.Value(int(idx), int(Integ))

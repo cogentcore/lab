@@ -39,6 +39,12 @@ type Replace struct {
 var Replaces = []Replace{
 	{[]byte("sltype.Uint32Vec2"), []byte("vec2<u32>")},
 	{[]byte("sltype.Float32Vec2"), []byte("vec2<f32>")},
+	{[]byte("slvec.Vector2i"), []byte("vec4<i32>")},
+	{[]byte("slvec.Vector2"), []byte("vec4<f32>")},
+	{[]byte("math32.Vector2i"), []byte("vec2<i32>")},
+	{[]byte("math32.Vector2"), []byte("vec2<f32>")},
+	{[]byte("math32.Vector3"), []byte("vec3<f32>")},
+	{[]byte("math32.Vector4"), []byte("vec4<f32>")},
 	{[]byte("float32"), []byte("f32")},
 	{[]byte("float64"), []byte("f64")}, // TODO: not yet supported
 	{[]byte("uint32"), []byte("u32")},

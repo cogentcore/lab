@@ -154,6 +154,8 @@ struct ParamStruct {
 	Dt:     f32,
 	Option: i32, // note: standard bool doesn't work
 	pad: f32, // comment this out to trigger alignment warning
+	VXYf: vec4<f32>,  // translates to vec4<f32>
+	VXYi: vec4<i32>, // translates to vec4<i32>
 	Subs: SubParamStruct,
 }
 fn ParamStruct_IntegFromRaw(ps: ParamStruct, idx: i32) -> f32 {
@@ -165,7 +167,7 @@ fn ParamStruct_IntegFromRaw(ps: ParamStruct, idx: i32) -> f32 {
 	integ += newVal;
 	Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ))] = integ;
 	Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Exp))] = exp(-integ);
-	var a: f32;
+	var a = ps.VXYf.x;
 	let ctx = Ctx[0];
 	ParamStruct_AnotherMeth(ps, ctx, idx, &a);
 	var bv = BigGet(Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(Integ)));

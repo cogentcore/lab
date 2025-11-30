@@ -39,6 +39,7 @@ func main() {
 	Data = tensor.NewFloat32()
 	Data.SetShapeSizes(n, 3)
 	nt := Data.Len()
+	Params[0].DataLen = uint32(nt)
 
 	IntData = tensor.NewInt32()
 	IntData.SetShapeSizes(n, 3)

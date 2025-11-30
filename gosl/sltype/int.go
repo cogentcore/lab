@@ -20,6 +20,26 @@ type Int32Vec4 struct {
 	W int32
 }
 
+// Add returns the vector p+q.
+func (p Int32Vec4) Add(q Int32Vec4) Int32Vec4 {
+	return Int32Vec4{p.X + q.X, p.Y + q.Y, p.Z + q.Z, p.W + q.W}
+}
+
+// Sub returns the vector p-q.
+func (p Int32Vec4) Sub(q Int32Vec4) Int32Vec4 {
+	return Int32Vec4{p.X - q.X, p.Y - q.Y, p.Z - q.Z, p.W - q.W}
+}
+
+// MulScalar returns the vector p*k.
+func (p Int32Vec4) MulScalar(k int32) Int32Vec4 {
+	return Int32Vec4{p.X * k, p.Y * k, p.Z * k, p.W * k}
+}
+
+// DivScalar returns the vector p/k.
+func (p Int32Vec4) DivScalar(k int32) Int32Vec4 {
+	return Int32Vec4{p.X / k, p.Y / k, p.Z / k, p.W / k}
+}
+
 ////////  Unsigned
 
 // Uint32Vec2 is a length 2 vector of uint32

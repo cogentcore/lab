@@ -2766,6 +2766,13 @@ func (p *printer) systemVars(d *ast.GenDecl, sysname string) {
 				p.userError(err)
 				continue
 			}
+			// by the time this happens, all types have been moved to imports and show up there
+			// so we've lost the original origin. And we'd have to make up an incompatible type name
+			// anyway, so bottom line is: all var types need to be defined locally.
+			// tt := p.getIdType(id)
+			// if tt != nil {
+			// 	fmt.Println("idtyp:", tt.String())
+			// }
 			typ = "[]" + id.Name
 		} else {
 			sel, ok := vs.Type.(*ast.SelectorExpr)

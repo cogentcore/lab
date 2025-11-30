@@ -1,6 +1,10 @@
-**Gosl** allows you to write Go programs that run on [[GPU]] hardware, by transpiling Go into the WGSL shader language used by [WebGPU](https://www.w3.org/TR/webgpu/), thereby establishing the _Go shader language_.
++++
+Name = "GoSL"
++++
 
-Gosl uses the [core gpu](https://github.com/cogentcore/core/tree/main/gpu) compute shader system, and operates within the overall [[Goal]] framework of an augmented version of the Go language.
+**GoSL** allows you to write Go programs that run on [[GPU]] hardware, by transpiling Go into the WGSL shader language used by [WebGPU](https://www.w3.org/TR/webgpu/), thereby establishing the _Go shader language_.
+
+GoSL uses the [core gpu](https://github.com/cogentcore/core/tree/main/gpu) compute shader system, and operates within the overall [[Goal]] framework of an augmented version of the Go language.
 
 The relevant regions of Go code to be run on the GPU are tagged using the `//gosl:start` and `//gosl:end` comment directives, and this code must only use basic expressions and concrete types that will compile correctly in a GPU shader (see [[#Restrictions]] below). Method functions and pass-by-reference pointer arguments to `struct` types are supported and incur no additional compute cost due to inlining (see notes below for more detail).
 
@@ -27,6 +31,8 @@ There are two key elements for GPU-enabled code:
 
 2. [[#Global variables]] on which the kernel functions _exclusively_ operate: all relevant data must be specifically copied from the CPU to the GPU and back. As explained in the [[GPU]] docs, each GPU compute shader is effectively a _standalone_ program operating on these global variables. To replicate this environment on the CPU, so the code works in both contexts, we need to make these variables global in the CPU (Go) environment as well.
 
+**IMPORTANT:** All tensor variables must be sent to the GPU at least once before running, because the generated code does not know the size of the tensor until this is done! This is true even if a variable is just a results variable that does not logically need to be uploaded to the GPU -- the overhead at startup for a single such transfer is not worth the extra complexity of creating the necessary alternative init code.
+
 `gosl` generates a file named `gosl.go` in your package directory that initializes the GPU with all of the global variables, and functions for running the kernels and syncing the gobal variable data back and forth between the CPu and GPU.
 
 ## Kernels
@@ -35,11 +41,18 @@ Each distinct compute kernel must be tagged with a `//gosl:kernel` comment direc
 ```go
 // Compute does the main computation.
 func Compute(i uint32) { //gosl:kernel
+	if i >= Params[0].DataLen { // note: essential to bounds check b/c i in 64 blocks
+		return
+	}
 	Params[0].IntegFromRaw(int(i))
 }
 ```
 
-The kernel functions receive a `uint32` index argument, and use this to index into the global variables containing the relevant data. Typically the kernel code itself just calls other relevant function(s) using the index, as in the above example. Critically, _all_ of the data that a kernel function ultimately depends on must be contained with the global variables, and these variables must have been sync'd up to the GPU from the CPU prior to running the kernel (more on this below).
+The kernel functions receive a `uint32` index argument, and use this to index into the global variables containing the relevant data. 
+
+**IMPORTANT:** the dispatch of kernels on the GPU is in blocks of 64 processors, so i will exceed the number that you pass into the `Run` function! It is essential to check bounds in every kernel.
+
+Typically the kernel code itself just calls other relevant function(s) using the index, as in the above example. Critically, _all_ of the data that a kernel function ultimately depends on must be contained with the global variables, and these variables must have been sync'd up to the GPU from the CPU prior to running the kernel (more on this below).
 
 In the CPU mode, the kernel is effectively run in a `for` loop like this:
 ```go
@@ -68,7 +81,7 @@ var (
 ```
 
 All such variables must be either:
-1. A `slice` of GPU-alignment compatible `struct` types, such as `ParamStruct` in the above example. In general such structs should be marked as `//gosl:read-only` due to various challenges associated with writing to structs, detailed below.
+1. A `slice` of GPU-alignment compatible `struct` types, such as `ParamStruct` in the above example. In general such structs should be marked as `//gosl:read-only` due to various challenges associated with writing to structs, detailed below. Due to lack of package-relative naming in the final WGSL file, any struct type defined in a sub package will show up unqualified in the generated `gosl.go` file, so a type alias is required to allow the resulting Go file to build properly.
 2. A `tensor` of a GPU-compatible elemental data type (`float32`, `uint32`, or `int32`), with the number of dimensions indicated by the `//gosl:dims <n>` tag as shown above. This is the preferred type for writable data.
 
 You can also just declare a slice of elemental GPU-compatible data values such as `float32`, but it is generally preferable to use the tensor instead, because it has built-in support for higher-dimensional indexing in a way that is transparent between CPU and GPU.
@@ -232,7 +245,7 @@ var<storage, read_write> PathGBuf: array<atomic<i32>>;
 atomicAdd(&PathGBuf[idx], val);
 ```
 
-This also unfortunately has the side-effect that you cannot do _non-atomic_ operations on atomic variables, as discussed extensively here: https://github.com/gpuweb/gpuweb/issues/2377  Gosl automatically detects the use of atomic functions on GPU variables, and tags them as atomic. 
+This also unfortunately has the side-effect that you cannot do _non-atomic_ operations on atomic variables, as discussed extensively here: https://github.com/gpuweb/gpuweb/issues/2377  GoSL automatically detects the use of atomic functions on GPU variables, and tags them as atomic. 
 
 ## Random numbers: slrand
 
@@ -244,9 +257,13 @@ See [[doc:gosl/slrand]] for a shader-optimized random number generation package,
 //gosl:end mycode
 ```
 
+## WGSL vector variables from math32.Vector2 etc: not yet
+
+WGSL supports variables like `vec4<f32>` which is equivalent to `math32.Vector4`. Unfortunately, it would be difficult to have simultaneous, transparent support for both of these types across Go and WGSL, requiring rewriting expressions on the WGSL side. It is possible, but would take a fair amount of work, and is not yet planned.
+
 ## Performance
 
 With sufficiently large N, and ignoring the data copying setup time, around ~80x speedup is typical on a Macbook Pro with M1 processor.  The `rand` example produces a 175x speedup!
 
-## Gosl pages
+
 

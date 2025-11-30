@@ -35,7 +35,7 @@ struct SubStruct {
 struct ParamStruct {
 	Tau: f32,
 	Dt: f32,
-	pad:  f32,
+	DataLen: u32,
 	pad1: f32,
 	Sub: SubStruct,
 }

@@ -153,6 +153,7 @@ func (st *State) AppendGoHeader(lines [][]byte) [][]byte {
 	"cogentcore.org/lab/gosl/slbool"
 	"cogentcore.org/lab/gosl/slrand"
 	"cogentcore.org/lab/gosl/sltype"
+	"cogentcore.org/lab/gosl/slvec"
 	"cogentcore.org/lab/tensor"
 `))
 	for impath := range st.GoImports {

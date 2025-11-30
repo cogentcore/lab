@@ -62,6 +62,7 @@ func RndGen(counter uint64, idx uint32) {
 }
 
 func Compute(i uint32) { //gosl:kernel
+	// note: this should have a bounds check here on i -- can be larger than Floats
 	RndGen(Seed[0].Seed, i)
 }
 

@@ -64,7 +64,7 @@ fmt.Println("d:", d)
 
 See [[tensor math#Alignment of shapes]] for more details on [[tensor math]] operations, using the NumPy [broadcasting](https://numpy.org/doc/stable/user/basics.broadcasting.html) logic.
 
-### Tensorfs
+### TensorFS
 
 In an interactive Goal shell (which we simulate here in the docs), variables in math mode are automatically saved to the [[tensorfs]] virtual data filesystem:
 
@@ -371,7 +371,7 @@ todo: huge amount of work needed to support complex numbers throughout!
 | . | . |`np.fft.ifft(a)` | inverse Fourier transform of `a` |
 | . | . |`signal.resample(x, np.ceil(len(x)/q))` |  downsample with low-pass filtering |
 
-### Tensorfs 
+### TensorFS
 
 The [[tensorfs]] data filesystem provides a global filesystem-like workspace for storing tensor data, and [[Goal]] has special commands and functions to facilitate interacting with it.
 

@@ -84,6 +84,7 @@ func CheckStruct(cx *Context, st *types.Struct, stName string) bool {
 			kind := bt.Kind()
 			if !(kind == types.Uint32 || kind == types.Int32 || kind == types.Float32 || kind == types.Uint64) {
 				hasErr = cx.AddError(fmt.Sprintf("    %s:  basic type != [U]Int32 or Float32: %s", fl.Name(), bt.String()), hasErr, stName)
+				fmt.Println("kind:", kind, "ft:", ft.String())
 			}
 		} else {
 			if sst, is := ut.(*types.Struct); is {
