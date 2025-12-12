@@ -18,49 +18,65 @@ import (
 	"cogentcore.org/lab/physics"
 )
 
-// World connects a Virtual World with an [xyz.Scene] to visualize the world,
-// including ability to render offscreen.
+// World displays a [physics.World] using a [xyz.Scene].
+// One World can be used for multiple different [physics.World]s which
+// is more efficient when running multiple in parallel.
+// Initial construction of the physics and visualization happens here.
 type World struct {
-
-	// World is the root Group node of the virtual world
-	World *physics.Group
-
 	// Scene is the [xyz.Scene] object for visualizing.
 	Scene *xyz.Scene
 
 	// Root is the root Group node in the Scene under which the world is rendered.
 	Root *xyz.Group
+
+	// Views are the view elements for each body in [physics.World].
+	Views []*View
 }
 
-// NewWorld returns a new World that links given [physics] world
-// (top level Group) with given [xyz.Scene], making a
-// top-level Root group in the scene.
-func NewWorld(world *physics.Group, sc *xyz.Scene) *World {
+// NewWorld returns a new World for visualizing a [physics.World].
+// with given [xyz.Scene], making a top-level Root group in the scene.
+func NewWorld(sc *xyz.Scene) *World {
 	rgp := xyz.NewGroup(sc)
 	rgp.SetName("world")
-	wr := &World{World: world, Scene: sc, Root: rgp}
-	GroupInit(wr.World, rgp)
-	wr.Update()
+	wr := &World{Scene: sc, Root: rgp}
 	return wr
 }
 
-// Init initializes the physics world, e.g., at start of a new sim run.
-func (wr *World) Init() {
-	wr.World.WorldInit()
-	wr.Update()
+// Init configures the visual world based on Views.
+// Call this _once_ after making all the new Views and Bodies.
+// (will return if already called).
+func (wr *World) Init(wl *physics.World) {
+	if len(wr.Root.Makers.Normal) > 0 {
+		return
+	}
+	wr.Root.Maker(func(p *tree.Plan) {
+		for _, vw := range wr.Views {
+			vw.Add(p)
+		}
+	})
 }
 
-// Update updates the view from current physics node state.
+// Update updates the xyz scene from current physics node state.
+// (use physics.World.SetAsCurrent()).
 func (wr *World) Update() {
+	wr.UpdateFromPhysics()
 	if wr.Scene != nil {
 		wr.Scene.Update()
 	}
 }
 
-// RenderFromNode does an offscreen render using given node
+// UpdateFromPhysics updates the World from currently active
+// physics state (use physics.World.SetAsCurrent()).
+func (wr *World) UpdateFromPhysics() {
+	for _, vw := range wr.Views {
+		vw.UpdateFromPhysics()
+	}
+}
+
+// RenderFromView does an offscreen render using given [View]
 // for the camera position and orientation, returning the render image.
 // Current scene camera is saved and restored.
-func (wr *World) RenderFromNode(node physics.Node, cam *Camera) image.Image {
+func (wr *World) RenderFromNode(vw *View, cam *Camera) image.Image {
 	sc := wr.Scene
 	camnm := "physics-view-rendernode-save"
 	sc.SaveCamera(camnm)
@@ -72,9 +88,8 @@ func (wr *World) RenderFromNode(node physics.Node, cam *Camera) image.Image {
 	sc.Camera.FOV = cam.FOV
 	sc.Camera.Near = cam.Near
 	sc.Camera.Far = cam.Far
-	nb := node.AsNodeBase()
-	sc.Camera.Pose.Pos = nb.Abs.Pos
-	sc.Camera.Pose.Quat = nb.Abs.Quat
+	sc.Camera.Pose.Pos = vw.Pos
+	sc.Camera.Pose.Quat = vw.Rot
 	sc.Camera.Pose.Scale.Set(1, 1, 1)
 
 	sc.UseAltFrame(cam.Size)

@@ -4,39 +4,38 @@
 
 package physics
 
-import (
-	"cogentcore.org/core/math32"
-	"cogentcore.org/core/tree"
-)
+//gosl:start
 
 // Contact is one pairwise point of contact between two bodies.
 // Contacts are represented in spherical terms relative to the
 // spherical BBox of A and B.
-type Contact struct {
+type ContactVars int32 //enums:enum
 
-	// one body
-	A Body
+const (
+	// first body
+	ContactA ContactVars = iota
 
 	// the other body
-	B Body
+	ContactB
 
 	// normal pointing from center of B to center of A
-	NormB math32.Vector3
+	ContactNormX
+	ContactNormY
+	ContactNormZ
 
 	// point on spherical shell of B where A is contacting
-	PtB math32.Vector3
+	ContactPointX
+	ContactPointY
+	ContactPointZ
 
-	// distance from PtB along NormB to contact point on spherical shell of A
-	Dist float32
-}
+	// ContactDist is the distance from PtB along NormB to contact
+	// point on spherical shell of A.
+	ContactDist
+)
 
-// UpdateDist updates the distance information for the contact
-func (c *Contact) UpdateDist() {
+//gosl:end
 
-}
-
-// Contacts is a slice list of contacts
-type Contacts []*Contact
+/*
 
 // New adds a new contact to the list
 func (cs *Contacts) New(a, b Body) *Contact {
@@ -47,7 +46,7 @@ func (cs *Contacts) New(a, b Body) *Contact {
 
 // BodyVelBBoxIntersects returns the list of potential contact nodes between a and b
 // (could be the same or different groups) that have intersecting velocity-projected
-// bounding boxes.  In general a should be dynamic bodies and b either dynamic or static.
+// bounding boxes. In general a should be dynamic bodies and b either dynamic or static.
 // This is the broad first-pass filtering.
 func BodyVelBBoxIntersects(a, b Node) Contacts {
 	var cts Contacts
@@ -81,3 +80,5 @@ func BodyVelBBoxIntersects(a, b Node) Contacts {
 	})
 	return cts
 }
+
+*/

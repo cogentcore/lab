@@ -1,0 +1,96 @@
+// Copyright (c) 2025, Cogent Core. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package physics
+
+import (
+	"math"
+
+	"cogentcore.org/core/math32"
+)
+
+//gosl:start
+
+// JointVars are joint state variables stored in tensor.Float32
+type JointVars int32 //enums:enum
+
+const (
+	// JointType (as an int32 from bits).
+	JointType JointVars = iota
+
+	// JointA is the dynamic body index for source, anchor, A body.
+	JointA
+
+	// JointB is the dynamic body index for target, follower, B body.
+	JointB
+
+	// position of joint.
+	JointPosX
+	JointPosY
+	JointPosZ
+
+	// joint parameters, specific to each joint type.
+	JointParamA
+	JointParamB
+)
+
+func GetJointType(idx int32) JointTypes {
+	return JointTypes(math.Float32bits(Joints[idx, JointType]))
+}
+
+func SetJointType(idx int32, typ JointTypes) {
+	Joints[idx, JointType] = math.Float32frombits(uint32(typ))
+}
+
+func SetJointA(idx, bodyIdx int32) {
+	Joints[idx, JointA] = math.Float32frombits(uint32(bodyIdx))
+}
+
+func JointAIndex(idx int32) int32 {
+	return int32(math.Float32bits(Joints[idx, JointA]))
+}
+
+func SetJointB(idx, bodyIdx int32) {
+	Joints[idx, JointB] = math.Float32frombits(uint32(bodyIdx))
+}
+
+func JointBIndex(idx int32) int32 {
+	return int32(math.Float32bits(Joints[idx, JointB]))
+}
+
+func JointPos(idx int32) math32.Vector3 {
+	var pos math32.Vector3
+	pos.X = Joints[idx, JointPosX]
+	pos.Y = Joints[idx, JointPosY]
+	pos.Z = Joints[idx, JointPosZ]
+	return pos
+}
+
+func SetJointPos(idx int32, pos math32.Vector3) {
+	Joints[idx, JointPosX] = pos.X
+	Joints[idx, JointPosY] = pos.Y
+	Joints[idx, JointPosZ] = pos.Z
+}
+
+// JointTypes are joint types that determine nature of interaction.
+type JointTypes int32 //enums:enum
+
+const (
+	// Glue is a completely rigid joint that supercedes all others,
+	// where body A drives motion of body B.
+	// JointA is the parent, supporting body, JointB is the child supported.
+	Glue JointTypes = iota
+
+	Ball
+)
+
+// GlueStep does glue joint processing
+func GlueStep(ji, ba, bb int32) {
+	pos := JointPos(ji)
+	bap := DynamicPos(ba)
+	bbp := pos.Add(bap)
+	SetDynamicPos(bb, bbp)
+}
+
+//gosl:end

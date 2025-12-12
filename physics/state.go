@@ -15,16 +15,16 @@ import (
 // state values such as Mass should go in Rigid.
 type State struct {
 
-	// position of center of mass of object
+	// Pos is the position of center of mass of object.
 	Pos math32.Vector3
 
-	// rotation specified as a Quat
+	// Quat is the rotation specified as a quaternion.
 	Quat math32.Quat
 
-	// linear velocity
+	// LinVel is the linear velocity.
 	LinVel math32.Vector3
 
-	// angular velocity
+	// AngVel is the angular velocity.
 	AngVel math32.Vector3
 }
 
@@ -35,7 +35,7 @@ func (ps *State) Defaults() {
 	}
 }
 
-//////// 	State updates
+//////// State updates
 
 // FromRel sets state from relative values compared to a parent state
 func (ps *State) FromRel(rel, par *State) {
@@ -75,7 +75,7 @@ func (ps *State) StepByLinVel(step float32) {
 	ps.Pos = ps.Pos.Add(ps.LinVel.MulScalar(step))
 }
 
-//////// 		Moving
+//////// Moving
 
 // Move moves (translates) Pos by given amount, and sets the LinVel to the given
 // delta -- this can be useful for Scripted motion to track movement.
@@ -102,7 +102,7 @@ func (ps *State) MoveOnAxisAbs(x, y, z, dist float32) { //types:add
 	ps.Pos.SetAdd(ps.LinVel)
 }
 
-//////// 		Rotating
+//////// Rotating
 
 // SetEulerRotation sets the rotation in Euler angles (degrees).
 func (ps *State) SetEulerRotation(x, y, z float32) { //types:add

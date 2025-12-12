@@ -7,9 +7,7 @@ package main
 //go:generate core generate
 
 import (
-	"fmt"
 	"image"
-	"math/rand"
 	"os"
 
 	"cogentcore.org/core/base/iox/imagex"
@@ -82,20 +80,20 @@ type Env struct { //types:add
 	// color map to use for rendering depth map
 	DepthMap core.ColorMapName
 
-	// The whole physics World, including visualization.
+	// The [physics World].
+	Physics *physics.World
+
+	// Visualization of the physics world.
 	World *world.World
 
 	// 3D visualization of the Scene
 	SceneEditor *xyzcore.SceneEditor
 
 	// emer object
-	Emer *physics.Group `display:"-"`
+	Emer *world.View `display:"-"`
 
 	// Right eye of emer
-	EyeR physics.Body `display:"-"`
-
-	// contacts from last step, for body
-	Contacts physics.Contacts `display:"-"`
+	EyeR *world.View `display:"-"`
 
 	// snapshot image
 	EyeRImg *core.Image `display:"-"`
@@ -117,31 +115,24 @@ func (ev *Env) Defaults() {
 	ev.Camera.FOV = 90
 }
 
-// MakePhysicsWorld constructs a new virtual physics world.
-func (ev *Env) MakePhysicsWorld() *physics.Group {
-	pw := physics.NewGroup()
-	pw.SetName("RoomWorld")
-
-	ev.MakeRoom(pw, "room1", ev.Width, ev.Depth, ev.Height, ev.Thick)
-	ev.MakeEmer(pw, "emer", ev.EmerHt)
-	pw.WorldInit()
-	return pw
-}
-
 func (ev *Env) MakeWorld(sc *xyz.Scene) {
-	pw := ev.MakePhysicsWorld()
+	ev.Physics = physics.NewWorld()
 	sc.Background = colors.Scheme.Select.Container
 	xyz.NewAmbient(sc, "ambient", 0.3, xyz.DirectSun)
 
 	dir := xyz.NewDirectional(sc, "dir", 1, xyz.DirectSun)
 	dir.Pos.Set(0, 2, 1) // default: 0,1,1 = above and behind us (we are at 0,0,X)
 
-	ev.World = world.NewWorld(pw, sc)
+	ev.World = world.NewWorld(sc)
+	ev.MakeRoom("room1", ev.Width, ev.Depth, ev.Height, ev.Thick)
+	ev.MakeEmer("emer", ev.EmerHt)
+	ev.World.Init(ev.Physics)
+	ev.World.Update()
 }
 
 // InitWorld does init on world.
 func (ev *Env) WorldInit() { //types:add
-	ev.World.Init()
+	// ev.World.Init()
 }
 
 // ConfigView3D makes the 3D view
@@ -186,28 +177,28 @@ func (ev *Env) UpdateView() {
 
 // WorldStep does one step of the world
 func (ev *Env) WorldStep() {
-	pw := ev.World.World
-	pw.Update() // only need to call if there are updaters added to world
-	pw.WorldRelToAbs()
-	cts := pw.WorldCollide(physics.DynsTopGps)
-	ev.Contacts = nil
-	for _, cl := range cts {
-		if len(cl) > 1 {
-			for _, c := range cl {
-				if c.A.AsTree().Name == "body" {
-					ev.Contacts = cl
-				}
-				fmt.Printf("A: %v  B: %v\n", c.A.AsTree().Name, c.B.AsTree().Name)
-			}
-		}
-	}
+	// pw := ev.Physics
+	// pw.Update() // only need to call if there are updaters added to world
+	// pw.WorldRelToAbs()
+	// cts := pw.WorldCollide(physics.DynsTopGps)
+	// ev.Contacts = nil
+	// for _, cl := range cts {
+	// 	if len(cl) > 1 {
+	// 		for _, c := range cl {
+	// 			if c.A.AsTree().Name == "body" {
+	// 				ev.Contacts = cl
+	// 			}
+	// 			fmt.Printf("A: %v  B: %v\n", c.A.AsTree().Name, c.B.AsTree().Name)
+	// 		}
+	// 	}
+	// }
 	ev.EmerAngry = false
-	if len(ev.Contacts) > 1 { // turn around
-		ev.EmerAngry = true
-		fmt.Printf("hit wall: turn around!\n")
-		rot := 100.0 + 90.0*rand.Float32()
-		ev.Emer.Rel.RotateOnAxis(0, 1, 0, rot)
-	}
+	// if len(ev.Contacts) > 1 { // turn around
+	// 	ev.EmerAngry = true
+	// 	fmt.Printf("hit wall: turn around!\n")
+	// 	rot := 100.0 + 90.0*rand.Float32()
+	// 	ev.Emer.Rel.RotateOnAxis(0, 1, 0, rot)
+	// }
 	ev.World.Update()
 	ev.GrabEyeImg()
 	ev.UpdateView()
@@ -215,121 +206,94 @@ func (ev *Env) WorldStep() {
 
 // StepForward moves Emer forward in current facing direction one step, and takes GrabEyeImg
 func (ev *Env) StepForward() { //types:add
-	ev.Emer.Rel.MoveOnAxis(0, 0, 1, -ev.MoveStep)
+	// ev.Emer.Rel.MoveOnAxis(0, 0, 1, -ev.MoveStep)
 	ev.WorldStep()
 }
 
 // StepBackward moves Emer backward in current facing direction one step, and takes GrabEyeImg
 func (ev *Env) StepBackward() { //types:add
-	ev.Emer.Rel.MoveOnAxis(0, 0, 1, ev.MoveStep)
+	// ev.Emer.Rel.MoveOnAxis(0, 0, 1, ev.MoveStep)
 	ev.WorldStep()
 }
 
 // RotBodyLeft rotates emer left and takes GrabEyeImg
 func (ev *Env) RotBodyLeft() { //types:add
-	ev.Emer.Rel.RotateOnAxis(0, 1, 0, ev.RotStep)
+	// ev.Emer.Rel.RotateOnAxis(0, 1, 0, ev.RotStep)
 	ev.WorldStep()
 }
 
 // RotBodyRight rotates emer right and takes GrabEyeImg
 func (ev *Env) RotBodyRight() { //types:add
-	ev.Emer.Rel.RotateOnAxis(0, 1, 0, -ev.RotStep)
+	// ev.Emer.Rel.RotateOnAxis(0, 1, 0, -ev.RotStep)
 	ev.WorldStep()
 }
 
 // RotHeadLeft rotates emer left and takes GrabEyeImg
 func (ev *Env) RotHeadLeft() { //types:add
-	hd := ev.Emer.ChildByName("head", 1).(*physics.Group)
-	hd.Rel.RotateOnAxis(0, 1, 0, ev.RotStep)
+	// hd := ev.Emer.ChildByName("head", 1).(*physics.Group)
+	// hd.Rel.RotateOnAxis(0, 1, 0, ev.RotStep)
 	ev.WorldStep()
 }
 
 // RotHeadRight rotates emer right and takes GrabEyeImg
 func (ev *Env) RotHeadRight() { //types:add
-	hd := ev.Emer.ChildByName("head", 1).(*physics.Group)
-	hd.Rel.RotateOnAxis(0, 1, 0, -ev.RotStep)
+	// hd := ev.Emer.ChildByName("head", 1).(*physics.Group)
+	// hd.Rel.RotateOnAxis(0, 1, 0, -ev.RotStep)
 	ev.WorldStep()
 }
 
-// MakeRoom constructs a new room in given parent group with given params
-func (ev *Env) MakeRoom(par *physics.Group, name string, width, depth, height, thick float32) {
-	tree.AddChildAt(par, name, func(rm *physics.Group) {
-		rm.Maker(func(p *tree.Plan) {
-			tree.AddAt(p, "floor", func(n *physics.Box) {
-				n.SetSize(math32.Vec3(width, thick, depth)).
-					SetColor("grey").SetInitPos(math32.Vec3(0, -thick/2, 0))
-			})
-			tree.AddAt(p, "back-wall", func(n *physics.Box) {
-				n.SetSize(math32.Vec3(width, height, thick)).
-					SetColor("blue").SetInitPos(math32.Vec3(0, height/2, -depth/2))
-			})
-			tree.AddAt(p, "left-wall", func(n *physics.Box) {
-				n.SetSize(math32.Vec3(thick, height, depth)).
-					SetColor("red").SetInitPos(math32.Vec3(-width/2, height/2, 0))
-			})
-			tree.AddAt(p, "right-wall", func(n *physics.Box) {
-				n.SetSize(math32.Vec3(thick, height, depth)).
-					SetColor("green").SetInitPos(math32.Vec3(width/2, height/2, 0))
-			})
-			tree.AddAt(p, "front-wall", func(n *physics.Box) {
-				n.SetSize(math32.Vec3(width, height, thick)).
-					SetColor("yellow").SetInitPos(math32.Vec3(0, height/2, depth/2))
-			})
-		})
-	})
+// MakeRoom constructs a new room with given params
+func (ev *Env) MakeRoom(name string, width, depth, height, thick float32) {
+	wr := ev.World
+	wl := ev.Physics
+	rot := math32.NewQuat(0, 0, 0, 1)
+	wr.NewBody(wl, name+"_floor", physics.Box, "grey", math32.Vec3(width, thick, depth),
+		math32.Vec3(0, -thick/2, 0), rot)
+	wr.NewBody(wl, name+"_back-wall", physics.Box, "blue", math32.Vec3(width, height, thick),
+		math32.Vec3(0, height/2, -depth/2), rot)
+	wr.NewBody(wl, name+"_left-wall", physics.Box, "red", math32.Vec3(thick, height, depth),
+		math32.Vec3(-width/2, height/2, 0), rot)
+	wr.NewBody(wl, name+"_right-wall", physics.Box, "green", math32.Vec3(thick, height, depth),
+		math32.Vec3(width/2, height/2, 0), rot)
+	wr.NewBody(wl, name+"_front-wall", physics.Box, "yellow", math32.Vec3(width, height, thick),
+		math32.Vec3(0, height/2, depth/2), rot)
 }
 
 // MakeEmer constructs a new Emer virtual robot of given height (e.g., 1).
-func (ev *Env) MakeEmer(par *physics.Group, name string, height float32) {
-	tree.AddChildAt(par, name, func(emr *physics.Group) {
-		ev.Emer = emr
-		emr.Maker(func(p *tree.Plan) {
-			width := height * .4
-			depth := height * .15
-			tree.AddAt(p, "body", func(n *physics.Box) {
-				n.SetSize(math32.Vec3(width, height, depth)).
-					SetColor("purple").SetDynamic(true).
-					SetInitPos(math32.Vec3(0, height/2, 0))
-			})
-			// body := physics.NewCapsule(emr, "body", math32.Vec3(0, height / 2, 0), height, width/2)
-			// body := physics.NewCylinder(emr, "body", math32.Vec3(0, height / 2, 0), height, width/2)
+func (ev *Env) MakeEmer(name string, height float32) {
+	wr := ev.World
+	wl := ev.Physics
+	width := height * .4
+	depth := height * .15
+	headsz := depth * 1.5
+	eyesz := headsz * .2
+	hhsz := .5 * headsz
+	rot := math32.NewQuat(0, 0, 0, 1)
+	ev.Emer = wr.NewBody(wl, name+"_body", physics.Box, "purple", math32.Vec3(width, height, depth),
+		math32.Vec3(0, height/2, 0), rot)
+	// body := physics.NewCapsule(emr, "body", math32.Vec3(0, height / 2, 0), height, width/2)
+	// body := physics.NewCylinder(emr, "body", math32.Vec3(0, height / 2, 0), height, width/2)
 
-			headsz := depth * 1.5
-			eyesz := headsz * .2
-			hhsz := .5 * headsz
-			tree.AddAt(p, "head", func(n *physics.Group) {
-				n.SetInitPos(math32.Vec3(0, height+hhsz, 0))
-				n.Maker(func(p *tree.Plan) {
-					tree.AddAt(p, "head", func(n *physics.Box) {
-						n.SetSize(math32.Vec3(headsz, headsz, headsz)).
-							SetColor("tan").SetDynamic(true).SetInitPos(math32.Vec3(0, 0, 0))
-						n.InitView = func(vn tree.Node) {
-							sld := vn.(*xyz.Solid)
-							world.BoxInit(n, sld)
-							sld.Updater(func() {
-								clr := n.Color
-								if ev.EmerAngry {
-									clr = "pink"
-								}
-								world.UpdateColor(clr, n.View.(*xyz.Solid))
-							})
-						}
-					})
-					tree.AddAt(p, "eye-l", func(n *physics.Box) {
-						n.SetSize(math32.Vec3(eyesz, eyesz*.5, eyesz*.2)).
-							SetColor("green").SetDynamic(true).
-							SetInitPos(math32.Vec3(-hhsz*.6, headsz*.1, -(hhsz + eyesz*.3)))
-					})
-					tree.AddAt(p, "eye-r", func(n *physics.Box) {
-						ev.EyeR = n
-						n.SetSize(math32.Vec3(eyesz, eyesz*.5, eyesz*.2)).
-							SetColor("green").SetDynamic(true).
-							SetInitPos(math32.Vec3(hhsz*.6, headsz*.1, -(hhsz + eyesz*.3)))
-					})
-				})
-			})
+	headPos := math32.Vec3(0, height+hhsz, 0)
+	vw := wr.NewBody(wl, name+"_head", physics.Box, "tan", math32.Vec3(headsz, headsz, headsz),
+		headPos, rot)
+	vw.InitView = func(sld *xyz.Solid) {
+		vw.BoxInit(sld)
+		sld.Updater(func() {
+			clr := vw.Color
+			if ev.EmerAngry {
+				clr = "pink"
+			}
+			vw.UpdateColor(clr, sld)
 		})
-	})
+	}
+	wl.NewJoint(physics.Glue, ev.Emer.Index, vw.Index, vw.Pos)
+	vw = wr.NewBody(wl, name+"_eye-l", physics.Box, "green", math32.Vec3(eyesz, eyesz*.5, eyesz*.2),
+		headPos.Add(math32.Vec3(-hhsz*.6, headsz*.1, -(hhsz+eyesz*.3))), rot)
+	wl.NewJoint(physics.Glue, ev.Emer.Index, vw.Index, vw.Pos)
+	ev.EyeR = wr.NewBody(wl, name+"_eye-r", physics.Box, "green", math32.Vec3(eyesz, eyesz*.5, eyesz*.2),
+		headPos.Add(math32.Vec3(hhsz*.6, headsz*.1, -(hhsz+eyesz*.3))), rot)
+	wl.NewJoint(physics.Glue, ev.Emer.Index, ev.EyeR.Index, ev.EyeR.Pos)
 }
 
 func (ev *Env) ConfigGUI() *core.Body {
@@ -355,17 +319,17 @@ func (ev *Env) ConfigGUI() *core.Body {
 	////////    3D Scene
 
 	etb := core.NewToolbar(scfr)
+	_ = etb
 	ev.SceneEditor = xyzcore.NewSceneEditor(scfr)
 	ev.SceneEditor.UpdateWidget()
 	sc := ev.SceneEditor.SceneXYZ()
 	ev.MakeWorld(sc)
-	tv.SyncTree(ev.World.World)
 
 	// local toolbar for manipulating emer
-	etb.Maker(world.MakeStateToolbar(&ev.Emer.Rel, func() {
-		ev.World.Update()
-		ev.SceneEditor.NeedsRender()
-	}))
+	// etb.Maker(world.MakeStateToolbar(&ev.Emer.Rel, func() {
+	// 	ev.World.Update()
+	// 	ev.SceneEditor.NeedsRender()
+	// }))
 
 	sc.Camera.Pose.Pos = math32.Vec3(0, 40, 3.5)
 	sc.Camera.LookAt(math32.Vec3(0, 5, 0), math32.Vec3(0, 1, 0))

@@ -1,0 +1,129 @@
+// Copyright (c) 2025, Cogent Core. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package physics
+
+import (
+	"cogentcore.org/core/math32"
+	"cogentcore.org/lab/tensor"
+)
+
+//go:generate core generate -add-types -gosl
+
+// World contains and manages all of the physics elements.
+type World struct {
+	// GPU determines whether to use GPU (else CPU).
+	GPU bool
+
+	// Params are global parameters.
+	Params []PhysParams
+
+	// Bodies are the rigid body elements (dynamic and static),
+	// specifying the constant, non-dynamic properties,
+	// which is initial state for dynamics.
+	// [body][BodyVarsN]
+	Bodies *tensor.Float32
+
+	// Dynamics are the dynamic rigid body elements: these actually move.
+	// The first set of variables are for initial values, and the second current.
+	// [body][DynamicVarsN]
+	Dynamics *tensor.Float32
+
+	// Joints is a list of permanent joints connecting bodies.
+	// [joint][JointVarsN]
+	Joints *tensor.Float32
+
+	// Contacts are points of contact between bodies.
+	// [contact][ContactVarsN]
+	Contacts *tensor.Float32
+}
+
+func NewWorld() *World {
+	wl := &World{}
+	wl.Init()
+	return wl
+}
+
+// Init makes initial vars.
+func (wl *World) Init() {
+	wl.Params = []PhysParams{}
+	wl.Bodies = tensor.NewFloat32(0, int(BodyVarsN))
+	wl.Dynamics = tensor.NewFloat32(0, int(DynamicVarsN))
+	wl.Joints = tensor.NewFloat32(0, int(JointVarsN))
+	wl.Contacts = tensor.NewFloat32(0, int(ContactVarsN))
+	wl.SetAsCurrentVars()
+}
+
+// NewBody adds a new body with given parameters. Returns the index.
+// Use this for Static elements; NewDynamic for dynamic elements.
+func (wl *World) NewBody(shape Shapes, size, pos math32.Vector3, rot math32.Quat) int32 {
+	sizes := wl.Bodies.ShapeSizes()
+	n := int32(sizes[0])
+	wl.Bodies.SetShapeSizes(int(n+1), int(BodyVarsN))
+	SetBodyShape(n, shape)
+	SetBodySize(n, size)
+	SetBodyPos(n, pos)
+	SetBodyRot(n, rot)
+	return n
+}
+
+// NewDynamic adds a new dynamic body with given parameters. Returns the index.
+func (wl *World) NewDynamic(shape Shapes, size, pos math32.Vector3, rot math32.Quat) (bodyIdx, dynIdx int32) {
+	bodyIdx = wl.NewBody(shape, size, pos, rot)
+	sizes := wl.Dynamics.ShapeSizes()
+	dynIdx = int32(sizes[0])
+	wl.Dynamics.SetShapeSizes(int(dynIdx+1), int(DynamicVarsN))
+	SetDynamicIndex(dynIdx, bodyIdx)
+	wl.Params[0].DynamicsN = dynIdx + 1
+	return
+}
+
+// NewJoint adds a new joint between two objects.
+func (wl *World) NewJoint(joint JointTypes, bodyA, bodyB int32, pos math32.Vector3) int32 {
+	sizes := wl.Joints.ShapeSizes()
+	idx := int32(sizes[0])
+	wl.Joints.SetShapeSizes(int(idx+1), int(JointVarsN))
+	SetJointA(idx, bodyA)
+	SetJointB(idx, bodyB)
+	SetJointPos(idx, pos)
+	wl.Params[0].JointsN = idx + 1
+	return idx
+}
+
+// SetAsCurrent sets these as the current global values that are
+// processed in the code (on the GPU). If this was not the setter of
+// the current variables, then the parameter variables are copied up
+// to the GPU.
+func (wl *World) SetAsCurrent() {
+	isCur := (Bodies == wl.Bodies)
+	wl.SetAsCurrentVars()
+	if GPUInitialized && !isCur {
+		wl.ToGPUInfra()
+	}
+}
+
+// SetAsCurrentVars sets these as the current global values that are
+// processed in the code (on the GPU).
+func (wl *World) SetAsCurrentVars() {
+	Params = wl.Params
+	Bodies = wl.Bodies
+	Dynamics = wl.Dynamics
+	Joints = wl.Joints
+	Contacts = wl.Contacts
+}
+
+// GPUInit initializes the GPU and transfers Infra.
+// Should have already called SetAsCurrent (needed for CPU and GPU).
+func (wl *World) GPUInit() {
+	GPUInit()
+	UseGPU = wl.GPU
+	wl.ToGPUInfra()
+}
+
+// ToGPUInfra copies all the infrastructure for these filters up to
+// the GPU. This is done in GPUInit, and
+func (wl *World) ToGPUInfra() {
+	ToGPUTensorStrides()
+	ToGPU(ParamsVar)
+}

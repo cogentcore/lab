@@ -1,0 +1,66 @@
+// Copyright (c) 2025, Cogent Core. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package physics
+
+//gosl:start
+
+// InitDynamics copies Body initial state to dynamic state.
+func InitDynamics(i uint32) { //gosl:kernel
+	pars := GetParams(0)
+	ii := int32(i)
+	if ii >= pars.DynamicsN {
+		return
+	}
+	bi := DynamicIndex(ii)
+	Dynamics[ii, PosX] = Bodies[bi, BodyPosX]
+	Dynamics[ii, PosY] = Bodies[bi, BodyPosY]
+	Dynamics[ii, PosZ] = Bodies[bi, BodyPosZ]
+
+	Dynamics[ii, RotX] = Bodies[bi, BodyRotX]
+	Dynamics[ii, RotY] = Bodies[bi, BodyRotY]
+	Dynamics[ii, RotZ] = Bodies[bi, BodyRotZ]
+	Dynamics[ii, RotW] = Bodies[bi, BodyRotW]
+
+	for v := VelX; v < DynamicVarsN; v++ {
+		Dynamics[ii, v] = 0.0
+	}
+}
+
+// StepJoints does joint-based update.
+func StepJoints(i uint32) { //gosl:kernel
+	pars := GetParams(0)
+	ji := int32(i)
+	if ji >= pars.JointsN {
+		return
+	}
+	ba := JointAIndex(ji)
+	bb := JointBIndex(ji)
+	jt := GetJointType(ji)
+	switch jt {
+	case Glue:
+		GlueStep(ji, ba, bb)
+	}
+}
+
+// Step is dynamic update step kernel. i = body
+func Step(i uint32) { //gosl:kernel
+	pars := GetParams(0)
+	ii := int32(i)
+	if ii >= pars.DynamicsN {
+		return
+	}
+	Dynamics[ii, PosX] += pars.Step * Dynamics[ii, VelX]
+	Dynamics[ii, PosY] += pars.Step * Dynamics[ii, VelY]
+	Dynamics[ii, PosZ] += pars.Step * Dynamics[ii, VelZ]
+
+	// todo: force, integrated etc.
+}
+
+//gosl:end
+
+func (wl *World) Step() {
+	pars := GetParams(0)
+	RunStep(int(pars.DynamicsN))
+}
