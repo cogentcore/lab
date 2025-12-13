@@ -1968,6 +1968,9 @@ func (p *printer) methodExpr(x *ast.CallExpr, depth int) {
 		}
 	}
 	// fmt.Println(pathIsPackage, recvType, methName, recvPath)
+	if p.mathMeth(x, depth, methName, recvPath, recvType) {
+		return
+	}
 	if pathIsPackage {
 		if recvType == "atomic" || recvType == "atomicx" {
 			p.curMethIsAtomic = true
@@ -2014,6 +2017,49 @@ func (p *printer) methodExpr(x *ast.CallExpr, depth int) {
 	p.curMethIsAtomic = false
 
 	p.assignRwArgs(rwargs) // gosl: assign temp var back to global var
+}
+
+// gosl: process math methods into expressions: .Add() -> + and V() to get slvec type
+func (p *printer) mathMeth(x *ast.CallExpr, depth int, methName, recvPath, recvType string) bool {
+	if strings.HasPrefix(recvType, "slvec.") && methName == "V" {
+		btyp := strings.TrimPrefix(recvType, "slvec.")
+		rtyp := "math32." + btyp
+		p.print(rtyp)
+		p.setPos(x.Lparen)
+		p.print(token.LPAREN)
+		switch btyp {
+		case "Vector2", "Vector2i":
+			p.print(recvPath+".x", token.COMMA, recvPath+".y")
+		case "Vector3":
+			p.print(recvPath+".x", token.COMMA, recvPath+".y", token.COMMA, recvPath+".z")
+		}
+		p.setPos(x.Rparen)
+		p.print(token.RPAREN)
+		p.curMethIsAtomic = false
+		return true
+	}
+	opr := token.ILLEGAL
+	switch methName {
+	case "Add":
+		opr = token.ADD
+	case "Sub":
+		opr = token.SUB
+	case "Mul":
+		opr = token.MUL
+	case "Div":
+		opr = token.QUO
+	}
+	if opr == token.ILLEGAL {
+		return false
+	}
+	p.print(recvPath, opr)
+	p.setPos(x.Lparen)
+	p.print(token.LPAREN)
+	p.exprList(x.Lparen, x.Args, depth, commaTerm, x.Rparen, false)
+	p.setPos(x.Rparen)
+	p.print(token.RPAREN)
+	p.curMethIsAtomic = false
+	return true
 }
 
 func (p *printer) expr0(x ast.Expr, depth int) {

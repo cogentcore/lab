@@ -132,7 +132,7 @@ const  Ball: JointTypes = 1;
 fn GlueStep(ji: i32,ba: i32,bb: i32) {
 	var pos = JointPos(ji);
 	var bap = DynamicPos(ba);
-	var bbp = pos.Add(bap);
+	var bbp = pos+(bap);
 	SetDynamicPos(bb, bbp);
 }
 
@@ -165,6 +165,8 @@ fn StepJoints(i: u32) { //gosl:kernel
 	switch (jt) {
 	case Glue: {
 		GlueStep(ji, ba, bb);
+	}
+	default: {
 	}
 	}
 }

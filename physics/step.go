@@ -43,6 +43,7 @@ func StepJoints(i uint32) { //gosl:kernel
 	switch jt {
 	case Glue:
 		GlueStep(ji, ba, bb)
+	default:
 	}
 }
 

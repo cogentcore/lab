@@ -139,11 +139,13 @@ func (ps *ParamStruct) IntegFromRaw(idx int) float32 {
 	Data[idx, Exp] = math32.Exp(-integ)
 
 	a := ps.VXYf.X
+	b := ps.VXYf.V()
+	c := b.Mul(b.Add(b)) // converted to direct ops
 
 	ctx := GetCtx(0)
 	ps.AnotherMeth(ctx, idx, &a)
 	bv := Big[idx, Integ]
-	Big[idx, Exp] = bv * 2
+	Big[idx, Exp] = bv*2 + c.Y
 	return Data[idx, Exp]
 }
 
