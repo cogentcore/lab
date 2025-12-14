@@ -62,7 +62,7 @@ const DynamicVarsN DynamicVars = 32
 
 var _DynamicVarsValueMap = map[string]DynamicVars{`Index`: 0, `PosX`: 1, `PosY`: 2, `PosZ`: 3, `RotX`: 4, `RotY`: 5, `RotZ`: 6, `RotW`: 7, `VelX`: 8, `VelY`: 9, `VelZ`: 10, `AngVelX`: 11, `AngVelY`: 12, `AngVelZ`: 13, `AccX`: 14, `AccY`: 15, `AccZ`: 16, `AngAccX`: 17, `AngAccY`: 18, `AngAccZ`: 19, `ForceX`: 20, `ForceY`: 21, `ForceZ`: 22, `TorqueX`: 23, `TorqueY`: 24, `TorqueZ`: 25, `DeltaX`: 26, `DeltaY`: 27, `DeltaZ`: 28, `AngDeltaX`: 29, `AngDeltaY`: 30, `AngDeltaZ`: 31}
 
-var _DynamicVarsDescMap = map[DynamicVars]string{0: `Index of body in list of bodies.`, 1: `3D position of center of mass.`, 2: ``, 3: ``, 4: `Quaternion rotation.`, 5: ``, 6: ``, 7: ``, 8: `Linear velocity.`, 9: ``, 10: ``, 11: `Angular velocity.`, 12: ``, 13: ``, 14: `Linear acceleration.`, 15: ``, 16: ``, 17: `Angular acceleration due to applied torques.`, 18: ``, 19: ``, 20: `Linear force driving linear acceleration. joints write to this using atomic. must clear after each step.`, 21: ``, 22: ``, 23: `Linear force driving linear acceleration. joints write to this using atomic. must clear after each step.`, 24: ``, 25: ``, 26: `Linear deltas.`, 27: ``, 28: ``, 29: `Angular deltas.`, 30: ``, 31: ``}
+var _DynamicVarsDescMap = map[DynamicVars]string{0: `Index of body in list of bodies.`, 1: `3D position of center of mass.`, 2: ``, 3: ``, 4: `Quaternion rotation.`, 5: ``, 6: ``, 7: ``, 8: `Linear velocity.`, 9: ``, 10: ``, 11: `Angular velocity.`, 12: ``, 13: ``, 14: `Linear acceleration.`, 15: ``, 16: ``, 17: `Angular acceleration due to applied torques.`, 18: ``, 19: ``, 20: `Linear force driving linear acceleration (from joints, etc).`, 21: ``, 22: ``, 23: `Torque driving angular acceleration (from joints, etc).`, 24: ``, 25: ``, 26: `Linear deltas.`, 27: ``, 28: ``, 29: `Angular deltas.`, 30: ``, 31: ``}
 
 var _DynamicVarsMap = map[DynamicVars]string{0: `Index`, 1: `PosX`, 2: `PosY`, 3: `PosZ`, 4: `RotX`, 5: `RotY`, 6: `RotZ`, 7: `RotW`, 8: `VelX`, 9: `VelY`, 10: `VelZ`, 11: `AngVelX`, 12: `AngVelY`, 13: `AngVelZ`, 14: `AccX`, 15: `AccY`, 16: `AccZ`, 17: `AngAccX`, 18: `AngAccY`, 19: `AngAccZ`, 20: `ForceX`, 21: `ForceY`, 22: `ForceZ`, 23: `TorqueX`, 24: `TorqueY`, 25: `TorqueZ`, 26: `DeltaX`, 27: `DeltaY`, 28: `DeltaZ`, 29: `AngDeltaX`, 30: `AngDeltaY`, 31: `AngDeltaZ`}
 
@@ -192,20 +192,20 @@ func (i *JointControlVars) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "JointControlVars")
 }
 
-var _GPUVarsValues = []GPUVars{0, 1, 2, 3, 4, 5}
+var _GPUVarsValues = []GPUVars{0, 1, 2, 3, 4, 5, 6}
 
 // GPUVarsN is the highest valid value for type GPUVars, plus one.
 //
 //gosl:start
-const GPUVarsN GPUVars = 6
+const GPUVarsN GPUVars = 7
 
 //gosl:end
 
-var _GPUVarsValueMap = map[string]GPUVars{`ParamsVar`: 0, `BodiesVar`: 1, `JointsVar`: 2, `DynamicsVar`: 3, `ContactsVar`: 4, `JointControlsVar`: 5}
+var _GPUVarsValueMap = map[string]GPUVars{`ParamsVar`: 0, `BodiesVar`: 1, `JointsVar`: 2, `BodyJointsVar`: 3, `DynamicsVar`: 4, `ContactsVar`: 5, `JointControlsVar`: 6}
 
-var _GPUVarsDescMap = map[GPUVars]string{0: ``, 1: ``, 2: ``, 3: ``, 4: ``, 5: ``}
+var _GPUVarsDescMap = map[GPUVars]string{0: ``, 1: ``, 2: ``, 3: ``, 4: ``, 5: ``, 6: ``}
 
-var _GPUVarsMap = map[GPUVars]string{0: `ParamsVar`, 1: `BodiesVar`, 2: `JointsVar`, 3: `DynamicsVar`, 4: `ContactsVar`, 5: `JointControlsVar`}
+var _GPUVarsMap = map[GPUVars]string{0: `ParamsVar`, 1: `BodiesVar`, 2: `JointsVar`, 3: `BodyJointsVar`, 4: `DynamicsVar`, 5: `ContactsVar`, 6: `JointControlsVar`}
 
 // String returns the string representation of this GPUVars value.
 func (i GPUVars) String() string { return enums.String(i, _GPUVarsMap) }
@@ -237,20 +237,20 @@ func (i GPUVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil 
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *GPUVars) UnmarshalText(text []byte) error { return enums.UnmarshalText(i, text, "GPUVars") }
 
-var _JointVarsValues = []JointVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
+var _JointVarsValues = []JointVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34}
 
 // JointVarsN is the highest valid value for type JointVars, plus one.
 //
 //gosl:start
-const JointVarsN JointVars = 21
+const JointVarsN JointVars = 35
 
 //gosl:end
 
-var _JointVarsValueMap = map[string]JointVars{`JointType`: 0, `JointEnabled`: 1, `JointParent`: 2, `JointChild`: 3, `JointAncestor`: 4, `JointPPosX`: 5, `JointPPosY`: 6, `JointPPosZ`: 7, `JointPRotX`: 8, `JointPRotY`: 9, `JointPRotZ`: 10, `JointPRotW`: 11, `JointCPosX`: 12, `JointCPosY`: 13, `JointCPosZ`: 14, `JointCRotX`: 15, `JointCRotY`: 16, `JointCRotZ`: 17, `JointCRotW`: 18, `JointLimitLower`: 19, `JointLimitUpper`: 20}
+var _JointVarsValueMap = map[string]JointVars{`JointType`: 0, `JointEnabled`: 1, `JointParent`: 2, `JointChild`: 3, `JointPPosX`: 4, `JointPPosY`: 5, `JointPPosZ`: 6, `JointPRotX`: 7, `JointPRotY`: 8, `JointPRotZ`: 9, `JointPRotW`: 10, `JointCPosX`: 11, `JointCPosY`: 12, `JointCPosZ`: 13, `JointCRotX`: 14, `JointCRotY`: 15, `JointCRotZ`: 16, `JointCRotW`: 17, `JointAxisX`: 18, `JointAxisY`: 19, `JointAxisZ`: 20, `JointLimitLower`: 21, `JointLimitUpper`: 22, `JointPForceX`: 23, `JointPForceY`: 24, `JointPForceZ`: 25, `JointPTorqueX`: 26, `JointPTorqueY`: 27, `JointPTorqueZ`: 28, `JointCForceX`: 29, `JointCForceY`: 30, `JointCForceZ`: 31, `JointCTorqueX`: 32, `JointCTorqueY`: 33, `JointCTorqueZ`: 34}
 
-var _JointVarsDescMap = map[JointVars]string{0: `JointType (as an int32 from bits).`, 1: `JointEnabled allows joints to be dynamically enabled.`, 2: `JointParent is the dynamic body index for parent body. Can be -1 for a fixed parent for absolute anchor.`, 3: `JointChild is the dynamic body index for child body.`, 4: `JointAncestor is the joint index where current parent is a child.`, 5: `position of joint, in parent frame.`, 6: ``, 7: ``, 8: `orientation of joint, in parent frame.`, 9: ``, 10: ``, 11: ``, 12: `position of joint, in child frame.`, 13: ``, 14: ``, 15: `orientation of joint, in child frame.`, 16: ``, 17: ``, 18: ``, 19: `joint limits`, 20: ``}
+var _JointVarsDescMap = map[JointVars]string{0: `JointType (as an int32 from bits).`, 1: `JointEnabled allows joints to be dynamically enabled.`, 2: `JointParent is the dynamic body index for parent body. Can be -1 for a fixed parent for absolute anchor.`, 3: `JointChild is the dynamic body index for child body.`, 4: `position of joint, in parent frame.`, 5: ``, 6: ``, 7: `orientation of joint, in parent frame.`, 8: ``, 9: ``, 10: ``, 11: `position of joint, in child frame.`, 12: ``, 13: ``, 14: `orientation of joint, in child frame.`, 15: ``, 16: ``, 17: ``, 18: ``, 19: ``, 20: ``, 21: `joint limits`, 22: ``, 23: `Computed parent joint force value.`, 24: ``, 25: ``, 26: `Computed parent joint torque value.`, 27: ``, 28: ``, 29: `Computed child joint force value.`, 30: ``, 31: ``, 32: `Computed child joint torque value.`, 33: ``, 34: ``}
 
-var _JointVarsMap = map[JointVars]string{0: `JointType`, 1: `JointEnabled`, 2: `JointParent`, 3: `JointChild`, 4: `JointAncestor`, 5: `JointPPosX`, 6: `JointPPosY`, 7: `JointPPosZ`, 8: `JointPRotX`, 9: `JointPRotY`, 10: `JointPRotZ`, 11: `JointPRotW`, 12: `JointCPosX`, 13: `JointCPosY`, 14: `JointCPosZ`, 15: `JointCRotX`, 16: `JointCRotY`, 17: `JointCRotZ`, 18: `JointCRotW`, 19: `JointLimitLower`, 20: `JointLimitUpper`}
+var _JointVarsMap = map[JointVars]string{0: `JointType`, 1: `JointEnabled`, 2: `JointParent`, 3: `JointChild`, 4: `JointPPosX`, 5: `JointPPosY`, 6: `JointPPosZ`, 7: `JointPRotX`, 8: `JointPRotY`, 9: `JointPRotZ`, 10: `JointPRotW`, 11: `JointCPosX`, 12: `JointCPosY`, 13: `JointCPosZ`, 14: `JointCRotX`, 15: `JointCRotY`, 16: `JointCRotZ`, 17: `JointCRotW`, 18: `JointAxisX`, 19: `JointAxisY`, 20: `JointAxisZ`, 21: `JointLimitLower`, 22: `JointLimitUpper`, 23: `JointPForceX`, 24: `JointPForceY`, 25: `JointPForceZ`, 26: `JointPTorqueX`, 27: `JointPTorqueY`, 28: `JointPTorqueZ`, 29: `JointCForceX`, 30: `JointCForceY`, 31: `JointCForceZ`, 32: `JointCTorqueX`, 33: `JointCTorqueY`, 34: `JointCTorqueZ`}
 
 // String returns the string representation of this JointVars value.
 func (i JointVars) String() string { return enums.String(i, _JointVarsMap) }

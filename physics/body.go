@@ -189,14 +189,12 @@ const (
 	AngAccY
 	AngAccZ
 
-	// Linear force driving linear acceleration.
-	// joints write to this using atomic. must clear after each step.
+	// Linear force driving linear acceleration (from joints, etc).
 	ForceX
 	ForceY
 	ForceZ
 
-	// Linear force driving linear acceleration.
-	// joints write to this using atomic. must clear after each step.
+	// Torque driving angular acceleration (from joints, etc).
 	TorqueX
 	TorqueY
 	TorqueZ

@@ -32,6 +32,10 @@ type World struct {
 	// [joint][JointVarsN]
 	Joints *tensor.Float32
 
+	// BodyJoints is a list of joint indexes for each dynamic body, for aggregating.
+	// [dyn body][parent, child][maxjointsperbody]
+	BodyJoints *tensor.Int32
+
 	// Dynamics are the dynamic rigid body elements: these actually move.
 	// The first set of variables are for initial values, and the second current.
 	// [body][DynamicVarsN]
@@ -57,6 +61,7 @@ func (wl *World) Init() {
 	wl.Params = []PhysParams{}
 	wl.Bodies = tensor.NewFloat32(0, int(BodyVarsN))
 	wl.Joints = tensor.NewFloat32(0, int(JointVarsN))
+	wl.BodyJoints = tensor.NewInt32(0, 2, 2)
 	wl.Dynamics = tensor.NewFloat32(0, int(DynamicVarsN))
 	wl.Contacts = tensor.NewFloat32(0, int(ContactVarsN))
 	wl.JointControls = tensor.NewFloat32(0, int(JointControlVarsN))
@@ -99,6 +104,8 @@ func (wl *World) NewJoint(joint JointTypes, parent, child int32, pos math32.Vect
 	return idx
 }
 
+// todo: init bodyjoints
+
 // SetAsCurrent sets these as the current global values that are
 // processed in the code (on the GPU). If this was not the setter of
 // the current variables, then the parameter variables are copied up
@@ -117,6 +124,7 @@ func (wl *World) SetAsCurrentVars() {
 	Params = wl.Params
 	Bodies = wl.Bodies
 	Joints = wl.Joints
+	BodyJoints = wl.BodyJoints
 	Dynamics = wl.Dynamics
 	Contacts = wl.Contacts
 	JointControls = wl.JointControls
@@ -131,8 +139,8 @@ func (wl *World) GPUInit() {
 }
 
 // ToGPUInfra copies all the infrastructure for these filters up to
-// the GPU. This is done in GPUInit, and
+// the GPU. This is done in GPUInit, and if current switched.
 func (wl *World) ToGPUInfra() {
 	ToGPUTensorStrides()
-	ToGPU(ParamsVar)
+	ToGPU(ParamsVar, BodiesVar, JointsVar, BodyJointsVar)
 }

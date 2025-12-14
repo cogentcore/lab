@@ -11,7 +11,7 @@ var<storage, read> Params: array<PhysParams>;
 var<storage, read_write> Bodies: array<f32>;
 @group(1) @binding(1)
 var<storage, read_write> Joints: array<f32>;
-// // Dynamics are the dynamic rigid body elements: these actually move. // [body][DynamicVarsN] 
+// // Dynamics are the dynamic rigid body elements: these actually move. // [dyn body][DynamicVarsN] 
 @group(2) @binding(0)
 var<storage, read_write> Dynamics: array<f32>;
 // // JointControls are dynamic joint control inputs. // [joint][JointControlVarsN] 
@@ -110,20 +110,20 @@ const  AngDeltaX: DynamicVars = 29;
 const  AngDeltaY: DynamicVars = 30;
 const  AngDeltaZ: DynamicVars = 31;
 fn DynamicIndex(idx: i32) -> i32 {
-	return i32(bitcast<u32>(Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(idx), u32(Index))]));
+	return i32(bitcast<u32>(Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(Index))]));
 }
 fn DynamicPos(idx: i32) -> vec3<f32> {
 	var pos: vec3<f32>;
-	pos.x = Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(idx), u32(PosX))];
-	pos.y = Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(idx), u32(PosY))];
-	pos.z = Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(idx), u32(PosZ))];return pos;
+	pos.x = Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(PosX))];
+	pos.y = Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(PosY))];
+	pos.z = Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(PosZ))];return pos;
 }
 fn DynamicRot(idx: i32) -> vec4<f32> {
 	var rot: vec4<f32>;
-	rot.x = Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(idx), u32(RotX))];
-	rot.y = Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(idx), u32(RotY))];
-	rot.z = Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(idx), u32(RotZ))];
-	rot.w = Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(idx), u32(RotW))];return rot;
+	rot.x = Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(RotX))];
+	rot.y = Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(RotY))];
+	rot.z = Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(RotZ))];
+	rot.w = Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(RotW))];return rot;
 }
 
 //////// import: "contact.go"
@@ -167,8 +167,8 @@ const BodyVarsN: BodyVars = 37;
 const DynamicVarsN: DynamicVars = 32;
 const ContactVarsN: ContactVars = 9;
 const JointControlVarsN: JointControlVars = 19;
-const GPUVarsN: GPUVars = 6;
-const JointVarsN: JointVars = 21;
+const GPUVarsN: GPUVars = 7;
+const JointVarsN: JointVars = 35;
 const JointTypesN: JointTypes = 7;
 const ShapesN: Shapes = 4;
 
@@ -178,23 +178,37 @@ const  JointType: JointVars = 0;
 const  JointEnabled: JointVars = 1;
 const  JointParent: JointVars = 2;
 const  JointChild: JointVars = 3;
-const  JointAncestor: JointVars = 4;
-const  JointPPosX: JointVars = 5;
-const  JointPPosY: JointVars = 6;
-const  JointPPosZ: JointVars = 7;
-const  JointPRotX: JointVars = 8;
-const  JointPRotY: JointVars = 9;
-const  JointPRotZ: JointVars = 10;
-const  JointPRotW: JointVars = 11;
-const  JointCPosX: JointVars = 12;
-const  JointCPosY: JointVars = 13;
-const  JointCPosZ: JointVars = 14;
-const  JointCRotX: JointVars = 15;
-const  JointCRotY: JointVars = 16;
-const  JointCRotZ: JointVars = 17;
-const  JointCRotW: JointVars = 18;
-const  JointLimitLower: JointVars = 19;
-const  JointLimitUpper: JointVars = 20;
+const  JointPPosX: JointVars = 4;
+const  JointPPosY: JointVars = 5;
+const  JointPPosZ: JointVars = 6;
+const  JointPRotX: JointVars = 7;
+const  JointPRotY: JointVars = 8;
+const  JointPRotZ: JointVars = 9;
+const  JointPRotW: JointVars = 10;
+const  JointCPosX: JointVars = 11;
+const  JointCPosY: JointVars = 12;
+const  JointCPosZ: JointVars = 13;
+const  JointCRotX: JointVars = 14;
+const  JointCRotY: JointVars = 15;
+const  JointCRotZ: JointVars = 16;
+const  JointCRotW: JointVars = 17;
+const  JointAxisX: JointVars = 18;
+const  JointAxisY: JointVars = 19;
+const  JointAxisZ: JointVars = 20;
+const  JointLimitLower: JointVars = 21;
+const  JointLimitUpper: JointVars = 22;
+const  JointPForceX: JointVars = 23;
+const  JointPForceY: JointVars = 24;
+const  JointPForceZ: JointVars = 25;
+const  JointPTorqueX: JointVars = 26;
+const  JointPTorqueY: JointVars = 27;
+const  JointPTorqueZ: JointVars = 28;
+const  JointCForceX: JointVars = 29;
+const  JointCForceY: JointVars = 30;
+const  JointCForceZ: JointVars = 31;
+const  JointCTorqueX: JointVars = 32;
+const  JointCTorqueY: JointVars = 33;
+const  JointCTorqueZ: JointVars = 34;
 fn GetJointType(idx: i32) -> JointTypes {
 	return JointTypes(bitcast<u32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointType))]));
 }
@@ -216,6 +230,33 @@ fn JointPRot(idx: i32) -> vec4<f32> {
 	rot.y = Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPRotY))];
 	rot.z = Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPRotZ))];
 	rot.w = Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPRotW))];return rot;
+}
+fn JointAxis(idx: i32) -> vec3<f32> {
+	var axis: vec3<f32>;
+	axis.x = Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointAxisX))];
+	axis.y = Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointAxisY))];
+	axis.z = Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointAxisZ))];return axis;
+}
+fn SetJointPForce(idx: i32, f: vec3<f32>) {
+	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPForceX))] = f.x;
+	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPForceY))] = f.y;
+	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPForceZ))] = f.z;
+}
+fn SetJointPTorque(idx: i32, t: vec3<f32>) {
+	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPTorqueX))] = t.x;
+	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPTorqueY))] = t.y;
+	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPTorqueZ))] = t.z;
+}
+fn SetJointCForce(idx: i32, f: vec3<f32>) {
+	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCForceX))] = f.x;
+	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCForceY))] = f.y;
+	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCForceZ))] = f.z;
+}
+fn SetJointCTorque(idx: i32, t: vec3<f32>) {
+	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCTorqueX))] = t.x;
+	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCTorqueY))] = t.y;
+	Joints[Index2D(TensorStrides[10], TensorStrides[11],
+	u32(idx), u32(JointCTorqueZ))] = t.z;
 }
 alias JointTypes = i32; //enums:enum
 const  Prismatic: JointTypes = 0;
@@ -252,17 +293,13 @@ const  Capsule: Shapes = 3;
 
 //////// import: "slmath-quaternion.go"
 fn MulQuat(v: vec3<f32>, q: vec4<f32>) -> vec3<f32> {
-	var qx = q.x;
-	var qy = q.y;
-	var qz = q.z;
-	var qw = q.w;
-	var ix = qw*v.x + qy*v.z - qz*v.y;
-	var iy = qw*v.y + qz*v.x - qx*v.z;
-	var iz = qw*v.z + qx*v.y - qy*v.x;
-	var iw = -qx*v.x - qy*v.y - qz*v.z;
-return vec3<f32>(ix*qw+iw*-qx+iy*-qz-iz*-qy,
-	iy*qw+iw*-qy+iz*-qx-ix*-qz,
-	iz*qw+iw*-qz+ix*-qy-iy*-qx);
+	var ix = q.w*v.x + q.y*v.z - q.z*v.y;
+	var iy = q.w*v.y + q.z*v.x - q.x*v.z;
+	var iz = q.w*v.z + q.x*v.y - q.y*v.x;
+	var iw = -q.x*v.x - q.y*v.y - q.z*v.z;
+return vec3<f32>(ix*q.w+iw*-q.x+iy*-q.z-iz*-q.y,
+	iy*q.w+iw*-q.y+iz*-q.x-ix*-q.z,
+	iz*q.w+iw*-q.z+ix*-q.y-iy*-q.x);
 }
 fn MulQuats(a: vec4<f32>,b: vec4<f32>) -> vec4<f32> {
 	var q: vec4<f32>;
@@ -270,6 +307,14 @@ fn MulQuats(a: vec4<f32>,b: vec4<f32>) -> vec4<f32> {
 	q.y = a.y*b.w + a.w*b.y + a.z*b.x - a.x*b.z;
 	q.z = a.z*b.w + a.w*b.z + a.x*b.y - a.y*b.x;
 	q.w = a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z;return q;
+}
+
+//////// import: "slmath-vector3.go"
+fn MulScalar3(v: vec3<f32>, s: f32) -> vec3<f32> {
+	return vec3<f32>(v.x*s, v.y*s, v.z*s);
+}
+fn Cross3(v: vec3<f32>,o: vec3<f32>) -> vec3<f32> {
+	return vec3<f32>(v.y*o.z-v.z*o.y, v.z*o.x-v.x*o.z, v.x*o.y-v.y*o.x);
 }
 
 //////// import: "step.go"
@@ -309,7 +354,6 @@ fn StepJoints(i: u32) { //gosl:kernel
 	var posecP = DynamicPos(jci);
 	var posecQ = DynamicRot(jci);
 	var xwcP = posecP;
-	var xwcQ = posecQ;
 	var comc = BodyCom(jcbi);
 	var rc = xwcP-(TransformPoint(posecP, posecQ, comc)); // child moment arm
 	var jf = JointForce(ji);
@@ -324,7 +368,16 @@ fn StepJoints(i: u32) { //gosl:kernel
 	case Ball: {
 		t = jtq;
 	}
+	case Revolute, Prismatic: {
+		var axis = JointAxis(ji);
+		var ap = MulQuat(axis, xwpQ);
+		f = f+(MulScalar3(ap, jf.x));
+	}
 	default: {
 	}
 	}
+	SetJointPForce(ji, f);
+	SetJointCForce(ji, f);
+	SetJointPTorque(ji, t+(Cross3(rp, f)));
+	SetJointCTorque(ji, t+(Cross3(rc, f)));
 }

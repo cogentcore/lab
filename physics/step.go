@@ -23,7 +23,7 @@ func MulTransforms(aP math32.Vector3, aQ math32.Quat, bP math32.Vector3, bQ math
 	*oQ = slmath.MulQuats(aQ, bQ)
 }
 
-// TransformPoint applies quat-based transform to given point
+// TransformPoint applies quat-based transform to given point.
 func TransformPoint(xP math32.Vector3, xQ math32.Quat, p math32.Vector3) math32.Vector3 {
 	dp := slmath.MulQuat(p, xQ)
 	return dp.Add(xP)
@@ -87,41 +87,38 @@ func StepJoints(i uint32) { //gosl:kernel
 	posecP := DynamicPos(jci)
 	posecQ := DynamicRot(jci)
 	xwcP := posecP
-	xwcQ := posecQ
+	// xwcQ := posecQ
 	comc := BodyCom(jcbi)
 	rc := xwcP.Sub(TransformPoint(posecP, posecQ, comc)) // child moment arm
 
+	// from controls:
 	jf := JointForce(ji)
 	jtq := JointTorque(ji)
 
 	var f, t math32.Vector3
 	switch jt {
 	case Free, Distance:
+		// todo: distance doesn't seem to be supported here?
 		f = jf
 		t = jtq
 	case Ball:
 		t = jtq
+	case Revolute, Prismatic:
+		axis := JointAxis(ji)
+		ap := slmath.MulQuat(axis, xwpQ)
+		f = f.Add(slmath.MulScalar3(ap, jf.X))
 	default:
+		// todo: D6 requires more iteration!
 	}
-}
-
-// Step is dynamic update step kernel. i = body
-func Step(i uint32) { //gosl:kernel
-	pars := GetParams(0)
-	ii := int32(i)
-	if ii >= pars.DynamicsN {
-		return
-	}
-	Dynamics.SetAdd(pars.Step*Dynamics.Value(int(ii), int(VelX)), int(ii), int(PosX))
-	Dynamics.SetAdd(pars.Step*Dynamics.Value(int(ii), int(VelY)), int(ii), int(PosY))
-	Dynamics.SetAdd(pars.Step*Dynamics.Value(int(ii), int(VelZ)), int(ii), int(PosZ))
-
-	// todo: force, integrated etc.
+	SetJointPForce(ji, f)
+	SetJointCForce(ji, f)
+	SetJointPTorque(ji, t.Add(slmath.Cross3(rp, f)))
+	SetJointCTorque(ji, t.Add(slmath.Cross3(rc, f)))
 }
 
 //gosl:end
 
-func (wl *World) Step() {
+func (wl *World) StepJoints() {
 	pars := GetParams(0)
-	RunStep(int(pars.DynamicsN))
+	RunStepJoints(int(pars.JointsN))
 }

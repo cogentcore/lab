@@ -42,9 +42,10 @@ const (
 	ParamsVar GPUVars = 0
 	BodiesVar GPUVars = 1
 	JointsVar GPUVars = 2
-	DynamicsVar GPUVars = 3
-	ContactsVar GPUVars = 4
-	JointControlsVar GPUVars = 5
+	BodyJointsVar GPUVars = 3
+	DynamicsVar GPUVars = 4
+	ContactsVar GPUVars = 5
+	JointControlsVar GPUVars = 6
 )
 
 // Tensor stride variables
@@ -86,6 +87,7 @@ func GPUInit() {
 			_ = vr
 			vr = sgp.Add("Bodies", gpu.Float32, 1, gpu.ComputeShader)
 			vr = sgp.Add("Joints", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("BodyJoints", gpu.Int32, 1, gpu.ComputeShader)
 			sgp.SetNValues(1)
 		}
 		{
@@ -107,10 +109,6 @@ func GPUInit() {
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/InitDynamics.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(1, "Bodies")
-		pl.AddVarUsed(2, "Dynamics")
-		pl.AddVarUsed(0, "Params")
-		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/Step.wgsl", sy)
-		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(2, "Dynamics")
 		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepJoints.wgsl", sy)
@@ -178,48 +176,6 @@ func RunOneInitDynamics(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunInitDynamicsCPU(n)
-	}
-}
-// RunStep runs the Step kernel with given number of elements,
-// on either the CPU or GPU depending on the UseGPU variable.
-// Can call multiple Run* kernels in a row, which are then all launched
-// in the same command submission on the GPU, which is by far the most efficient.
-// MUST call RunDone (with optional vars to sync) after all Run calls.
-// Alternatively, a single-shot RunOneStep call does Run and Done for a
-// single run-and-sync case.
-func RunStep(n int) {
-	if UseGPU {
-		RunStepGPU(n)
-	} else {
-		RunStepCPU(n)
-	}
-}
-
-// RunStepGPU runs the Step kernel on the GPU. See [RunStep] for more info.
-func RunStepGPU(n int) {
-	sy := GPUSystem
-	pl := sy.ComputePipelines["Step"]
-	ce, _ := sy.BeginComputePass()
-	pl.Dispatch1D(ce, n, 64)
-}
-
-// RunStepCPU runs the Step kernel on the CPU.
-func RunStepCPU(n int) {
-	gpu.VectorizeFunc(0, n, Step)
-}
-
-// RunOneStep runs the Step kernel with given number of elements,
-// on either the CPU or GPU depending on the UseGPU variable.
-// This version then calls RunDone with the given variables to sync
-// after the Run, for a single-shot Run-and-Done call. If multiple kernels
-// can be run in sequence, it is much more efficient to do multiple Run*
-// calls followed by a RunDone call.
-func RunOneStep(n int, syncVars ...GPUVars) {
-	if UseGPU {
-		RunStepGPU(n)
-		RunDone(syncVars...)
-	} else {
-		RunStepCPU(n)
 	}
 }
 // RunStepJoints runs the StepJoints kernel with given number of elements,
@@ -298,6 +254,9 @@ func ToGPU(vars ...GPUVars) {
 		case JointsVar:
 			v, _ := syVars.ValueByIndex(1, "Joints", 0)
 			gpu.SetValueFrom(v, Joints.Values)
+		case BodyJointsVar:
+			v, _ := syVars.ValueByIndex(1, "BodyJoints", 0)
+			gpu.SetValueFrom(v, BodyJoints.Values)
 		case DynamicsVar:
 			v, _ := syVars.ValueByIndex(2, "Dynamics", 0)
 			gpu.SetValueFrom(v, Dynamics.Values)
@@ -328,17 +287,20 @@ func ToGPUTensorStrides() {
 	}
 	sy := GPUSystem
 	syVars := sy.Vars()
-	TensorStrides.SetShapeSizes(50)
+	TensorStrides.SetShapeSizes(60)
 	TensorStrides.SetInt1D(Bodies.Shape().Strides[0], 0)
 	TensorStrides.SetInt1D(Bodies.Shape().Strides[1], 1)
 	TensorStrides.SetInt1D(Joints.Shape().Strides[0], 10)
 	TensorStrides.SetInt1D(Joints.Shape().Strides[1], 11)
-	TensorStrides.SetInt1D(Dynamics.Shape().Strides[0], 20)
-	TensorStrides.SetInt1D(Dynamics.Shape().Strides[1], 21)
-	TensorStrides.SetInt1D(Contacts.Shape().Strides[0], 30)
-	TensorStrides.SetInt1D(Contacts.Shape().Strides[1], 31)
-	TensorStrides.SetInt1D(JointControls.Shape().Strides[0], 40)
-	TensorStrides.SetInt1D(JointControls.Shape().Strides[1], 41)
+	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[0], 20)
+	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[1], 21)
+	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[2], 22)
+	TensorStrides.SetInt1D(Dynamics.Shape().Strides[0], 30)
+	TensorStrides.SetInt1D(Dynamics.Shape().Strides[1], 31)
+	TensorStrides.SetInt1D(Contacts.Shape().Strides[0], 40)
+	TensorStrides.SetInt1D(Contacts.Shape().Strides[1], 41)
+	TensorStrides.SetInt1D(JointControls.Shape().Strides[0], 50)
+	TensorStrides.SetInt1D(JointControls.Shape().Strides[1], 51)
 	v, _ := syVars.ValueByIndex(0, "TensorStrides", 0)
 	gpu.SetValueFrom(v, TensorStrides.Values)
 }
@@ -357,6 +319,9 @@ func ReadFromGPU(vars ...GPUVars) {
 			v.GPUToRead(sy.CommandEncoder)
 		case JointsVar:
 			v, _ := syVars.ValueByIndex(1, "Joints", 0)
+			v.GPUToRead(sy.CommandEncoder)
+		case BodyJointsVar:
+			v, _ := syVars.ValueByIndex(1, "BodyJoints", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case DynamicsVar:
 			v, _ := syVars.ValueByIndex(2, "Dynamics", 0)
@@ -389,6 +354,10 @@ func SyncFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(1, "Joints", 0)
 			v.ReadSync()
 			gpu.ReadToBytes(v, Joints.Values)
+		case BodyJointsVar:
+			v, _ := syVars.ValueByIndex(1, "BodyJoints", 0)
+			v.ReadSync()
+			gpu.ReadToBytes(v, BodyJoints.Values)
 		case DynamicsVar:
 			v, _ := syVars.ValueByIndex(2, "Dynamics", 0)
 			v.ReadSync()

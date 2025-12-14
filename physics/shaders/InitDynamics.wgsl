@@ -9,7 +9,7 @@ var<storage, read> Params: array<PhysParams>;
 // // Bodies are the rigid body elements (dynamic and static), // specifying the constant, non-dynamic properties, // which is initial state for dynamics. // [body][BodyVarsN] 
 @group(1) @binding(0)
 var<storage, read_write> Bodies: array<f32>;
-// // Dynamics are the dynamic rigid body elements: these actually move. // [body][DynamicVarsN] 
+// // Dynamics are the dynamic rigid body elements: these actually move. // [dyn body][DynamicVarsN] 
 @group(2) @binding(0)
 var<storage, read_write> Dynamics: array<f32>;
 // // JointControls are dynamic joint control inputs. // [joint][JointControlVarsN] 
@@ -102,7 +102,7 @@ const  AngDeltaX: DynamicVars = 29;
 const  AngDeltaY: DynamicVars = 30;
 const  AngDeltaZ: DynamicVars = 31;
 fn DynamicIndex(idx: i32) -> i32 {
-	return i32(bitcast<u32>(Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(idx), u32(Index))]));
+	return i32(bitcast<u32>(Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(Index))]));
 }
 
 //////// import: "contact.go"
@@ -144,8 +144,8 @@ const BodyVarsN: BodyVars = 37;
 const DynamicVarsN: DynamicVars = 32;
 const ContactVarsN: ContactVars = 9;
 const JointControlVarsN: JointControlVars = 19;
-const GPUVarsN: GPUVars = 6;
-const JointVarsN: JointVars = 21;
+const GPUVarsN: GPUVars = 7;
+const JointVarsN: JointVars = 35;
 const JointTypesN: JointTypes = 7;
 const ShapesN: Shapes = 4;
 
@@ -155,23 +155,37 @@ const  JointType: JointVars = 0;
 const  JointEnabled: JointVars = 1;
 const  JointParent: JointVars = 2;
 const  JointChild: JointVars = 3;
-const  JointAncestor: JointVars = 4;
-const  JointPPosX: JointVars = 5;
-const  JointPPosY: JointVars = 6;
-const  JointPPosZ: JointVars = 7;
-const  JointPRotX: JointVars = 8;
-const  JointPRotY: JointVars = 9;
-const  JointPRotZ: JointVars = 10;
-const  JointPRotW: JointVars = 11;
-const  JointCPosX: JointVars = 12;
-const  JointCPosY: JointVars = 13;
-const  JointCPosZ: JointVars = 14;
-const  JointCRotX: JointVars = 15;
-const  JointCRotY: JointVars = 16;
-const  JointCRotZ: JointVars = 17;
-const  JointCRotW: JointVars = 18;
-const  JointLimitLower: JointVars = 19;
-const  JointLimitUpper: JointVars = 20;
+const  JointPPosX: JointVars = 4;
+const  JointPPosY: JointVars = 5;
+const  JointPPosZ: JointVars = 6;
+const  JointPRotX: JointVars = 7;
+const  JointPRotY: JointVars = 8;
+const  JointPRotZ: JointVars = 9;
+const  JointPRotW: JointVars = 10;
+const  JointCPosX: JointVars = 11;
+const  JointCPosY: JointVars = 12;
+const  JointCPosZ: JointVars = 13;
+const  JointCRotX: JointVars = 14;
+const  JointCRotY: JointVars = 15;
+const  JointCRotZ: JointVars = 16;
+const  JointCRotW: JointVars = 17;
+const  JointAxisX: JointVars = 18;
+const  JointAxisY: JointVars = 19;
+const  JointAxisZ: JointVars = 20;
+const  JointLimitLower: JointVars = 21;
+const  JointLimitUpper: JointVars = 22;
+const  JointPForceX: JointVars = 23;
+const  JointPForceY: JointVars = 24;
+const  JointPForceZ: JointVars = 25;
+const  JointPTorqueX: JointVars = 26;
+const  JointPTorqueY: JointVars = 27;
+const  JointPTorqueZ: JointVars = 28;
+const  JointCForceX: JointVars = 29;
+const  JointCForceY: JointVars = 30;
+const  JointCForceZ: JointVars = 31;
+const  JointCTorqueX: JointVars = 32;
+const  JointCTorqueY: JointVars = 33;
+const  JointCTorqueZ: JointVars = 34;
 alias JointTypes = i32; //enums:enum
 const  Prismatic: JointTypes = 0;
 const  Revolute: JointTypes = 1;
@@ -207,6 +221,8 @@ const  Capsule: Shapes = 3;
 
 //////// import: "slmath-quaternion.go"
 
+//////// import: "slmath-vector3.go"
+
 //////// import: "step.go"
 fn InitDynamics(i: u32) { //gosl:kernel
 	let pars = Params[0];
@@ -215,15 +231,15 @@ fn InitDynamics(i: u32) { //gosl:kernel
 		return;
 	}
 	var bi = DynamicIndex(ii);
-	Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(ii), u32(PosX))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyPosX))];
-	Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(ii), u32(PosY))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyPosY))];
-	Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(ii), u32(PosZ))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyPosZ))];
-	Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(ii), u32(RotX))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotX))];
-	Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(ii), u32(RotY))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotY))];
-	Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(ii), u32(RotZ))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotZ))];
-	Dynamics[Index2D(TensorStrides[20], TensorStrides[21], u32(ii), u32(RotW))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotW))];
+	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(PosX))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyPosX))];
+	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(PosY))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyPosY))];
+	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(PosZ))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyPosZ))];
+	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(RotX))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotX))];
+	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(RotY))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotY))];
+	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(RotZ))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotZ))];
+	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(RotW))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotW))];
 	for (var v = VelX; v < DynamicVarsN; v++) {
-		Dynamics[Index2D(TensorStrides[20], TensorStrides[21],
+		Dynamics[Index2D(TensorStrides[30], TensorStrides[31],
 		u32(ii), u32(v))] = 0.0;
 	}
 }

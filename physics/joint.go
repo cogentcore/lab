@@ -33,9 +33,6 @@ const (
 	// JointChild is the dynamic body index for child body.
 	JointChild
 
-	// JointAncestor is the joint index where current parent is a child.
-	JointAncestor
-
 	// position of joint, in parent frame.
 	JointPPosX
 	JointPPosY
@@ -58,9 +55,35 @@ const (
 	JointCRotZ
 	JointCRotW
 
+	JointAxisX
+	JointAxisY
+	JointAxisZ
+
 	// joint limits
 	JointLimitLower
 	JointLimitUpper
+
+	// Computed forces (temp storage until aggregated by bodies).
+
+	// Computed parent joint force value.
+	JointPForceX
+	JointPForceY
+	JointPForceZ
+
+	// Computed parent joint torque value.
+	JointPTorqueX
+	JointPTorqueY
+	JointPTorqueZ
+
+	// Computed child joint force value.
+	JointCForceX
+	JointCForceY
+	JointCForceZ
+
+	// Computed child joint torque value.
+	JointCTorqueX
+	JointCTorqueY
+	JointCTorqueZ
 )
 
 func GetJointType(idx int32) JointTypes {
@@ -117,6 +140,76 @@ func SetJointPRot(idx int32, rot math32.Quat) {
 	Joints.Set(rot.W, int(idx), int(JointPRotW))
 }
 
+func JointAxis(idx int32) math32.Vector3 {
+	var axis math32.Vector3
+	axis.X = Joints.Value(int(idx), int(JointAxisX))
+	axis.Y = Joints.Value(int(idx), int(JointAxisY))
+	axis.Z = Joints.Value(int(idx), int(JointAxisZ))
+	return axis
+}
+
+func SetJointAxis(idx int32, axis math32.Vector3) {
+	Joints.Set(axis.X, int(idx), int(JointAxisX))
+	Joints.Set(axis.Y, int(idx), int(JointAxisY))
+	Joints.Set(axis.Z, int(idx), int(JointAxisZ))
+}
+
+func JointPForce(idx int32) math32.Vector3 {
+	var f math32.Vector3
+	f.X = Joints.Value(int(idx), int(JointPForceX))
+	f.Y = Joints.Value(int(idx), int(JointPForceY))
+	f.Z = Joints.Value(int(idx), int(JointPForceZ))
+	return f
+}
+
+func SetJointPForce(idx int32, f math32.Vector3) {
+	Joints.Set(f.X, int(idx), int(JointPForceX))
+	Joints.Set(f.Y, int(idx), int(JointPForceY))
+	Joints.Set(f.Z, int(idx), int(JointPForceZ))
+}
+
+func JointPTorque(idx int32) math32.Vector3 {
+	var t math32.Vector3
+	t.X = Joints.Value(int(idx), int(JointPTorqueX))
+	t.Y = Joints.Value(int(idx), int(JointPTorqueY))
+	t.Z = Joints.Value(int(idx), int(JointPTorqueZ))
+	return t
+}
+
+func SetJointPTorque(idx int32, t math32.Vector3) {
+	Joints.Set(t.X, int(idx), int(JointPTorqueX))
+	Joints.Set(t.Y, int(idx), int(JointPTorqueY))
+	Joints.Set(t.Z, int(idx), int(JointPTorqueZ))
+}
+
+func JointCForce(idx int32) math32.Vector3 {
+	var f math32.Vector3
+	f.X = Joints.Value(int(idx), int(JointCForceX))
+	f.Y = Joints.Value(int(idx), int(JointCForceY))
+	f.Z = Joints.Value(int(idx), int(JointCForceZ))
+	return f
+}
+
+func SetJointCForce(idx int32, f math32.Vector3) {
+	Joints.Set(f.X, int(idx), int(JointCForceX))
+	Joints.Set(f.Y, int(idx), int(JointCForceY))
+	Joints.Set(f.Z, int(idx), int(JointCForceZ))
+}
+
+func JointCTorque(idx int32) math32.Vector3 {
+	var t math32.Vector3
+	t.X = Joints.Value(int(idx), int(JointCTorqueX))
+	t.Y = Joints.Value(int(idx), int(JointCTorqueY))
+	t.Z = Joints.Value(int(idx), int(JointCTorqueZ))
+	return t
+}
+
+func SetJointCTorque(idx int32, t math32.Vector3) {
+	Joints.Set(t.X, int(idx), int(JointCTorqueX))
+	Joints.Set(t.Y, int(idx), int(JointCTorqueY))
+	Joints.Set(t.Z, int(idx), int(JointCTorqueZ))
+}
+
 // JointTypes are joint types that determine nature of interaction.
 type JointTypes int32 //enums:enum
 
@@ -142,13 +235,5 @@ const (
 	// D6 is a generic 6-DoF joint.
 	D6
 )
-
-// FixedStep does fixed joint processing
-func FixedStep(ji, jp, jc int32) {
-	pos := JointPPos(ji)
-	jpp := DynamicPos(jp)
-	bbp := pos.Add(bap)
-	SetDynamicPos(bb, bbp)
-}
 
 //gosl:end

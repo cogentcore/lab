@@ -28,13 +28,18 @@ var (
 	Bodies *tensor.Float32
 
 	// Joints is a list of permanent joints connecting bodies,
-	// which do not change (no dynamic variables).
+	// which do not change (no dynamic variables, except temps).
 	// [joint][JointVars]
 	//gosl:dims 2
 	Joints *tensor.Float32
 
+	// BodyJoints is a list of joint indexes for each dynamic body, for aggregating.
+	// [dyn body][parent, child][maxjointsperbody]
+	//gosl:dims 3
+	BodyJoints *tensor.Int32
+
 	// Dynamics are the dynamic rigid body elements: these actually move.
-	// [body][DynamicVarsN]
+	// [dyn body][DynamicVarsN]
 	//gosl:group Bodies
 	//gosl:dims 2
 	Dynamics *tensor.Float32
