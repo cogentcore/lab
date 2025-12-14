@@ -27,18 +27,23 @@ type World struct {
 	// [body][BodyVarsN]
 	Bodies *tensor.Float32
 
+	// Joints is a list of permanent joints connecting bodies,
+	// which do not change (no dynamic variables).
+	// [joint][JointVarsN]
+	Joints *tensor.Float32
+
 	// Dynamics are the dynamic rigid body elements: these actually move.
 	// The first set of variables are for initial values, and the second current.
 	// [body][DynamicVarsN]
 	Dynamics *tensor.Float32
 
-	// Joints is a list of permanent joints connecting bodies.
-	// [joint][JointVarsN]
-	Joints *tensor.Float32
-
 	// Contacts are points of contact between bodies.
 	// [contact][ContactVarsN]
 	Contacts *tensor.Float32
+
+	// JointControls are dynamic joint control inputs.
+	// [joint][JointControlVarsN]
+	JointControls *tensor.Float32
 }
 
 func NewWorld() *World {
@@ -51,9 +56,10 @@ func NewWorld() *World {
 func (wl *World) Init() {
 	wl.Params = []PhysParams{}
 	wl.Bodies = tensor.NewFloat32(0, int(BodyVarsN))
-	wl.Dynamics = tensor.NewFloat32(0, int(DynamicVarsN))
 	wl.Joints = tensor.NewFloat32(0, int(JointVarsN))
+	wl.Dynamics = tensor.NewFloat32(0, int(DynamicVarsN))
 	wl.Contacts = tensor.NewFloat32(0, int(ContactVarsN))
+	wl.JointControls = tensor.NewFloat32(0, int(JointControlVarsN))
 	wl.SetAsCurrentVars()
 }
 
@@ -81,14 +87,14 @@ func (wl *World) NewDynamic(shape Shapes, size, pos math32.Vector3, rot math32.Q
 	return
 }
 
-// NewJoint adds a new joint between two objects.
-func (wl *World) NewJoint(joint JointTypes, bodyA, bodyB int32, pos math32.Vector3) int32 {
+// NewJoint adds a new joint between parent and child dynamic object indexes.
+func (wl *World) NewJoint(joint JointTypes, parent, child int32, pos math32.Vector3) int32 {
 	sizes := wl.Joints.ShapeSizes()
 	idx := int32(sizes[0])
 	wl.Joints.SetShapeSizes(int(idx+1), int(JointVarsN))
-	SetJointA(idx, bodyA)
-	SetJointB(idx, bodyB)
-	SetJointPos(idx, pos)
+	SetJointParent(idx, parent)
+	SetJointChild(idx, child)
+	SetJointPPos(idx, pos)
 	wl.Params[0].JointsN = idx + 1
 	return idx
 }
@@ -110,9 +116,10 @@ func (wl *World) SetAsCurrent() {
 func (wl *World) SetAsCurrentVars() {
 	Params = wl.Params
 	Bodies = wl.Bodies
-	Dynamics = wl.Dynamics
 	Joints = wl.Joints
+	Dynamics = wl.Dynamics
 	Contacts = wl.Contacts
+	JointControls = wl.JointControls
 }
 
 // GPUInit initializes the GPU and transfers Infra.

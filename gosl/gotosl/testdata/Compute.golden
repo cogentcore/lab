@@ -126,6 +126,14 @@ const  Raw: i32   = 0;
 const  Integ: i32 = 1;
 const  Exp: i32 = 2;
 const  NVars: i32 = 3;
+fn TransformPoint(xP: vec3<f32>, xQ: vec4<f32>, p: vec3<f32>) -> vec3<f32> {
+	var dp = MulQuat(p, xQ);return dp+(xP);
+}
+fn MulTransforms(aP: vec3<f32>, aQ: vec4<f32>, bP: vec3<f32>, bQ: vec4<f32>, oP: ptr<function,vec3<f32>>, oQ: ptr<function,vec4<f32>>) {
+	var br = MulQuat(bP, aQ);
+	*oP = br+(aP);
+	*oQ = MulQuats(aQ, bQ);
+}
 alias NeuronFlags = i32;
 const  NeuronOff: NeuronFlags = 0x01;
 const  NeuronHasExt: NeuronFlags = 0x02; // note: 1<<2 does NOT work
@@ -156,6 +164,8 @@ struct ParamStruct {
 	pad: f32, // comment this out to trigger alignment warning
 	VXYf: vec4<f32>,  // translates to vec4<f32>
 	VXYi: vec4<i32>, // translates to vec4<i32>
+	Pos:  vec4<f32>,
+	Rot:  vec4<f32>,
 	Subs: SubParamStruct,
 }
 fn ParamStruct_IntegFromRaw(ps: ParamStruct, idx: i32) -> f32 {
@@ -170,10 +180,15 @@ fn ParamStruct_IntegFromRaw(ps: ParamStruct, idx: i32) -> f32 {
 	var a = ps.VXYf.x;
 	var b = vec2<f32>(ps.VXYf.x,ps.VXYf.y);
 	var c = b*(b+(b)); // converted to direct ops
+	var op: vec3<f32>;
+	var oq: vec4<f32>;
+	MulTransforms(vec3<f32>(ps.Pos.x,ps.Pos.y,ps.Pos.z), ps.Rot, vec3<f32>(ps.Pos.x,ps.Pos.y,ps.Pos.z), ps.Rot, &op, &oq);
+	var d = MulQuat(op, oq);
+	d = TransformPoint(op, oq, d);
 	let ctx = Ctx[0];
 	ParamStruct_AnotherMeth(ps, ctx, idx, &a);
 	var bv = BigGet(Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(Integ)));
-	BigSet(bv*2 + c.y, Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(Exp)));return Data[Index2D(TensorStrides[0], TensorStrides[1],
+	BigSet(bv*2 + c.y + d.z, Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(Exp)));return Data[Index2D(TensorStrides[0], TensorStrides[1],
 u32(idx), u32(Exp))];
 }
 fn ParamStruct_AnotherMeth(ps: ParamStruct, ctx: Context, idx: i32, ptrarg: ptr<function,f32>) {
@@ -219,4 +234,26 @@ struct Context {
 fn Compute(i: u32) { //gosl:kernel
 	let params = Params[0];
 	ParamStruct_IntegFromRaw(params, i32(i));
+}
+
+//////// import: "slmath-quaternion.go"
+fn MulQuat(v: vec3<f32>, q: vec4<f32>) -> vec3<f32> {
+	var qx = q.x;
+	var qy = q.y;
+	var qz = q.z;
+	var qw = q.w;
+	var ix = qw*v.x + qy*v.z - qz*v.y;
+	var iy = qw*v.y + qz*v.x - qx*v.z;
+	var iz = qw*v.z + qx*v.y - qy*v.x;
+	var iw = -qx*v.x - qy*v.y - qz*v.z;
+return vec3<f32>(ix*qw+iw*-qx+iy*-qz-iz*-qy,
+	iy*qw+iw*-qy+iz*-qx-ix*-qz,
+	iz*qw+iw*-qz+ix*-qy-iy*-qx);
+}
+fn MulQuats(a: vec4<f32>,b: vec4<f32>) -> vec4<f32> {
+	var q: vec4<f32>;
+	q.x = a.x*b.w + a.w*b.x + a.y*b.z - a.z*b.y;
+	q.y = a.y*b.w + a.w*b.y + a.z*b.x - a.x*b.z;
+	q.z = a.z*b.w + a.w*b.z + a.x*b.y - a.y*b.x;
+	q.w = a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z;return q;
 }

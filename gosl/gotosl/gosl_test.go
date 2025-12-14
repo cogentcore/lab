@@ -17,7 +17,7 @@ func TestTranslate(t *testing.T) {
 	os.Chdir("testdata")
 
 	opts := cli.DefaultOptions("gosl", "Go as a shader language converts Go code to WGSL WebGPU shader code, which can be run on the GPU through WebGPU.")
-	cfg := &Config{}
+	cfg := &Config{Keep: true}
 	cli.Run(opts, cfg, Run)
 
 	exSh, err := os.ReadFile("Compute.golden")

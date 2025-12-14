@@ -4,7 +4,28 @@
 
 package physics
 
+import (
+	"cogentcore.org/core/math32"
+	"cogentcore.org/lab/gosl/slmath"
+)
+
 //gosl:start
+//gosl:import "cogentcore.org/lab/gosl/slmath"
+
+// MulTransforms computes the equivalent of matrix multiplication for
+// two quat-based transforms, o = a * b
+func MulTransforms(aP math32.Vector3, aQ math32.Quat, bP math32.Vector3, bQ math32.Quat, oP *math32.Vector3, oQ *math32.Quat) {
+	// rotate b by a and add a
+	br := slmath.MulQuat(bP, aQ)
+	*oP = br.Add(aP)
+	*oQ = slmath.MulQuats(aQ, bQ)
+}
+
+// TransformPoint applies quat-based transform to given point
+func TransformPoint(xP math32.Vector3, xQ math32.Quat, p math32.Vector3) math32.Vector3 {
+	dp := slmath.MulQuat(p, xQ)
+	return dp.Add(xP)
+}
 
 // InitDynamics copies Body initial state to dynamic state.
 func InitDynamics(i uint32) { //gosl:kernel
@@ -35,12 +56,49 @@ func StepJoints(i uint32) { //gosl:kernel
 	if ji >= pars.JointsN {
 		return
 	}
-	ba := JointAIndex(ji)
-	bb := JointBIndex(ji)
+	// todo: enabled
+	jpi := JointParentIndex(ji)
+	jpbi := DynamicIndex(jpi)
+	jci := JointChildIndex(ji)
+	jcbi := DynamicIndex(jci)
 	jt := GetJointType(ji)
+
+	jpP := JointPPos(ji)
+	jpQ := JointPRot(ji)
+
+	// parent world transform
+	xwpP := jpP
+	xwpQ := jpQ
+	posepP := jpP
+	posepQ := jpQ
+	var comp math32.Vector3
+
+	if jpi >= 0 { // can be fixed
+		posepP = DynamicPos(jpi)
+		posepQ = DynamicRot(jpi)
+		MulTransforms(posepP, posepQ, jpP, jpQ, &xwpP, &xwpQ)
+		comp = BodyCom(jpbi)
+	}
+	rp := xwpP.Sub(TransformPoint(posepP, posepQ, comp)) // parent moment arm
+
+	// child world transform
+	posecP := DynamicPos(jci)
+	posecQ := DynamicRot(jci)
+	xwcP := posecP
+	xwcQ := posecQ
+	comc := BodyCom(jcbi)
+	rc := xwcP.Sub(TransformPoint(posecP, posecQ, comc)) // child moment arm
+
+	jf := JointForce(ji)
+	jtq := JointTorque(ji)
+
+	var f, t math32.Vector3
 	switch jt {
-	case Glue:
-		GlueStep(ji, ba, bb)
+	case Free, Distance:
+		f = jf
+		t = jtq
+	case Ball:
+		t = jtq
 	default:
 	}
 }

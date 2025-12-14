@@ -2,9 +2,11 @@
 Name = "GoSL"
 +++
 
-**GoSL** allows you to write Go programs that run on [[GPU]] hardware, by transpiling Go into the WGSL shader language used by [WebGPU](https://www.w3.org/TR/webgpu/), thereby establishing the _Go shader language_.
+**GoSL** (via the `gosl` executable) allows you to write Go programs that run on [[GPU]] hardware, by transpiling Go into the WGSL shader language used by [WebGPU](https://www.w3.org/TR/webgpu/), thereby establishing the _Go shader language_.
 
-GoSL uses the [core gpu](https://github.com/cogentcore/core/tree/main/gpu) compute shader system, and operates within the overall [[Goal]] framework of an augmented version of the Go language.
+GoSL uses the [core gpu](https://github.com/cogentcore/core/tree/main/gpu) compute shader system, and can take advantage of the [[Goal]] transpiler to provide a more natural tensor indexing syntax.
+
+Functionally, GoSL is similar to [NVIDIA warp](https://github.com/NVIDIA/warp) --  [docs](https://nvidia.github.io/warp/basics.html), which uses python as the original source and converts it to either C++ or CUDA code. In GoSL, the original code is directly Go, so we just need to do the WGSL part. Unlike warp, WGSL runs on all GPU platforms, including the web (warp only runs on NVIDIA GPUs, on desktop).
 
 The relevant regions of Go code to be run on the GPU are tagged using the `//gosl:start` and `//gosl:end` comment directives, and this code must only use basic expressions and concrete types that will compile correctly in a GPU shader (see [[#Restrictions]] below). Method functions and pass-by-reference pointer arguments to `struct` types are supported and incur no additional compute cost due to inlining (see notes below for more detail).
 

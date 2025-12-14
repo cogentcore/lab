@@ -2,13 +2,44 @@
 
 The `physics` engine is a 3D physics simulator for creating virtual environments, which can run on the GPU or CPU using [gosl](https://cogentcore.org/lab/gosl).
 
-The overall design emphasizes simplicity and robustness over exact physics precision. A simple forward Euler integration of aggregated forces is computed, with strong limits, soft constraints, and damping dynamics to prevent numerical instability even with relatively large step sizes.
-
 All interactions are mediated by `Joint` elements that connect two rigid `Body` elements. Optimized joint types enable robust implementation of specific types of interactions.
 
-To enable GPU computation, the data is all stored in tensor structures, with `Dynamics` and `Statics` Body tensors holding all the rigid body data, etc.
+To enable GPU computation, the data is all stored in tensor structures, with `Dynamics` augmenting basic `Body` data for moving rigid bodies. Static elements participate in collisions but not joints.
 
-The [world](world) visualization sub-package manages a View element that links to physics bodies and generates an [xyz](https://cogentcore.org/core/xyz) 3D scenegraph based on the physics bodies, and updates this visualization efficiently as the physics is updated.
+The [world](world) visualization sub-package manages a `View` element that links to physics bodies and generates an [xyz](https://cogentcore.org/core/xyz) 3D scenegraph based on the physics bodies, and updates this visualization efficiently as the physics is updated.
+
+## XPBD: Extended Position-Based Dynamics
+
+My intuition in confronting the physics problem was to directly update positions instead of dealing with forces, accelerations, or even velocities, because positions are more robust. Higher-order derivatives are messy and unstable. Turns out that this approach has proven quite powerful, with the MacklinMullerChentanez16 and MullerMacklinChentanezEtAl20 papers on XPBD providing some very compelling results: https://www.youtube.com/watch?v=CPq87E1vD8k
+
+* https://github.com/newton-physics/newton -- supports XPBD as one of several solvers, MuJoCo is default. 
+* https://github.com/NVIDIAGameWorks/PhysX -- older NVIDIA project -- not sure what it uses
+* https://mujoco.readthedocs.io/en/stable/overview.html -- MuJoCo is widely used and is the default for Newton.
+* https://github.com/bulletphysics/bullet3 -- uses Featherstone for joints and impulse-based contacts. Featherstone is incredibly complex to implement.
+
+* https://github.com/InteractiveComputerGraphics/PositionBasedDynamics -- another PBD impl
+* https://github.com/nobuo-nakagawa/xpbd " 2016
+
+So, the project is now to implement the XPBD algorithm, which is theoretically very simple, and the Newton code provides a python-based GPU-organized version.
+
+## Notes:
+
+* Update `Contact` points where bodies will touch (Dynamic on Dynamic or Static). Static is strongly grouped with hierarchical bounding boxes to optimize that process. Dynamic groups are updated as a function of motion to remain compact.
+
+* Contact points have priority over joints and are addressed first. No penetration is allowed. Position and velocity are updated directly.
+
+* Joints are then updated -- only one joint per dependent dynamic body.
+
+
+### Scenarios
+
+* body -> head -> eye: this follows a clear "support" / A -> B directional dynamic -- but not parallel, as updates need to flow along the chain.
+
+* foot -> ankle -> leg -> body: assume that foot gets contact support, then leg, body depend on that. but what about falling over, so laying on body -- now foot is free, and dependence goes the other way. need a full constraint satisfaction solution.
+
+* could do multi-step constraint satisfaction within each update, so everything just propagates and an update step happens when settled? allows fully general updating. simpler. seems good.
+
+* settle on positions, not velocities. velocity is a parameter to use as a constraint?
 
 ## OLD:
 
@@ -50,7 +81,7 @@ It is up to the user to manage the list of potential collisions, e.g., by settin
 
 
 
-Currently, it provides collision detection and basic forward Euler physics updating, but it does not yet compute any forces for the interactions among the bodies. Ultimately we hope to figure out how the [Bullet](https://github.com/bulletphysics/bullet3) system works and get that running here, in a clean and simple implementation.
+Currently, it provides collision detection and basic forward Euler physics updating, but it does not yet compute any forces for the interactions among the bodies. Ultimately we hope to figure out how the [Bullet]) system works and get that running here, in a clean and simple implementation.
 
 Incrementally, we will start with a basic explicitly driven form of physics that is sufficient to get started, and build from there.
 

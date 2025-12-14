@@ -1,0 +1,73 @@
+// Copyright (c) 2025, Cogent Core. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package physics
+
+import "cogentcore.org/core/math32"
+
+//gosl:start
+
+// JointControlVars are external joint control input variables stored in tensor.Float32.
+// These must be in one-to-one correspondence with the joints.
+type JointControlVars int32 //enums:enum
+
+const (
+	// Joint force and torque inputs
+	JointForceX JointControlVars = iota
+	JointForceY
+	JointForceZ
+	JointTorqueX
+	JointTorqueY
+	JointTorqueZ
+
+	// target values (1 DoF use JointTargetPosX)
+	JointTargetPosX
+	JointTargetPosY
+	JointTargetPosZ
+
+	JointTargetRotX
+	JointTargetRotY
+	JointTargetRotZ
+	JointTargetRotW
+
+	// target velocity
+	JointTargetVelX
+	JointTargetVelY
+	JointTargetVelZ
+
+	// target angular velocity
+	JointTargetAngVelX
+	JointTargetAngVelY
+	JointTargetAngVelZ
+)
+
+func JointForce(idx int32) math32.Vector3 {
+	var f math32.Vector3
+	f.X = Joints[idx, JointForceX]
+	f.Y = Joints[idx, JointForceY]
+	f.Z = Joints[idx, JointForceZ]
+	return f
+}
+
+func SetJointForce(idx int32, f math32.Vector3) {
+	Joints[idx, JointForceX] = f.X
+	Joints[idx, JointForceY] = f.Y
+	Joints[idx, JointForceZ] = f.Z
+}
+
+func JointTorque(idx int32) math32.Vector3 {
+	var f math32.Vector3
+	f.X = Joints[idx, JointTorqueX]
+	f.Y = Joints[idx, JointTorqueY]
+	f.Z = Joints[idx, JointTorqueZ]
+	return f
+}
+
+func SetJointTorque(idx int32, f math32.Vector3) {
+	Joints[idx, JointTorqueX] = f.X
+	Joints[idx, JointTorqueY] = f.Y
+	Joints[idx, JointTorqueZ] = f.Z
+}
+
+//gosl:end

@@ -19,6 +19,9 @@ const (
 	// Shape is the shape type of the object, as a Shapes type.
 	Shape BodyVars = iota
 
+	// WorldIndex partitions body into different worlds; Global are -1
+	WorldIndex
+
 	// Size is the size of the object (values depend on shape type).
 	SizeX
 	SizeY
@@ -29,6 +32,9 @@ const (
 	// Mass is the mass of the object.
 	Mass
 
+	// InvMass is 1/mass of the object or 0 if no mass.
+	InvMass
+
 	// Bounce specifies the COR or coefficient of restitution (0..1),
 	// which determines how elastic the collision is,
 	// i.e., final velocity / initial velocity.
@@ -38,16 +44,43 @@ const (
 	// Additive across the two surfaces.
 	Friction
 
-	// 3D position of center of mass.
+	// 3D position of body (structural center).
 	BodyPosX
 	BodyPosY
 	BodyPosZ
 
-	// Quaternion rotation.
+	// Quaternion rotation of body.
 	BodyRotX
 	BodyRotY
 	BodyRotZ
 	BodyRotW
+
+	// Relative center-of-mass offset from 3D position of body.
+	BodyComX
+	BodyComY
+	BodyComZ
+
+	// Inertia 3x3 matrix (column matrix organization, r,c labels).
+	InertiaXX
+	InertiaYX
+	InertiaZX
+	InertiaXY
+	InertiaYY
+	InertiaZY
+	InertiaXZ
+	InertiaYZ
+	InertiaZZ
+
+	// InvInertia inverse inertia 3x3 matrix (column matrix organization, r,c labels).
+	InvInertiaXX
+	InvInertiaYX
+	InvInertiaZX
+	InvInertiaXY
+	InvInertiaYY
+	InvInertiaZY
+	InvInertiaXZ
+	InvInertiaYZ
+	InvInertiaZZ
 )
 
 func BodyShape(idx int32) Shapes {
@@ -102,6 +135,20 @@ func SetBodyRot(idx int32, rot math32.Quat) {
 	Bodies[idx, BodyRotW] = rot.W
 }
 
+func BodyCom(idx int32) math32.Vector3 {
+	var pos math32.Vector3
+	pos.X = Bodies[idx, BodyComX]
+	pos.Y = Bodies[idx, BodyComY]
+	pos.Z = Bodies[idx, BodyComZ]
+	return pos
+}
+
+func SetBodyCom(idx int32, pos math32.Vector3) {
+	Bodies[idx, BodyComX] = pos.X
+	Bodies[idx, BodyComY] = pos.Y
+	Bodies[idx, BodyComZ] = pos.Z
+}
+
 // DynamicVars are dynamic body variables stored in tensor.Float32.
 type DynamicVars int32 //enums:enum
 
@@ -120,29 +167,47 @@ const (
 	RotZ
 	RotW
 
+	// Linear velocity.
 	VelX
 	VelY
 	VelZ
-
-	// Linear acceleration.
-	AccX
-	AccY
-	AccZ
-
-	// Linear force driving linear acceleration.
-	ForceX
-	ForceY
-	ForceZ
 
 	// Angular velocity.
 	AngVelX
 	AngVelY
 	AngVelZ
 
+	// Linear acceleration.
+	AccX
+	AccY
+	AccZ
+
 	// Angular acceleration due to applied torques.
 	AngAccX
 	AngAccY
 	AngAccZ
+
+	// Linear force driving linear acceleration.
+	// joints write to this using atomic. must clear after each step.
+	ForceX
+	ForceY
+	ForceZ
+
+	// Linear force driving linear acceleration.
+	// joints write to this using atomic. must clear after each step.
+	TorqueX
+	TorqueY
+	TorqueZ
+
+	// Linear deltas.
+	DeltaX
+	DeltaY
+	DeltaZ
+
+	// Angular deltas.
+	AngDeltaX
+	AngDeltaY
+	AngDeltaZ
 )
 
 func SetDynamicIndex(idx, bodyIdx int32) {

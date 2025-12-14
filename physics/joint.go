@@ -14,27 +14,53 @@ import (
 
 //gosl:start
 
-// JointVars are joint state variables stored in tensor.Float32
+// JointVars are joint state variables stored in tensor.Float32.
+// These are all static joint properties; dynamic control variables
+// in [JointControlVars] and [JointControls].
 type JointVars int32 //enums:enum
 
 const (
 	// JointType (as an int32 from bits).
 	JointType JointVars = iota
 
-	// JointA is the dynamic body index for source, anchor, A body.
-	JointA
+	// JointEnabled allows joints to be dynamically enabled.
+	JointEnabled
 
-	// JointB is the dynamic body index for target, follower, B body.
-	JointB
+	// JointParent is the dynamic body index for parent body.
+	// Can be -1 for a fixed parent for absolute anchor.
+	JointParent
 
-	// position of joint.
-	JointPosX
-	JointPosY
-	JointPosZ
+	// JointChild is the dynamic body index for child body.
+	JointChild
 
-	// joint parameters, specific to each joint type.
-	JointParamA
-	JointParamB
+	// JointAncestor is the joint index where current parent is a child.
+	JointAncestor
+
+	// position of joint, in parent frame.
+	JointPPosX
+	JointPPosY
+	JointPPosZ
+
+	// orientation of joint, in parent frame.
+	JointPRotX
+	JointPRotY
+	JointPRotZ
+	JointPRotW
+
+	// position of joint, in child frame.
+	JointCPosX
+	JointCPosY
+	JointCPosZ
+
+	// orientation of joint, in child frame.
+	JointCRotX
+	JointCRotY
+	JointCRotZ
+	JointCRotW
+
+	// joint limits
+	JointLimitLower
+	JointLimitUpper
 )
 
 func GetJointType(idx int32) JointTypes {
@@ -45,52 +71,82 @@ func SetJointType(idx int32, typ JointTypes) {
 	Joints.Set(math.Float32frombits(uint32(typ)), int(idx), int(JointType))
 }
 
-func SetJointA(idx, bodyIdx int32) {
-	Joints.Set(math.Float32frombits(uint32(bodyIdx)), int(idx), int(JointA))
+func SetJointParent(idx, bodyIdx int32) {
+	Joints.Set(math.Float32frombits(uint32(bodyIdx)), int(idx), int(JointParent))
 }
 
-func JointAIndex(idx int32) int32 {
-	return int32(math.Float32bits(Joints.Value(int(idx), int(JointA))))
+func JointParentIndex(idx int32) int32 {
+	return int32(math.Float32bits(Joints.Value(int(idx), int(JointParent))))
 }
 
-func SetJointB(idx, bodyIdx int32) {
-	Joints.Set(math.Float32frombits(uint32(bodyIdx)), int(idx), int(JointB))
+func SetJointChild(idx, bodyIdx int32) {
+	Joints.Set(math.Float32frombits(uint32(bodyIdx)), int(idx), int(JointChild))
 }
 
-func JointBIndex(idx int32) int32 {
-	return int32(math.Float32bits(Joints.Value(int(idx), int(JointB))))
+func JointChildIndex(idx int32) int32 {
+	return int32(math.Float32bits(Joints.Value(int(idx), int(JointChild))))
 }
 
-func JointPos(idx int32) math32.Vector3 {
+func JointPPos(idx int32) math32.Vector3 {
 	var pos math32.Vector3
-	pos.X = Joints.Value(int(idx), int(JointPosX))
-	pos.Y = Joints.Value(int(idx), int(JointPosY))
-	pos.Z = Joints.Value(int(idx), int(JointPosZ))
+	pos.X = Joints.Value(int(idx), int(JointPPosX))
+	pos.Y = Joints.Value(int(idx), int(JointPPosY))
+	pos.Z = Joints.Value(int(idx), int(JointPPosZ))
 	return pos
 }
 
-func SetJointPos(idx int32, pos math32.Vector3) {
-	Joints.Set(pos.X, int(idx), int(JointPosX))
-	Joints.Set(pos.Y, int(idx), int(JointPosY))
-	Joints.Set(pos.Z, int(idx), int(JointPosZ))
+func SetJointPPos(idx int32, pos math32.Vector3) {
+	Joints.Set(pos.X, int(idx), int(JointPPosX))
+	Joints.Set(pos.Y, int(idx), int(JointPPosY))
+	Joints.Set(pos.Z, int(idx), int(JointPPosZ))
+}
+
+func JointPRot(idx int32) math32.Quat {
+	var rot math32.Quat
+	rot.X = Joints.Value(int(idx), int(JointPRotX))
+	rot.Y = Joints.Value(int(idx), int(JointPRotY))
+	rot.Z = Joints.Value(int(idx), int(JointPRotZ))
+	rot.W = Joints.Value(int(idx), int(JointPRotW))
+	return rot
+}
+
+func SetJointPRot(idx int32, rot math32.Quat) {
+	Joints.Set(rot.X, int(idx), int(JointPRotX))
+	Joints.Set(rot.Y, int(idx), int(JointPRotY))
+	Joints.Set(rot.Z, int(idx), int(JointPRotZ))
+	Joints.Set(rot.W, int(idx), int(JointPRotW))
 }
 
 // JointTypes are joint types that determine nature of interaction.
 type JointTypes int32 //enums:enum
 
 const (
-	// Glue is a completely rigid joint that supercedes all others,
-	// where body A drives motion of body B.
-	// JointA is the parent, supporting body, JointB is the child supported.
-	Glue JointTypes = iota
+	// Prismatic allows translation along a single axis (slider): 1 DoF.
+	Prismatic JointTypes = iota
 
+	// Revolute allows rotation about a single axis (axel): 1 DoF.
+	Revolute
+
+	// Ball allows rotation about all three axes (3 DoF, quaternion).
 	Ball
+
+	// Fixed locks all relative motion: 0 DoF.
+	Fixed
+
+	// Free allows full 6-DoF motion (translation and rotation).
+	Free
+
+	// Distance keeps two bodies a distance within joint limits: 6 DoF.
+	Distance
+
+	// D6 is a generic 6-DoF joint.
+	D6
 )
 
-// GlueStep does glue joint processing
-func GlueStep(ji, ba, bb int32) {
-	pos := JointPos(ji)
-	bap := DynamicPos(ba)
+// FixedStep does fixed joint processing
+func FixedStep(ji, jp, jc int32) {
+	pos := JointPPos(ji)
+	jpp := DynamicPos(jp)
 	bbp := pos.Add(bap)
 	SetDynamicPos(bb, bbp)
 }

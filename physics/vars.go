@@ -27,19 +27,26 @@ var (
 	//gosl:dims 2
 	Bodies *tensor.Float32
 
-	// Dynamics are the dynamic rigid body elements: these actually move.
-	// [body][DynamicVarsN]
-	//gosl:dims 2
-	Dynamics *tensor.Float32
-
-	// Joints is a list of permanent joints connecting bodies.
+	// Joints is a list of permanent joints connecting bodies,
+	// which do not change (no dynamic variables).
 	// [joint][JointVars]
 	//gosl:dims 2
 	Joints *tensor.Float32
 
+	// Dynamics are the dynamic rigid body elements: these actually move.
+	// [body][DynamicVarsN]
+	//gosl:group Bodies
+	//gosl:dims 2
+	Dynamics *tensor.Float32
+
 	// Contacts are points of contact between bodies.
 	// [contact][ContactVarsN]
-	//gosl:group Contacts
 	//gosl:dims 2
 	Contacts *tensor.Float32
+
+	// JointControls are dynamic joint control inputs.
+	// [joint][JointControlVarsN]
+	//gosl:group Controls
+	//gosl:dims 2
+	JointControls *tensor.Float32
 )

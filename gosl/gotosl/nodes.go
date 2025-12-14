@@ -695,14 +695,26 @@ func (p *printer) derefPtrArgs(x ast.Expr, prec, depth int) {
 // gosl: mark pointer param types (only for non-struct), returns true if pointer
 func (p *printer) ptrParamType(x ast.Expr) (ast.Expr, bool) {
 	if u, ok := x.(*ast.StarExpr); ok {
-		typ := p.getIdType(u.X.(*ast.Ident))
-		if typ != nil {
-			if _, ok := typ.Underlying().(*types.Struct); ok {
-				return u.X, false
+		switch pt := u.X.(type) {
+		case *ast.Ident:
+			typ := p.getIdType(pt)
+			if typ != nil {
+				if _, ok := typ.Underlying().(*types.Struct); ok {
+					return u.X, false
+				}
 			}
+			p.print("ptr<function", token.COMMA)
+			return u.X, true
+		case *ast.SelectorExpr:
+			if id, ok := pt.X.(*ast.Ident); ok {
+				if id.Name == "math32" {
+					p.print("ptr<function", token.COMMA)
+					return u.X, true
+				}
+			}
+		default:
+			fmt.Println("ERROR: unrecognized pointer type -- can only have pointers to structs and vector types", pt)
 		}
-		p.print("ptr<function", token.COMMA)
-		return u.X, true
 	}
 	return x, false
 }
@@ -1365,6 +1377,7 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 		args := x.Args
 		var rwargs []rwArg
 		if isid {
+			// fmt.Println("start call:", fid.Name, p.curFunc)
 			if p.curFunc != nil {
 				p.curFunc.Funcs[fid.Name] = p.GoToSL.RecycleFunc(fid.Name)
 			}
@@ -1394,6 +1407,7 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 		p.setPos(x.Rparen)
 		p.print(token.RPAREN)
 		p.assignRwArgs(rwargs)
+		// fmt.Println("call:", x.Fun, p.curFunc)
 
 	case *ast.CompositeLit:
 		// composite literal elements that are composite literals themselves may have the type omitted
@@ -3158,8 +3172,8 @@ func (p *printer) funcDecl(d *ast.FuncDecl) {
 	p.curMethRecv = nil
 	if p.GoToSL.GetFuncGraph {
 		p.GoToSL.FuncGraph[fname] = p.curFunc
-		p.curFunc = nil
 	}
+	p.curFunc = nil
 }
 
 func (p *printer) decl(decl ast.Decl) {
