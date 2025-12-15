@@ -63,6 +63,16 @@ const (
 	JointLimitLower
 	JointLimitUpper
 
+	// joint stiffness target (ke)
+	JointStiffX
+	JointStiffY
+	JointStiffZ
+
+	// joint damping target (kd)
+	JointDampX
+	JointDampY
+	JointDampZ
+
 	// Computed forces (temp storage until aggregated by bodies).
 
 	// Computed parent joint force value.
@@ -111,11 +121,7 @@ func JointChildIndex(idx int32) int32 {
 }
 
 func JointPPos(idx int32) math32.Vector3 {
-	var pos math32.Vector3
-	pos.X = Joints.Value(int(idx), int(JointPPosX))
-	pos.Y = Joints.Value(int(idx), int(JointPPosY))
-	pos.Z = Joints.Value(int(idx), int(JointPPosZ))
-	return pos
+	return math32.Vec3(Joints.Value(int(idx), int(JointPPosX)), Joints.Value(int(idx), int(JointPPosY)), Joints.Value(int(idx), int(JointPPosZ)))
 }
 
 func SetJointPPos(idx int32, pos math32.Vector3) {
@@ -125,12 +131,7 @@ func SetJointPPos(idx int32, pos math32.Vector3) {
 }
 
 func JointPRot(idx int32) math32.Quat {
-	var rot math32.Quat
-	rot.X = Joints.Value(int(idx), int(JointPRotX))
-	rot.Y = Joints.Value(int(idx), int(JointPRotY))
-	rot.Z = Joints.Value(int(idx), int(JointPRotZ))
-	rot.W = Joints.Value(int(idx), int(JointPRotW))
-	return rot
+	return math32.NewQuat(Joints.Value(int(idx), int(JointPRotX)), Joints.Value(int(idx), int(JointPRotY)), Joints.Value(int(idx), int(JointPRotZ)), Joints.Value(int(idx), int(JointPRotW)))
 }
 
 func SetJointPRot(idx int32, rot math32.Quat) {
@@ -140,12 +141,29 @@ func SetJointPRot(idx int32, rot math32.Quat) {
 	Joints.Set(rot.W, int(idx), int(JointPRotW))
 }
 
+func JointCPos(idx int32) math32.Vector3 {
+	return math32.Vec3(Joints.Value(int(idx), int(JointCPosX)), Joints.Value(int(idx), int(JointCPosY)), Joints.Value(int(idx), int(JointCPosZ)))
+}
+
+func SetJointCPos(idx int32, pos math32.Vector3) {
+	Joints.Set(pos.X, int(idx), int(JointCPosX))
+	Joints.Set(pos.Y, int(idx), int(JointCPosY))
+	Joints.Set(pos.Z, int(idx), int(JointCPosZ))
+}
+
+func JointCRot(idx int32) math32.Quat {
+	return math32.NewQuat(Joints.Value(int(idx), int(JointCRotX)), Joints.Value(int(idx), int(JointCRotY)), Joints.Value(int(idx), int(JointCRotZ)), Joints.Value(int(idx), int(JointCRotW)))
+}
+
+func SetJointCRot(idx int32, rot math32.Quat) {
+	Joints.Set(rot.X, int(idx), int(JointCRotX))
+	Joints.Set(rot.Y, int(idx), int(JointCRotY))
+	Joints.Set(rot.Z, int(idx), int(JointCRotZ))
+	Joints.Set(rot.W, int(idx), int(JointCRotW))
+}
+
 func JointAxis(idx int32) math32.Vector3 {
-	var axis math32.Vector3
-	axis.X = Joints.Value(int(idx), int(JointAxisX))
-	axis.Y = Joints.Value(int(idx), int(JointAxisY))
-	axis.Z = Joints.Value(int(idx), int(JointAxisZ))
-	return axis
+	return math32.Vec3(Joints.Value(int(idx), int(JointAxisX)), Joints.Value(int(idx), int(JointAxisY)), Joints.Value(int(idx), int(JointAxisZ)))
 }
 
 func SetJointAxis(idx int32, axis math32.Vector3) {
@@ -154,12 +172,28 @@ func SetJointAxis(idx int32, axis math32.Vector3) {
 	Joints.Set(axis.Z, int(idx), int(JointAxisZ))
 }
 
+func JointStiff(idx int32) math32.Vector3 {
+	return math32.Vec3(Joints.Value(int(idx), int(JointStiffX)), Joints.Value(int(idx), int(JointStiffY)), Joints.Value(int(idx), int(JointStiffZ)))
+}
+
+func SetJointStiff(idx int32, stiff math32.Vector3) {
+	Joints.Set(stiff.X, int(idx), int(JointStiffX))
+	Joints.Set(stiff.Y, int(idx), int(JointStiffY))
+	Joints.Set(stiff.Z, int(idx), int(JointStiffZ))
+}
+
+func JointDamp(idx int32) math32.Vector3 {
+	return math32.Vec3(Joints.Value(int(idx), int(JointDampX)), Joints.Value(int(idx), int(JointDampY)), Joints.Value(int(idx), int(JointDampZ)))
+}
+
+func SetJointDamp(idx int32, damp math32.Vector3) {
+	Joints.Set(damp.X, int(idx), int(JointDampX))
+	Joints.Set(damp.Y, int(idx), int(JointDampY))
+	Joints.Set(damp.Z, int(idx), int(JointDampZ))
+}
+
 func JointPForce(idx int32) math32.Vector3 {
-	var f math32.Vector3
-	f.X = Joints.Value(int(idx), int(JointPForceX))
-	f.Y = Joints.Value(int(idx), int(JointPForceY))
-	f.Z = Joints.Value(int(idx), int(JointPForceZ))
-	return f
+	return math32.Vec3(Joints.Value(int(idx), int(JointPForceX)), Joints.Value(int(idx), int(JointPForceY)), Joints.Value(int(idx), int(JointPForceZ)))
 }
 
 func SetJointPForce(idx int32, f math32.Vector3) {
@@ -169,11 +203,7 @@ func SetJointPForce(idx int32, f math32.Vector3) {
 }
 
 func JointPTorque(idx int32) math32.Vector3 {
-	var t math32.Vector3
-	t.X = Joints.Value(int(idx), int(JointPTorqueX))
-	t.Y = Joints.Value(int(idx), int(JointPTorqueY))
-	t.Z = Joints.Value(int(idx), int(JointPTorqueZ))
-	return t
+	return math32.Vec3(Joints.Value(int(idx), int(JointPTorqueX)), Joints.Value(int(idx), int(JointPTorqueY)), Joints.Value(int(idx), int(JointPTorqueZ)))
 }
 
 func SetJointPTorque(idx int32, t math32.Vector3) {
@@ -183,11 +213,7 @@ func SetJointPTorque(idx int32, t math32.Vector3) {
 }
 
 func JointCForce(idx int32) math32.Vector3 {
-	var f math32.Vector3
-	f.X = Joints.Value(int(idx), int(JointCForceX))
-	f.Y = Joints.Value(int(idx), int(JointCForceY))
-	f.Z = Joints.Value(int(idx), int(JointCForceZ))
-	return f
+	return math32.Vec3(Joints.Value(int(idx), int(JointCForceX)), Joints.Value(int(idx), int(JointCForceY)), Joints.Value(int(idx), int(JointCForceZ)))
 }
 
 func SetJointCForce(idx int32, f math32.Vector3) {
@@ -197,11 +223,7 @@ func SetJointCForce(idx int32, f math32.Vector3) {
 }
 
 func JointCTorque(idx int32) math32.Vector3 {
-	var t math32.Vector3
-	t.X = Joints.Value(int(idx), int(JointCTorqueX))
-	t.Y = Joints.Value(int(idx), int(JointCTorqueY))
-	t.Z = Joints.Value(int(idx), int(JointCTorqueZ))
-	return t
+	return math32.Vec3(Joints.Value(int(idx), int(JointCTorqueX)), Joints.Value(int(idx), int(JointCTorqueY)), Joints.Value(int(idx), int(JointCTorqueZ)))
 }
 
 func SetJointCTorque(idx int32, t math32.Vector3) {

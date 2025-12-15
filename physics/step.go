@@ -4,12 +4,10 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package physics
+// This code is adapted directly from https://github.com/newton-physics/newton
+// Copyright (c) 2025 The Newton Developers, Released under an Apache-2.0 license
 
-import (
-	"cogentcore.org/core/math32"
-	"cogentcore.org/lab/gosl/slmath"
-)
+package physics
 
 //gosl:start
 //gosl:import "cogentcore.org/lab/gosl/slmath"
@@ -19,28 +17,6 @@ func OneIfNonzero(f float32) float32 {
 		return 1.0
 	}
 	return 0.0
-}
-
-// InitDynamics copies Body initial state to dynamic state.
-func InitDynamics(i uint32) { //gosl:kernel
-	pars := GetParams(0)
-	ii := int32(i)
-	if ii >= pars.DynamicsN {
-		return
-	}
-	bi := DynamicIndex(ii)
-	Dynamics.Set(Bodies.Value(int(bi), int(BodyPosX)), int(ii), int(DynPosX))
-	Dynamics.Set(Bodies.Value(int(bi), int(BodyPosY)), int(ii), int(DynPosY))
-	Dynamics.Set(Bodies.Value(int(bi), int(BodyPosZ)), int(ii), int(DynPosZ))
-
-	Dynamics.Set(Bodies.Value(int(bi), int(BodyRotX)), int(ii), int(DynRotX))
-	Dynamics.Set(Bodies.Value(int(bi), int(BodyRotY)), int(ii), int(DynRotY))
-	Dynamics.Set(Bodies.Value(int(bi), int(BodyRotZ)), int(ii), int(DynRotZ))
-	Dynamics.Set(Bodies.Value(int(bi), int(BodyRotW)), int(ii), int(DynRotW))
-
-	for v := DynVelX; v < DynamicVarsN; v++ {
-		Dynamics.Set(0.0, int(ii), int(v))
-	}
 }
 
 // step does the following:
@@ -69,132 +45,9 @@ func InitDynamics(i uint32) { //gosl:kernel
 // 		kernel=apply_rigid_restitution,
 //		kernel=apply_body_delta_velocities,
 
-// StepJoints does joint-based update.
-func StepJoints(i uint32) { //gosl:kernel
-	pars := GetParams(0)
-	ji := int32(i)
-	if ji >= pars.JointsN {
-		return
-	}
-	// todo: enabled
-	jpi := JointParentIndex(ji)
-	jpbi := DynamicIndex(jpi)
-	jci := JointChildIndex(ji)
-	jcbi := DynamicIndex(jci)
-	jt := GetJointType(ji)
-
-	jpP := JointPPos(ji)
-	jpQ := JointPRot(ji)
-
-	// parent world transform
-	xwpP := jpP
-	xwpQ := jpQ
-	posepP := jpP
-	posepQ := jpQ
-	var comp math32.Vector3
-
-	if jpi >= 0 { // can be fixed
-		posepP = DynamicPos(jpi)
-		posepQ = DynamicRot(jpi)
-		slmath.MulQPTransforms(posepP, posepQ, jpP, jpQ, &xwpP, &xwpQ)
-		comp = BodyCom(jpbi)
-	}
-	rp := xwpP.Sub(slmath.MulQPPoint(posepP, posepQ, comp)) // parent moment arm
-
-	// child world transform
-	posecP := DynamicPos(jci)
-	posecQ := DynamicRot(jci)
-	xwcP := posecP
-	// xwcQ := posecQ
-	comc := BodyCom(jcbi)
-	rc := xwcP.Sub(slmath.MulQPPoint(posecP, posecQ, comc)) // child moment arm
-
-	// from controls:
-	jf := JointForce(ji)
-	jtq := JointTorque(ji)
-
-	var f, t math32.Vector3
-	switch jt {
-	case Free, Distance:
-		// todo: distance doesn't seem to be supported here?
-		f = jf
-		t = jtq
-	case Ball:
-		t = jtq
-	case Revolute, Prismatic:
-		axis := JointAxis(ji)
-		ap := slmath.MulQuatVector(xwpQ, axis)
-		f = f.Add(slmath.MulScalar3(ap, jf.X))
-	default:
-		// todo: D6 requires more iteration!
-	}
-	SetJointPForce(ji, f)
-	SetJointCForce(ji, f)
-	SetJointPTorque(ji, t.Add(slmath.Cross3(rp, f)))
-	SetJointCTorque(ji, t.Add(slmath.Cross3(rc, f)))
-}
-
-// todo: aggregate forces
-
-// StepIntegrateBodies
-func StepIntegrateBodies(i uint32) { //gosl:kernel
-	pars := GetParams(0)
-	di := int32(i)
-	if di >= pars.DynamicsN {
-		return
-	}
-	bi := DynamicIndex(di)
-
-	invMass := Bodies.Value(int(bi), int(BodyInvMass))
-	inertia := BodyInertia(bi)
-	invInertia := BodyInvInertia(bi)
-
-	com := BodyCom(bi)
-
-	// unpack transform
-	x0 := DynamicPos(di)
-	r0 := DynamicRot(di)
-
-	// unpack spatial twist
-	v0 := DynamicDelta(di)
-	w0 := DynamicAngDelta(di)
-
-	// unpack spatial wrench
-	f0 := DynamicForce(di)
-	t0 := DynamicTorque(di)
-
-	xcom := slmath.MulQuatVector(r0, com).Add(x0)
-
-	// linear part
-	v1 := v0.Add(f0.MulScalar(invMass).Add(pars.Gravity.V().MulScalar(OneIfNonzero(invMass))).MulScalar(pars.Dt))
-	x1 := xcom.Add(v1.MulScalar(pars.Dt))
-
-	// angular part (compute in body frame)
-	wb := slmath.MulQuatVectorInverse(r0, w0)
-	tb := slmath.MulQuatVectorInverse(r0, t0).Sub(slmath.Cross3(wb, inertia.MulVector3(wb))) // coriolis forces
-
-	w1 := slmath.MulQuatVector(r0, wb.Add(invInertia.MulVector3(tb).MulScalar(pars.Dt)))
-	r1 := slmath.MulQuats(math32.NewQuat(w1.X, w1.Y, w1.Z, 0), r0).MulScalar(0.5 * pars.Dt)
-	r1 = slmath.QuatNormalize(r1)
-
-	// angular damping
-	w1 = w1.MulScalar(1.0 - pars.AngularDamping*pars.Dt)
-
-	newP := x1.Sub(slmath.MulQuatVector(r1, com)) // pos
-	newQ := r1                                    // rot
-
-	newV := v1 // delta
-	newW := w1 // angDelta
-
-	// todo: write new values
-
-	// q_new = wp.transform(x1 - wp.quat_rotate(r1, com), r1)
-	// qd_new = wp.spatial_vector(v1, w1)
-}
-
 //gosl:end
 
-func (wl *World) StepJoints() {
+func (wl *World) StepJointForces() {
 	pars := GetParams(0)
-	RunStepJoints(int(pars.JointsN))
+	RunStepJointForces(int(pars.JointsN))
 }

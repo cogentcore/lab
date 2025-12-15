@@ -1,0 +1,183 @@
+// Copyright (c) 2025, Cogent Core. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package physics
+
+import (
+	"math"
+
+	"cogentcore.org/core/math32"
+)
+
+//gosl:start
+
+// DynamicVars are dynamic body variables stored in tensor.Float32.
+type DynamicVars int32 //enums:enum
+
+const (
+	// Index of body in list of bodies.
+	DynIndex DynamicVars = iota
+
+	// 3D position of center of mass.
+	DynPosX
+	DynPosY
+	DynPosZ
+
+	// Quaternion rotation.
+	DynRotX
+	DynRotY
+	DynRotZ
+	DynRotW
+
+	// Linear velocity.
+	DynVelX
+	DynVelY
+	DynVelZ
+
+	// Angular velocity.
+	DynAngVelX
+	DynAngVelY
+	DynAngVelZ
+
+	// Linear acceleration.
+	DynAccX
+	DynAccY
+	DynAccZ
+
+	// Angular acceleration due to applied torques.
+	DynAngAccX
+	DynAngAccY
+	DynAngAccZ
+
+	// Linear force driving linear acceleration (from joints, etc).
+	DynForceX
+	DynForceY
+	DynForceZ
+
+	// Torque driving angular acceleration (from joints, etc).
+	DynTorqueX
+	DynTorqueY
+	DynTorqueZ
+
+	// Linear deltas.
+	DynDeltaX
+	DynDeltaY
+	DynDeltaZ
+
+	// Angular deltas.
+	DynAngDeltaX
+	DynAngDeltaY
+	DynAngDeltaZ
+)
+
+func SetDynamicIndex(idx, cni, bodyIdx int32) {
+	Dynamics[idx, cni, DynIndex] = math.Float32frombits(uint32(bodyIdx))
+}
+
+func DynamicIndex(idx, cni int32) int32 {
+	return int32(math.Float32bits(Dynamics[idx, cni, DynIndex]))
+}
+
+func DynamicPos(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynPosX], Dynamics[idx, cni, DynPosY], Dynamics[idx, cni, DynPosZ])
+}
+
+func SetDynamicPos(idx, cni int32, pos math32.Vector3) {
+	Dynamics[idx, cni, DynPosX] = pos.X
+	Dynamics[idx, cni, DynPosY] = pos.Y
+	Dynamics[idx, cni, DynPosZ] = pos.Z
+}
+
+func DynamicRot(idx, cni int32) math32.Quat {
+	return math32.NewQuat(Dynamics[idx, cni, DynRotX], Dynamics[idx, cni, DynRotY], Dynamics[idx, cni, DynRotZ], Dynamics[idx, cni, DynRotW])
+}
+
+func SetDynamicRot(idx, cni int32, rot math32.Quat) {
+	Dynamics[idx, cni, DynRotX] = rot.X
+	Dynamics[idx, cni, DynRotY] = rot.Y
+	Dynamics[idx, cni, DynRotZ] = rot.Z
+	Dynamics[idx, cni, DynRotW] = rot.W
+}
+
+func DynamicVel(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynVelX], Dynamics[idx, cni, DynVelY], Dynamics[idx, cni, DynVelZ])
+}
+
+func SetDynamicVel(idx, cni int32, vel math32.Vector3) {
+	Dynamics[idx, cni, DynVelX] = vel.X
+	Dynamics[idx, cni, DynVelY] = vel.Y
+	Dynamics[idx, cni, DynVelZ] = vel.Z
+}
+
+func DynamicAcc(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynAccX], Dynamics[idx, cni, DynAccY], Dynamics[idx, cni, DynAccZ])
+}
+
+func SetDynamicAcc(idx, cni int32, acc math32.Vector3) {
+	Dynamics[idx, cni, DynAccX] = acc.X
+	Dynamics[idx, cni, DynAccY] = acc.Y
+	Dynamics[idx, cni, DynAccZ] = acc.Z
+}
+
+func DynamicForce(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynForceX], Dynamics[idx, cni, DynForceY], Dynamics[idx, cni, DynForceZ])
+}
+
+func SetDynamicForce(idx, cni int32, force math32.Vector3) {
+	Dynamics[idx, cni, DynForceX] = force.X
+	Dynamics[idx, cni, DynForceY] = force.Y
+	Dynamics[idx, cni, DynForceZ] = force.Z
+}
+
+func DynamicTorque(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynTorqueX], Dynamics[idx, cni, DynTorqueY], Dynamics[idx, cni, DynTorqueZ])
+}
+
+func SetDynamicTorque(idx, cni int32, torque math32.Vector3) {
+	Dynamics[idx, cni, DynTorqueX] = torque.X
+	Dynamics[idx, cni, DynTorqueY] = torque.Y
+	Dynamics[idx, cni, DynTorqueZ] = torque.Z
+}
+
+func DynamicAngVel(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynAngVelX], Dynamics[idx, cni, DynAngVelY], Dynamics[idx, cni, DynAngVelZ])
+}
+
+func SetDynamicAngVel(idx, cni int32, angVel math32.Vector3) {
+	Dynamics[idx, cni, DynAngVelX] = angVel.X
+	Dynamics[idx, cni, DynAngVelY] = angVel.Y
+	Dynamics[idx, cni, DynAngVelZ] = angVel.Z
+}
+
+func DynamicAngAcc(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynAngAccX], Dynamics[idx, cni, DynAngAccY], Dynamics[idx, cni, DynAngAccZ])
+}
+
+func SetDynamicAngAcc(idx, cni int32, angAcc math32.Vector3) {
+	Dynamics[idx, cni, DynAngAccX] = angAcc.X
+	Dynamics[idx, cni, DynAngAccY] = angAcc.Y
+	Dynamics[idx, cni, DynAngAccZ] = angAcc.Z
+}
+
+func DynamicDelta(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynDeltaX], Dynamics[idx, cni, DynDeltaY], Dynamics[idx, cni, DynDeltaZ])
+}
+
+func SetDynamicDelta(idx, cni int32, delta math32.Vector3) {
+	Dynamics[idx, cni, DynDeltaX] = delta.X
+	Dynamics[idx, cni, DynDeltaY] = delta.Y
+	Dynamics[idx, cni, DynDeltaZ] = delta.Z
+}
+
+func DynamicAngDelta(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynAngDeltaX], Dynamics[idx, cni, DynAngDeltaY], Dynamics[idx, cni, DynAngDeltaZ])
+}
+
+func SetDynamicAngDelta(idx, cni int32, angDelta math32.Vector3) {
+	Dynamics[idx, cni, DynAngDeltaX] = angDelta.X
+	Dynamics[idx, cni, DynAngDeltaY] = angDelta.Y
+	Dynamics[idx, cni, DynAngDeltaZ] = angDelta.Z
+}
+
+//gosl:end

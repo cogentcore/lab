@@ -1,0 +1,109 @@
+// Copyright (c) 2025, Cogent Core. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// This code is adapted directly from https://github.com/newton-physics/newton
+// Copyright (c) 2025 The Newton Developers, Released under an Apache-2.0 license
+
+package physics
+
+import (
+	"cogentcore.org/core/math32"
+	"cogentcore.org/lab/gosl/slmath"
+)
+
+//gosl:start
+//gosl:import "cogentcore.org/lab/gosl/slmath"
+
+// InitDynamics copies Body initial state to dynamic state (cur and next).
+func InitDynamics(i uint32) { //gosl:kernel
+	pars := GetParams(0)
+	ii := int32(i)
+	if ii >= pars.DynamicsN {
+		return
+	}
+	for cni := range 2 {
+		bi := DynamicIndex(ii, int32(cni))
+		Dynamics[ii, cni, DynPosX] = Bodies[bi, BodyPosX]
+		Dynamics[ii, cni, DynPosY] = Bodies[bi, BodyPosY]
+		Dynamics[ii, cni, DynPosZ] = Bodies[bi, BodyPosZ]
+
+		Dynamics[ii, cni, DynRotX] = Bodies[bi, BodyRotX]
+		Dynamics[ii, cni, DynRotY] = Bodies[bi, BodyRotY]
+		Dynamics[ii, cni, DynRotZ] = Bodies[bi, BodyRotZ]
+		Dynamics[ii, cni, DynRotW] = Bodies[bi, BodyRotW]
+
+		for v := DynVelX; v < DynamicVarsN; v++ {
+			Dynamics[ii, cni, v] = 0.0
+		}
+	}
+}
+
+// DynamicsCurToNext copies [Dynamics] state from Cur to Next.
+func DynamicsCurToNext(i uint32) { //gosl:kernel
+	pars := GetParams(0)
+	ii := int32(i)
+	if ii >= pars.DynamicsN {
+		return
+	}
+	for di := DynIndex; di < DynamicVarsN; di++ {
+		Dynamics[ii, pars.Next, di] = Dynamics[ii, pars.Cur, di]
+	}
+}
+
+// todo: aggregate forces
+
+// StepIntegrateBodies
+func StepIntegrateBodies(i uint32) { //gosl:kernel
+	pars := GetParams(0)
+	di := int32(i)
+	if di >= pars.DynamicsN {
+		return
+	}
+	bi := DynamicIndex(di, pars.Cur)
+
+	invMass := Bodies[bi, BodyInvMass]
+	inertia := BodyInertia(bi)
+	invInertia := BodyInvInertia(bi)
+
+	com := BodyCom(bi)
+
+	// unpack transform
+	x0 := DynamicPos(di, pars.Cur)
+	r0 := DynamicRot(di, pars.Cur)
+
+	// unpack spatial twist
+	v0 := DynamicDelta(di, pars.Cur)
+	w0 := DynamicAngDelta(di, pars.Cur)
+
+	// unpack spatial wrench
+	f0 := DynamicForce(di, pars.Next)
+	t0 := DynamicTorque(di, pars.Next)
+
+	xcom := slmath.MulQuatVector(r0, com).Add(x0)
+
+	// linear part
+	v1 := v0.Add(f0.MulScalar(invMass).Add(pars.Gravity.V().MulScalar(OneIfNonzero(invMass))).MulScalar(pars.Dt))
+	x1 := xcom.Add(v1.MulScalar(pars.Dt))
+
+	// angular part (compute in body frame)
+	wb := slmath.MulQuatVectorInverse(r0, w0)
+	tb := slmath.MulQuatVectorInverse(r0, t0).Sub(slmath.Cross3(wb, inertia.MulVector3(wb))) // coriolis forces
+
+	w1 := slmath.MulQuatVector(r0, wb.Add(invInertia.MulVector3(tb).MulScalar(pars.Dt)))
+	r1 := slmath.MulQuats(math32.NewQuat(w1.X, w1.Y, w1.Z, 0), r0).MulScalar(0.5 * pars.Dt)
+	r1 = slmath.QuatNormalize(r1)
+
+	// angular damping
+	w1 = w1.MulScalar(1.0 - pars.AngularDamping*pars.Dt)
+
+	x1a := x1.Sub(slmath.MulQuatVector(r1, com)) // pos corrected to nominal center.
+
+	SetDynamicPos(di, pars.Next, x1a)
+	SetDynamicRot(di, pars.Next, r1)
+
+	SetDynamicDelta(di, pars.Next, v1)
+	SetDynamicAngDelta(di, pars.Next, w1)
+}
+
+//gosl:end

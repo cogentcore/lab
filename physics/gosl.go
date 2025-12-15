@@ -106,6 +106,10 @@ func GPUInit() {
 			sgp.SetNValues(1)
 		}
 		var pl *gpu.ComputePipeline
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/DynamicsCurToNext.wgsl", sy)
+		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(2, "Dynamics")
+		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/InitDynamics.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(1, "Bodies")
@@ -116,10 +120,18 @@ func GPUInit() {
 		pl.AddVarUsed(1, "Bodies")
 		pl.AddVarUsed(2, "Dynamics")
 		pl.AddVarUsed(0, "Params")
-		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepJoints.wgsl", sy)
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepJointForces.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(1, "Bodies")
 		pl.AddVarUsed(2, "Dynamics")
+		pl.AddVarUsed(3, "JointControls")
+		pl.AddVarUsed(1, "Joints")
+		pl.AddVarUsed(0, "Params")
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepSolveJoints.wgsl", sy)
+		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(1, "Bodies")
+		pl.AddVarUsed(2, "Dynamics")
+		pl.AddVarUsed(3, "JointControls")
 		pl.AddVarUsed(1, "Joints")
 		pl.AddVarUsed(0, "Params")
 		sy.Config()
@@ -141,6 +153,48 @@ func GPURelease() {
 	ComputeGPU = nil
 }
 
+// RunDynamicsCurToNext runs the DynamicsCurToNext kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneDynamicsCurToNext call does Run and Done for a
+// single run-and-sync case.
+func RunDynamicsCurToNext(n int) {
+	if UseGPU {
+		RunDynamicsCurToNextGPU(n)
+	} else {
+		RunDynamicsCurToNextCPU(n)
+	}
+}
+
+// RunDynamicsCurToNextGPU runs the DynamicsCurToNext kernel on the GPU. See [RunDynamicsCurToNext] for more info.
+func RunDynamicsCurToNextGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["DynamicsCurToNext"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunDynamicsCurToNextCPU runs the DynamicsCurToNext kernel on the CPU.
+func RunDynamicsCurToNextCPU(n int) {
+	gpu.VectorizeFunc(0, n, DynamicsCurToNext)
+}
+
+// RunOneDynamicsCurToNext runs the DynamicsCurToNext kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneDynamicsCurToNext(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunDynamicsCurToNextGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunDynamicsCurToNextCPU(n)
+	}
+}
 // RunInitDynamics runs the InitDynamics kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -225,46 +279,88 @@ func RunOneStepIntegrateBodies(n int, syncVars ...GPUVars) {
 		RunStepIntegrateBodiesCPU(n)
 	}
 }
-// RunStepJoints runs the StepJoints kernel with given number of elements,
+// RunStepJointForces runs the StepJointForces kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
 // in the same command submission on the GPU, which is by far the most efficient.
 // MUST call RunDone (with optional vars to sync) after all Run calls.
-// Alternatively, a single-shot RunOneStepJoints call does Run and Done for a
+// Alternatively, a single-shot RunOneStepJointForces call does Run and Done for a
 // single run-and-sync case.
-func RunStepJoints(n int) {
+func RunStepJointForces(n int) {
 	if UseGPU {
-		RunStepJointsGPU(n)
+		RunStepJointForcesGPU(n)
 	} else {
-		RunStepJointsCPU(n)
+		RunStepJointForcesCPU(n)
 	}
 }
 
-// RunStepJointsGPU runs the StepJoints kernel on the GPU. See [RunStepJoints] for more info.
-func RunStepJointsGPU(n int) {
+// RunStepJointForcesGPU runs the StepJointForces kernel on the GPU. See [RunStepJointForces] for more info.
+func RunStepJointForcesGPU(n int) {
 	sy := GPUSystem
-	pl := sy.ComputePipelines["StepJoints"]
+	pl := sy.ComputePipelines["StepJointForces"]
 	ce, _ := sy.BeginComputePass()
 	pl.Dispatch1D(ce, n, 64)
 }
 
-// RunStepJointsCPU runs the StepJoints kernel on the CPU.
-func RunStepJointsCPU(n int) {
-	gpu.VectorizeFunc(0, n, StepJoints)
+// RunStepJointForcesCPU runs the StepJointForces kernel on the CPU.
+func RunStepJointForcesCPU(n int) {
+	gpu.VectorizeFunc(0, n, StepJointForces)
 }
 
-// RunOneStepJoints runs the StepJoints kernel with given number of elements,
+// RunOneStepJointForces runs the StepJointForces kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // This version then calls RunDone with the given variables to sync
 // after the Run, for a single-shot Run-and-Done call. If multiple kernels
 // can be run in sequence, it is much more efficient to do multiple Run*
 // calls followed by a RunDone call.
-func RunOneStepJoints(n int, syncVars ...GPUVars) {
+func RunOneStepJointForces(n int, syncVars ...GPUVars) {
 	if UseGPU {
-		RunStepJointsGPU(n)
+		RunStepJointForcesGPU(n)
 		RunDone(syncVars...)
 	} else {
-		RunStepJointsCPU(n)
+		RunStepJointForcesCPU(n)
+	}
+}
+// RunStepSolveJoints runs the StepSolveJoints kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneStepSolveJoints call does Run and Done for a
+// single run-and-sync case.
+func RunStepSolveJoints(n int) {
+	if UseGPU {
+		RunStepSolveJointsGPU(n)
+	} else {
+		RunStepSolveJointsCPU(n)
+	}
+}
+
+// RunStepSolveJointsGPU runs the StepSolveJoints kernel on the GPU. See [RunStepSolveJoints] for more info.
+func RunStepSolveJointsGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["StepSolveJoints"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunStepSolveJointsCPU runs the StepSolveJoints kernel on the CPU.
+func RunStepSolveJointsCPU(n int) {
+	gpu.VectorizeFunc(0, n, StepSolveJoints)
+}
+
+// RunOneStepSolveJoints runs the StepSolveJoints kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneStepSolveJoints(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunStepSolveJointsGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunStepSolveJointsCPU(n)
 	}
 }
 // RunDone must be called after Run* calls to start compute kernels.
@@ -344,6 +440,7 @@ func ToGPUTensorStrides() {
 	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[2], 22)
 	TensorStrides.SetInt1D(Dynamics.Shape().Strides[0], 30)
 	TensorStrides.SetInt1D(Dynamics.Shape().Strides[1], 31)
+	TensorStrides.SetInt1D(Dynamics.Shape().Strides[2], 32)
 	TensorStrides.SetInt1D(Contacts.Shape().Strides[0], 40)
 	TensorStrides.SetInt1D(Contacts.Shape().Strides[1], 41)
 	TensorStrides.SetInt1D(JointControls.Shape().Strides[0], 50)

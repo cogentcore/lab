@@ -39,9 +39,10 @@ var (
 	BodyJoints *tensor.Int32
 
 	// Dynamics are the dynamic rigid body elements: these actually move.
-	// [dyn body][DynamicVarsN]
+	// Two alternating states are used: Params.Cur and Params.Next.
+	// [dyn body][cur/next][DynamicVarsN]
 	//gosl:group Bodies
-	//gosl:dims 2
+	//gosl:dims 3
 	Dynamics *tensor.Float32
 
 	// Contacts are points of contact between bodies.

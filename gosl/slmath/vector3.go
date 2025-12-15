@@ -24,9 +24,57 @@ func DivScalar3(v math32.Vector3, s float32) math32.Vector3 {
 	return math32.Vec3(v.X/s, v.Y/s, v.Z/s)
 }
 
+func Negate3(v math32.Vector3) math32.Vector3 {
+	return math32.Vec3(-v.X, -v.Y, -v.Z)
+}
+
 // Length3 returns the length (magnitude) of this vector.
 func Length3(v math32.Vector3) float32 {
 	return math32.Sqrt(v.X*v.X + v.Y*v.Y + v.Z*v.Z)
+}
+
+// LengthSquared3 returns the length squared of this vector.
+func LengthSquared3(v math32.Vector3) float32 {
+	return v.X*v.X + v.Y*v.Y + v.Z*v.Z
+}
+
+func Dot3(v, o math32.Vector3) float32 {
+	return v.X*o.X + v.Y*o.Y + v.Z*o.Z
+}
+
+// Max3 returns max of this vector components vs. other vector.
+func Max3(v, o math32.Vector3) math32.Vector3 {
+	return math32.Vec3(max(v.X, o.X), max(v.Y, o.Y), max(v.Z, o.Z))
+}
+
+// Min3 returns min of this vector components vs. other vector.
+func Min3(v, o math32.Vector3) math32.Vector3 {
+	return math32.Vec3(min(v.X, o.X), min(v.Y, o.Y), min(v.Z, o.Z))
+}
+
+// Abs3 returns abs of this vector components.
+func Abs3(v math32.Vector3) math32.Vector3 {
+	return math32.Vec3(math32.Abs(v.X), math32.Abs(v.Y), math32.Abs(v.Z))
+}
+
+func Clamp3(v, min, max math32.Vector3) math32.Vector3 {
+	r := v
+	if r.X < min.X {
+		r.X = min.X
+	} else if r.X > max.X {
+		r.X = max.X
+	}
+	if r.Y < min.Y {
+		r.Y = min.Y
+	} else if r.Y > max.Y {
+		r.Y = max.Y
+	}
+	if r.Z < min.Z {
+		r.Z = min.Z
+	} else if r.Z > max.Z {
+		r.Z = max.Z
+	}
+	return r
 }
 
 // Normal3 returns this vector divided by its length (its unit vector).

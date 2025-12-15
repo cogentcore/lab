@@ -63,8 +63,7 @@ func MulQuats(a, b math32.Quat) math32.Quat {
 // two quat-point spatial transforms: o = a * b
 func MulQPTransforms(aP math32.Vector3, aQ math32.Quat, bP math32.Vector3, bQ math32.Quat, oP *math32.Vector3, oQ *math32.Quat) {
 	// rotate b by a and add a
-	br := MulQuatVector(aQ, bP)
-	*oP = br.Add(aP)
+	*oP = MulQuatVector(aQ, bP).Add(aP)
 	*oQ = MulQuats(aQ, bQ)
 }
 
@@ -72,6 +71,54 @@ func MulQPTransforms(aP math32.Vector3, aQ math32.Quat, bP math32.Vector3, bQ ma
 func MulQPPoint(xP math32.Vector3, xQ math32.Quat, p math32.Vector3) math32.Vector3 {
 	dp := MulQuatVector(xQ, p)
 	return dp.Add(xP)
+}
+
+func QPTransformInverse(p math32.Vector3, q math32.Quat, oP *math32.Vector3, oQ *math32.Quat) {
+	qi := QuatInverse(q)
+	*oP = Negate3(MulQuatVector(qi, p))
+	*oQ = qi
+}
+
+func QuatInverse(q math32.Quat) math32.Quat {
+	nq := q
+	nq.X *= -1
+	nq.Y *= -1
+	nq.Z *= -1
+	return QuatNormalize(nq)
+}
+
+func QuatToMatrix3(q math32.Quat) math32.Matrix3 {
+	var m math32.Matrix3
+	x := q.X
+	y := q.Y
+	z := q.Z
+	w := q.W
+	x2 := x + x
+	y2 := y + y
+	z2 := z + z
+	xx := x * x2
+	xy := x * y2
+	xz := x * z2
+	yy := y * y2
+	yz := y * z2
+	zz := z * z2
+	wx := w * x2
+	wy := w * y2
+	wz := w * z2
+
+	m[0] = 1 - (yy + zz)
+	m[3] = xy - wz
+	m[6] = xz + wy
+
+	m[1] = xy + wz
+	m[4] = 1 - (xx + zz)
+	m[7] = yz - wx
+
+	m[2] = xz - wy
+	m[5] = yz + wx
+	m[8] = 1 - (xx + yy)
+
+	return m
 }
 
 //gosl:end

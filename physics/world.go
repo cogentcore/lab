@@ -38,7 +38,7 @@ type World struct {
 
 	// Dynamics are the dynamic rigid body elements: these actually move.
 	// The first set of variables are for initial values, and the second current.
-	// [body][DynamicVarsN]
+	// [body][cur/next][DynamicVarsN]
 	Dynamics *tensor.Float32
 
 	// Contacts are points of contact between bodies.
@@ -62,7 +62,7 @@ func (wl *World) Init() {
 	wl.Bodies = tensor.NewFloat32(0, int(BodyVarsN))
 	wl.Joints = tensor.NewFloat32(0, int(JointVarsN))
 	wl.BodyJoints = tensor.NewInt32(0, 2, 2)
-	wl.Dynamics = tensor.NewFloat32(0, int(DynamicVarsN))
+	wl.Dynamics = tensor.NewFloat32(0, 2, int(DynamicVarsN))
 	wl.Contacts = tensor.NewFloat32(0, int(ContactVarsN))
 	wl.JointControls = tensor.NewFloat32(0, int(JointControlVarsN))
 	wl.SetAsCurrentVars()
@@ -86,8 +86,9 @@ func (wl *World) NewDynamic(shape Shapes, size, pos math32.Vector3, rot math32.Q
 	bodyIdx = wl.NewBody(shape, size, pos, rot)
 	sizes := wl.Dynamics.ShapeSizes()
 	dynIdx = int32(sizes[0])
-	wl.Dynamics.SetShapeSizes(int(dynIdx+1), int(DynamicVarsN))
-	SetDynamicIndex(dynIdx, bodyIdx)
+	wl.Dynamics.SetShapeSizes(int(dynIdx+1), 2, int(DynamicVarsN))
+	SetDynamicIndex(dynIdx, 0, bodyIdx)
+	SetDynamicIndex(dynIdx, 1, bodyIdx)
 	wl.Params[0].DynamicsN = dynIdx + 1
 	return
 }

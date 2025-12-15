@@ -19,6 +19,12 @@ type PhysParams struct {
 	// JointsN is number of joints.
 	JointsN int32
 
+	// Index for the current state (0 or 1, alternates with Next).
+	Cur int32
+
+	// Index for the next state (1 or 0, alternates with Cur).
+	Next int32
+
 	// Iters is the number of iterations to perform.
 	Iters int32 `default:"2"`
 
@@ -52,7 +58,7 @@ type PhysParams struct {
 	// Restitution
 	Restitution slbool.Bool `default:"false"`
 
-	pad, pad1, pad2 float32
+	pad float32
 
 	// Gravity is the gravity acceleration function
 	Gravity slvec.Vector3

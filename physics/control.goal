@@ -14,12 +14,12 @@ type JointControlVars int32 //enums:enum
 
 const (
 	// Joint force and torque inputs
-	JointForceX JointControlVars = iota
-	JointForceY
-	JointForceZ
-	JointTorqueX
-	JointTorqueY
-	JointTorqueZ
+	JointCtrlForceX JointControlVars = iota
+	JointCtrlForceY
+	JointCtrlForceZ
+	JointCtrlTorqueX
+	JointCtrlTorqueY
+	JointCtrlTorqueZ
 
 	// target values (1 DoF use JointTargetPosX)
 	JointTargetPosX
@@ -42,32 +42,64 @@ const (
 	JointTargetAngVelZ
 )
 
-func JointForce(idx int32) math32.Vector3 {
-	var f math32.Vector3
-	f.X = Joints[idx, JointForceX]
-	f.Y = Joints[idx, JointForceY]
-	f.Z = Joints[idx, JointForceZ]
-	return f
+func JointControlForce(idx int32) math32.Vector3 {
+	return math32.Vec3(JointControls[idx, JointCtrlForceX], JointControls[idx, JointCtrlForceY], JointControls[idx, JointCtrlForceZ])
 }
 
-func SetJointForce(idx int32, f math32.Vector3) {
-	Joints[idx, JointForceX] = f.X
-	Joints[idx, JointForceY] = f.Y
-	Joints[idx, JointForceZ] = f.Z
+func SetJointControlForce(idx int32, f math32.Vector3) {
+	JointControls[idx, JointCtrlForceX] = f.X
+	JointControls[idx, JointCtrlForceY] = f.Y
+	JointControls[idx, JointCtrlForceZ] = f.Z
 }
 
-func JointTorque(idx int32) math32.Vector3 {
-	var f math32.Vector3
-	f.X = Joints[idx, JointTorqueX]
-	f.Y = Joints[idx, JointTorqueY]
-	f.Z = Joints[idx, JointTorqueZ]
-	return f
+func JointControlTorque(idx int32) math32.Vector3 {
+	return math32.Vec3(JointControls[idx, JointCtrlTorqueX], JointControls[idx, JointCtrlTorqueY], JointControls[idx, JointCtrlTorqueZ])
 }
 
-func SetJointTorque(idx int32, f math32.Vector3) {
-	Joints[idx, JointTorqueX] = f.X
-	Joints[idx, JointTorqueY] = f.Y
-	Joints[idx, JointTorqueZ] = f.Z
+func SetJointControlTorque(idx int32, f math32.Vector3) {
+	JointControls[idx, JointCtrlTorqueX] = f.X
+	JointControls[idx, JointCtrlTorqueY] = f.Y
+	JointControls[idx, JointCtrlTorqueZ] = f.Z
+}
+
+func JointTargetPos(idx int32) math32.Vector3 {
+	return math32.Vec3(JointControls[idx, JointTargetPosX], JointControls[idx, JointTargetPosY], JointControls[idx, JointTargetPosZ])
+}
+
+func SetJointTargetPos(idx int32, f math32.Vector3) {
+	JointControls[idx, JointTargetPosX] = f.X
+	JointControls[idx, JointTargetPosY] = f.Y
+	JointControls[idx, JointTargetPosZ] = f.Z
+}
+
+func JointTargetRot(idx int32) math32.Vector3 {
+	return math32.Vec3(JointControls[idx, JointTargetRotX], JointControls[idx, JointTargetRotY], JointControls[idx, JointTargetRotZ])
+}
+
+func SetJointTargetRot(idx int32, f math32.Vector3) {
+	JointControls[idx, JointTargetRotX] = f.X
+	JointControls[idx, JointTargetRotY] = f.Y
+	JointControls[idx, JointTargetRotZ] = f.Z
+}
+
+func JointTargetVel(idx int32) math32.Vector3 {
+	return math32.Vec3(JointControls[idx, JointTargetVelX], JointControls[idx, JointTargetVelY], JointControls[idx, JointTargetVelZ])
+}
+
+func SetJointTargetVel(idx int32, f math32.Vector3) {
+	JointControls[idx, JointTargetVelX] = f.X
+	JointControls[idx, JointTargetVelY] = f.Y
+	JointControls[idx, JointTargetVelZ] = f.Z
+}
+
+func JointTargetAngVel(idx int32) math32.Vector3 {
+	return math32.Vec3(JointControls[idx, JointTargetAngVelX], JointControls[idx, JointTargetAngVelY], JointControls[idx, JointTargetAngVelZ])
+}
+
+func SetJointTargetAngVel(idx int32, f math32.Vector3) {
+	JointControls[idx, JointTargetAngVelX] = f.X
+	JointControls[idx, JointTargetAngVelY] = f.Y
+	JointControls[idx, JointTargetAngVelZ] = f.Z
 }
 
 //gosl:end
