@@ -60,7 +60,7 @@ func FastExp(x float32) float32 {
 
 // TransformPoint applies quat-based transform to given point
 func TransformPoint(xP math32.Vector3, xQ math32.Quat, p math32.Vector3) math32.Vector3 {
-	dp := slmath.MulQuat(p, xQ)
+	dp := slmath.MulQuatVector(xQ, p)
 	return dp.Add(xP)
 }
 
@@ -68,7 +68,7 @@ func TransformPoint(xP math32.Vector3, xQ math32.Quat, p math32.Vector3) math32.
 // two quat-based transforms, o = a * b
 func MulTransforms(aP math32.Vector3, aQ math32.Quat, bP math32.Vector3, bQ math32.Quat, oP *math32.Vector3, oQ *math32.Quat) {
 	// rotate b by a and add a
-	br := slmath.MulQuat(bP, aQ)
+	br := slmath.MulQuatVector(aQ, bP)
 	*oP = br.Add(aP)
 	*oQ = slmath.MulQuats(aQ, bQ)
 }
@@ -164,7 +164,7 @@ func (ps *ParamStruct) IntegFromRaw(idx int) float32 {
 	var op math32.Vector3
 	var oq math32.Quat
 	MulTransforms(ps.Pos.V(), ps.Rot, ps.Pos.V(), ps.Rot, &op, &oq)
-	d := slmath.MulQuat(op, oq)
+	d := slmath.MulQuatVector(oq, op)
 	d = TransformPoint(op, oq, d)
 
 	ctx := GetCtx(0)

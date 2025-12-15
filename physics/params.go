@@ -22,6 +22,9 @@ type PhysParams struct {
 	// Iters is the number of iterations to perform.
 	Iters int32 `default:"2"`
 
+	// Dt is the integration stepsize.
+	Dt float32 `default:"0.01"`
+
 	// SoftRelax is soft-body relaxation constant.
 	SoftRelax float32 `default:"0.9"`
 
@@ -49,12 +52,15 @@ type PhysParams struct {
 	// Restitution
 	Restitution slbool.Bool `default:"false"`
 
+	pad, pad1, pad2 float32
+
 	// Gravity is the gravity acceleration function
 	Gravity slvec.Vector3
 }
 
 func (pr *PhysParams) Defaults() {
 	pr.Iters = 2
+	pr.Dt = 0.01
 	pr.Gravity.Set(0, -9.81, 0)
 	pr.SoftRelax = 0.9
 	pr.JointLinearRelax = 0.7

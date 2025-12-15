@@ -1962,9 +1962,10 @@ func (p *printer) methodExpr(x *ast.CallExpr, depth int) {
 			rwargs = append(rwargs, rwArg{idx: idx, tmpVar: recvPath})
 		}
 	} else {
-		err := fmt.Errorf("gosl methodExpr ERROR: path expression for method call must be simple list of fields, not %#v:", path.X)
-		p.userError(err)
-		return
+		// fmt.Println("arg issue with:", methName)
+		// err := fmt.Errorf("gosl methodExpr ERROR: path expression for method call must be simple list of fields, not %#v:", path.X)
+		// p.userError(err)
+		// return
 	}
 	args := x.Args
 	if pathType != nil {
@@ -2058,15 +2059,17 @@ func (p *printer) mathMeth(x *ast.CallExpr, depth int, methName, recvPath, recvT
 		opr = token.ADD
 	case "Sub":
 		opr = token.SUB
-	case "Mul":
+	case "Mul", "MulVector", "MulVector3", "MulScalar":
 		opr = token.MUL
-	case "Div":
+	case "Div", "DivScalar":
 		opr = token.QUO
 	}
 	if opr == token.ILLEGAL {
 		return false
 	}
-	p.print(recvPath, opr)
+	path := x.Fun.(*ast.SelectorExpr) // we know fun is selector
+	p.expr(path.X)
+	p.print(opr)
 	p.setPos(x.Lparen)
 	p.print(token.LPAREN)
 	p.exprList(x.Lparen, x.Args, depth, commaTerm, x.Rparen, false)

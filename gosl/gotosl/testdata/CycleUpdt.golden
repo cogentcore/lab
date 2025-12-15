@@ -66,4 +66,8 @@ fn CycleUpdt(i: u32) { //gosl:kernel read-write:Ctx
 	Ctx[0] = ctx;
 }
 
+//////// import: "slmath-matrix3.go"
+
 //////// import: "slmath-quaternion.go"
+
+//////// import: "slmath-vector3.go"

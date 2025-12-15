@@ -111,6 +111,11 @@ func GPUInit() {
 		pl.AddVarUsed(1, "Bodies")
 		pl.AddVarUsed(2, "Dynamics")
 		pl.AddVarUsed(0, "Params")
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepIntegrateBodies.wgsl", sy)
+		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(1, "Bodies")
+		pl.AddVarUsed(2, "Dynamics")
+		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepJoints.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(1, "Bodies")
@@ -176,6 +181,48 @@ func RunOneInitDynamics(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunInitDynamicsCPU(n)
+	}
+}
+// RunStepIntegrateBodies runs the StepIntegrateBodies kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneStepIntegrateBodies call does Run and Done for a
+// single run-and-sync case.
+func RunStepIntegrateBodies(n int) {
+	if UseGPU {
+		RunStepIntegrateBodiesGPU(n)
+	} else {
+		RunStepIntegrateBodiesCPU(n)
+	}
+}
+
+// RunStepIntegrateBodiesGPU runs the StepIntegrateBodies kernel on the GPU. See [RunStepIntegrateBodies] for more info.
+func RunStepIntegrateBodiesGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["StepIntegrateBodies"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunStepIntegrateBodiesCPU runs the StepIntegrateBodies kernel on the CPU.
+func RunStepIntegrateBodiesCPU(n int) {
+	gpu.VectorizeFunc(0, n, StepIntegrateBodies)
+}
+
+// RunOneStepIntegrateBodies runs the StepIntegrateBodies kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneStepIntegrateBodies(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunStepIntegrateBodiesGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunStepIntegrateBodiesCPU(n)
 	}
 }
 // RunStepJoints runs the StepJoints kernel with given number of elements,

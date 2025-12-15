@@ -127,10 +127,10 @@ const  Integ: i32 = 1;
 const  Exp: i32 = 2;
 const  NVars: i32 = 3;
 fn TransformPoint(xP: vec3<f32>, xQ: vec4<f32>, p: vec3<f32>) -> vec3<f32> {
-	var dp = MulQuat(p, xQ);return dp+(xP);
+	var dp = MulQuatVector(xQ, p);return dp+(xP);
 }
 fn MulTransforms(aP: vec3<f32>, aQ: vec4<f32>, bP: vec3<f32>, bQ: vec4<f32>, oP: ptr<function,vec3<f32>>, oQ: ptr<function,vec4<f32>>) {
-	var br = MulQuat(bP, aQ);
+	var br = MulQuatVector(aQ, bP);
 	*oP = br+(aP);
 	*oQ = MulQuats(aQ, bQ);
 }
@@ -183,7 +183,7 @@ fn ParamStruct_IntegFromRaw(ps: ParamStruct, idx: i32) -> f32 {
 	var op: vec3<f32>;
 	var oq: vec4<f32>;
 	MulTransforms(vec3<f32>(ps.Pos.x,ps.Pos.y,ps.Pos.z), ps.Rot, vec3<f32>(ps.Pos.x,ps.Pos.y,ps.Pos.z), ps.Rot, &op, &oq);
-	var d = MulQuat(op, oq);
+	var d = MulQuatVector(oq, op);
 	d = TransformPoint(op, oq, d);
 	let ctx = Ctx[0];
 	ParamStruct_AnotherMeth(ps, ctx, idx, &a);
@@ -236,19 +236,12 @@ fn Compute(i: u32) { //gosl:kernel
 	ParamStruct_IntegFromRaw(params, i32(i));
 }
 
+//////// import: "slmath-matrix3.go"
+
 //////// import: "slmath-quaternion.go"
-fn MulQuat(v: vec3<f32>, q: vec4<f32>) -> vec3<f32> {
-	var qx = q.x;
-	var qy = q.y;
-	var qz = q.z;
-	var qw = q.w;
-	var ix = qw*v.x + qy*v.z - qz*v.y;
-	var iy = qw*v.y + qz*v.x - qx*v.z;
-	var iz = qw*v.z + qx*v.y - qy*v.x;
-	var iw = -qx*v.x - qy*v.y - qz*v.z;
-return vec3<f32>(ix*qw+iw*-qx+iy*-qz-iz*-qy,
-	iy*qw+iw*-qy+iz*-qx-ix*-qz,
-	iz*qw+iw*-qz+ix*-qy-iy*-qx);
+fn MulQuatVector(q: vec4<f32>, v: vec3<f32>) -> vec3<f32> {
+	var xyz = vec3<f32>(q.x, q.y, q.z);
+	var t = MulScalar3(Cross3(xyz, v), f32(f32(2)));return v+(MulScalar3(t, q.w))+(Cross3(xyz, t));
 }
 fn MulQuats(a: vec4<f32>,b: vec4<f32>) -> vec4<f32> {
 	var q: vec4<f32>;
@@ -256,4 +249,12 @@ fn MulQuats(a: vec4<f32>,b: vec4<f32>) -> vec4<f32> {
 	q.y = a.y*b.w + a.w*b.y + a.z*b.x - a.x*b.z;
 	q.z = a.z*b.w + a.w*b.z + a.x*b.y - a.y*b.x;
 	q.w = a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z;return q;
+}
+
+//////// import: "slmath-vector3.go"
+fn MulScalar3(v: vec3<f32>, s: f32) -> vec3<f32> {
+	return vec3<f32>(v.x*s, v.y*s, v.z*s);
+}
+fn Cross3(v: vec3<f32>,o: vec3<f32>) -> vec3<f32> {
+	return vec3<f32>(v.y*o.z-v.z*o.y, v.z*o.x-v.x*o.z, v.x*o.y-v.y*o.x);
 }

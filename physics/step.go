@@ -14,19 +14,11 @@ import (
 //gosl:start
 //gosl:import "cogentcore.org/lab/gosl/slmath"
 
-// MulTransforms computes the equivalent of matrix multiplication for
-// two quat-based transforms, o = a * b
-func MulTransforms(aP math32.Vector3, aQ math32.Quat, bP math32.Vector3, bQ math32.Quat, oP *math32.Vector3, oQ *math32.Quat) {
-	// rotate b by a and add a
-	br := slmath.MulQuat(bP, aQ)
-	*oP = br.Add(aP)
-	*oQ = slmath.MulQuats(aQ, bQ)
-}
-
-// TransformPoint applies quat-based transform to given point.
-func TransformPoint(xP math32.Vector3, xQ math32.Quat, p math32.Vector3) math32.Vector3 {
-	dp := slmath.MulQuat(p, xQ)
-	return dp.Add(xP)
+func OneIfNonzero(f float32) float32 {
+	if f != 0.0 {
+		return 1.0
+	}
+	return 0.0
 }
 
 // InitDynamics copies Body initial state to dynamic state.
@@ -37,19 +29,45 @@ func InitDynamics(i uint32) { //gosl:kernel
 		return
 	}
 	bi := DynamicIndex(ii)
-	Dynamics.Set(Bodies.Value(int(bi), int(BodyPosX)), int(ii), int(PosX))
-	Dynamics.Set(Bodies.Value(int(bi), int(BodyPosY)), int(ii), int(PosY))
-	Dynamics.Set(Bodies.Value(int(bi), int(BodyPosZ)), int(ii), int(PosZ))
+	Dynamics.Set(Bodies.Value(int(bi), int(BodyPosX)), int(ii), int(DynPosX))
+	Dynamics.Set(Bodies.Value(int(bi), int(BodyPosY)), int(ii), int(DynPosY))
+	Dynamics.Set(Bodies.Value(int(bi), int(BodyPosZ)), int(ii), int(DynPosZ))
 
-	Dynamics.Set(Bodies.Value(int(bi), int(BodyRotX)), int(ii), int(RotX))
-	Dynamics.Set(Bodies.Value(int(bi), int(BodyRotY)), int(ii), int(RotY))
-	Dynamics.Set(Bodies.Value(int(bi), int(BodyRotZ)), int(ii), int(RotZ))
-	Dynamics.Set(Bodies.Value(int(bi), int(BodyRotW)), int(ii), int(RotW))
+	Dynamics.Set(Bodies.Value(int(bi), int(BodyRotX)), int(ii), int(DynRotX))
+	Dynamics.Set(Bodies.Value(int(bi), int(BodyRotY)), int(ii), int(DynRotY))
+	Dynamics.Set(Bodies.Value(int(bi), int(BodyRotZ)), int(ii), int(DynRotZ))
+	Dynamics.Set(Bodies.Value(int(bi), int(BodyRotW)), int(ii), int(DynRotW))
 
-	for v := VelX; v < DynamicVarsN; v++ {
+	for v := DynVelX; v < DynamicVarsN; v++ {
 		Dynamics.Set(0.0, int(ii), int(v))
 	}
 }
+
+// step does the following:
+// if self.compute_body_velocity_from_position_delta or self.enable_restitution:
+// 	body_q_init = wp.clone(state_in.body_q)
+// 	body_qd_init = wp.clone(state_in.body_qd)
+// body_deltas = wp.empty_like(state_out.body_qd)
+// kernel=apply_joint_forces,
+// self.integrate_bodies(model, state_in, state_out, dt, self.angular_damping)
+// for i in range(self.iterations):
+// 	kernel=solve_body_joints,
+//      body_q, body_qd = self.apply_body_deltas(model, state_in, state_out, body_deltas, dt)
+// 	kernel=solve_body_contact_positions,
+//	if self.enable_restitution and i == 0:
+//        # remember contact constraint weighting from the first iteration
+//        if self.rigid_contact_con_weighting:
+//            rigid_contact_inv_weight_init = wp.clone(rigid_contact_inv_weight)
+//        else:
+//            rigid_contact_inv_weight_init = None
+//	body_q, body_qd = self.apply_body_deltas(
+//		model, state_in, state_out, body_deltas, dt, rigid_contact_inv_weight
+//	)
+//	# update body velocities from position changes
+//      if self.compute_body_velocity_from_position_delta and model.body_count and not requires_grad:
+// 		kernel=update_body_velocities,
+// 		kernel=apply_rigid_restitution,
+//		kernel=apply_body_delta_velocities,
 
 // StepJoints does joint-based update.
 func StepJoints(i uint32) { //gosl:kernel
@@ -78,10 +96,10 @@ func StepJoints(i uint32) { //gosl:kernel
 	if jpi >= 0 { // can be fixed
 		posepP = DynamicPos(jpi)
 		posepQ = DynamicRot(jpi)
-		MulTransforms(posepP, posepQ, jpP, jpQ, &xwpP, &xwpQ)
+		slmath.MulQPTransforms(posepP, posepQ, jpP, jpQ, &xwpP, &xwpQ)
 		comp = BodyCom(jpbi)
 	}
-	rp := xwpP.Sub(TransformPoint(posepP, posepQ, comp)) // parent moment arm
+	rp := xwpP.Sub(slmath.MulQPPoint(posepP, posepQ, comp)) // parent moment arm
 
 	// child world transform
 	posecP := DynamicPos(jci)
@@ -89,7 +107,7 @@ func StepJoints(i uint32) { //gosl:kernel
 	xwcP := posecP
 	// xwcQ := posecQ
 	comc := BodyCom(jcbi)
-	rc := xwcP.Sub(TransformPoint(posecP, posecQ, comc)) // child moment arm
+	rc := xwcP.Sub(slmath.MulQPPoint(posecP, posecQ, comc)) // child moment arm
 
 	// from controls:
 	jf := JointForce(ji)
@@ -105,7 +123,7 @@ func StepJoints(i uint32) { //gosl:kernel
 		t = jtq
 	case Revolute, Prismatic:
 		axis := JointAxis(ji)
-		ap := slmath.MulQuat(axis, xwpQ)
+		ap := slmath.MulQuatVector(xwpQ, axis)
 		f = f.Add(slmath.MulScalar3(ap, jf.X))
 	default:
 		// todo: D6 requires more iteration!
@@ -114,6 +132,64 @@ func StepJoints(i uint32) { //gosl:kernel
 	SetJointCForce(ji, f)
 	SetJointPTorque(ji, t.Add(slmath.Cross3(rp, f)))
 	SetJointCTorque(ji, t.Add(slmath.Cross3(rc, f)))
+}
+
+// todo: aggregate forces
+
+// StepIntegrateBodies
+func StepIntegrateBodies(i uint32) { //gosl:kernel
+	pars := GetParams(0)
+	di := int32(i)
+	if di >= pars.DynamicsN {
+		return
+	}
+	bi := DynamicIndex(di)
+
+	invMass := Bodies.Value(int(bi), int(BodyInvMass))
+	inertia := BodyInertia(bi)
+	invInertia := BodyInvInertia(bi)
+
+	com := BodyCom(bi)
+
+	// unpack transform
+	x0 := DynamicPos(di)
+	r0 := DynamicRot(di)
+
+	// unpack spatial twist
+	v0 := DynamicDelta(di)
+	w0 := DynamicAngDelta(di)
+
+	// unpack spatial wrench
+	f0 := DynamicForce(di)
+	t0 := DynamicTorque(di)
+
+	xcom := slmath.MulQuatVector(r0, com).Add(x0)
+
+	// linear part
+	v1 := v0.Add(f0.MulScalar(invMass).Add(pars.Gravity.V().MulScalar(OneIfNonzero(invMass))).MulScalar(pars.Dt))
+	x1 := xcom.Add(v1.MulScalar(pars.Dt))
+
+	// angular part (compute in body frame)
+	wb := slmath.MulQuatVectorInverse(r0, w0)
+	tb := slmath.MulQuatVectorInverse(r0, t0).Sub(slmath.Cross3(wb, inertia.MulVector3(wb))) // coriolis forces
+
+	w1 := slmath.MulQuatVector(r0, wb.Add(invInertia.MulVector3(tb).MulScalar(pars.Dt)))
+	r1 := slmath.MulQuats(math32.NewQuat(w1.X, w1.Y, w1.Z, 0), r0).MulScalar(0.5 * pars.Dt)
+	r1 = slmath.QuatNormalize(r1)
+
+	// angular damping
+	w1 = w1.MulScalar(1.0 - pars.AngularDamping*pars.Dt)
+
+	newP := x1.Sub(slmath.MulQuatVector(r1, com)) // pos
+	newQ := r1                                    // rot
+
+	newV := v1 // delta
+	newW := w1 // angDelta
+
+	// todo: write new values
+
+	// q_new = wp.transform(x1 - wp.quat_rotate(r1, com), r1)
+	// qd_new = wp.spatial_vector(v1, w1)
 }
 
 //gosl:end

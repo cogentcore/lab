@@ -40,9 +40,9 @@ func (ps *State) Defaults() {
 // FromRel sets state from relative values compared to a parent state
 func (ps *State) FromRel(rel, par *State) {
 	ps.Quat = rel.Quat.Mul(par.Quat)
-	ps.Pos = rel.Pos.MulQuat(par.Quat).Add(par.Pos)
-	ps.LinVel = rel.LinVel.MulQuat(rel.Quat).Add(par.LinVel)
-	ps.AngVel = rel.AngVel.MulQuat(rel.Quat).Add(par.AngVel)
+	ps.Pos = par.Quat.MulVector(rel.Pos).Add(par.Pos)
+	ps.LinVel = rel.Quat.MulVector(rel.LinVel).Add(par.LinVel)
+	ps.AngVel = rel.Quat.MulVector(rel.AngVel).Add(par.AngVel)
 }
 
 // AngMotionMax is maximum angular motion that can be taken per update
@@ -89,7 +89,7 @@ func (ps *State) Move(delta math32.Vector3) {
 // The axis is normalized prior to aplying the distance factor.
 // Sets the LinVel to motion vector.
 func (ps *State) MoveOnAxis(x, y, z, dist float32) { //types:add
-	ps.LinVel = math32.Vec3(x, y, z).Normal().MulQuat(ps.Quat).MulScalar(dist)
+	ps.LinVel = ps.Quat.MulVector(math32.Vec3(x, y, z).Normal()).MulScalar(dist)
 	ps.Pos.SetAdd(ps.LinVel)
 }
 

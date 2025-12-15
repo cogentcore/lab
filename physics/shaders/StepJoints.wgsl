@@ -33,15 +33,15 @@ fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
 
 //////// import: "body.go"
 alias BodyVars = i32; //enums:enum
-const  Shape: BodyVars = 0;
-const  WorldIndex: BodyVars = 1;
-const  SizeX: BodyVars = 2;
-const  SizeY: BodyVars = 3;
-const  SizeZ: BodyVars = 4;
-const  Mass: BodyVars = 5;
-const  InvMass: BodyVars = 6;
-const  Bounce: BodyVars = 7;
-const  Friction: BodyVars = 8;
+const  BodyShape: BodyVars = 0;
+const  BodyWorldIndex: BodyVars = 1;
+const  BodySizeX: BodyVars = 2;
+const  BodySizeY: BodyVars = 3;
+const  BodySizeZ: BodyVars = 4;
+const  BodyMass: BodyVars = 5;
+const  BodyInvMass: BodyVars = 6;
+const  BodyBounce: BodyVars = 7;
+const  BodyFriction: BodyVars = 8;
 const  BodyPosX: BodyVars = 9;
 const  BodyPosY: BodyVars = 10;
 const  BodyPosZ: BodyVars = 11;
@@ -52,78 +52,68 @@ const  BodyRotW: BodyVars = 15;
 const  BodyComX: BodyVars = 16;
 const  BodyComY: BodyVars = 17;
 const  BodyComZ: BodyVars = 18;
-const  InertiaXX: BodyVars = 19;
-const  InertiaYX: BodyVars = 20;
-const  InertiaZX: BodyVars = 21;
-const  InertiaXY: BodyVars = 22;
-const  InertiaYY: BodyVars = 23;
-const  InertiaZY: BodyVars = 24;
-const  InertiaXZ: BodyVars = 25;
-const  InertiaYZ: BodyVars = 26;
-const  InertiaZZ: BodyVars = 27;
-const  InvInertiaXX: BodyVars = 28;
-const  InvInertiaYX: BodyVars = 29;
-const  InvInertiaZX: BodyVars = 30;
-const  InvInertiaXY: BodyVars = 31;
-const  InvInertiaYY: BodyVars = 32;
-const  InvInertiaZY: BodyVars = 33;
-const  InvInertiaXZ: BodyVars = 34;
-const  InvInertiaYZ: BodyVars = 35;
-const  InvInertiaZZ: BodyVars = 36;
+const  BodyInertiaXX: BodyVars = 19;
+const  BodyInertiaYX: BodyVars = 20;
+const  BodyInertiaZX: BodyVars = 21;
+const  BodyInertiaXY: BodyVars = 22;
+const  BodyInertiaYY: BodyVars = 23;
+const  BodyInertiaZY: BodyVars = 24;
+const  BodyInertiaXZ: BodyVars = 25;
+const  BodyInertiaYZ: BodyVars = 26;
+const  BodyInertiaZZ: BodyVars = 27;
+const  BodyInvInertiaXX: BodyVars = 28;
+const  BodyInvInertiaYX: BodyVars = 29;
+const  BodyInvInertiaZX: BodyVars = 30;
+const  BodyInvInertiaXY: BodyVars = 31;
+const  BodyInvInertiaYY: BodyVars = 32;
+const  BodyInvInertiaZY: BodyVars = 33;
+const  BodyInvInertiaXZ: BodyVars = 34;
+const  BodyInvInertiaYZ: BodyVars = 35;
+const  BodyInvInertiaZZ: BodyVars = 36;
 fn BodyCom(idx: i32) -> vec3<f32> {
-	var pos: vec3<f32>;
-	pos.x = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyComX))];
-	pos.y = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyComY))];
-	pos.z = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyComZ))];return pos;
+	return vec3<f32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyComX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyComY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyComZ))]);
 }
 alias DynamicVars = i32; //enums:enum
-const  Index: DynamicVars = 0;
-const  PosX: DynamicVars = 1;
-const  PosY: DynamicVars = 2;
-const  PosZ: DynamicVars = 3;
-const  RotX: DynamicVars = 4;
-const  RotY: DynamicVars = 5;
-const  RotZ: DynamicVars = 6;
-const  RotW: DynamicVars = 7;
-const  VelX: DynamicVars = 8;
-const  VelY: DynamicVars = 9;
-const  VelZ: DynamicVars = 10;
-const  AngVelX: DynamicVars = 11;
-const  AngVelY: DynamicVars = 12;
-const  AngVelZ: DynamicVars = 13;
-const  AccX: DynamicVars = 14;
-const  AccY: DynamicVars = 15;
-const  AccZ: DynamicVars = 16;
-const  AngAccX: DynamicVars = 17;
-const  AngAccY: DynamicVars = 18;
-const  AngAccZ: DynamicVars = 19;
-const  ForceX: DynamicVars = 20;
-const  ForceY: DynamicVars = 21;
-const  ForceZ: DynamicVars = 22;
-const  TorqueX: DynamicVars = 23;
-const  TorqueY: DynamicVars = 24;
-const  TorqueZ: DynamicVars = 25;
-const  DeltaX: DynamicVars = 26;
-const  DeltaY: DynamicVars = 27;
-const  DeltaZ: DynamicVars = 28;
-const  AngDeltaX: DynamicVars = 29;
-const  AngDeltaY: DynamicVars = 30;
-const  AngDeltaZ: DynamicVars = 31;
+const  DynIndex: DynamicVars = 0;
+const  DynPosX: DynamicVars = 1;
+const  DynPosY: DynamicVars = 2;
+const  DynPosZ: DynamicVars = 3;
+const  DynRotX: DynamicVars = 4;
+const  DynRotY: DynamicVars = 5;
+const  DynRotZ: DynamicVars = 6;
+const  DynRotW: DynamicVars = 7;
+const  DynVelX: DynamicVars = 8;
+const  DynVelY: DynamicVars = 9;
+const  DynVelZ: DynamicVars = 10;
+const  DynAngVelX: DynamicVars = 11;
+const  DynAngVelY: DynamicVars = 12;
+const  DynAngVelZ: DynamicVars = 13;
+const  DynAccX: DynamicVars = 14;
+const  DynAccY: DynamicVars = 15;
+const  DynAccZ: DynamicVars = 16;
+const  DynAngAccX: DynamicVars = 17;
+const  DynAngAccY: DynamicVars = 18;
+const  DynAngAccZ: DynamicVars = 19;
+const  DynForceX: DynamicVars = 20;
+const  DynForceY: DynamicVars = 21;
+const  DynForceZ: DynamicVars = 22;
+const  DynTorqueX: DynamicVars = 23;
+const  DynTorqueY: DynamicVars = 24;
+const  DynTorqueZ: DynamicVars = 25;
+const  DynDeltaX: DynamicVars = 26;
+const  DynDeltaY: DynamicVars = 27;
+const  DynDeltaZ: DynamicVars = 28;
+const  DynAngDeltaX: DynamicVars = 29;
+const  DynAngDeltaY: DynamicVars = 30;
+const  DynAngDeltaZ: DynamicVars = 31;
 fn DynamicIndex(idx: i32) -> i32 {
-	return i32(bitcast<u32>(Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(Index))]));
+	return i32(bitcast<u32>(Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(DynIndex))]));
 }
 fn DynamicPos(idx: i32) -> vec3<f32> {
-	var pos: vec3<f32>;
-	pos.x = Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(PosX))];
-	pos.y = Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(PosY))];
-	pos.z = Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(PosZ))];return pos;
+	return vec3<f32>(Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(DynPosX))], Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(DynPosY))], Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(DynPosZ))]);
 }
 fn DynamicRot(idx: i32) -> vec4<f32> {
-	var rot: vec4<f32>;
-	rot.x = Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(RotX))];
-	rot.y = Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(RotY))];
-	rot.z = Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(RotZ))];
-	rot.w = Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(RotW))];return rot;
+	return vec4<f32>(Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(DynRotX))], Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(DynRotY))], Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(DynRotZ))], Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(DynRotW))]);
 }
 
 //////// import: "contact.go"
@@ -272,6 +262,7 @@ struct PhysParams {
 	DynamicsN: i32,
 	JointsN: i32,
 	Iters: i32,
+	Dt: f32,
 	SoftRelax: f32,
 	JointLinearRelax: f32,
 	JointAngularRelax: f32,
@@ -281,6 +272,9 @@ struct PhysParams {
 	AngularDamping: f32,
 	ContactWeighting: i32,
 	Restitution: i32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 	Gravity: vec4<f32>,
 }
 
@@ -291,15 +285,12 @@ const  Sphere: Shapes = 1;
 const  Cylinder: Shapes = 2;
 const  Capsule: Shapes = 3;
 
+//////// import: "slmath-matrix3.go"
+
 //////// import: "slmath-quaternion.go"
-fn MulQuat(v: vec3<f32>, q: vec4<f32>) -> vec3<f32> {
-	var ix = q.w*v.x + q.y*v.z - q.z*v.y;
-	var iy = q.w*v.y + q.z*v.x - q.x*v.z;
-	var iz = q.w*v.z + q.x*v.y - q.y*v.x;
-	var iw = -q.x*v.x - q.y*v.y - q.z*v.z;
-return vec3<f32>(ix*q.w+iw*-q.x+iy*-q.z-iz*-q.y,
-	iy*q.w+iw*-q.y+iz*-q.x-ix*-q.z,
-	iz*q.w+iw*-q.z+ix*-q.y-iy*-q.x);
+fn MulQuatVector(q: vec4<f32>, v: vec3<f32>) -> vec3<f32> {
+	var xyz = vec3<f32>(q.x, q.y, q.z);
+	var t = MulScalar3(Cross3(xyz, v), f32(f32(2)));return v+(MulScalar3(t, q.w))+(Cross3(xyz, t));
 }
 fn MulQuats(a: vec4<f32>,b: vec4<f32>) -> vec4<f32> {
 	var q: vec4<f32>;
@@ -307,6 +298,14 @@ fn MulQuats(a: vec4<f32>,b: vec4<f32>) -> vec4<f32> {
 	q.y = a.y*b.w + a.w*b.y + a.z*b.x - a.x*b.z;
 	q.z = a.z*b.w + a.w*b.z + a.x*b.y - a.y*b.x;
 	q.w = a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z;return q;
+}
+fn MulQPTransforms(aP: vec3<f32>, aQ: vec4<f32>, bP: vec3<f32>, bQ: vec4<f32>, oP: ptr<function,vec3<f32>>, oQ: ptr<function,vec4<f32>>) {
+	var br = MulQuatVector(aQ, bP);
+	*oP = br+(aP);
+	*oQ = MulQuats(aQ, bQ);
+}
+fn MulQPPoint(xP: vec3<f32>, xQ: vec4<f32>, p: vec3<f32>) -> vec3<f32> {
+	var dp = MulQuatVector(xQ, p);return dp+(xP);
 }
 
 //////// import: "slmath-vector3.go"
@@ -318,14 +317,6 @@ fn Cross3(v: vec3<f32>,o: vec3<f32>) -> vec3<f32> {
 }
 
 //////// import: "step.go"
-fn MulTransforms(aP: vec3<f32>, aQ: vec4<f32>, bP: vec3<f32>, bQ: vec4<f32>, oP: ptr<function,vec3<f32>>, oQ: ptr<function,vec4<f32>>) {
-	var br = MulQuat(bP, aQ);
-	*oP = br+(aP);
-	*oQ = MulQuats(aQ, bQ);
-}
-fn TransformPoint(xP: vec3<f32>, xQ: vec4<f32>, p: vec3<f32>) -> vec3<f32> {
-	var dp = MulQuat(p, xQ);return dp+(xP);
-}
 fn StepJoints(i: u32) { //gosl:kernel
 	let pars = Params[0];
 	var ji = i32(i);
@@ -347,15 +338,15 @@ fn StepJoints(i: u32) { //gosl:kernel
 	if (jpi >= 0) { // can be fixed
 		posepP = DynamicPos(jpi);
 		posepQ = DynamicRot(jpi);
-		MulTransforms(posepP, posepQ, jpP, jpQ, &xwpP, &xwpQ);
+		MulQPTransforms(posepP, posepQ, jpP, jpQ, &xwpP, &xwpQ);
 		comp = BodyCom(jpbi);
 	}
-	var rp = xwpP-(TransformPoint(posepP, posepQ, comp)); // parent moment arm
+	var rp = xwpP-(MulQPPoint(posepP, posepQ, comp)); // parent moment arm
 	var posecP = DynamicPos(jci);
 	var posecQ = DynamicRot(jci);
 	var xwcP = posecP;
 	var comc = BodyCom(jcbi);
-	var rc = xwcP-(TransformPoint(posecP, posecQ, comc)); // child moment arm
+	var rc = xwcP-(MulQPPoint(posecP, posecQ, comc)); // child moment arm
 	var jf = JointForce(ji);
 	var jtq = JointTorque(ji);
 	var f: vec3<f32>;
@@ -370,7 +361,7 @@ fn StepJoints(i: u32) { //gosl:kernel
 	}
 	case Revolute, Prismatic: {
 		var axis = JointAxis(ji);
-		var ap = MulQuat(axis, xwpQ);
+		var ap = MulQuatVector(xwpQ, axis);
 		f = f+(MulScalar3(ap, jf.x));
 	}
 	default: {

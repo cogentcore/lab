@@ -8,22 +8,47 @@ import "cogentcore.org/core/math32"
 
 //gosl:start
 
-// MulQuat returns vector multiplied by specified quaternion and
-// then by the quaternion inverse.
-// It basically applies the rotation encoded in the quaternion to this vector.
-func MulQuat(v math32.Vector3, q math32.Quat) math32.Vector3 {
-	// calculate quat * vector
-	ix := q.W*v.X + q.Y*v.Z - q.Z*v.Y
-	iy := q.W*v.Y + q.Z*v.X - q.X*v.Z
-	iz := q.W*v.Z + q.X*v.Y - q.Y*v.X
-	iw := -q.X*v.X - q.Y*v.Y - q.Z*v.Z
-	// calculate result * inverse quat
-	return math32.Vec3(ix*q.W+iw*-q.X+iy*-q.Z-iz*-q.Y,
-		iy*q.W+iw*-q.Y+iz*-q.X-ix*-q.Z,
-		iz*q.W+iw*-q.Z+ix*-q.Y-iy*-q.X)
+// QuatLength returns the length of this quaternion.
+func QuatLength(q math32.Quat) float32 {
+	return math32.Sqrt(q.X*q.X + q.Y*q.Y + q.Z*q.Z + q.W*q.W)
 }
 
-// MulQuats set this quaternion to the multiplication of a by b.
+// QuatNormalize normalizes the quaternion.
+func QuatNormalize(q math32.Quat) math32.Quat {
+	var nq math32.Quat
+	l := QuatLength(q)
+	if l == 0 {
+		nq.X = 0
+		nq.Y = 0
+		nq.Z = 0
+		nq.W = 1
+	} else {
+		l = 1 / l
+		nq.X *= l
+		nq.Y *= l
+		nq.Z *= l
+		nq.W *= l
+	}
+	return nq
+}
+
+// MulQuatVector applies the rotation encoded in the [math32.Quat]
+// to the [math32.Vector3].
+func MulQuatVector(q math32.Quat, v math32.Vector3) math32.Vector3 {
+	xyz := math32.Vec3(q.X, q.Y, q.Z)
+	t := MulScalar3(Cross3(xyz, v), 2)
+	return v.Add(MulScalar3(t, q.W)).Add(Cross3(xyz, t))
+}
+
+// MulQuatVectorInverse applies the inverse of the rotation encoded
+// in the [math32.Quat] to the [math32.Vector3].
+func MulQuatVectorInverse(q math32.Quat, v math32.Vector3) math32.Vector3 {
+	xyz := math32.Vec3(q.X, q.Y, q.Z)
+	t := MulScalar3(Cross3(xyz, v), 2)
+	return v.Sub(MulScalar3(t, q.W)).Add(Cross3(xyz, t))
+}
+
+// MulQuats returns multiplication of a by b quaternions.
 func MulQuats(a, b math32.Quat) math32.Quat {
 	// from http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/code/index.htm
 	var q math32.Quat
@@ -32,6 +57,21 @@ func MulQuats(a, b math32.Quat) math32.Quat {
 	q.Z = a.Z*b.W + a.W*b.Z + a.X*b.Y - a.Y*b.X
 	q.W = a.W*b.W - a.X*b.X - a.Y*b.Y - a.Z*b.Z
 	return q
+}
+
+// MulQPTransforms computes the equivalent of matrix multiplication for
+// two quat-point spatial transforms: o = a * b
+func MulQPTransforms(aP math32.Vector3, aQ math32.Quat, bP math32.Vector3, bQ math32.Quat, oP *math32.Vector3, oQ *math32.Quat) {
+	// rotate b by a and add a
+	br := MulQuatVector(aQ, bP)
+	*oP = br.Add(aP)
+	*oQ = MulQuats(aQ, bQ)
+}
+
+// MulQPPoint applies quat-point spatial transform to given 3D point.
+func MulQPPoint(xP math32.Vector3, xQ math32.Quat, p math32.Vector3) math32.Vector3 {
+	dp := MulQuatVector(xQ, p)
+	return dp.Add(xP)
 }
 
 //gosl:end

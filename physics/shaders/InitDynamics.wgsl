@@ -31,15 +31,15 @@ fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
 
 //////// import: "body.go"
 alias BodyVars = i32; //enums:enum
-const  Shape: BodyVars = 0;
-const  WorldIndex: BodyVars = 1;
-const  SizeX: BodyVars = 2;
-const  SizeY: BodyVars = 3;
-const  SizeZ: BodyVars = 4;
-const  Mass: BodyVars = 5;
-const  InvMass: BodyVars = 6;
-const  Bounce: BodyVars = 7;
-const  Friction: BodyVars = 8;
+const  BodyShape: BodyVars = 0;
+const  BodyWorldIndex: BodyVars = 1;
+const  BodySizeX: BodyVars = 2;
+const  BodySizeY: BodyVars = 3;
+const  BodySizeZ: BodyVars = 4;
+const  BodyMass: BodyVars = 5;
+const  BodyInvMass: BodyVars = 6;
+const  BodyBounce: BodyVars = 7;
+const  BodyFriction: BodyVars = 8;
 const  BodyPosX: BodyVars = 9;
 const  BodyPosY: BodyVars = 10;
 const  BodyPosZ: BodyVars = 11;
@@ -50,59 +50,59 @@ const  BodyRotW: BodyVars = 15;
 const  BodyComX: BodyVars = 16;
 const  BodyComY: BodyVars = 17;
 const  BodyComZ: BodyVars = 18;
-const  InertiaXX: BodyVars = 19;
-const  InertiaYX: BodyVars = 20;
-const  InertiaZX: BodyVars = 21;
-const  InertiaXY: BodyVars = 22;
-const  InertiaYY: BodyVars = 23;
-const  InertiaZY: BodyVars = 24;
-const  InertiaXZ: BodyVars = 25;
-const  InertiaYZ: BodyVars = 26;
-const  InertiaZZ: BodyVars = 27;
-const  InvInertiaXX: BodyVars = 28;
-const  InvInertiaYX: BodyVars = 29;
-const  InvInertiaZX: BodyVars = 30;
-const  InvInertiaXY: BodyVars = 31;
-const  InvInertiaYY: BodyVars = 32;
-const  InvInertiaZY: BodyVars = 33;
-const  InvInertiaXZ: BodyVars = 34;
-const  InvInertiaYZ: BodyVars = 35;
-const  InvInertiaZZ: BodyVars = 36;
+const  BodyInertiaXX: BodyVars = 19;
+const  BodyInertiaYX: BodyVars = 20;
+const  BodyInertiaZX: BodyVars = 21;
+const  BodyInertiaXY: BodyVars = 22;
+const  BodyInertiaYY: BodyVars = 23;
+const  BodyInertiaZY: BodyVars = 24;
+const  BodyInertiaXZ: BodyVars = 25;
+const  BodyInertiaYZ: BodyVars = 26;
+const  BodyInertiaZZ: BodyVars = 27;
+const  BodyInvInertiaXX: BodyVars = 28;
+const  BodyInvInertiaYX: BodyVars = 29;
+const  BodyInvInertiaZX: BodyVars = 30;
+const  BodyInvInertiaXY: BodyVars = 31;
+const  BodyInvInertiaYY: BodyVars = 32;
+const  BodyInvInertiaZY: BodyVars = 33;
+const  BodyInvInertiaXZ: BodyVars = 34;
+const  BodyInvInertiaYZ: BodyVars = 35;
+const  BodyInvInertiaZZ: BodyVars = 36;
 alias DynamicVars = i32; //enums:enum
-const  Index: DynamicVars = 0;
-const  PosX: DynamicVars = 1;
-const  PosY: DynamicVars = 2;
-const  PosZ: DynamicVars = 3;
-const  RotX: DynamicVars = 4;
-const  RotY: DynamicVars = 5;
-const  RotZ: DynamicVars = 6;
-const  RotW: DynamicVars = 7;
-const  VelX: DynamicVars = 8;
-const  VelY: DynamicVars = 9;
-const  VelZ: DynamicVars = 10;
-const  AngVelX: DynamicVars = 11;
-const  AngVelY: DynamicVars = 12;
-const  AngVelZ: DynamicVars = 13;
-const  AccX: DynamicVars = 14;
-const  AccY: DynamicVars = 15;
-const  AccZ: DynamicVars = 16;
-const  AngAccX: DynamicVars = 17;
-const  AngAccY: DynamicVars = 18;
-const  AngAccZ: DynamicVars = 19;
-const  ForceX: DynamicVars = 20;
-const  ForceY: DynamicVars = 21;
-const  ForceZ: DynamicVars = 22;
-const  TorqueX: DynamicVars = 23;
-const  TorqueY: DynamicVars = 24;
-const  TorqueZ: DynamicVars = 25;
-const  DeltaX: DynamicVars = 26;
-const  DeltaY: DynamicVars = 27;
-const  DeltaZ: DynamicVars = 28;
-const  AngDeltaX: DynamicVars = 29;
-const  AngDeltaY: DynamicVars = 30;
-const  AngDeltaZ: DynamicVars = 31;
+const  DynIndex: DynamicVars = 0;
+const  DynPosX: DynamicVars = 1;
+const  DynPosY: DynamicVars = 2;
+const  DynPosZ: DynamicVars = 3;
+const  DynRotX: DynamicVars = 4;
+const  DynRotY: DynamicVars = 5;
+const  DynRotZ: DynamicVars = 6;
+const  DynRotW: DynamicVars = 7;
+const  DynVelX: DynamicVars = 8;
+const  DynVelY: DynamicVars = 9;
+const  DynVelZ: DynamicVars = 10;
+const  DynAngVelX: DynamicVars = 11;
+const  DynAngVelY: DynamicVars = 12;
+const  DynAngVelZ: DynamicVars = 13;
+const  DynAccX: DynamicVars = 14;
+const  DynAccY: DynamicVars = 15;
+const  DynAccZ: DynamicVars = 16;
+const  DynAngAccX: DynamicVars = 17;
+const  DynAngAccY: DynamicVars = 18;
+const  DynAngAccZ: DynamicVars = 19;
+const  DynForceX: DynamicVars = 20;
+const  DynForceY: DynamicVars = 21;
+const  DynForceZ: DynamicVars = 22;
+const  DynTorqueX: DynamicVars = 23;
+const  DynTorqueY: DynamicVars = 24;
+const  DynTorqueZ: DynamicVars = 25;
+const  DynDeltaX: DynamicVars = 26;
+const  DynDeltaY: DynamicVars = 27;
+const  DynDeltaZ: DynamicVars = 28;
+const  DynAngDeltaX: DynamicVars = 29;
+const  DynAngDeltaY: DynamicVars = 30;
+const  DynAngDeltaZ: DynamicVars = 31;
 fn DynamicIndex(idx: i32) -> i32 {
-	return i32(bitcast<u32>(Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(Index))]));
+	return i32(bitcast<u32>(Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(DynIndex))]));
 }
 
 //////// import: "contact.go"
@@ -200,6 +200,7 @@ struct PhysParams {
 	DynamicsN: i32,
 	JointsN: i32,
 	Iters: i32,
+	Dt: f32,
 	SoftRelax: f32,
 	JointLinearRelax: f32,
 	JointAngularRelax: f32,
@@ -209,6 +210,9 @@ struct PhysParams {
 	AngularDamping: f32,
 	ContactWeighting: i32,
 	Restitution: i32,
+	pad: f32,
+	pad1: f32,
+	pad2: f32,
 	Gravity: vec4<f32>,
 }
 
@@ -218,6 +222,8 @@ const  Box: Shapes = 0;
 const  Sphere: Shapes = 1;
 const  Cylinder: Shapes = 2;
 const  Capsule: Shapes = 3;
+
+//////// import: "slmath-matrix3.go"
 
 //////// import: "slmath-quaternion.go"
 
@@ -231,14 +237,14 @@ fn InitDynamics(i: u32) { //gosl:kernel
 		return;
 	}
 	var bi = DynamicIndex(ii);
-	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(PosX))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyPosX))];
-	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(PosY))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyPosY))];
-	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(PosZ))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyPosZ))];
-	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(RotX))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotX))];
-	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(RotY))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotY))];
-	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(RotZ))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotZ))];
-	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(RotW))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotW))];
-	for (var v = VelX; v < DynamicVarsN; v++) {
+	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(DynPosX))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyPosX))];
+	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(DynPosY))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyPosY))];
+	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(DynPosZ))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyPosZ))];
+	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(DynRotX))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotX))];
+	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(DynRotY))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotY))];
+	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(DynRotZ))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotZ))];
+	Dynamics[Index2D(TensorStrides[30], TensorStrides[31], u32(ii), u32(DynRotW))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyRotW))];
+	for (var v = DynVelX; v < DynamicVarsN; v++) {
 		Dynamics[Index2D(TensorStrides[30], TensorStrides[31],
 		u32(ii), u32(v))] = 0.0;
 	}
