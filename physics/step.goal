@@ -12,6 +12,9 @@ import (
 //gosl:start
 //gosl:import "cogentcore.org/lab/gosl/slmath"
 
+// todo: Dynamics has an extra 2 index for Cur and Next,
+// switch between those.
+
 func OneIfNonzero(f float32) float32 {
 	if f != 0.0 {
 		return 1.0
