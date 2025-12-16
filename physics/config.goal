@@ -1,0 +1,46 @@
+// Copyright (c) 2025, Cogent Core. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package physics
+
+// Config does final configuration prior to running
+// after everything has been added.
+func (wl *World) Config() {
+	wl.ConfigJoints()
+}
+
+// ConfigJoints does all of the initialization associated with joints.
+func (wl *World) ConfigJoints() {
+	// accumulate parent and child joints per dynamic
+	nj := wl.Params[0].JointsN
+	nd := wl.Params[0].DynamicsN
+	bjp := make([][]int32, nd)
+	bjc := make([][]int32, nd)
+	
+	maxi := 0
+
+	for ji := range nj {
+		jpi := JointParentIndex(ji)
+		jci := JointChildIndex(ji)
+		bjp[jpi] = append(bjp[jpi], ji)
+		bjc[jci] = append(bjc[jci], ji)
+		maxi = max(maxi, len(bjp[jpi]))
+		maxi = max(maxi, len(bjc[jci]))
+	}
+	maxi = maxi+1 // extra for n
+	wl.Params[0].BodyJointsMax = int32(maxi)
+	wl.BodyJoints.SetShapeSizes(int(nd), 2, maxi)
+	for di := range nd {
+		np := int32(len(bjp[di]))
+		wl.BodyJoints[di, 0, 0] = np
+		for i, ji := range bjp[di] {
+			wl.BodyJoints[di, 0, 1+i] = ji
+		}
+		nc := int32(len(bjc[di]))
+		wl.BodyJoints[di, 1, 0] = nc
+		for i, ji := range bjc[di] {
+			wl.BodyJoints[di, 1, 1+i] = ji
+		}
+	}
+}

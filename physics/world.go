@@ -33,7 +33,7 @@ type World struct {
 	Joints *tensor.Float32
 
 	// BodyJoints is a list of joint indexes for each dynamic body, for aggregating.
-	// [dyn body][parent, child][maxjointsperbody]
+	// [dyn body][parent, child][Params.BodyJointsMax]
 	BodyJoints *tensor.Int32
 
 	// Dynamics are the dynamic rigid body elements: these actually move.

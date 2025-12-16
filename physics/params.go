@@ -13,18 +13,6 @@ import (
 
 // PhysParams are the physics parameters
 type PhysParams struct {
-	// DynamicsN is number of dynamics bodies.
-	DynamicsN int32
-
-	// JointsN is number of joints.
-	JointsN int32
-
-	// Index for the current state (0 or 1, alternates with Next).
-	Cur int32
-
-	// Index for the next state (1 or 0, alternates with Cur).
-	Next int32
-
 	// Iters is the number of iterations to perform.
 	Iters int32 `default:"2"`
 
@@ -58,7 +46,20 @@ type PhysParams struct {
 	// Restitution
 	Restitution slbool.Bool `default:"false"`
 
-	pad float32
+	// DynamicsN is number of dynamics bodies.
+	DynamicsN int32 `edit:"-"`
+
+	// JointsN is number of joints.
+	JointsN int32 `edit:"-"`
+
+	// BodyJointsMax is max number of joints per body + 1 for actual n.
+	BodyJointsMax int32 `edit:"-"`
+
+	// Index for the current state (0 or 1, alternates with Next).
+	Cur int32 `edit:"-"`
+
+	// Index for the next state (1 or 0, alternates with Cur).
+	Next int32 `edit:"-"`
 
 	// Gravity is the gravity acceleration function
 	Gravity slvec.Vector3

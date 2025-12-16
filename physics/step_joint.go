@@ -19,16 +19,16 @@ import (
 
 // StepJointForces computes joint forces.
 func StepJointForces(i uint32) { //gosl:kernel
-	pars := GetParams(0)
+	params := GetParams(0)
 	ji := int32(i)
-	if ji >= pars.JointsN {
+	if ji >= params.JointsN {
 		return
 	}
 	// todo: enabled
 	jpi := JointParentIndex(ji)
-	jpbi := DynamicIndex(jpi, pars.Cur)
+	jpbi := DynamicIndex(jpi, params.Cur)
 	jci := JointChildIndex(ji)
-	jcbi := DynamicIndex(jci, pars.Cur)
+	jcbi := DynamicIndex(jci, params.Cur)
 	jt := GetJointType(ji)
 
 	jpP := JointPPos(ji)
@@ -42,16 +42,16 @@ func StepJointForces(i uint32) { //gosl:kernel
 	var comp math32.Vector3
 
 	if jpi >= 0 { // can be fixed
-		posepP = DynamicPos(jpi, pars.Cur)
-		posepQ = DynamicRot(jpi, pars.Cur)
+		posepP = DynamicPos(jpi, params.Cur)
+		posepQ = DynamicRot(jpi, params.Cur)
 		slmath.MulQPTransforms(posepP, posepQ, jpP, jpQ, &xwpP, &xwpQ)
 		comp = BodyCom(jpbi)
 	}
 	rp := xwpP.Sub(slmath.MulQPPoint(posepP, posepQ, comp)) // parent moment arm
 
 	// child world transform
-	posecP := DynamicPos(jci, pars.Cur)
-	posecQ := DynamicRot(jci, pars.Cur)
+	posecP := DynamicPos(jci, params.Cur)
+	posecQ := DynamicRot(jci, params.Cur)
 	xwcP := posecP
 	// xwcQ := posecQ
 	comc := BodyCom(jcbi)
@@ -85,17 +85,17 @@ func StepJointForces(i uint32) { //gosl:kernel
 
 // StepSolveJoints fixes joints after updating bodies.
 func StepSolveJoints(i uint32) { //gosl:kernel
-	pars := GetParams(0)
+	params := GetParams(0)
 	ji := int32(i)
-	if ji >= pars.JointsN {
+	if ji >= params.JointsN {
 		return
 	}
 
 	// todo: enabled
 	jpi := JointParentIndex(ji)
-	jpbi := DynamicIndex(jpi, pars.Cur)
+	jpbi := DynamicIndex(jpi, params.Cur)
 	jci := JointChildIndex(ji)
-	jcbi := DynamicIndex(jci, pars.Cur)
+	jcbi := DynamicIndex(jci, params.Cur)
 	jt := GetJointType(ji)
 
 	if jt == Free {
@@ -115,19 +115,19 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 
 	// parent transform and moment arm
 	if jpi >= 0 {
-		posepP = DynamicPos(jpi, pars.Next) // now using next
-		posepQ = DynamicRot(jpi, pars.Next)
+		posepP = DynamicPos(jpi, params.Next) // now using next
+		posepQ = DynamicRot(jpi, params.Next)
 		slmath.MulQPTransforms(posepP, posepQ, jpP, jpQ, &xwpP, &xwpQ)
 		comp = BodyCom(jpbi)
 		mInvp = Bodies.Value(int(jpbi), int(BodyInvMass))
 		iInvp = BodyInvInertia(jpbi)
-		velp = DynamicDelta(jpi, pars.Next)
-		omegap = DynamicAngDelta(jpi, pars.Next)
+		velp = DynamicDelta(jpi, params.Next)
+		omegap = DynamicAngDelta(jpi, params.Next)
 	}
 
 	// child transform and moment arm
-	posecP := DynamicPos(jci, pars.Next)
-	posecQ := DynamicRot(jci, pars.Next)
+	posecP := DynamicPos(jci, params.Next)
+	posecQ := DynamicRot(jci, params.Next)
 	jcP := JointCPos(ji)
 	jcQ := JointCRot(ji)
 	xwcP := jcP
@@ -136,8 +136,8 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 	comc := BodyCom(jcbi)
 	mInvc := Bodies.Value(int(jcbi), int(BodyInvMass))
 	iInvc := BodyInvInertia(jcbi)
-	velc := DynamicDelta(jci, pars.Next)
-	omegac := DynamicAngDelta(jci, pars.Next)
+	velc := DynamicDelta(jci, params.Next)
+	omegac := DynamicAngDelta(jci, params.Next)
 
 	if mInvp == 0.0 && mInvc == 0.0 { // connection between two immovable bodies
 		return
@@ -226,9 +226,9 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 		//	     dt,
 		//	 )
 		//
-		//	 linDelta_p += linear_p * (d_lambda * pars.JointLinearRelax)
+		//	 linDelta_p += linear_p * (d_lambda * params.JointLinearRelax)
 		//	 angDelta_p += angular_p * (d_lambda * angular_relaxation)
-		//	 linDelta_c += linear_c * (d_lambda * pars.JointLinearRelax)
+		//	 linDelta_c += linear_c * (d_lambda * params.JointLinearRelax)
 		//	 angDelta_c += angular_c * (d_lambda * angular_relaxation)
 	} else { // compute joint target, stiffness, damping
 		var axisLimitsD, axisLimitsA math32.Vector3
@@ -322,7 +322,7 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 			derr := slmath.Dot3(linearp, velp) + slmath.Dot3(linearc, velc) + slmath.Dot3(angularp, omegap) + slmath.Dot3(angularc, omegac)
 
 			err := float32(0.0)
-			compliance := pars.JointLinearComply
+			compliance := params.JointLinearComply
 			damping := float32(0.0)
 
 			targetVel := axisTargetVelKdD.X // [dim]
@@ -351,12 +351,12 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 			if math32.Abs(err) > 1e-9 || math32.Abs(derrRel) > 1e-9 {
 				lambdaIn := float32(0.0)
 				dLambda := PositionalCorrection(err, derrRel, posepQ, posecQ, mInvp, mInvc,
-					iInvp, iInvc, linearp, linearc, angularp, angularc, lambdaIn, compliance, damping, pars.Dt)
+					iInvp, iInvc, linearp, linearc, angularp, angularc, lambdaIn, compliance, damping, params.Dt)
 
-				linDeltaP = linDeltaP.Add(linearp.MulScalar(dLambda * pars.JointLinearRelax))
-				angDeltaP = angDeltaP.Add(angularp.MulScalar(dLambda * pars.JointAngularRelax))
-				linDeltaC = linDeltaC.Add(linearc.MulScalar(dLambda * pars.JointLinearRelax))
-				angDeltaC = angDeltaC.Add(angularc.MulScalar(dLambda * pars.JointAngularRelax))
+				linDeltaP = linDeltaP.Add(linearp.MulScalar(dLambda * params.JointLinearRelax))
+				angDeltaP = angDeltaP.Add(angularp.MulScalar(dLambda * params.JointAngularRelax))
+				linDeltaC = linDeltaC.Add(linearc.MulScalar(dLambda * params.JointLinearRelax))
+				angDeltaC = angDeltaC.Add(angularc.MulScalar(dLambda * params.JointAngularRelax))
 			}
 		}
 	}

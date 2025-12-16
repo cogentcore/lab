@@ -267,10 +267,6 @@ const  D6: JointTypes = 6;
 
 //////// import: "params.go"
 struct PhysParams {
-	DynamicsN: i32,
-	JointsN: i32,
-	Cur: i32,
-	Next: i32,
 	Iters: i32,
 	Dt: f32,
 	SoftRelax: f32,
@@ -282,7 +278,11 @@ struct PhysParams {
 	AngularDamping: f32,
 	ContactWeighting: i32,
 	Restitution: i32,
-	pad: f32,
+	DynamicsN: i32,
+	JointsN: i32,
+	BodyJointsMax: i32,
+	Cur: i32,
+	Next: i32,
 	Gravity: vec4<f32>,
 }
 
@@ -346,34 +346,34 @@ fn Cross3(v: vec3<f32>,o: vec3<f32>) -> vec3<f32> {
 
 //////// import: "step_body.go"
 fn StepBodyDeltas(i: u32) { //gosl:kernel
-	let pars = Params[0];
+	let params = Params[0];
 	var di = i32(i);
-	if (di >= pars.DynamicsN) {
+	if (di >= params.DynamicsN) {
 		return;
 	}
-	var bi = DynamicIndex(di, pars.Cur);
+	var bi = DynamicIndex(di, params.Cur);
 	var invMass = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyInvMass))];
 	if (invMass == 0) {
 		return; // no updates
 	}
 	var inertia = BodyInertia(bi);
 	var invInertia = BodyInvInertia(bi);
-	var p0 = DynamicPos(di, pars.Next);
-	var q0 = DynamicRot(di, pars.Next);
-	var v0 = DynamicDelta(di, pars.Next);
-	var w0 = DynamicAngDelta(di, pars.Next);
+	var p0 = DynamicPos(di, params.Next);
+	var q0 = DynamicRot(di, params.Next);
+	var v0 = DynamicDelta(di, params.Next);
+	var w0 = DynamicAngDelta(di, params.Next);
 	var weight = f32(1.0);
 	var dp = v0*(invMass * weight);
 	var dq = w0*(weight);
 	var wb = MulQuatVectorInverse(q0, w0);
 	var dwb = invInertia*(MulQuatVectorInverse(q0, dq));
 	var tb = Cross3(dwb, inertia*(wb+(dwb)))+(Cross3(wb, inertia*(dwb)));
-	var dw1 = MulQuatVector(q0, dwb-(invInertia*(tb)*(pars.Dt)));
-	var q1 = q0+(MulQuats(vec4<f32>(dw1.x, dw1.y, dw1.z, 0), q0)*(0.5 * pars.Dt));
+	var dw1 = MulQuatVector(q0, dwb-(invInertia*(tb)*(params.Dt)));
+	var q1 = q0+(MulQuats(vec4<f32>(dw1.x, dw1.y, dw1.z, 0), q0)*(0.5 * params.Dt));
 	q1 = QuatNormalize(q1);
 	var com = BodyCom(bi);
 	var pcom = MulQuatVector(q0, com)+(p0);
-	var p1 = pcom+(dp*(pars.Dt));
+	var p1 = pcom+(dp*(params.Dt));
 	p1 = p1-(MulQuatVector(q1, com));
 	var v1 = v0+(dp);
 	var w1 = w0+(dw1);
@@ -383,10 +383,10 @@ fn StepBodyDeltas(i: u32) { //gosl:kernel
 	if (Length3(w1) < 1e-4) {
 		w1 = vec3<f32>(0, 0, 0);
 	}
-	SetDynamicPos(di, pars.Next, p1);
-	SetDynamicRot(di, pars.Next, q1);
-	SetDynamicDelta(di, pars.Next, v1);
-	SetDynamicAngDelta(di, pars.Next, w1);
+	SetDynamicPos(di, params.Next, p1);
+	SetDynamicRot(di, params.Next, q1);
+	SetDynamicDelta(di, params.Next, v1);
+	SetDynamicAngDelta(di, params.Next, w1);
 }
 
 //////// import: "step_joint.go"

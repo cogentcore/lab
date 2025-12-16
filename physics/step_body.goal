@@ -17,9 +17,9 @@ import (
 
 // InitDynamics copies Body initial state to dynamic state (cur and next).
 func InitDynamics(i uint32) { //gosl:kernel
-	pars := GetParams(0)
+	params := GetParams(0)
 	ii := int32(i)
-	if ii >= pars.DynamicsN {
+	if ii >= params.DynamicsN {
 		return
 	}
 	for cni := range 2 {
@@ -41,26 +41,84 @@ func InitDynamics(i uint32) { //gosl:kernel
 
 // DynamicsCurToNext copies [Dynamics] state from Cur to Next.
 func DynamicsCurToNext(i uint32) { //gosl:kernel
-	pars := GetParams(0)
+	params := GetParams(0)
 	ii := int32(i)
-	if ii >= pars.DynamicsN {
+	if ii >= params.DynamicsN {
 		return
 	}
 	for di := DynIndex; di < DynamicVarsN; di++ {
-		Dynamics[ii, pars.Next, di] = Dynamics[ii, pars.Cur, di]
+		Dynamics[ii, params.Next, di] = Dynamics[ii, params.Cur, di]
 	}
 }
 
-// todo: aggregate forces
+// ForcesFromJoints gathers forces and torques from joints per dynamic
+func ForcesFromJoints(i uint32) { //gosl:kernel
+	params := GetParams(0)
+	di := int32(i)
+	if di >= params.DynamicsN {
+		return
+	}
+	np := BodyJoints[di, 0, 0]
+	nc := BodyJoints[di, 1, 0]
+
+	tf := math32.Vec3(0,0,0)
+	tt := math32.Vec3(0,0,0)
+	for i := int32(1); i <= np; i++ {
+		ji := BodyJoints[di, 0, i]
+		f := JointPForce(ji)
+		tf = tf.Add(f)
+		t := JointPTorque(ji)
+		tt = tt.Add(t)
+	}
+	for i := int32(1); i <= nc; i++ {
+		ji := BodyJoints[di, 1, i]
+		f := JointCForce(ji)
+		tf = tf.Add(f)
+		t := JointCTorque(ji)
+		tt = tt.Add(t)
+	}
+	SetDynamicForce(di, params.Next, tf)
+	SetDynamicTorque(di, params.Next, tt)
+}
+
+// DeltasFromJoints gathers deltas, angDeltas from joints per dynamic
+func DeltasFromJoints(i uint32) { //gosl:kernel
+	params := GetParams(0)
+	di := int32(i)
+	if di >= params.DynamicsN {
+		return
+	}
+	np := BodyJoints[di, 0, 0]
+	nc := BodyJoints[di, 1, 0]
+
+	td := math32.Vec3(0,0,0)
+	ta := math32.Vec3(0,0,0)
+	for i := int32(1); i <= np; i++ {
+		ji := BodyJoints[di, 0, i]
+		d := JointPDelta(ji)
+		td = td.Add(d)
+		a := JointPAngDelta(ji)
+		ta = ta.Add(a)
+	}
+	for i := int32(1); i <= nc; i++ {
+		ji := BodyJoints[di, 1, i]
+		d := JointCDelta(ji)
+		td = td.Add(d)
+		a := JointCAngDelta(ji)
+		ta = ta.Add(a)
+	}
+	SetDynamicDelta(di, params.Next, td)
+	SetDynamicAngDelta(di, params.Next, ta)
+}
 
 // StepIntegrateBodies applies forces to update pos and deltas
 func StepIntegrateBodies(i uint32) { //gosl:kernel
-	pars := GetParams(0)
+	params := GetParams(0)
 	di := int32(i)
-	if di >= pars.DynamicsN {
+	if di >= params.DynamicsN {
 		return
 	}
-	bi := DynamicIndex(di, pars.Cur)
+	bi := DynamicIndex(di, params.Cur)
 
 	invMass := Bodies[bi, BodyInvMass]
 	inertia := BodyInertia(bi)
@@ -69,50 +127,50 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 	com := BodyCom(bi)
 
 	// current pos
-	p0 := DynamicPos(di, pars.Cur)
-	q0 := DynamicRot(di, pars.Cur)
+	p0 := DynamicPos(di, params.Cur)
+	q0 := DynamicRot(di, params.Cur)
 
 	// current deltas
-	v0 := DynamicDelta(di, pars.Cur)
-	w0 := DynamicAngDelta(di, pars.Cur)
+	v0 := DynamicDelta(di, params.Cur)
+	w0 := DynamicAngDelta(di, params.Cur)
 
 	// new forces integrated from joints
-	f0 := DynamicForce(di, pars.Next)
-	t0 := DynamicTorque(di, pars.Next)
+	f0 := DynamicForce(di, params.Next)
+	t0 := DynamicTorque(di, params.Next)
 
 	pcom := slmath.MulQuatVector(q0, com).Add(p0)
 
 	// linear part
-	v1 := v0.Add(f0.MulScalar(invMass).Add(pars.Gravity.V().MulScalar(OneIfNonzero(invMass))).MulScalar(pars.Dt))
-	p1 := pcom.Add(v1.MulScalar(pars.Dt))
+	v1 := v0.Add(f0.MulScalar(invMass).Add(params.Gravity.V().MulScalar(OneIfNonzero(invMass))).MulScalar(params.Dt))
+	p1 := pcom.Add(v1.MulScalar(params.Dt))
 
 	// angular part (compute in body frame)
 	wb := slmath.MulQuatVectorInverse(q0, w0)
 	tb := slmath.MulQuatVectorInverse(q0, t0).Sub(slmath.Cross3(wb, inertia.MulVector3(wb))) // coriolis forces
 
-	w1 := slmath.MulQuatVector(q0, wb.Add(invInertia.MulVector3(tb).MulScalar(pars.Dt)))
-	q1 := slmath.MulQuats(math32.NewQuat(w1.X, w1.Y, w1.Z, 0), q0).MulScalar(0.5 * pars.Dt)
+	w1 := slmath.MulQuatVector(q0, wb.Add(invInertia.MulVector3(tb).MulScalar(params.Dt)))
+	q1 := slmath.MulQuats(math32.NewQuat(w1.X, w1.Y, w1.Z, 0), q0).MulScalar(0.5 * params.Dt)
 	q1 = slmath.QuatNormalize(q1)
 
 	// angular damping
-	w1 = w1.MulScalar(1.0 - pars.AngularDamping*pars.Dt)
+	w1 = w1.MulScalar(1.0 - params.AngularDamping*params.Dt)
 
 	p1a := p1.Sub(slmath.MulQuatVector(q1, com)) // pos corrected to nominal center.
 
-	SetDynamicPos(di, pars.Next, p1a)
-	SetDynamicRot(di, pars.Next, q1)
-	SetDynamicDelta(di, pars.Next, v1)
-	SetDynamicAngDelta(di, pars.Next, w1)
+	SetDynamicPos(di, params.Next, p1a)
+	SetDynamicRot(di, params.Next, q1)
+	SetDynamicDelta(di, params.Next, v1)
+	SetDynamicAngDelta(di, params.Next, w1)
 }
 
 // StepBodyDeltas updates Next position with deltas.
 func StepBodyDeltas(i uint32) { //gosl:kernel
-	pars := GetParams(0)
+	params := GetParams(0)
 	di := int32(i)
-	if di >= pars.DynamicsN {
+	if di >= params.DynamicsN {
 		return
 	}
-	bi := DynamicIndex(di, pars.Cur)
+	bi := DynamicIndex(di, params.Cur)
 
 	invMass := Bodies[bi, BodyInvMass]
 	if invMass == 0 {
@@ -122,12 +180,12 @@ func StepBodyDeltas(i uint32) { //gosl:kernel
 	invInertia := BodyInvInertia(bi)
 
 	// starting pos (from force integration)
-	p0 := DynamicPos(di, pars.Next)
-	q0 := DynamicRot(di, pars.Next)
+	p0 := DynamicPos(di, params.Next)
+	q0 := DynamicRot(di, params.Next)
 
 	// starting deltas
-	v0 := DynamicDelta(di, pars.Next)
-	w0 := DynamicAngDelta(di, pars.Next)
+	v0 := DynamicDelta(di, params.Next)
+	w0 := DynamicAngDelta(di, params.Next)
 
 	weight := float32(1.0)
 	// todo: this is rigid_contact_inv_weight in solver_xpbd.py: from contacts, with restitution
@@ -143,10 +201,10 @@ func StepBodyDeltas(i uint32) { //gosl:kernel
 	dwb := invInertia.MulVector3(slmath.MulQuatVectorInverse(q0, dq))
 	// coriolis forces delta from dwb = (wb + dwb) I (wb + dwb) - wb I wb
 	tb := slmath.Cross3(dwb, inertia.MulVector3(wb.Add(dwb))).Add(slmath.Cross3(wb, inertia.MulVector3(dwb)))
-	dw1 := slmath.MulQuatVector(q0, dwb.Sub(invInertia.MulVector3(tb).MulScalar(pars.Dt)))
+	dw1 := slmath.MulQuatVector(q0, dwb.Sub(invInertia.MulVector3(tb).MulScalar(params.Dt)))
 
 	// update orientation
-	q1 := q0.Add(slmath.MulQuats(math32.NewQuat(dw1.X, dw1.Y, dw1.Z, 0), q0).MulScalar(0.5 * pars.Dt))
+	q1 := q0.Add(slmath.MulQuats(math32.NewQuat(dw1.X, dw1.Y, dw1.Z, 0), q0).MulScalar(0.5 * params.Dt))
 	// q1 := q0 + 0.5 * wp.quat(dw1 * dt, 0.0) * q0
 	q1 = slmath.QuatNormalize(q1)
 
@@ -154,7 +212,7 @@ func StepBodyDeltas(i uint32) { //gosl:kernel
 	com := BodyCom(bi)
 	pcom := slmath.MulQuatVector(q0, com).Add(p0)
 
-	p1 := pcom.Add(dp.MulScalar(pars.Dt))
+	p1 := pcom.Add(dp.MulScalar(params.Dt))
 	p1 = p1.Sub(slmath.MulQuatVector(q1, com))
 
 	// update linear and angular velocity
@@ -169,10 +227,10 @@ func StepBodyDeltas(i uint32) { //gosl:kernel
 		w1 = math32.Vec3(0, 0, 0)
 	}
 
-	SetDynamicPos(di, pars.Next, p1)
-	SetDynamicRot(di, pars.Next, q1)
-	SetDynamicDelta(di, pars.Next, v1)
-	SetDynamicAngDelta(di, pars.Next, w1)
+	SetDynamicPos(di, params.Next, p1)
+	SetDynamicRot(di, params.Next, q1)
+	SetDynamicDelta(di, params.Next, v1)
+	SetDynamicAngDelta(di, params.Next, w1)
 }
 
 //gosl:end

@@ -273,10 +273,6 @@ const  D6: JointTypes = 6;
 
 //////// import: "params.go"
 struct PhysParams {
-	DynamicsN: i32,
-	JointsN: i32,
-	Cur: i32,
-	Next: i32,
 	Iters: i32,
 	Dt: f32,
 	SoftRelax: f32,
@@ -288,7 +284,11 @@ struct PhysParams {
 	AngularDamping: f32,
 	ContactWeighting: i32,
 	Restitution: i32,
-	pad: f32,
+	DynamicsN: i32,
+	JointsN: i32,
+	BodyJointsMax: i32,
+	Cur: i32,
+	Next: i32,
 	Gravity: vec4<f32>,
 }
 
@@ -354,36 +354,36 @@ fn OneIfNonzero(f: f32) -> f32 {
 
 //////// import: "step_body.go"
 fn StepIntegrateBodies(i: u32) { //gosl:kernel
-	let pars = Params[0];
+	let params = Params[0];
 	var di = i32(i);
-	if (di >= pars.DynamicsN) {
+	if (di >= params.DynamicsN) {
 		return;
 	}
-	var bi = DynamicIndex(di, pars.Cur);
+	var bi = DynamicIndex(di, params.Cur);
 	var invMass = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyInvMass))];
 	var inertia = BodyInertia(bi);
 	var invInertia = BodyInvInertia(bi);
 	var com = BodyCom(bi);
-	var p0 = DynamicPos(di, pars.Cur);
-	var q0 = DynamicRot(di, pars.Cur);
-	var v0 = DynamicDelta(di, pars.Cur);
-	var w0 = DynamicAngDelta(di, pars.Cur);
-	var f0 = DynamicForce(di, pars.Next);
-	var t0 = DynamicTorque(di, pars.Next);
+	var p0 = DynamicPos(di, params.Cur);
+	var q0 = DynamicRot(di, params.Cur);
+	var v0 = DynamicDelta(di, params.Cur);
+	var w0 = DynamicAngDelta(di, params.Cur);
+	var f0 = DynamicForce(di, params.Next);
+	var t0 = DynamicTorque(di, params.Next);
 	var pcom = MulQuatVector(q0, com)+(p0);
-	var v1 = v0+(f0*(invMass)+(vec3<f32>(pars.Gravity.x,pars.Gravity.y,pars.Gravity.z)*(OneIfNonzero(invMass)))*(pars.Dt));
-	var p1 = pcom+(v1*(pars.Dt));
+	var v1 = v0+(f0*(invMass)+(vec3<f32>(params.Gravity.x,params.Gravity.y,params.Gravity.z)*(OneIfNonzero(invMass)))*(params.Dt));
+	var p1 = pcom+(v1*(params.Dt));
 	var wb = MulQuatVectorInverse(q0, w0);
 	var tb = MulQuatVectorInverse(q0, t0)-(Cross3(wb, inertia*(wb))); // coriolis forces
-	var w1 = MulQuatVector(q0, wb+(invInertia*(tb)*(pars.Dt)));
-	var q1 = MulQuats(vec4<f32>(w1.x, w1.y, w1.z, 0), q0)*(0.5 * pars.Dt);
+	var w1 = MulQuatVector(q0, wb+(invInertia*(tb)*(params.Dt)));
+	var q1 = MulQuats(vec4<f32>(w1.x, w1.y, w1.z, 0), q0)*(0.5 * params.Dt);
 	q1 = QuatNormalize(q1);
-	w1 = w1*(1.0 - pars.AngularDamping*pars.Dt);
+	w1 = w1*(1.0 - params.AngularDamping*params.Dt);
 	var p1a = p1-(MulQuatVector(q1, com)); // pos corrected to nominal center.
-	SetDynamicPos(di, pars.Next, p1a);
-	SetDynamicRot(di, pars.Next, q1);
-	SetDynamicDelta(di, pars.Next, v1);
-	SetDynamicAngDelta(di, pars.Next, w1);
+	SetDynamicPos(di, params.Next, p1a);
+	SetDynamicRot(di, params.Next, q1);
+	SetDynamicDelta(di, params.Next, v1);
+	SetDynamicAngDelta(di, params.Next, w1);
 }
 
 //////// import: "step_joint.go"

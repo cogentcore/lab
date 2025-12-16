@@ -221,10 +221,6 @@ const  D6: JointTypes = 6;
 
 //////// import: "params.go"
 struct PhysParams {
-	DynamicsN: i32,
-	JointsN: i32,
-	Cur: i32,
-	Next: i32,
 	Iters: i32,
 	Dt: f32,
 	SoftRelax: f32,
@@ -236,7 +232,11 @@ struct PhysParams {
 	AngularDamping: f32,
 	ContactWeighting: i32,
 	Restitution: i32,
-	pad: f32,
+	DynamicsN: i32,
+	JointsN: i32,
+	BodyJointsMax: i32,
+	Cur: i32,
+	Next: i32,
 	Gravity: vec4<f32>,
 }
 
@@ -257,9 +257,9 @@ const  Capsule: Shapes = 3;
 
 //////// import: "step_body.go"
 fn InitDynamics(i: u32) { //gosl:kernel
-	let pars = Params[0];
+	let params = Params[0];
 	var ii = i32(i);
-	if (ii >= pars.DynamicsN) {
+	if (ii >= params.DynamicsN) {
 		return;
 	}
 	for (var cni=0; cni<2; cni++) {

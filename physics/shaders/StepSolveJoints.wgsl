@@ -301,10 +301,6 @@ const  D6: JointTypes = 6;
 
 //////// import: "params.go"
 struct PhysParams {
-	DynamicsN: i32,
-	JointsN: i32,
-	Cur: i32,
-	Next: i32,
 	Iters: i32,
 	Dt: f32,
 	SoftRelax: f32,
@@ -316,7 +312,11 @@ struct PhysParams {
 	AngularDamping: f32,
 	ContactWeighting: i32,
 	Restitution: i32,
-	pad: f32,
+	DynamicsN: i32,
+	JointsN: i32,
+	BodyJointsMax: i32,
+	Cur: i32,
+	Next: i32,
 	Gravity: vec4<f32>,
 }
 
@@ -415,15 +415,15 @@ fn Cross3(v: vec3<f32>,o: vec3<f32>) -> vec3<f32> {
 
 //////// import: "step_joint.go"
 fn StepSolveJoints(i: u32) { //gosl:kernel
-	let pars = Params[0];
+	let params = Params[0];
 	var ji = i32(i);
-	if (ji >= pars.JointsN) {
+	if (ji >= params.JointsN) {
 		return;
 	}
 	var jpi = JointParentIndex(ji);
-	var jpbi = DynamicIndex(jpi, pars.Cur);
+	var jpbi = DynamicIndex(jpi, params.Cur);
 	var jci = JointChildIndex(ji);
-	var jcbi = DynamicIndex(jci, pars.Cur);
+	var jcbi = DynamicIndex(jci, params.Cur);
 	var jt = GetJointType(ji);
 	if (jt == Free) {
 		return;
@@ -441,17 +441,17 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 	velp: vec3<f32>;
 	var omegap: vec3<f32>;
 	if (jpi >= 0) {
-		posepP = DynamicPos(jpi, pars.Next); // now using next
-		posepQ = DynamicRot(jpi, pars.Next);
+		posepP = DynamicPos(jpi, params.Next); // now using next
+		posepQ = DynamicRot(jpi, params.Next);
 		MulQPTransforms(posepP, posepQ, jpP, jpQ, &xwpP, &xwpQ);
 		comp = BodyCom(jpbi);
 		mInvp = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(jpbi), u32(BodyInvMass))];
 		iInvp = BodyInvInertia(jpbi);
-		velp = DynamicDelta(jpi, pars.Next);
-		omegap = DynamicAngDelta(jpi, pars.Next);
+		velp = DynamicDelta(jpi, params.Next);
+		omegap = DynamicAngDelta(jpi, params.Next);
 	}
-	var posecP = DynamicPos(jci, pars.Next);
-	var posecQ = DynamicRot(jci, pars.Next);
+	var posecP = DynamicPos(jci, params.Next);
+	var posecQ = DynamicRot(jci, params.Next);
 	var jcP = JointCPos(ji);
 	var jcQ = JointCRot(ji);
 	var xwcP = jcP;
@@ -460,8 +460,8 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 	var comc = BodyCom(jcbi);
 	var mInvc = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(jcbi), u32(BodyInvMass))];
 	var iInvc = BodyInvInertia(jcbi);
-	var velc = DynamicDelta(jci, pars.Next);
-	var omegac = DynamicAngDelta(jci, pars.Next);
+	var velc = DynamicDelta(jci, params.Next);
+	var omegac = DynamicAngDelta(jci, params.Next);
 	if (mInvp == 0.0 && mInvc == 0.0) { // connection between two immovable bodies
 		return;
 	}
@@ -520,7 +520,7 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 			var angularc = Cross3(rc, linearc);
 			var derr = Dot3(linearp, velp) + Dot3(linearc, velc) + Dot3(angularp, omegap) + Dot3(angularc, omegac);
 			var err = f32(0.0);
-			var compliance = pars.JointLinearComply;
+			var compliance = params.JointLinearComply;
 			var damping = f32(0.0);
 			var targetVel = axisTargetVelKdD.x; // [dim]
 			var derrRel = derr - targetVel;
@@ -545,11 +545,11 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 			if (abs(err) > 1e-9 || abs(derrRel) > 1e-9) {
 				var lambdaIn = f32(0.0);
 				var dLambda = PositionalCorrection(err, derrRel, posepQ, posecQ, mInvp, mInvc,
-					iInvp, iInvc, linearp, linearc, angularp, angularc, lambdaIn, compliance, damping, pars.Dt);
-				linDeltaP = linDeltaP+(linearp*(dLambda * pars.JointLinearRelax));
-				angDeltaP = angDeltaP+(angularp*(dLambda * pars.JointAngularRelax));
-				linDeltaC = linDeltaC+(linearc*(dLambda * pars.JointLinearRelax));
-				angDeltaC = angDeltaC+(angularc*(dLambda * pars.JointAngularRelax));
+					iInvp, iInvc, linearp, linearc, angularp, angularc, lambdaIn, compliance, damping, params.Dt);
+				linDeltaP = linDeltaP+(linearp*(dLambda * params.JointLinearRelax));
+				angDeltaP = angDeltaP+(angularp*(dLambda * params.JointAngularRelax));
+				linDeltaC = linDeltaC+(linearc*(dLambda * params.JointLinearRelax));
+				angDeltaC = angDeltaC+(angularc*(dLambda * params.JointAngularRelax));
 			}
 		}
 	}

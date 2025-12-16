@@ -46,6 +46,6 @@ func OneIfNonzero(f float32) float32 {
 //gosl:end
 
 func (wl *World) StepJointForces() {
-	pars := GetParams(0)
-	RunStepJointForces(int(pars.JointsN))
+	params := GetParams(0)
+	RunStepJointForces(int(params.JointsN))
 }

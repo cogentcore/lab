@@ -106,9 +106,21 @@ func GPUInit() {
 			sgp.SetNValues(1)
 		}
 		var pl *gpu.ComputePipeline
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/DeltasFromJoints.wgsl", sy)
+		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(1, "BodyJoints")
+		pl.AddVarUsed(2, "Dynamics")
+		pl.AddVarUsed(1, "Joints")
+		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/DynamicsCurToNext.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(2, "Dynamics")
+		pl.AddVarUsed(0, "Params")
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/ForcesFromJoints.wgsl", sy)
+		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(1, "BodyJoints")
+		pl.AddVarUsed(2, "Dynamics")
+		pl.AddVarUsed(1, "Joints")
 		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/InitDynamics.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
@@ -158,6 +170,48 @@ func GPURelease() {
 	ComputeGPU = nil
 }
 
+// RunDeltasFromJoints runs the DeltasFromJoints kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneDeltasFromJoints call does Run and Done for a
+// single run-and-sync case.
+func RunDeltasFromJoints(n int) {
+	if UseGPU {
+		RunDeltasFromJointsGPU(n)
+	} else {
+		RunDeltasFromJointsCPU(n)
+	}
+}
+
+// RunDeltasFromJointsGPU runs the DeltasFromJoints kernel on the GPU. See [RunDeltasFromJoints] for more info.
+func RunDeltasFromJointsGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["DeltasFromJoints"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunDeltasFromJointsCPU runs the DeltasFromJoints kernel on the CPU.
+func RunDeltasFromJointsCPU(n int) {
+	gpu.VectorizeFunc(0, n, DeltasFromJoints)
+}
+
+// RunOneDeltasFromJoints runs the DeltasFromJoints kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneDeltasFromJoints(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunDeltasFromJointsGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunDeltasFromJointsCPU(n)
+	}
+}
 // RunDynamicsCurToNext runs the DynamicsCurToNext kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -198,6 +252,48 @@ func RunOneDynamicsCurToNext(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunDynamicsCurToNextCPU(n)
+	}
+}
+// RunForcesFromJoints runs the ForcesFromJoints kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneForcesFromJoints call does Run and Done for a
+// single run-and-sync case.
+func RunForcesFromJoints(n int) {
+	if UseGPU {
+		RunForcesFromJointsGPU(n)
+	} else {
+		RunForcesFromJointsCPU(n)
+	}
+}
+
+// RunForcesFromJointsGPU runs the ForcesFromJoints kernel on the GPU. See [RunForcesFromJoints] for more info.
+func RunForcesFromJointsGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["ForcesFromJoints"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunForcesFromJointsCPU runs the ForcesFromJoints kernel on the CPU.
+func RunForcesFromJointsCPU(n int) {
+	gpu.VectorizeFunc(0, n, ForcesFromJoints)
+}
+
+// RunOneForcesFromJoints runs the ForcesFromJoints kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneForcesFromJoints(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunForcesFromJointsGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunForcesFromJointsCPU(n)
 	}
 }
 // RunInitDynamics runs the InitDynamics kernel with given number of elements,
