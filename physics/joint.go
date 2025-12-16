@@ -14,6 +14,35 @@ import (
 
 //gosl:start
 
+// Sentinel value for unlimited joint limits
+const JointLimitUnlimited = 1e10
+
+// JointTypes are joint types that determine nature of interaction.
+type JointTypes int32 //enums:enum
+
+const (
+	// Prismatic allows translation along a single axis (slider): 1 DoF.
+	Prismatic JointTypes = iota
+
+	// Revolute allows rotation about a single axis (axel): 1 DoF.
+	Revolute
+
+	// Ball allows rotation about all three axes (3 DoF, quaternion).
+	Ball
+
+	// Fixed locks all relative motion: 0 DoF.
+	Fixed
+
+	// Free allows full 6-DoF motion (translation and rotation).
+	Free
+
+	// Distance keeps two bodies a distance within joint limits: 6 DoF.
+	Distance
+
+	// D6 is a generic 6-DoF joint.
+	D6
+)
+
 // JointVars are joint state variables stored in tensor.Float32.
 // These are all static joint properties; dynamic control variables
 // in [JointControlVars] and [JointControls].
@@ -55,24 +84,17 @@ const (
 	JointCRotZ
 	JointCRotW
 
-	// axis of articulation for the joint
-	JointAxisX
-	JointAxisY
-	JointAxisZ
+	// JointDoFN is the number of degrees-of-freedom for the joint.
+	JointDoFN
 
-	// joint limits
-	JointLimitLower
-	JointLimitUpper
-
-	// joint stiffness target (ke)
-	JointStiffX
-	JointStiffY
-	JointStiffZ
-
-	// joint damping target (kd)
-	JointDampX
-	JointDampY
-	JointDampZ
+	// indexes in JointDoFs for each DoF
+	JointDoF1
+	JointDoF2
+	JointDoF3
+	// angular starts here for Free, D6
+	JointDoF4
+	JointDoF5
+	JointDoF6
 
 	// Computed forces (temp storage until aggregated by bodies).
 
@@ -141,6 +163,22 @@ func JointChildIndex(idx int32) int32 {
 	return int32(math.Float32bits(Joints.Value(int(idx), int(JointChild))))
 }
 
+func SetJointDoFN(idx, dofN int32) {
+	Joints.Set(math.Float32frombits(uint32(dofN)), int(idx), int(JointDoFN))
+}
+
+func GetJointDoFN(idx int32) int32 {
+	return int32(math.Float32bits(Joints.Value(int(idx), int(JointDoFN))))
+}
+
+func SetJointDoFIndex(idx, dof, dofIdx int32) {
+	Joints.Set(math.Float32frombits(uint32(dofIdx)), int(idx), int(int32(JointDoF1)+dof))
+}
+
+func JointDoFIndex(idx, dof int32) int32 {
+	return int32(math.Float32bits(Joints.Value(int(idx), int(int32(JointDoF1)+dof))))
+}
+
 func JointPPos(idx int32) math32.Vector3 {
 	return math32.Vec3(Joints.Value(int(idx), int(JointPPosX)), Joints.Value(int(idx), int(JointPPosY)), Joints.Value(int(idx), int(JointPPosZ)))
 }
@@ -181,36 +219,6 @@ func SetJointCRot(idx int32, rot math32.Quat) {
 	Joints.Set(rot.Y, int(idx), int(JointCRotY))
 	Joints.Set(rot.Z, int(idx), int(JointCRotZ))
 	Joints.Set(rot.W, int(idx), int(JointCRotW))
-}
-
-func JointAxis(idx int32) math32.Vector3 {
-	return math32.Vec3(Joints.Value(int(idx), int(JointAxisX)), Joints.Value(int(idx), int(JointAxisY)), Joints.Value(int(idx), int(JointAxisZ)))
-}
-
-func SetJointAxis(idx int32, axis math32.Vector3) {
-	Joints.Set(axis.X, int(idx), int(JointAxisX))
-	Joints.Set(axis.Y, int(idx), int(JointAxisY))
-	Joints.Set(axis.Z, int(idx), int(JointAxisZ))
-}
-
-func JointStiff(idx int32) math32.Vector3 {
-	return math32.Vec3(Joints.Value(int(idx), int(JointStiffX)), Joints.Value(int(idx), int(JointStiffY)), Joints.Value(int(idx), int(JointStiffZ)))
-}
-
-func SetJointStiff(idx int32, stiff math32.Vector3) {
-	Joints.Set(stiff.X, int(idx), int(JointStiffX))
-	Joints.Set(stiff.Y, int(idx), int(JointStiffY))
-	Joints.Set(stiff.Z, int(idx), int(JointStiffZ))
-}
-
-func JointDamp(idx int32) math32.Vector3 {
-	return math32.Vec3(Joints.Value(int(idx), int(JointDampX)), Joints.Value(int(idx), int(JointDampY)), Joints.Value(int(idx), int(JointDampZ)))
-}
-
-func SetJointDamp(idx int32, damp math32.Vector3) {
-	Joints.Set(damp.X, int(idx), int(JointDampX))
-	Joints.Set(damp.Y, int(idx), int(JointDampY))
-	Joints.Set(damp.Z, int(idx), int(JointDampZ))
 }
 
 func JointPForce(idx int32) math32.Vector3 {
@@ -293,31 +301,52 @@ func SetJointCAngDelta(idx int32, t math32.Vector3) {
 	Joints.Set(t.Z, int(idx), int(JointCAngDeltaZ))
 }
 
-// JointTypes are joint types that determine nature of interaction.
-type JointTypes int32 //enums:enum
+// JointDoFVars are joint DoF state variables stored in tensor.Float32,
+// one for each DoF.
+type JointDoFVars int32 //enums:enum
 
 const (
-	// Prismatic allows translation along a single axis (slider): 1 DoF.
-	Prismatic JointTypes = iota
+	// axis of articulation for the DoF
+	JointAxisX JointDoFVars = iota
+	JointAxisY
+	JointAxisZ
 
-	// Revolute allows rotation about a single axis (axel): 1 DoF.
-	Revolute
+	// joint limits
+	JointLimitLower
+	JointLimitUpper
 
-	// Ball allows rotation about all three axes (3 DoF, quaternion).
-	Ball
+	// joint stiffness target (ke)
+	JointStiff
 
-	// Fixed locks all relative motion: 0 DoF.
-	Fixed
-
-	// Free allows full 6-DoF motion (translation and rotation).
-	Free
-
-	// Distance keeps two bodies a distance within joint limits: 6 DoF.
-	Distance
-
-	// D6 is a generic 6-DoF joint.
-	D6
+	// joint damping target (kd)
+	JointDamp
 )
+
+func JointAxisDoF(didx int32) math32.Vector3 {
+	return math32.Vec3(JointDoFs.Value(int(didx), int(JointAxisX)), JointDoFs.Value(int(didx), int(JointAxisY)), JointDoFs.Value(int(didx), int(JointAxisZ)))
+}
+
+func SetJointAxisDoF(didx int32, axis math32.Vector3) {
+	JointDoFs.Set(axis.X, int(didx), int(JointAxisX))
+	JointDoFs.Set(axis.Y, int(didx), int(JointAxisY))
+	JointDoFs.Set(axis.Z, int(didx), int(JointAxisZ))
+}
+
+func JointAxis(idx, dof int32) math32.Vector3 {
+	return JointAxisDoF(JointDoFIndex(idx, dof))
+}
+
+func SetJointAxis(idx, dof int32, axis math32.Vector3) {
+	SetJointAxisDoF(JointDoFIndex(idx, dof), axis)
+}
+
+func JointDoF(idx, dof int32, vr JointDoFVars) float32 {
+	return JointDoFs.Value(int(JointDoFIndex(idx, dof)), int(vr))
+}
+
+func SetJointDoF(idx, dof int32, vr JointDoFVars, value float32) {
+	JointDoFs.Set(value, int(JointDoFIndex(idx, dof)), int(vr))
+}
 
 //gosl:end
 
@@ -325,6 +354,11 @@ func (wl *World) JointDefaults(idx int32) {
 	rot := math32.NewQuat(0, 0, 0, 1)
 	SetJointPRot(idx, rot)
 	SetJointCRot(idx, rot)
-	SetJointStiff(idx, math32.Vector3Scalar(1.0e4))
-	SetJointDamp(idx, math32.Vector3Scalar(1.0))
+}
+
+func (wl *World) JointDoFDefaults(didx int32) {
+	JointDoFs.Set(-JointLimitUnlimited, int(didx), int(JointLimitLower))
+	JointDoFs.Set(JointLimitUnlimited, int(didx), int(JointLimitUpper))
+	JointDoFs.Set(1.0e4, int(didx), int(JointStiff))
+	JointDoFs.Set(1.0e1, int(didx), int(JointDamp))
 }

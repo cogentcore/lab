@@ -24,6 +24,7 @@ func StepJointForces(i uint32) { //gosl:kernel
 	if ji >= params.JointsN {
 		return
 	}
+	// ndof := JointDoFN(ji)
 	// todo: enabled
 	jpi := JointParentIndex(ji)
 	jpbi := int32(-1)
@@ -60,22 +61,17 @@ func StepJointForces(i uint32) { //gosl:kernel
 	comc := BodyCom(jcbi)
 	rc := xwcP.Sub(slmath.MulQPPoint(posecP, posecQ, comc)) // child moment arm
 
-	// from controls:
-	jf := JointControlForce(ji)
-	jtq := JointControlTorque(ji)
-
 	var f, t math32.Vector3
 	switch jt {
 	case Free, Distance:
-		// todo: distance doesn't seem to be supported here?
-		f = jf
-		t = jtq
+		f = math32.Vec3(GetJointControlForce(ji, 0), GetJointControlForce(ji, 1), GetJointControlForce(ji, 2))
+		t = math32.Vec3(GetJointControlForce(ji, 3), GetJointControlForce(ji, 4), GetJointControlForce(ji, 5))
 	case Ball:
-		t = jtq
+		t = math32.Vec3(GetJointControlForce(ji, 0), GetJointControlForce(ji, 1), GetJointControlForce(ji, 2))
 	case Revolute, Prismatic:
-		axis := JointAxis(ji)
+		axis := JointAxis(ji, 0)
 		ap := slmath.MulQuatVector(xwpQ, axis)
-		f = f.Add(slmath.MulScalar3(ap, jf.X))
+		f = slmath.MulScalar3(ap, GetJointControlForce(ji, 0))
 	default:
 		// todo: D6 requires more iteration!
 	}
@@ -241,25 +237,20 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 		var axisTargetPosKeD, axisTargetPosKeA math32.Vector3
 		var axisTargetVelKdD, axisTargetVelKdA math32.Vector3
 
-		//	axis_target_pos_ke = wp.spatial_vector()
-		//	axis_target_vel_kd = wp.spatial_vector()
-		//
-		// avoid a for loop here since local variables would need to be modified
-		// which is not yet differentiable
-		axis := JointAxis(ji)
-		loTemp := axis.MulScalar(Joints.Value(int(ji), int(JointLimitLower)))
-		upTemp := axis.MulScalar(Joints.Value(int(ji), int(JointLimitUpper)))
+		axis := JointAxis(ji, 0)
+		loTemp := axis.MulScalar(JointDoF(ji, 0, JointLimitLower))
+		upTemp := axis.MulScalar(JointDoF(ji, 0, JointLimitUpper))
 		axisLimitsD = slmath.Min3(loTemp, upTemp)
 		axisLimitsA = slmath.Max3(loTemp, upTemp)
-		ke := JointStiff(ji)
-		kd := JointDamp(ji)
-		targetPos := JointTargetPos(ji)
-		targetVel := JointTargetVel(ji)
-		if ke.X > 0.0 { // has position control
-			UpdateJointAxisWeightedTarget(axis, targetPos.X, ke.X, &axisTargetPosKeD, &axisTargetPosKeA)
+		ke := JointDoF(ji, 0, JointStiff)
+		kd := JointDoF(ji, 0, JointDamp)
+		targetPos := GetJointTargetPos(ji, 0)
+		targetVel := GetJointTargetVel(ji, 0)
+		if ke > 0.0 { // has position control
+			UpdateJointAxisWeightedTarget(axis, targetPos, ke, &axisTargetPosKeD, &axisTargetPosKeA)
 		}
-		if kd.X > 0.0 { // has velocity control
-			UpdateJointAxisWeightedTarget(axis, targetVel.X, kd.X, &axisTargetVelKdD, &axisTargetVelKdA)
+		if kd > 0.0 { // has velocity control
+			UpdateJointAxisWeightedTarget(axis, targetVel, kd, &axisTargetVelKdD, &axisTargetVelKdA)
 		}
 		//       if lin_axis_count > 1:
 		//           axis_idx = axis_start + 1

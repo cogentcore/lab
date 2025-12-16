@@ -52,6 +52,9 @@ type PhysParams struct {
 	// JointsN is number of joints.
 	JointsN int32 `edit:"-"`
 
+	// JointDoFsN is number of joint DoFs.
+	JointDoFsN int32 `edit:"-"`
+
 	// BodyJointsMax is max number of joints per body + 1 for actual n.
 	BodyJointsMax int32 `edit:"-"`
 
@@ -60,6 +63,8 @@ type PhysParams struct {
 
 	// Index for the next state (1 or 0, alternates with Cur).
 	Next int32 `edit:"-"`
+
+	pad, pad1, pad2 int32
 
 	// Gravity is the gravity acceleration function
 	Gravity slvec.Vector3

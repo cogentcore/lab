@@ -9,12 +9,12 @@ var<storage, read> Params: array<PhysParams>;
 // // Bodies are the rigid body elements (dynamic and static), // specifying the constant, non-dynamic properties, // which is initial state for dynamics. // [body][BodyVarsN] 
 @group(1) @binding(1)
 var<storage, read_write> Joints: array<f32>;
-@group(1) @binding(2)
+@group(1) @binding(3)
 var<storage, read_write> BodyJoints: array<i32>;
 // // Dynamics are the dynamic rigid body elements: these actually move. // Two alternating states are used: Params.Cur and Params.Next. // [dyn body][cur/next][DynamicVarsN] 
 @group(2) @binding(0)
 var<storage, read_write> Dynamics: array<f32>;
-// // JointControls are dynamic joint control inputs. // [joint][JointControlVarsN] 
+// // JointControls are dynamic joint control inputs, per joint DoF // (in correspondence with [JointDoFs]). This can be uploaded to the // GPU at every step. // [dof][JointControlVarsN] 
 
 alias GPUVars = i32;
 
@@ -89,25 +89,9 @@ const  ContactDist: ContactVars = 8;
 
 //////// import: "control.go"
 alias JointControlVars = i32; //enums:enum
-const  JointCtrlForceX: JointControlVars = 0;
-const  JointCtrlForceY: JointControlVars = 1;
-const  JointCtrlForceZ: JointControlVars = 2;
-const  JointCtrlTorqueX: JointControlVars = 3;
-const  JointCtrlTorqueY: JointControlVars = 4;
-const  JointCtrlTorqueZ: JointControlVars = 5;
-const  JointTargetPosX: JointControlVars = 6;
-const  JointTargetPosY: JointControlVars = 7;
-const  JointTargetPosZ: JointControlVars = 8;
-const  JointTargetRotX: JointControlVars = 9;
-const  JointTargetRotY: JointControlVars = 10;
-const  JointTargetRotZ: JointControlVars = 11;
-const  JointTargetRotW: JointControlVars = 12;
-const  JointTargetVelX: JointControlVars = 13;
-const  JointTargetVelY: JointControlVars = 14;
-const  JointTargetVelZ: JointControlVars = 15;
-const  JointTargetAngVelX: JointControlVars = 16;
-const  JointTargetAngVelY: JointControlVars = 17;
-const  JointTargetAngVelZ: JointControlVars = 18;
+const  JointControlForce: JointControlVars = 0;
+const  JointTargetPos: JointControlVars    = 1;
+const  JointTargetVel: JointControlVars = 2;
 
 //////// import: "dynamics.go"
 alias DynamicVars = i32; //enums:enum
@@ -144,27 +128,37 @@ const  DynAngDeltaX: DynamicVars = 29;
 const  DynAngDeltaY: DynamicVars = 30;
 const  DynAngDeltaZ: DynamicVars = 31;
 fn SetDynamicForce(idx: i32,cni: i32, force: vec3<f32>) {
-	Dynamics[Index3D(TensorStrides[30], TensorStrides[31], TensorStrides[32], u32(idx), u32(cni), u32(DynForceX))] = force.x;
-	Dynamics[Index3D(TensorStrides[30], TensorStrides[31], TensorStrides[32], u32(idx), u32(cni), u32(DynForceY))] = force.y;
-	Dynamics[Index3D(TensorStrides[30], TensorStrides[31], TensorStrides[32], u32(idx), u32(cni), u32(DynForceZ))] = force.z;
+	Dynamics[Index3D(TensorStrides[40], TensorStrides[41], TensorStrides[42], u32(idx), u32(cni), u32(DynForceX))] = force.x;
+	Dynamics[Index3D(TensorStrides[40], TensorStrides[41], TensorStrides[42], u32(idx), u32(cni), u32(DynForceY))] = force.y;
+	Dynamics[Index3D(TensorStrides[40], TensorStrides[41], TensorStrides[42], u32(idx), u32(cni), u32(DynForceZ))] = force.z;
 }
 fn SetDynamicTorque(idx: i32,cni: i32, torque: vec3<f32>) {
-	Dynamics[Index3D(TensorStrides[30], TensorStrides[31], TensorStrides[32], u32(idx), u32(cni), u32(DynTorqueX))] = torque.x;
-	Dynamics[Index3D(TensorStrides[30], TensorStrides[31], TensorStrides[32], u32(idx), u32(cni), u32(DynTorqueY))] = torque.y;
-	Dynamics[Index3D(TensorStrides[30], TensorStrides[31], TensorStrides[32], u32(idx), u32(cni), u32(DynTorqueZ))] = torque.z;
+	Dynamics[Index3D(TensorStrides[40], TensorStrides[41], TensorStrides[42], u32(idx), u32(cni), u32(DynTorqueX))] = torque.x;
+	Dynamics[Index3D(TensorStrides[40], TensorStrides[41], TensorStrides[42], u32(idx), u32(cni), u32(DynTorqueY))] = torque.y;
+	Dynamics[Index3D(TensorStrides[40], TensorStrides[41], TensorStrides[42], u32(idx), u32(cni), u32(DynTorqueZ))] = torque.z;
 }
 
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 37;
 const ContactVarsN: ContactVars = 9;
-const JointControlVarsN: JointControlVars = 19;
+const JointControlVarsN: JointControlVars = 3;
 const DynamicVarsN: DynamicVars = 32;
-const GPUVarsN: GPUVars = 7;
-const JointVarsN: JointVars = 53;
+const GPUVarsN: GPUVars = 8;
 const JointTypesN: JointTypes = 7;
+const JointVarsN: JointVars = 49;
+const JointDoFVarsN: JointDoFVars = 7;
 const ShapesN: Shapes = 4;
 
 //////// import: "joint.go"
+const JointLimitUnlimited = 1e10;
+alias JointTypes = i32; //enums:enum
+const  Prismatic: JointTypes = 0;
+const  Revolute: JointTypes = 1;
+const  Ball: JointTypes = 2;
+const  Fixed: JointTypes = 3;
+const  Free: JointTypes = 4;
+const  Distance: JointTypes = 5;
+const  D6: JointTypes = 6;
 alias JointVars = i32; //enums:enum
 const  JointType: JointVars = 0;
 const  JointEnabled: JointVars = 1;
@@ -184,41 +178,37 @@ const  JointCRotX: JointVars = 14;
 const  JointCRotY: JointVars = 15;
 const  JointCRotZ: JointVars = 16;
 const  JointCRotW: JointVars = 17;
-const  JointAxisX: JointVars = 18;
-const  JointAxisY: JointVars = 19;
-const  JointAxisZ: JointVars = 20;
-const  JointLimitLower: JointVars = 21;
-const  JointLimitUpper: JointVars = 22;
-const  JointStiffX: JointVars = 23;
-const  JointStiffY: JointVars = 24;
-const  JointStiffZ: JointVars = 25;
-const  JointDampX: JointVars = 26;
-const  JointDampY: JointVars = 27;
-const  JointDampZ: JointVars = 28;
-const  JointPForceX: JointVars = 29;
-const  JointPForceY: JointVars = 30;
-const  JointPForceZ: JointVars = 31;
-const  JointPTorqueX: JointVars = 32;
-const  JointPTorqueY: JointVars = 33;
-const  JointPTorqueZ: JointVars = 34;
-const  JointCForceX: JointVars = 35;
-const  JointCForceY: JointVars = 36;
-const  JointCForceZ: JointVars = 37;
-const  JointCTorqueX: JointVars = 38;
-const  JointCTorqueY: JointVars = 39;
-const  JointCTorqueZ: JointVars = 40;
-const  JointPDeltaX: JointVars = 41;
-const  JointPDeltaY: JointVars = 42;
-const  JointPDeltaZ: JointVars = 43;
-const  JointPAngDeltaX: JointVars = 44;
-const  JointPAngDeltaY: JointVars = 45;
-const  JointPAngDeltaZ: JointVars = 46;
-const  JointCDeltaX: JointVars = 47;
-const  JointCDeltaY: JointVars = 48;
-const  JointCDeltaZ: JointVars = 49;
-const  JointCAngDeltaX: JointVars = 50;
-const  JointCAngDeltaY: JointVars = 51;
-const  JointCAngDeltaZ: JointVars = 52;
+const  JointDoFN: JointVars = 18;
+const  JointDoF1: JointVars = 19;
+const  JointDoF2: JointVars = 20;
+const  JointDoF3: JointVars = 21;
+const  JointDoF4: JointVars = 22;
+const  JointDoF5: JointVars = 23;
+const  JointDoF6: JointVars = 24;
+const  JointPForceX: JointVars = 25;
+const  JointPForceY: JointVars = 26;
+const  JointPForceZ: JointVars = 27;
+const  JointPTorqueX: JointVars = 28;
+const  JointPTorqueY: JointVars = 29;
+const  JointPTorqueZ: JointVars = 30;
+const  JointCForceX: JointVars = 31;
+const  JointCForceY: JointVars = 32;
+const  JointCForceZ: JointVars = 33;
+const  JointCTorqueX: JointVars = 34;
+const  JointCTorqueY: JointVars = 35;
+const  JointCTorqueZ: JointVars = 36;
+const  JointPDeltaX: JointVars = 37;
+const  JointPDeltaY: JointVars = 38;
+const  JointPDeltaZ: JointVars = 39;
+const  JointPAngDeltaX: JointVars = 40;
+const  JointPAngDeltaY: JointVars = 41;
+const  JointPAngDeltaZ: JointVars = 42;
+const  JointCDeltaX: JointVars = 43;
+const  JointCDeltaY: JointVars = 44;
+const  JointCDeltaZ: JointVars = 45;
+const  JointCAngDeltaX: JointVars = 46;
+const  JointCAngDeltaY: JointVars = 47;
+const  JointCAngDeltaZ: JointVars = 48;
 fn JointPForce(idx: i32) -> vec3<f32> {
 	return vec3<f32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPForceX))], Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPForceY))], Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPForceZ))]);
 }
@@ -231,14 +221,14 @@ fn JointCForce(idx: i32) -> vec3<f32> {
 fn JointCTorque(idx: i32) -> vec3<f32> {
 	return vec3<f32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCTorqueX))], Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCTorqueY))], Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCTorqueZ))]);
 }
-alias JointTypes = i32; //enums:enum
-const  Prismatic: JointTypes = 0;
-const  Revolute: JointTypes = 1;
-const  Ball: JointTypes = 2;
-const  Fixed: JointTypes = 3;
-const  Free: JointTypes = 4;
-const  Distance: JointTypes = 5;
-const  D6: JointTypes = 6;
+alias JointDoFVars = i32; //enums:enum
+const  JointAxisX: JointDoFVars = 0;
+const  JointAxisY: JointDoFVars = 1;
+const  JointAxisZ: JointDoFVars = 2;
+const  JointLimitLower: JointDoFVars = 3;
+const  JointLimitUpper: JointDoFVars = 4;
+const  JointStiff: JointDoFVars = 5;
+const  JointDamp: JointDoFVars = 6;
 
 //////// import: "params.go"
 struct PhysParams {
@@ -255,9 +245,13 @@ struct PhysParams {
 	Restitution: i32,
 	DynamicsN: i32,
 	JointsN: i32,
+	JointDoFsN: i32,
 	BodyJointsMax: i32,
 	Cur: i32,
 	Next: i32,
+	pad: i32,
+	pad1: i32,
+	pad2: i32,
 	Gravity: vec4<f32>,
 }
 
@@ -283,19 +277,19 @@ fn ForcesFromJoints(i: u32) { //gosl:kernel
 	if (di >= params.DynamicsN) {
 		return;
 	}
-	var np = BodyJoints[Index3D(TensorStrides[20], TensorStrides[21], TensorStrides[22], u32(di), u32(0), u32(0))];
-	var nc = BodyJoints[Index3D(TensorStrides[20], TensorStrides[21], TensorStrides[22], u32(di), u32(1), u32(0))];
+	var np = BodyJoints[Index3D(TensorStrides[30], TensorStrides[31], TensorStrides[32], u32(di), u32(0), u32(0))];
+	var nc = BodyJoints[Index3D(TensorStrides[30], TensorStrides[31], TensorStrides[32], u32(di), u32(1), u32(0))];
 	var tf = vec3<f32>(0, 0, 0);
 	var tt = vec3<f32>(0, 0, 0);
 	for (var i = i32(1); i <= np; i++) {
-		var ji = BodyJoints[Index3D(TensorStrides[20], TensorStrides[21], TensorStrides[22], u32(di), u32(0), u32(i))];
+		var ji = BodyJoints[Index3D(TensorStrides[30], TensorStrides[31], TensorStrides[32], u32(di), u32(0), u32(i))];
 		var f = JointPForce(ji);
 		tf = tf+(f);
 		var t = JointPTorque(ji);
 		tt = tt+(t);
 	}
 	for (var i = i32(1); i <= nc; i++) {
-		var ji = BodyJoints[Index3D(TensorStrides[20], TensorStrides[21], TensorStrides[22], u32(di), u32(1), u32(i))];
+		var ji = BodyJoints[Index3D(TensorStrides[30], TensorStrides[31], TensorStrides[32], u32(di), u32(1), u32(i))];
 		var f = JointCForce(ji);
 		tf = tf+(f);
 		var t = JointCTorque(ji);

@@ -57,9 +57,9 @@ func main() {
 	depth := height * .15
 	b1 := wr.NewDynamic(wl, "body", physics.Box, "purple", 1.0, math32.Vec3(width, height, depth),
 		math32.Vec3(0, height/2, 0), rot)
-	bj := wl.NewJoint(physics.Revolute, -1, b1.DynamicIndex, math32.Vec3(-width, 0, 0), math32.Vec3(0, 0, 0), math32.Vec3(1, 0, 0))
+	bj := wl.NewJoint1D(physics.Revolute, -1, b1.DynamicIndex, math32.Vec3(-width, 0, 0), math32.Vec3(0, 0, 0), math32.Vec3(1, 0, 0))
 	_ = bj
-	wl.SetJointControlForce(bj, math32.X, 5)
+	physics.SetJointControlForce(bj, 0, 5)
 
 	wl.Config()
 	params := physics.GetParams(0)

@@ -6,121 +6,43 @@
 
 package physics
 
-import "cogentcore.org/core/math32"
-
 //gosl:start
 
 // JointControlVars are external joint control input variables stored in tensor.Float32.
-// These must be in one-to-one correspondence with the joints.
-// The X,Y,Z indexes are used progressively for the increasing degrees of freedom for
-// the joints.
+// These must be in one-to-one correspondence with the JointDoFs.
 type JointControlVars int32 //enums:enum
 
 const (
 	// Joint force and torque inputs
-	JointControlForceX JointControlVars = iota
-	JointControlForceY
-	JointControlForceZ
-
-	JointControlTorqueX
-	JointControlTorqueY
-	JointControlTorqueZ
-
-	// target values (1 DoF use JointTargetPosX)
-	JointTargetPosX
-	JointTargetPosY
-	JointTargetPosZ
-
-	JointTargetRotX
-	JointTargetRotY
-	JointTargetRotZ
-	JointTargetRotW
-
-	// target velocity
-	JointTargetVelX
-	JointTargetVelY
-	JointTargetVelZ
-
-	// target angular velocity
-	JointTargetAngVelX
-	JointTargetAngVelY
-	JointTargetAngVelZ
+	JointControlForce JointControlVars = iota
+	JointTargetPos
+	JointTargetVel
 )
 
-func JointControlForce(idx int32) math32.Vector3 {
-	return math32.Vec3(JointControls.Value(int(idx), int(JointControlForceX)), JointControls.Value(int(idx), int(JointControlForceY)), JointControls.Value(int(idx), int(JointControlForceZ)))
+// SetJointControlForce sets the control force for given dof for given joint
+// to given value.
+func SetJointControlForce(idx, dof int32, value float32) {
+	JointControls.Set(value, int(JointDoFIndex(idx, dof)), int(JointControlForce))
 }
 
-func SetJointControlForce(idx int32, f math32.Vector3) {
-	JointControls.Set(f.X, int(idx), int(JointControlForceX))
-	JointControls.Set(f.Y, int(idx), int(JointControlForceY))
-	JointControls.Set(f.Z, int(idx), int(JointControlForceZ))
+func GetJointControlForce(idx, dof int32) float32 {
+	return JointControls.Value(int(JointDoFIndex(idx, dof)), int(JointControlForce))
 }
 
-func JointControlTorque(idx int32) math32.Vector3 {
-	return math32.Vec3(JointControls.Value(int(idx), int(JointControlTorqueX)), JointControls.Value(int(idx), int(JointControlTorqueY)), JointControls.Value(int(idx), int(JointControlTorqueZ)))
+func SetJointTargetPos(idx, dof int32, value float32) {
+	JointControls.Set(value, int(JointDoFIndex(idx, dof)), int(JointTargetPos))
 }
 
-func SetJointControlTorque(idx int32, f math32.Vector3) {
-	JointControls.Set(f.X, int(idx), int(JointControlTorqueX))
-	JointControls.Set(f.Y, int(idx), int(JointControlTorqueY))
-	JointControls.Set(f.Z, int(idx), int(JointControlTorqueZ))
+func GetJointTargetPos(idx, dof int32) float32 {
+	return JointControls.Value(int(JointDoFIndex(idx, dof)), int(JointTargetPos))
 }
 
-func JointTargetPos(idx int32) math32.Vector3 {
-	return math32.Vec3(JointControls.Value(int(idx), int(JointTargetPosX)), JointControls.Value(int(idx), int(JointTargetPosY)), JointControls.Value(int(idx), int(JointTargetPosZ)))
+func SetJointTargetVel(idx, dof int32, value float32) {
+	JointControls.Set(value, int(JointDoFIndex(idx, dof)), int(JointTargetVel))
 }
 
-func SetJointTargetPos(idx int32, f math32.Vector3) {
-	JointControls.Set(f.X, int(idx), int(JointTargetPosX))
-	JointControls.Set(f.Y, int(idx), int(JointTargetPosY))
-	JointControls.Set(f.Z, int(idx), int(JointTargetPosZ))
-}
-
-func JointTargetRot(idx int32) math32.Vector3 {
-	return math32.Vec3(JointControls.Value(int(idx), int(JointTargetRotX)), JointControls.Value(int(idx), int(JointTargetRotY)), JointControls.Value(int(idx), int(JointTargetRotZ)))
-}
-
-func SetJointTargetRot(idx int32, f math32.Vector3) {
-	JointControls.Set(f.X, int(idx), int(JointTargetRotX))
-	JointControls.Set(f.Y, int(idx), int(JointTargetRotY))
-	JointControls.Set(f.Z, int(idx), int(JointTargetRotZ))
-}
-
-func JointTargetVel(idx int32) math32.Vector3 {
-	return math32.Vec3(JointControls.Value(int(idx), int(JointTargetVelX)), JointControls.Value(int(idx), int(JointTargetVelY)), JointControls.Value(int(idx), int(JointTargetVelZ)))
-}
-
-func SetJointTargetVel(idx int32, f math32.Vector3) {
-	JointControls.Set(f.X, int(idx), int(JointTargetVelX))
-	JointControls.Set(f.Y, int(idx), int(JointTargetVelY))
-	JointControls.Set(f.Z, int(idx), int(JointTargetVelZ))
-}
-
-func JointTargetAngVel(idx int32) math32.Vector3 {
-	return math32.Vec3(JointControls.Value(int(idx), int(JointTargetAngVelX)), JointControls.Value(int(idx), int(JointTargetAngVelY)), JointControls.Value(int(idx), int(JointTargetAngVelZ)))
-}
-
-func SetJointTargetAngVel(idx int32, f math32.Vector3) {
-	JointControls.Set(f.X, int(idx), int(JointTargetAngVelX))
-	JointControls.Set(f.Y, int(idx), int(JointTargetAngVelY))
-	JointControls.Set(f.Z, int(idx), int(JointTargetAngVelZ))
+func GetJointTargetVel(idx, dof int32) float32 {
+	return JointControls.Value(int(JointDoFIndex(idx, dof)), int(JointTargetVel))
 }
 
 //gosl:end
-
-func (wl *World) SetJointTargetPos(idx int32, dim math32.Dims, value float32) {
-	JointControls.Set(value, int(idx), int(int(JointTargetPosX)+int(dim)))
-}
-
-func (wl *World) SetJointTargetRot(idx int32, dim math32.Dims, value float32) {
-	JointControls.Set(value, int(idx), int(int(JointTargetRotX)+int(dim)))
-}
-
-func (wl *World) SetJointControlForce(idx int32, dim math32.Dims, value float32) {
-	JointControls.Set(value, int(idx), int(int(JointControlForceX)+int(dim)))
-}
-
-func (wl *World) SetJointControlTorque(idx int32, dim math32.Dims, value float32) {
-	JointControls.Set(value, int(idx), int(int(JointControlTorqueX)+int(dim)))
-}

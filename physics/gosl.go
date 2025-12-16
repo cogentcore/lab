@@ -42,10 +42,11 @@ const (
 	ParamsVar GPUVars = 0
 	BodiesVar GPUVars = 1
 	JointsVar GPUVars = 2
-	BodyJointsVar GPUVars = 3
-	DynamicsVar GPUVars = 4
-	ContactsVar GPUVars = 5
-	JointControlsVar GPUVars = 6
+	JointDoFsVar GPUVars = 3
+	BodyJointsVar GPUVars = 4
+	DynamicsVar GPUVars = 5
+	ContactsVar GPUVars = 6
+	JointControlsVar GPUVars = 7
 )
 
 // Tensor stride variables
@@ -87,6 +88,7 @@ func GPUInit() {
 			_ = vr
 			vr = sgp.Add("Bodies", gpu.Float32, 1, gpu.ComputeShader)
 			vr = sgp.Add("Joints", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("JointDoFs", gpu.Float32, 1, gpu.ComputeShader)
 			vr = sgp.Add("BodyJoints", gpu.Int32, 1, gpu.ComputeShader)
 			sgp.SetNValues(1)
 		}
@@ -142,6 +144,7 @@ func GPUInit() {
 		pl.AddVarUsed(1, "Bodies")
 		pl.AddVarUsed(2, "Dynamics")
 		pl.AddVarUsed(3, "JointControls")
+		pl.AddVarUsed(1, "JointDoFs")
 		pl.AddVarUsed(1, "Joints")
 		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepSolveJoints.wgsl", sy)
@@ -149,6 +152,7 @@ func GPUInit() {
 		pl.AddVarUsed(1, "Bodies")
 		pl.AddVarUsed(2, "Dynamics")
 		pl.AddVarUsed(3, "JointControls")
+		pl.AddVarUsed(1, "JointDoFs")
 		pl.AddVarUsed(1, "Joints")
 		pl.AddVarUsed(0, "Params")
 		sy.Config()
@@ -540,6 +544,9 @@ func ToGPU(vars ...GPUVars) {
 		case JointsVar:
 			v, _ := syVars.ValueByIndex(1, "Joints", 0)
 			gpu.SetValueFrom(v, Joints.Values)
+		case JointDoFsVar:
+			v, _ := syVars.ValueByIndex(1, "JointDoFs", 0)
+			gpu.SetValueFrom(v, JointDoFs.Values)
 		case BodyJointsVar:
 			v, _ := syVars.ValueByIndex(1, "BodyJoints", 0)
 			gpu.SetValueFrom(v, BodyJoints.Values)
@@ -573,21 +580,23 @@ func ToGPUTensorStrides() {
 	}
 	sy := GPUSystem
 	syVars := sy.Vars()
-	TensorStrides.SetShapeSizes(60)
+	TensorStrides.SetShapeSizes(70)
 	TensorStrides.SetInt1D(Bodies.Shape().Strides[0], 0)
 	TensorStrides.SetInt1D(Bodies.Shape().Strides[1], 1)
 	TensorStrides.SetInt1D(Joints.Shape().Strides[0], 10)
 	TensorStrides.SetInt1D(Joints.Shape().Strides[1], 11)
-	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[0], 20)
-	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[1], 21)
-	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[2], 22)
-	TensorStrides.SetInt1D(Dynamics.Shape().Strides[0], 30)
-	TensorStrides.SetInt1D(Dynamics.Shape().Strides[1], 31)
-	TensorStrides.SetInt1D(Dynamics.Shape().Strides[2], 32)
-	TensorStrides.SetInt1D(Contacts.Shape().Strides[0], 40)
-	TensorStrides.SetInt1D(Contacts.Shape().Strides[1], 41)
-	TensorStrides.SetInt1D(JointControls.Shape().Strides[0], 50)
-	TensorStrides.SetInt1D(JointControls.Shape().Strides[1], 51)
+	TensorStrides.SetInt1D(JointDoFs.Shape().Strides[0], 20)
+	TensorStrides.SetInt1D(JointDoFs.Shape().Strides[1], 21)
+	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[0], 30)
+	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[1], 31)
+	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[2], 32)
+	TensorStrides.SetInt1D(Dynamics.Shape().Strides[0], 40)
+	TensorStrides.SetInt1D(Dynamics.Shape().Strides[1], 41)
+	TensorStrides.SetInt1D(Dynamics.Shape().Strides[2], 42)
+	TensorStrides.SetInt1D(Contacts.Shape().Strides[0], 50)
+	TensorStrides.SetInt1D(Contacts.Shape().Strides[1], 51)
+	TensorStrides.SetInt1D(JointControls.Shape().Strides[0], 60)
+	TensorStrides.SetInt1D(JointControls.Shape().Strides[1], 61)
 	v, _ := syVars.ValueByIndex(0, "TensorStrides", 0)
 	gpu.SetValueFrom(v, TensorStrides.Values)
 }
@@ -606,6 +615,9 @@ func ReadFromGPU(vars ...GPUVars) {
 			v.GPUToRead(sy.CommandEncoder)
 		case JointsVar:
 			v, _ := syVars.ValueByIndex(1, "Joints", 0)
+			v.GPUToRead(sy.CommandEncoder)
+		case JointDoFsVar:
+			v, _ := syVars.ValueByIndex(1, "JointDoFs", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case BodyJointsVar:
 			v, _ := syVars.ValueByIndex(1, "BodyJoints", 0)
@@ -641,6 +653,10 @@ func SyncFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(1, "Joints", 0)
 			v.ReadSync()
 			gpu.ReadToBytes(v, Joints.Values)
+		case JointDoFsVar:
+			v, _ := syVars.ValueByIndex(1, "JointDoFs", 0)
+			v.ReadSync()
+			gpu.ReadToBytes(v, JointDoFs.Values)
 		case BodyJointsVar:
 			v, _ := syVars.ValueByIndex(1, "BodyJoints", 0)
 			v.ReadSync()

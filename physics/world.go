@@ -32,6 +32,10 @@ type World struct {
 	// [joint][JointVarsN]
 	Joints *tensor.Float32 `display:"no-inline"`
 
+	// JointDoFs is a list of joint DoF parameters, allocated per joint.
+	// [dof][JointDoFVars]
+	JointDoFs *tensor.Float32 `display:"no-inline"`
+
 	// BodyJoints is a list of joint indexes for each dynamic body, for aggregating.
 	// [dyn body][parent, child][Params.BodyJointsMax]
 	BodyJoints *tensor.Int32 `display:"no-inline"`
@@ -45,8 +49,10 @@ type World struct {
 	// [contact][ContactVarsN]
 	Contacts *tensor.Float32 `display:"no-inline"`
 
-	// JointControls are dynamic joint control inputs.
-	// [joint][JointControlVarsN]
+	// JointControls are dynamic joint control inputs, per joint DoF
+	// (in correspondence with [JointDoFs]). This can be uploaded to the
+	// GPU at every step.
+	// [dof][JointControlVarsN]
 	JointControls *tensor.Float32 `display:"no-inline"`
 }
 
@@ -62,6 +68,7 @@ func (wl *World) Init() {
 	wl.Params[0].Defaults()
 	wl.Bodies = tensor.NewFloat32(0, int(BodyVarsN))
 	wl.Joints = tensor.NewFloat32(0, int(JointVarsN))
+	wl.JointDoFs = tensor.NewFloat32(0, int(JointDoFVarsN))
 	wl.BodyJoints = tensor.NewInt32(0, 2, 2)
 	wl.Dynamics = tensor.NewFloat32(0, 2, int(DynamicVarsN))
 	wl.Contacts = tensor.NewFloat32(0, int(ContactVarsN))
@@ -95,23 +102,39 @@ func (wl *World) NewDynamic(shape Shapes, mass float32, size, pos math32.Vector3
 	return
 }
 
-// NewJoint adds a new joint between parent and child dynamic object indexes.
+// NewJoint1D adds a new 1 DoF joint between parent and child dynamic object indexes,
+// for Prismatic and Revolute joint types.
 // Use -1 for parent to add a world-anchored joint.
 // ppos, cpos are the relative positions from the parent, child.
 // Sets relative rotation matricies to identity by default.
 // axis is the axis of articulation for the joint.
-func (wl *World) NewJoint(joint JointTypes, parent, child int32, ppos, cpos, axis math32.Vector3) int32 {
+// Use [JointDoFIndex] to access the remaining DoF parameters.
+func (wl *World) NewJoint1D(joint JointTypes, parent, child int32, ppos, cpos, axis math32.Vector3) int32 {
 	sizes := wl.Joints.ShapeSizes()
 	idx := int32(sizes[0])
 	wl.Joints.SetShapeSizes(int(idx+1), int(JointVarsN))
-	wl.JointControls.SetShapeSizes(int(idx+1), int(JointControlVarsN))
 	SetJointParent(idx, parent)
 	SetJointChild(idx, child)
 	SetJointPPos(idx, ppos)
 	SetJointCPos(idx, cpos)
-	SetJointAxis(idx, axis)
+	SetJointDoFN(idx, 1)
+	didx := wl.newJointDoF(0, axis)
+	SetJointDoFIndex(idx, 0, didx)
 	wl.JointDefaults(idx)
 	wl.Params[0].JointsN = idx + 1
+	return idx
+}
+
+// newJointDoF adds new JointDoFs and JointControls entries
+// initialized to detfaults. Returns index.
+func (wl *World) newJointDoF(dof int32, axis math32.Vector3) int32 {
+	sizes := wl.JointDoFs.ShapeSizes()
+	idx := int32(sizes[0])
+	wl.JointDoFs.SetShapeSizes(int(idx+1), int(JointDoFVarsN))
+	wl.JointControls.SetShapeSizes(int(idx+1), int(JointControlVarsN))
+	wl.JointDoFDefaults(idx)
+	SetJointAxis(idx, 0, axis)
+	wl.Params[0].JointDoFsN = idx + 1
 	return idx
 }
 
@@ -134,6 +157,7 @@ func (wl *World) SetAsCurrentVars() {
 	Bodies = wl.Bodies
 	Joints = wl.Joints
 	BodyJoints = wl.BodyJoints
+	JointDoFs = wl.JointDoFs
 	Dynamics = wl.Dynamics
 	Contacts = wl.Contacts
 	JointControls = wl.JointControls
@@ -151,5 +175,5 @@ func (wl *World) GPUInit() {
 // the GPU. This is done in GPUInit, and if current switched.
 func (wl *World) ToGPUInfra() {
 	ToGPUTensorStrides()
-	ToGPU(ParamsVar, BodiesVar, JointsVar, BodyJointsVar)
+	ToGPU(ParamsVar, BodiesVar, JointsVar, BodyJointsVar, JointDoFsVar)
 }

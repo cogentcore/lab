@@ -98,20 +98,20 @@ func (i *ContactVars) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "ContactVars")
 }
 
-var _JointControlVarsValues = []JointControlVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}
+var _JointControlVarsValues = []JointControlVars{0, 1, 2}
 
 // JointControlVarsN is the highest valid value for type JointControlVars, plus one.
 //
 //gosl:start
-const JointControlVarsN JointControlVars = 19
+const JointControlVarsN JointControlVars = 3
 
 //gosl:end
 
-var _JointControlVarsValueMap = map[string]JointControlVars{`JointCtrlForceX`: 0, `JointCtrlForceY`: 1, `JointCtrlForceZ`: 2, `JointCtrlTorqueX`: 3, `JointCtrlTorqueY`: 4, `JointCtrlTorqueZ`: 5, `JointTargetPosX`: 6, `JointTargetPosY`: 7, `JointTargetPosZ`: 8, `JointTargetRotX`: 9, `JointTargetRotY`: 10, `JointTargetRotZ`: 11, `JointTargetRotW`: 12, `JointTargetVelX`: 13, `JointTargetVelY`: 14, `JointTargetVelZ`: 15, `JointTargetAngVelX`: 16, `JointTargetAngVelY`: 17, `JointTargetAngVelZ`: 18}
+var _JointControlVarsValueMap = map[string]JointControlVars{`JointControlForce`: 0, `JointTargetPos`: 1, `JointTargetVel`: 2}
 
-var _JointControlVarsDescMap = map[JointControlVars]string{0: `Joint force and torque inputs`, 1: ``, 2: ``, 3: ``, 4: ``, 5: ``, 6: `target values (1 DoF use JointTargetPosX)`, 7: ``, 8: ``, 9: ``, 10: ``, 11: ``, 12: ``, 13: `target velocity`, 14: ``, 15: ``, 16: `target angular velocity`, 17: ``, 18: ``}
+var _JointControlVarsDescMap = map[JointControlVars]string{0: `Joint force and torque inputs`, 1: ``, 2: ``}
 
-var _JointControlVarsMap = map[JointControlVars]string{0: `JointCtrlForceX`, 1: `JointCtrlForceY`, 2: `JointCtrlForceZ`, 3: `JointCtrlTorqueX`, 4: `JointCtrlTorqueY`, 5: `JointCtrlTorqueZ`, 6: `JointTargetPosX`, 7: `JointTargetPosY`, 8: `JointTargetPosZ`, 9: `JointTargetRotX`, 10: `JointTargetRotY`, 11: `JointTargetRotZ`, 12: `JointTargetRotW`, 13: `JointTargetVelX`, 14: `JointTargetVelY`, 15: `JointTargetVelZ`, 16: `JointTargetAngVelX`, 17: `JointTargetAngVelY`, 18: `JointTargetAngVelZ`}
+var _JointControlVarsMap = map[JointControlVars]string{0: `JointControlForce`, 1: `JointTargetPos`, 2: `JointTargetVel`}
 
 // String returns the string representation of this JointControlVars value.
 func (i JointControlVars) String() string { return enums.String(i, _JointControlVarsMap) }
@@ -192,20 +192,20 @@ func (i *DynamicVars) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "DynamicVars")
 }
 
-var _GPUVarsValues = []GPUVars{0, 1, 2, 3, 4, 5, 6}
+var _GPUVarsValues = []GPUVars{0, 1, 2, 3, 4, 5, 6, 7}
 
 // GPUVarsN is the highest valid value for type GPUVars, plus one.
 //
 //gosl:start
-const GPUVarsN GPUVars = 7
+const GPUVarsN GPUVars = 8
 
 //gosl:end
 
-var _GPUVarsValueMap = map[string]GPUVars{`ParamsVar`: 0, `BodiesVar`: 1, `JointsVar`: 2, `BodyJointsVar`: 3, `DynamicsVar`: 4, `ContactsVar`: 5, `JointControlsVar`: 6}
+var _GPUVarsValueMap = map[string]GPUVars{`ParamsVar`: 0, `BodiesVar`: 1, `JointsVar`: 2, `JointDoFsVar`: 3, `BodyJointsVar`: 4, `DynamicsVar`: 5, `ContactsVar`: 6, `JointControlsVar`: 7}
 
-var _GPUVarsDescMap = map[GPUVars]string{0: ``, 1: ``, 2: ``, 3: ``, 4: ``, 5: ``, 6: ``}
+var _GPUVarsDescMap = map[GPUVars]string{0: ``, 1: ``, 2: ``, 3: ``, 4: ``, 5: ``, 6: ``, 7: ``}
 
-var _GPUVarsMap = map[GPUVars]string{0: `ParamsVar`, 1: `BodiesVar`, 2: `JointsVar`, 3: `BodyJointsVar`, 4: `DynamicsVar`, 5: `ContactsVar`, 6: `JointControlsVar`}
+var _GPUVarsMap = map[GPUVars]string{0: `ParamsVar`, 1: `BodiesVar`, 2: `JointsVar`, 3: `JointDoFsVar`, 4: `BodyJointsVar`, 5: `DynamicsVar`, 6: `ContactsVar`, 7: `JointControlsVar`}
 
 // String returns the string representation of this GPUVars value.
 func (i GPUVars) String() string { return enums.String(i, _GPUVarsMap) }
@@ -236,53 +236,6 @@ func (i GPUVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil 
 
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *GPUVars) UnmarshalText(text []byte) error { return enums.UnmarshalText(i, text, "GPUVars") }
-
-var _JointVarsValues = []JointVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52}
-
-// JointVarsN is the highest valid value for type JointVars, plus one.
-//
-//gosl:start
-const JointVarsN JointVars = 53
-
-//gosl:end
-
-var _JointVarsValueMap = map[string]JointVars{`JointType`: 0, `JointEnabled`: 1, `JointParent`: 2, `JointChild`: 3, `JointPPosX`: 4, `JointPPosY`: 5, `JointPPosZ`: 6, `JointPRotX`: 7, `JointPRotY`: 8, `JointPRotZ`: 9, `JointPRotW`: 10, `JointCPosX`: 11, `JointCPosY`: 12, `JointCPosZ`: 13, `JointCRotX`: 14, `JointCRotY`: 15, `JointCRotZ`: 16, `JointCRotW`: 17, `JointAxisX`: 18, `JointAxisY`: 19, `JointAxisZ`: 20, `JointLimitLower`: 21, `JointLimitUpper`: 22, `JointStiffX`: 23, `JointStiffY`: 24, `JointStiffZ`: 25, `JointDampX`: 26, `JointDampY`: 27, `JointDampZ`: 28, `JointPForceX`: 29, `JointPForceY`: 30, `JointPForceZ`: 31, `JointPTorqueX`: 32, `JointPTorqueY`: 33, `JointPTorqueZ`: 34, `JointCForceX`: 35, `JointCForceY`: 36, `JointCForceZ`: 37, `JointCTorqueX`: 38, `JointCTorqueY`: 39, `JointCTorqueZ`: 40, `JointPDeltaX`: 41, `JointPDeltaY`: 42, `JointPDeltaZ`: 43, `JointPAngDeltaX`: 44, `JointPAngDeltaY`: 45, `JointPAngDeltaZ`: 46, `JointCDeltaX`: 47, `JointCDeltaY`: 48, `JointCDeltaZ`: 49, `JointCAngDeltaX`: 50, `JointCAngDeltaY`: 51, `JointCAngDeltaZ`: 52}
-
-var _JointVarsDescMap = map[JointVars]string{0: `JointType (as an int32 from bits).`, 1: `JointEnabled allows joints to be dynamically enabled.`, 2: `JointParent is the dynamic body index for parent body. Can be -1 for a fixed parent for absolute anchor.`, 3: `JointChild is the dynamic body index for child body.`, 4: `relative position of joint, in parent frame.`, 5: ``, 6: ``, 7: `relative orientation of joint, in parent frame.`, 8: ``, 9: ``, 10: ``, 11: `relative position of joint, in child frame.`, 12: ``, 13: ``, 14: `relative orientation of joint, in child frame.`, 15: ``, 16: ``, 17: ``, 18: `axis of articulation for the joint`, 19: ``, 20: ``, 21: `joint limits`, 22: ``, 23: `joint stiffness target (ke)`, 24: ``, 25: ``, 26: `joint damping target (kd)`, 27: ``, 28: ``, 29: `Computed parent joint force value.`, 30: ``, 31: ``, 32: `Computed parent joint torque value.`, 33: ``, 34: ``, 35: `Computed child joint force value.`, 36: ``, 37: ``, 38: `Computed child joint torque value.`, 39: ``, 40: ``, 41: `Computed parent joint delta value.`, 42: ``, 43: ``, 44: `Computed parent joint angdelta value.`, 45: ``, 46: ``, 47: `Computed child joint delta value.`, 48: ``, 49: ``, 50: `Computed child joint angdelta value.`, 51: ``, 52: ``}
-
-var _JointVarsMap = map[JointVars]string{0: `JointType`, 1: `JointEnabled`, 2: `JointParent`, 3: `JointChild`, 4: `JointPPosX`, 5: `JointPPosY`, 6: `JointPPosZ`, 7: `JointPRotX`, 8: `JointPRotY`, 9: `JointPRotZ`, 10: `JointPRotW`, 11: `JointCPosX`, 12: `JointCPosY`, 13: `JointCPosZ`, 14: `JointCRotX`, 15: `JointCRotY`, 16: `JointCRotZ`, 17: `JointCRotW`, 18: `JointAxisX`, 19: `JointAxisY`, 20: `JointAxisZ`, 21: `JointLimitLower`, 22: `JointLimitUpper`, 23: `JointStiffX`, 24: `JointStiffY`, 25: `JointStiffZ`, 26: `JointDampX`, 27: `JointDampY`, 28: `JointDampZ`, 29: `JointPForceX`, 30: `JointPForceY`, 31: `JointPForceZ`, 32: `JointPTorqueX`, 33: `JointPTorqueY`, 34: `JointPTorqueZ`, 35: `JointCForceX`, 36: `JointCForceY`, 37: `JointCForceZ`, 38: `JointCTorqueX`, 39: `JointCTorqueY`, 40: `JointCTorqueZ`, 41: `JointPDeltaX`, 42: `JointPDeltaY`, 43: `JointPDeltaZ`, 44: `JointPAngDeltaX`, 45: `JointPAngDeltaY`, 46: `JointPAngDeltaZ`, 47: `JointCDeltaX`, 48: `JointCDeltaY`, 49: `JointCDeltaZ`, 50: `JointCAngDeltaX`, 51: `JointCAngDeltaY`, 52: `JointCAngDeltaZ`}
-
-// String returns the string representation of this JointVars value.
-func (i JointVars) String() string { return enums.String(i, _JointVarsMap) }
-
-// SetString sets the JointVars value from its string representation,
-// and returns an error if the string is invalid.
-func (i *JointVars) SetString(s string) error {
-	return enums.SetString(i, s, _JointVarsValueMap, "JointVars")
-}
-
-// Int64 returns the JointVars value as an int64.
-func (i JointVars) Int64() int64 { return int64(i) }
-
-// SetInt64 sets the JointVars value from an int64.
-func (i *JointVars) SetInt64(in int64) { *i = JointVars(in) }
-
-// Desc returns the description of the JointVars value.
-func (i JointVars) Desc() string { return enums.Desc(i, _JointVarsDescMap) }
-
-// JointVarsValues returns all possible values for the type JointVars.
-func JointVarsValues() []JointVars { return _JointVarsValues }
-
-// Values returns all possible values for the type JointVars.
-func (i JointVars) Values() []enums.Enum { return enums.Values(_JointVarsValues) }
-
-// MarshalText implements the [encoding.TextMarshaler] interface.
-func (i JointVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
-
-// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
-func (i *JointVars) UnmarshalText(text []byte) error {
-	return enums.UnmarshalText(i, text, "JointVars")
-}
 
 var _JointTypesValues = []JointTypes{0, 1, 2, 3, 4, 5, 6}
 
@@ -329,6 +282,100 @@ func (i JointTypes) MarshalText() ([]byte, error) { return []byte(i.String()), n
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *JointTypes) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "JointTypes")
+}
+
+var _JointVarsValues = []JointVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48}
+
+// JointVarsN is the highest valid value for type JointVars, plus one.
+//
+//gosl:start
+const JointVarsN JointVars = 49
+
+//gosl:end
+
+var _JointVarsValueMap = map[string]JointVars{`JointType`: 0, `JointEnabled`: 1, `JointParent`: 2, `JointChild`: 3, `JointPPosX`: 4, `JointPPosY`: 5, `JointPPosZ`: 6, `JointPRotX`: 7, `JointPRotY`: 8, `JointPRotZ`: 9, `JointPRotW`: 10, `JointCPosX`: 11, `JointCPosY`: 12, `JointCPosZ`: 13, `JointCRotX`: 14, `JointCRotY`: 15, `JointCRotZ`: 16, `JointCRotW`: 17, `JointDoFN`: 18, `JointDoF1`: 19, `JointDoF2`: 20, `JointDoF3`: 21, `JointDoF4`: 22, `JointDoF5`: 23, `JointDoF6`: 24, `JointPForceX`: 25, `JointPForceY`: 26, `JointPForceZ`: 27, `JointPTorqueX`: 28, `JointPTorqueY`: 29, `JointPTorqueZ`: 30, `JointCForceX`: 31, `JointCForceY`: 32, `JointCForceZ`: 33, `JointCTorqueX`: 34, `JointCTorqueY`: 35, `JointCTorqueZ`: 36, `JointPDeltaX`: 37, `JointPDeltaY`: 38, `JointPDeltaZ`: 39, `JointPAngDeltaX`: 40, `JointPAngDeltaY`: 41, `JointPAngDeltaZ`: 42, `JointCDeltaX`: 43, `JointCDeltaY`: 44, `JointCDeltaZ`: 45, `JointCAngDeltaX`: 46, `JointCAngDeltaY`: 47, `JointCAngDeltaZ`: 48}
+
+var _JointVarsDescMap = map[JointVars]string{0: `JointType (as an int32 from bits).`, 1: `JointEnabled allows joints to be dynamically enabled.`, 2: `JointParent is the dynamic body index for parent body. Can be -1 for a fixed parent for absolute anchor.`, 3: `JointChild is the dynamic body index for child body.`, 4: `relative position of joint, in parent frame.`, 5: ``, 6: ``, 7: `relative orientation of joint, in parent frame.`, 8: ``, 9: ``, 10: ``, 11: `relative position of joint, in child frame.`, 12: ``, 13: ``, 14: `relative orientation of joint, in child frame.`, 15: ``, 16: ``, 17: ``, 18: `JointDoFN is the number of degrees-of-freedom for the joint.`, 19: `indexes in JointDoFs for each DoF`, 20: ``, 21: ``, 22: `angular starts here for Free, D6`, 23: ``, 24: ``, 25: `Computed parent joint force value.`, 26: ``, 27: ``, 28: `Computed parent joint torque value.`, 29: ``, 30: ``, 31: `Computed child joint force value.`, 32: ``, 33: ``, 34: `Computed child joint torque value.`, 35: ``, 36: ``, 37: `Computed parent joint delta value.`, 38: ``, 39: ``, 40: `Computed parent joint angdelta value.`, 41: ``, 42: ``, 43: `Computed child joint delta value.`, 44: ``, 45: ``, 46: `Computed child joint angdelta value.`, 47: ``, 48: ``}
+
+var _JointVarsMap = map[JointVars]string{0: `JointType`, 1: `JointEnabled`, 2: `JointParent`, 3: `JointChild`, 4: `JointPPosX`, 5: `JointPPosY`, 6: `JointPPosZ`, 7: `JointPRotX`, 8: `JointPRotY`, 9: `JointPRotZ`, 10: `JointPRotW`, 11: `JointCPosX`, 12: `JointCPosY`, 13: `JointCPosZ`, 14: `JointCRotX`, 15: `JointCRotY`, 16: `JointCRotZ`, 17: `JointCRotW`, 18: `JointDoFN`, 19: `JointDoF1`, 20: `JointDoF2`, 21: `JointDoF3`, 22: `JointDoF4`, 23: `JointDoF5`, 24: `JointDoF6`, 25: `JointPForceX`, 26: `JointPForceY`, 27: `JointPForceZ`, 28: `JointPTorqueX`, 29: `JointPTorqueY`, 30: `JointPTorqueZ`, 31: `JointCForceX`, 32: `JointCForceY`, 33: `JointCForceZ`, 34: `JointCTorqueX`, 35: `JointCTorqueY`, 36: `JointCTorqueZ`, 37: `JointPDeltaX`, 38: `JointPDeltaY`, 39: `JointPDeltaZ`, 40: `JointPAngDeltaX`, 41: `JointPAngDeltaY`, 42: `JointPAngDeltaZ`, 43: `JointCDeltaX`, 44: `JointCDeltaY`, 45: `JointCDeltaZ`, 46: `JointCAngDeltaX`, 47: `JointCAngDeltaY`, 48: `JointCAngDeltaZ`}
+
+// String returns the string representation of this JointVars value.
+func (i JointVars) String() string { return enums.String(i, _JointVarsMap) }
+
+// SetString sets the JointVars value from its string representation,
+// and returns an error if the string is invalid.
+func (i *JointVars) SetString(s string) error {
+	return enums.SetString(i, s, _JointVarsValueMap, "JointVars")
+}
+
+// Int64 returns the JointVars value as an int64.
+func (i JointVars) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the JointVars value from an int64.
+func (i *JointVars) SetInt64(in int64) { *i = JointVars(in) }
+
+// Desc returns the description of the JointVars value.
+func (i JointVars) Desc() string { return enums.Desc(i, _JointVarsDescMap) }
+
+// JointVarsValues returns all possible values for the type JointVars.
+func JointVarsValues() []JointVars { return _JointVarsValues }
+
+// Values returns all possible values for the type JointVars.
+func (i JointVars) Values() []enums.Enum { return enums.Values(_JointVarsValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i JointVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *JointVars) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "JointVars")
+}
+
+var _JointDoFVarsValues = []JointDoFVars{0, 1, 2, 3, 4, 5, 6}
+
+// JointDoFVarsN is the highest valid value for type JointDoFVars, plus one.
+//
+//gosl:start
+const JointDoFVarsN JointDoFVars = 7
+
+//gosl:end
+
+var _JointDoFVarsValueMap = map[string]JointDoFVars{`JointAxisX`: 0, `JointAxisY`: 1, `JointAxisZ`: 2, `JointLimitLower`: 3, `JointLimitUpper`: 4, `JointStiff`: 5, `JointDamp`: 6}
+
+var _JointDoFVarsDescMap = map[JointDoFVars]string{0: `axis of articulation for the DoF`, 1: ``, 2: ``, 3: `joint limits`, 4: ``, 5: `joint stiffness target (ke)`, 6: `joint damping target (kd)`}
+
+var _JointDoFVarsMap = map[JointDoFVars]string{0: `JointAxisX`, 1: `JointAxisY`, 2: `JointAxisZ`, 3: `JointLimitLower`, 4: `JointLimitUpper`, 5: `JointStiff`, 6: `JointDamp`}
+
+// String returns the string representation of this JointDoFVars value.
+func (i JointDoFVars) String() string { return enums.String(i, _JointDoFVarsMap) }
+
+// SetString sets the JointDoFVars value from its string representation,
+// and returns an error if the string is invalid.
+func (i *JointDoFVars) SetString(s string) error {
+	return enums.SetString(i, s, _JointDoFVarsValueMap, "JointDoFVars")
+}
+
+// Int64 returns the JointDoFVars value as an int64.
+func (i JointDoFVars) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the JointDoFVars value from an int64.
+func (i *JointDoFVars) SetInt64(in int64) { *i = JointDoFVars(in) }
+
+// Desc returns the description of the JointDoFVars value.
+func (i JointDoFVars) Desc() string { return enums.Desc(i, _JointDoFVarsDescMap) }
+
+// JointDoFVarsValues returns all possible values for the type JointDoFVars.
+func JointDoFVarsValues() []JointDoFVars { return _JointDoFVarsValues }
+
+// Values returns all possible values for the type JointDoFVars.
+func (i JointDoFVars) Values() []enums.Enum { return enums.Values(_JointDoFVarsValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i JointDoFVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *JointDoFVars) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "JointDoFVars")
 }
 
 var _ShapesValues = []Shapes{0, 1, 2, 3}

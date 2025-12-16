@@ -33,6 +33,11 @@ var (
 	//gosl:dims 2
 	Joints *tensor.Float32
 
+	// JointDoFs is a list of joint DoF parameters, allocated per joint.
+	// [dof][JointDoFVars]
+	//gosl:dims 2
+	JointDoFs *tensor.Float32
+
 	// BodyJoints is a list of joint indexes for each dynamic body, for aggregating.
 	// [dyn body][parent, child][maxjointsperbody]
 	//gosl:dims 3
@@ -50,8 +55,10 @@ var (
 	//gosl:dims 2
 	Contacts *tensor.Float32
 
-	// JointControls are dynamic joint control inputs.
-	// [joint][JointControlVarsN]
+	// JointControls are dynamic joint control inputs, per joint DoF
+	// (in correspondence with [JointDoFs]). This can be uploaded to the
+	// GPU at every step.
+	// [dof][JointControlVarsN]
 	//gosl:group Controls
 	//gosl:dims 2
 	JointControls *tensor.Float32
