@@ -94,6 +94,26 @@ const (
 	JointCTorqueX
 	JointCTorqueY
 	JointCTorqueZ
+
+	// Computed parent joint delta value.
+	JointPDeltaX
+	JointPDeltaY
+	JointPDeltaZ
+
+	// Computed parent joint angdelta value.
+	JointPAngDeltaX
+	JointPAngDeltaY
+	JointPAngDeltaZ
+
+	// Computed child joint delta value.
+	JointCDeltaX
+	JointCDeltaY
+	JointCDeltaZ
+
+	// Computed child joint angdelta value.
+	JointCAngDeltaX
+	JointCAngDeltaY
+	JointCAngDeltaZ
 )
 
 func GetJointType(idx int32) JointTypes {
@@ -230,6 +250,46 @@ func SetJointCTorque(idx int32, t math32.Vector3) {
 	Joints.Set(t.X, int(idx), int(JointCTorqueX))
 	Joints.Set(t.Y, int(idx), int(JointCTorqueY))
 	Joints.Set(t.Z, int(idx), int(JointCTorqueZ))
+}
+
+func JointPDelta(idx int32) math32.Vector3 {
+	return math32.Vec3(Joints.Value(int(idx), int(JointPDeltaX)), Joints.Value(int(idx), int(JointPDeltaY)), Joints.Value(int(idx), int(JointPDeltaZ)))
+}
+
+func SetJointPDelta(idx int32, f math32.Vector3) {
+	Joints.Set(f.X, int(idx), int(JointPDeltaX))
+	Joints.Set(f.Y, int(idx), int(JointPDeltaY))
+	Joints.Set(f.Z, int(idx), int(JointPDeltaZ))
+}
+
+func JointPAngDelta(idx int32) math32.Vector3 {
+	return math32.Vec3(Joints.Value(int(idx), int(JointPAngDeltaX)), Joints.Value(int(idx), int(JointPAngDeltaY)), Joints.Value(int(idx), int(JointPAngDeltaZ)))
+}
+
+func SetJointPAngDelta(idx int32, t math32.Vector3) {
+	Joints.Set(t.X, int(idx), int(JointPAngDeltaX))
+	Joints.Set(t.Y, int(idx), int(JointPAngDeltaY))
+	Joints.Set(t.Z, int(idx), int(JointPAngDeltaZ))
+}
+
+func JointCDelta(idx int32) math32.Vector3 {
+	return math32.Vec3(Joints.Value(int(idx), int(JointCDeltaX)), Joints.Value(int(idx), int(JointCDeltaY)), Joints.Value(int(idx), int(JointCDeltaZ)))
+}
+
+func SetJointCDelta(idx int32, f math32.Vector3) {
+	Joints.Set(f.X, int(idx), int(JointCDeltaX))
+	Joints.Set(f.Y, int(idx), int(JointCDeltaY))
+	Joints.Set(f.Z, int(idx), int(JointCDeltaZ))
+}
+
+func JointCAngDelta(idx int32) math32.Vector3 {
+	return math32.Vec3(Joints.Value(int(idx), int(JointCAngDeltaX)), Joints.Value(int(idx), int(JointCAngDeltaY)), Joints.Value(int(idx), int(JointCAngDeltaZ)))
+}
+
+func SetJointCAngDelta(idx int32, t math32.Vector3) {
+	Joints.Set(t.X, int(idx), int(JointCAngDeltaX))
+	Joints.Set(t.Y, int(idx), int(JointCAngDeltaY))
+	Joints.Set(t.Z, int(idx), int(JointCAngDeltaZ))
 }
 
 // JointTypes are joint types that determine nature of interaction.

@@ -74,6 +74,7 @@ func StepJointForces(i uint32) { //gosl:kernel
 	default:
 		// todo: D6 requires more iteration!
 	}
+	// These are unique to joint: aggregate into dynamics Next in separate step.
 	SetJointPForce(ji, f)
 	SetJointCForce(ji, f)
 	SetJointPTorque(ji, t.Add(slmath.Cross3(rp, f)))
@@ -277,16 +278,16 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 
 		axisStiffness := axisTargetPosKeA
 		axisDamping := axisTargetVelKdA
-		for i := range 3 {
-			if axisStiffness.X > 0.0 { // todo: Dim(i) access
-				axisTargetPosKeD.X /= axisStiffness.X
-			}
+		// for i := range 3 {
+		if axisStiffness.X > 0.0 { // todo: Dim(i) access
+			axisTargetPosKeD.X /= axisStiffness.X
 		}
-		for i := range 3 {
-			if axisDamping.X > 0.0 { // todo Dim
-				axisTargetVelKdD.X /= axisDamping.X
-			}
+		// }
+		// for i := range 3 {
+		if axisDamping.X > 0.0 { // todo Dim
+			axisTargetVelKdD.X /= axisDamping.X
 		}
+		// }
 		axisLimitsLower := axisLimitsD
 		axisLimitsUpper := axisLimitsA
 		// todo:
@@ -296,11 +297,13 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 		rc := xc.Sub(slmath.MulQPPoint(posecP, posecQ, comc))
 
 		//  for loop will be unrolled, so we can modify local variables
-		for dim := range 3 {
+		// for dim := range 3 {
+		{
 			e := relPoseP.X // rel_p[dim]
 
 			// compute gradients
-			linearc := math32.Vec3(frame_p[0, dim], frame_p[1, dim], frame_p[2, dim])
+			// linearc := math32.Vec3(frame_p[0, dim], frame_p[1, dim], frame_p[2, dim]) // todo
+			linearc := math32.Vec3(0, 0, 0)
 			linearp := slmath.Negate3(linearc)
 			angularp := slmath.Cross3(rp, linearc)
 			angularc := slmath.Cross3(rc, linearc)
@@ -534,16 +537,22 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 	//           angDelta_p += angular_p * d_lambda
 	//           angDelta_c += angular_c * d_lambda
 
+	// These are unique to joint: aggregate into dynamics Next in separate step.
+	SetJointPDelta(ji, linDeltaP)
+	SetJointPAngDelta(ji, angDeltaP)
+	SetJointCDelta(ji, linDeltaC)
+	SetJointCAngDelta(ji, angDeltaC)
+
 	//    if id_p >= 0:
 	//        wp.atomic_add(deltas, id_p, wp.spatial_vector(linDelta_p, angDelta_p))
 	//    if id_c >= 0:
 	//        wp.atomic_add(deltas, id_c, wp.spatial_vector(linDelta_c, angDelta_c))
 }
 
-func UpdateJointAxisWeightedTarget(axis math32.Vector3, target, weight float32, axisTargets, axisWeights *math32.Vector3) {
+func UpdateJointAxisWeightedTarget(axis math32.Vector3, targ, weight float32, axisTargets, axisWeights *math32.Vector3) {
 	weightedAxis := axis.MulScalar(weight)
-	*axisTargets = axisTargets.Add(weightedAxis.MulScalar(target)) // weighted target (to be normalized later by sum of weights)
-	*axisWeights = axisWeights.Add(slmath.Abs3(weightedAxis))
+	*axisTargets = (*axisTargets).Add(weightedAxis.MulScalar(targ)) // weighted target (to be normalized later by sum of weights)
+	*axisWeights = (*axisWeights).Add(slmath.Abs3(weightedAxis))
 }
 
 func PositionalCorrection(err, derr float32, tfaQ, tfbQ math32.Quat, mInva, mInvb float32, Iinva, Iinvb math32.Matrix3, lineara, linearb, angulara, angularb math32.Vector3, lambdaIn, compliance, damping, dt float32) float32 {

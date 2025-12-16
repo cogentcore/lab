@@ -115,6 +115,11 @@ func GPUInit() {
 		pl.AddVarUsed(1, "Bodies")
 		pl.AddVarUsed(2, "Dynamics")
 		pl.AddVarUsed(0, "Params")
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepBodyDeltas.wgsl", sy)
+		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(1, "Bodies")
+		pl.AddVarUsed(2, "Dynamics")
+		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepIntegrateBodies.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(1, "Bodies")
@@ -235,6 +240,48 @@ func RunOneInitDynamics(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunInitDynamicsCPU(n)
+	}
+}
+// RunStepBodyDeltas runs the StepBodyDeltas kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneStepBodyDeltas call does Run and Done for a
+// single run-and-sync case.
+func RunStepBodyDeltas(n int) {
+	if UseGPU {
+		RunStepBodyDeltasGPU(n)
+	} else {
+		RunStepBodyDeltasCPU(n)
+	}
+}
+
+// RunStepBodyDeltasGPU runs the StepBodyDeltas kernel on the GPU. See [RunStepBodyDeltas] for more info.
+func RunStepBodyDeltasGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["StepBodyDeltas"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunStepBodyDeltasCPU runs the StepBodyDeltas kernel on the CPU.
+func RunStepBodyDeltasCPU(n int) {
+	gpu.VectorizeFunc(0, n, StepBodyDeltas)
+}
+
+// RunOneStepBodyDeltas runs the StepBodyDeltas kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneStepBodyDeltas(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunStepBodyDeltasGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunStepBodyDeltasCPU(n)
 	}
 }
 // RunStepIntegrateBodies runs the StepIntegrateBodies kernel with given number of elements,

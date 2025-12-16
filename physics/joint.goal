@@ -92,6 +92,26 @@ const (
 	JointCTorqueX
 	JointCTorqueY
 	JointCTorqueZ
+
+	// Computed parent joint delta value.
+	JointPDeltaX
+	JointPDeltaY
+	JointPDeltaZ
+
+	// Computed parent joint angdelta value.
+	JointPAngDeltaX
+	JointPAngDeltaY
+	JointPAngDeltaZ
+
+	// Computed child joint delta value.
+	JointCDeltaX
+	JointCDeltaY
+	JointCDeltaZ
+
+	// Computed child joint angdelta value.
+	JointCAngDeltaX
+	JointCAngDeltaY
+	JointCAngDeltaZ
 )
 
 func GetJointType(idx int32) JointTypes {
@@ -228,6 +248,46 @@ func SetJointCTorque(idx int32, t math32.Vector3) {
 	Joints[idx, JointCTorqueX] = t.X
 	Joints[idx, JointCTorqueY] = t.Y
 	Joints[idx, JointCTorqueZ] = t.Z
+}
+
+func JointPDelta(idx int32) math32.Vector3 {
+	return math32.Vec3(Joints[idx, JointPDeltaX], Joints[idx, JointPDeltaY], Joints[idx, JointPDeltaZ])
+}
+
+func SetJointPDelta(idx int32, f math32.Vector3) {
+	Joints[idx, JointPDeltaX] = f.X
+	Joints[idx, JointPDeltaY] = f.Y
+	Joints[idx, JointPDeltaZ] = f.Z
+}
+
+func JointPAngDelta(idx int32) math32.Vector3 {
+	return math32.Vec3(Joints[idx, JointPAngDeltaX], Joints[idx, JointPAngDeltaY], Joints[idx, JointPAngDeltaZ])
+}
+
+func SetJointPAngDelta(idx int32, t math32.Vector3) {
+	Joints[idx, JointPAngDeltaX] = t.X
+	Joints[idx, JointPAngDeltaY] = t.Y
+	Joints[idx, JointPAngDeltaZ] = t.Z
+}
+
+func JointCDelta(idx int32) math32.Vector3 {
+	return math32.Vec3(Joints[idx, JointCDeltaX], Joints[idx, JointCDeltaY], Joints[idx, JointCDeltaZ])
+}
+
+func SetJointCDelta(idx int32, f math32.Vector3) {
+	Joints[idx, JointCDeltaX] = f.X
+	Joints[idx, JointCDeltaY] = f.Y
+	Joints[idx, JointCDeltaZ] = f.Z
+}
+
+func JointCAngDelta(idx int32) math32.Vector3 {
+	return math32.Vec3(Joints[idx, JointCAngDeltaX], Joints[idx, JointCAngDeltaY], Joints[idx, JointCAngDeltaZ])
+}
+
+func SetJointCAngDelta(idx int32, t math32.Vector3) {
+	Joints[idx, JointCAngDeltaX] = t.X
+	Joints[idx, JointCAngDeltaY] = t.Y
+	Joints[idx, JointCAngDeltaZ] = t.Z
 }
 
 // JointTypes are joint types that determine nature of interaction.

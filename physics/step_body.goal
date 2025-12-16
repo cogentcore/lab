@@ -53,7 +53,7 @@ func DynamicsCurToNext(i uint32) { //gosl:kernel
 
 // todo: aggregate forces
 
-// StepIntegrateBodies
+// StepIntegrateBodies applies forces to update pos and deltas
 func StepIntegrateBodies(i uint32) { //gosl:kernel
 	pars := GetParams(0)
 	di := int32(i)
@@ -68,40 +68,109 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 
 	com := BodyCom(bi)
 
-	// unpack transform
-	x0 := DynamicPos(di, pars.Cur)
-	r0 := DynamicRot(di, pars.Cur)
+	// current pos
+	p0 := DynamicPos(di, pars.Cur)
+	q0 := DynamicRot(di, pars.Cur)
 
-	// unpack spatial twist
+	// current deltas
 	v0 := DynamicDelta(di, pars.Cur)
 	w0 := DynamicAngDelta(di, pars.Cur)
 
-	// unpack spatial wrench
+	// new forces integrated from joints
 	f0 := DynamicForce(di, pars.Next)
 	t0 := DynamicTorque(di, pars.Next)
 
-	xcom := slmath.MulQuatVector(r0, com).Add(x0)
+	pcom := slmath.MulQuatVector(q0, com).Add(p0)
 
 	// linear part
 	v1 := v0.Add(f0.MulScalar(invMass).Add(pars.Gravity.V().MulScalar(OneIfNonzero(invMass))).MulScalar(pars.Dt))
-	x1 := xcom.Add(v1.MulScalar(pars.Dt))
+	p1 := pcom.Add(v1.MulScalar(pars.Dt))
 
 	// angular part (compute in body frame)
-	wb := slmath.MulQuatVectorInverse(r0, w0)
-	tb := slmath.MulQuatVectorInverse(r0, t0).Sub(slmath.Cross3(wb, inertia.MulVector3(wb))) // coriolis forces
+	wb := slmath.MulQuatVectorInverse(q0, w0)
+	tb := slmath.MulQuatVectorInverse(q0, t0).Sub(slmath.Cross3(wb, inertia.MulVector3(wb))) // coriolis forces
 
-	w1 := slmath.MulQuatVector(r0, wb.Add(invInertia.MulVector3(tb).MulScalar(pars.Dt)))
-	r1 := slmath.MulQuats(math32.NewQuat(w1.X, w1.Y, w1.Z, 0), r0).MulScalar(0.5 * pars.Dt)
-	r1 = slmath.QuatNormalize(r1)
+	w1 := slmath.MulQuatVector(q0, wb.Add(invInertia.MulVector3(tb).MulScalar(pars.Dt)))
+	q1 := slmath.MulQuats(math32.NewQuat(w1.X, w1.Y, w1.Z, 0), q0).MulScalar(0.5 * pars.Dt)
+	q1 = slmath.QuatNormalize(q1)
 
 	// angular damping
 	w1 = w1.MulScalar(1.0 - pars.AngularDamping*pars.Dt)
 
-	x1a := x1.Sub(slmath.MulQuatVector(r1, com)) // pos corrected to nominal center.
+	p1a := p1.Sub(slmath.MulQuatVector(q1, com)) // pos corrected to nominal center.
 
-	SetDynamicPos(di, pars.Next, x1a)
-	SetDynamicRot(di, pars.Next, r1)
+	SetDynamicPos(di, pars.Next, p1a)
+	SetDynamicRot(di, pars.Next, q1)
+	SetDynamicDelta(di, pars.Next, v1)
+	SetDynamicAngDelta(di, pars.Next, w1)
+}
 
+// StepBodyDeltas updates Next position with deltas.
+func StepBodyDeltas(i uint32) { //gosl:kernel
+	pars := GetParams(0)
+	di := int32(i)
+	if di >= pars.DynamicsN {
+		return
+	}
+	bi := DynamicIndex(di, pars.Cur)
+
+	invMass := Bodies[bi, BodyInvMass]
+	if invMass == 0 {
+		return // no updates
+	}
+	inertia := BodyInertia(bi)
+	invInertia := BodyInvInertia(bi)
+
+	// starting pos (from force integration)
+	p0 := DynamicPos(di, pars.Next)
+	q0 := DynamicRot(di, pars.Next)
+
+	// starting deltas
+	v0 := DynamicDelta(di, pars.Next)
+	w0 := DynamicAngDelta(di, pars.Next)
+
+	weight := float32(1.0)
+	// todo: this is rigid_contact_inv_weight in solver_xpbd.py: from contacts, with restitution
+	//    if constraint_inv_weights:
+	//        inv_weight = constraint_inv_weights[tid]
+	//        if inv_weight > 0.0:
+	//            weight = 1.0 / inv_weight
+
+	dp := v0.MulScalar(invMass * weight)
+	dq := w0.MulScalar(weight)
+
+	wb := slmath.MulQuatVectorInverse(q0, w0)
+	dwb := invInertia.MulVector3(slmath.MulQuatVectorInverse(q0, dq))
+	// coriolis forces delta from dwb = (wb + dwb) I (wb + dwb) - wb I wb
+	tb := slmath.Cross3(dwb, inertia.MulVector3(wb.Add(dwb))).Add(slmath.Cross3(wb, inertia.MulVector3(dwb)))
+	dw1 := slmath.MulQuatVector(q0, dwb.Sub(invInertia.MulVector3(tb).MulScalar(pars.Dt)))
+
+	// update orientation
+	q1 := q0.Add(slmath.MulQuats(math32.NewQuat(dw1.X, dw1.Y, dw1.Z, 0), q0).MulScalar(0.5 * pars.Dt))
+	// q1 := q0 + 0.5 * wp.quat(dw1 * dt, 0.0) * q0
+	q1 = slmath.QuatNormalize(q1)
+
+	// update position
+	com := BodyCom(bi)
+	pcom := slmath.MulQuatVector(q0, com).Add(p0)
+
+	p1 := pcom.Add(dp.MulScalar(pars.Dt))
+	p1 = p1.Sub(slmath.MulQuatVector(q1, com))
+
+	// update linear and angular velocity
+	v1 := v0.Add(dp)
+	w1 := w0.Add(dw1)
+
+	// this improves gradient stability
+	if slmath.Length3(v1) < 1e-4 {
+		v1 = math32.Vec3(0, 0, 0)
+	}
+	if slmath.Length3(w1) < 1e-4 {
+		w1 = math32.Vec3(0, 0, 0)
+	}
+
+	SetDynamicPos(di, pars.Next, p1)
+	SetDynamicRot(di, pars.Next, q1)
 	SetDynamicDelta(di, pars.Next, v1)
 	SetDynamicAngDelta(di, pars.Next, w1)
 }
