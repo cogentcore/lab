@@ -13,8 +13,8 @@ import (
 
 // PhysParams are the physics parameters
 type PhysParams struct {
-	// Iters is the number of iterations to perform.
-	Iters int32 `default:"2"`
+	// Iterations is the number of iterations to perform.
+	Iterations int32 `default:"2"`
 
 	// Dt is the integration stepsize.
 	Dt float32 `default:"0.01"`
@@ -66,7 +66,7 @@ type PhysParams struct {
 }
 
 func (pr *PhysParams) Defaults() {
-	pr.Iters = 2
+	pr.Iterations = 2
 	pr.Dt = 0.01
 	pr.Gravity.Set(0, -9.81, 0)
 	pr.SoftRelax = 0.9

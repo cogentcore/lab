@@ -25,29 +25,29 @@ type World struct {
 	// specifying the constant, non-dynamic properties,
 	// which is initial state for dynamics.
 	// [body][BodyVarsN]
-	Bodies *tensor.Float32
+	Bodies *tensor.Float32 `display:"no-inline"`
 
 	// Joints is a list of permanent joints connecting bodies,
 	// which do not change (no dynamic variables).
 	// [joint][JointVarsN]
-	Joints *tensor.Float32
+	Joints *tensor.Float32 `display:"no-inline"`
 
 	// BodyJoints is a list of joint indexes for each dynamic body, for aggregating.
 	// [dyn body][parent, child][Params.BodyJointsMax]
-	BodyJoints *tensor.Int32
+	BodyJoints *tensor.Int32 `display:"no-inline"`
 
 	// Dynamics are the dynamic rigid body elements: these actually move.
 	// The first set of variables are for initial values, and the second current.
 	// [body][cur/next][DynamicVarsN]
-	Dynamics *tensor.Float32
+	Dynamics *tensor.Float32 `display:"no-inline"`
 
 	// Contacts are points of contact between bodies.
 	// [contact][ContactVarsN]
-	Contacts *tensor.Float32
+	Contacts *tensor.Float32 `display:"no-inline"`
 
 	// JointControls are dynamic joint control inputs.
 	// [joint][JointControlVarsN]
-	JointControls *tensor.Float32
+	JointControls *tensor.Float32 `display:"no-inline"`
 }
 
 func NewWorld() *World {
@@ -58,7 +58,8 @@ func NewWorld() *World {
 
 // Init makes initial vars.
 func (wl *World) Init() {
-	wl.Params = []PhysParams{}
+	wl.Params = make([]PhysParams, 1)
+	wl.Params[0].Defaults()
 	wl.Bodies = tensor.NewFloat32(0, int(BodyVarsN))
 	wl.Joints = tensor.NewFloat32(0, int(JointVarsN))
 	wl.BodyJoints = tensor.NewInt32(0, 2, 2)
@@ -82,30 +83,37 @@ func (wl *World) NewBody(shape Shapes, size, pos math32.Vector3, rot math32.Quat
 }
 
 // NewDynamic adds a new dynamic body with given parameters. Returns the index.
-func (wl *World) NewDynamic(shape Shapes, size, pos math32.Vector3, rot math32.Quat) (bodyIdx, dynIdx int32) {
+func (wl *World) NewDynamic(shape Shapes, mass float32, size, pos math32.Vector3, rot math32.Quat) (bodyIdx, dynIdx int32) {
 	bodyIdx = wl.NewBody(shape, size, pos, rot)
 	sizes := wl.Dynamics.ShapeSizes()
 	dynIdx = int32(sizes[0])
 	wl.Dynamics.SetShapeSizes(int(dynIdx+1), 2, int(DynamicVarsN))
 	SetDynamicIndex(dynIdx, 0, bodyIdx)
 	SetDynamicIndex(dynIdx, 1, bodyIdx)
+	wl.SetMass(bodyIdx, shape, size, mass)
 	wl.Params[0].DynamicsN = dynIdx + 1
 	return
 }
 
 // NewJoint adds a new joint between parent and child dynamic object indexes.
-func (wl *World) NewJoint(joint JointTypes, parent, child int32, pos math32.Vector3) int32 {
+// Use -1 for parent to add a world-anchored joint.
+// ppos, cpos are the relative positions from the parent, child.
+// Sets relative rotation matricies to identity by default.
+// axis is the axis of articulation for the joint.
+func (wl *World) NewJoint(joint JointTypes, parent, child int32, ppos, cpos, axis math32.Vector3) int32 {
 	sizes := wl.Joints.ShapeSizes()
 	idx := int32(sizes[0])
 	wl.Joints.SetShapeSizes(int(idx+1), int(JointVarsN))
+	wl.JointControls.SetShapeSizes(int(idx+1), int(JointControlVarsN))
 	SetJointParent(idx, parent)
 	SetJointChild(idx, child)
-	SetJointPPos(idx, pos)
+	SetJointPPos(idx, ppos)
+	SetJointCPos(idx, cpos)
+	SetJointAxis(idx, axis)
+	wl.JointDefaults(idx)
 	wl.Params[0].JointsN = idx + 1
 	return idx
 }
-
-// todo: init bodyjoints
 
 // SetAsCurrent sets these as the current global values that are
 // processed in the code (on the GPU). If this was not the setter of

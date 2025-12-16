@@ -6,17 +6,24 @@
 
 package physics
 
+// import "fmt"
+
 // Config does final configuration prior to running
-// after everything has been added.
+// after everything has been added. Does SetAsCurrent, GPUInit.
 func (wl *World) Config() {
 	wl.ConfigJoints()
+	// todo: other things
+	wl.SetAsCurrent()
+	wl.GPUInit()
+	wl.InitState()
 }
 
 // ConfigJoints does all of the initialization associated with joints.
 func (wl *World) ConfigJoints() {
 	// accumulate parent and child joints per dynamic
-	nj := wl.Params[0].JointsN
-	nd := wl.Params[0].DynamicsN
+	params := &wl.Params[0]
+	nj := params.JointsN
+	nd := params.DynamicsN
 	bjp := make([][]int32, nd)
 	bjc := make([][]int32, nd)
 
@@ -25,13 +32,15 @@ func (wl *World) ConfigJoints() {
 	for ji := range nj {
 		jpi := JointParentIndex(ji)
 		jci := JointChildIndex(ji)
-		bjp[jpi] = append(bjp[jpi], ji)
+		if jpi >= 0 {
+			bjp[jpi] = append(bjp[jpi], ji)
+			maxi = max(maxi, len(bjp[jpi]))
+		}
 		bjc[jci] = append(bjc[jci], ji)
-		maxi = max(maxi, len(bjp[jpi]))
 		maxi = max(maxi, len(bjc[jci]))
 	}
 	maxi = maxi + 1 // extra for n
-	wl.Params[0].BodyJointsMax = int32(maxi)
+	params.BodyJointsMax = int32(maxi)
 	wl.BodyJoints.SetShapeSizes(int(nd), 2, maxi)
 	for di := range nd {
 		np := int32(len(bjp[di]))
@@ -45,4 +54,10 @@ func (wl *World) ConfigJoints() {
 			wl.BodyJoints.Set(ji, int(di), int(1), int(1+i))
 		}
 	}
+}
+
+// InitState initializes the simulation state.
+func (wl *World) InitState() {
+	params := GetParams(0)
+	RunInitDynamics(int(params.DynamicsN))
 }

@@ -269,13 +269,13 @@ func (ev *Env) MakeEmer(name string, height float32) {
 	eyesz := headsz * .2
 	hhsz := .5 * headsz
 	rot := math32.NewQuat(0, 0, 0, 1)
-	ev.Emer = wr.NewBody(wl, name+"_body", physics.Box, "purple", math32.Vec3(width, height, depth),
+	ev.Emer = wr.NewDynamic(wl, name+"_body", physics.Box, "purple", math32.Vec3(width, height, depth),
 		math32.Vec3(0, height/2, 0), rot)
 	// body := physics.NewCapsule(emr, "body", math32.Vec3(0, height / 2, 0), height, width/2)
 	// body := physics.NewCylinder(emr, "body", math32.Vec3(0, height / 2, 0), height, width/2)
 
 	headPos := math32.Vec3(0, height+hhsz, 0)
-	vw := wr.NewBody(wl, name+"_head", physics.Box, "tan", math32.Vec3(headsz, headsz, headsz),
+	vw := wr.NewDynamic(wl, name+"_head", physics.Box, "tan", math32.Vec3(headsz, headsz, headsz),
 		headPos, rot)
 	vw.InitView = func(sld *xyz.Solid) {
 		vw.BoxInit(sld)
@@ -287,11 +287,11 @@ func (ev *Env) MakeEmer(name string, height float32) {
 			vw.UpdateColor(clr, sld)
 		})
 	}
-	wl.NewJoint(physics.Glue, ev.Emer.Index, vw.Index, vw.Pos)
-	vw = wr.NewBody(wl, name+"_eye-l", physics.Box, "green", math32.Vec3(eyesz, eyesz*.5, eyesz*.2),
+	wl.NewJoint(physics.Fixed, ev.Emer.Index, vw.Index, vw.Pos)
+	vw = wr.NewDynamic(wl, name+"_eye-l", physics.Box, "green", math32.Vec3(eyesz, eyesz*.5, eyesz*.2),
 		headPos.Add(math32.Vec3(-hhsz*.6, headsz*.1, -(hhsz+eyesz*.3))), rot)
 	wl.NewJoint(physics.Glue, ev.Emer.Index, vw.Index, vw.Pos)
-	ev.EyeR = wr.NewBody(wl, name+"_eye-r", physics.Box, "green", math32.Vec3(eyesz, eyesz*.5, eyesz*.2),
+	ev.EyeR = wr.NewDynamic(wl, name+"_eye-r", physics.Box, "green", math32.Vec3(eyesz, eyesz*.5, eyesz*.2),
 		headPos.Add(math32.Vec3(hhsz*.6, headsz*.1, -(hhsz+eyesz*.3))), rot)
 	wl.NewJoint(physics.Glue, ev.Emer.Index, ev.EyeR.Index, ev.EyeR.Pos)
 }

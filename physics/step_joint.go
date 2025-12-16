@@ -26,7 +26,10 @@ func StepJointForces(i uint32) { //gosl:kernel
 	}
 	// todo: enabled
 	jpi := JointParentIndex(ji)
-	jpbi := DynamicIndex(jpi, params.Cur)
+	jpbi := int32(-1)
+	if jpi >= 0 {
+		jpbi = DynamicIndex(jpi, params.Cur)
+	}
 	jci := JointChildIndex(ji)
 	jcbi := DynamicIndex(jci, params.Cur)
 	jt := GetJointType(ji)
@@ -93,7 +96,10 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 
 	// todo: enabled
 	jpi := JointParentIndex(ji)
-	jpbi := DynamicIndex(jpi, params.Cur)
+	jpbi := int32(-1)
+	if jpi >= 0 {
+		jpbi = DynamicIndex(jpi, params.Cur)
+	}
 	jci := JointChildIndex(ji)
 	jcbi := DynamicIndex(jci, params.Cur)
 	jt := GetJointType(ji)
@@ -553,14 +559,6 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 	SetJointPAngDelta(ji, angDeltaP)
 	SetJointCDelta(ji, linDeltaC)
 	SetJointCAngDelta(ji, angDeltaC)
-
-	// if id_p >= 0:
-	//
-	//	wp.atomic_add(deltas, id_p, wp.spatial_vector(linDelta_p, angDelta_p))
-	//
-	// if id_c >= 0:
-	//
-	//	wp.atomic_add(deltas, id_c, wp.spatial_vector(linDelta_c, angDelta_c))
 }
 
 func UpdateJointAxisWeightedTarget(axis math32.Vector3, targ, weight float32, axisTargets, axisWeights *math32.Vector3) {

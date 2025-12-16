@@ -33,28 +33,29 @@ const (
 	// JointChild is the dynamic body index for child body.
 	JointChild
 
-	// position of joint, in parent frame.
+	// relative position of joint, in parent frame.
 	JointPPosX
 	JointPPosY
 	JointPPosZ
 
-	// orientation of joint, in parent frame.
+	// relative orientation of joint, in parent frame.
 	JointPRotX
 	JointPRotY
 	JointPRotZ
 	JointPRotW
 
-	// position of joint, in child frame.
+	// relative position of joint, in child frame.
 	JointCPosX
 	JointCPosY
 	JointCPosZ
 
-	// orientation of joint, in child frame.
+	// relative orientation of joint, in child frame.
 	JointCRotX
 	JointCRotY
 	JointCRotZ
 	JointCRotW
 
+	// axis of articulation for the joint
 	JointAxisX
 	JointAxisY
 	JointAxisZ
@@ -319,3 +320,11 @@ const (
 )
 
 //gosl:end
+
+func (wl *World) JointDefaults(idx int32) {
+	rot := math32.NewQuat(0, 0, 0, 1)
+	SetJointPRot(idx, rot)
+	SetJointCRot(idx, rot)
+	SetJointStiff(idx, math32.Vector3Scalar(1.0e4))
+	SetJointDamp(idx, math32.Vector3Scalar(1.0))
+}

@@ -144,4 +144,16 @@ func BodyInvInertia(idx int32) math32.Matrix3 {
 		Bodies[idx, BodyInvInertiaXZ], Bodies[idx, BodyInvInertiaYZ], Bodies[idx, BodyInvInertiaZZ])
 }
 
+func SetBodyInertia(idx int32, inertia math32.Matrix3) {
+	for i := range 9 {
+		Bodies[idx, int(BodyInertiaXX)+i] = inertia[i]
+	}
+}
+
+func SetBodyInvInertia(idx int32, invInertia math32.Matrix3) {
+	for i := range 9 {
+		Bodies[idx, int(BodyInvInertiaXX)+i] = invInertia[i]
+	}
+}
+
 //gosl:end

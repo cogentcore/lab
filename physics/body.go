@@ -146,4 +146,16 @@ func BodyInvInertia(idx int32) math32.Matrix3 {
 		Bodies.Value(int(idx), int(BodyInvInertiaXZ)), Bodies.Value(int(idx), int(BodyInvInertiaYZ)), Bodies.Value(int(idx), int(BodyInvInertiaZZ)))
 }
 
+func SetBodyInertia(idx int32, inertia math32.Matrix3) {
+	for i := range 9 {
+		Bodies.Set(inertia[i], int(idx), int(int(BodyInertiaXX)+i))
+	}
+}
+
+func SetBodyInvInertia(idx int32, invInertia math32.Matrix3) {
+	for i := range 9 {
+		Bodies.Set(invInertia[i], int(idx), int(int(BodyInvInertiaXX)+i))
+	}
+}
+
 //gosl:end

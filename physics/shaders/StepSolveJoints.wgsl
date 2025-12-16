@@ -301,7 +301,7 @@ const  D6: JointTypes = 6;
 
 //////// import: "params.go"
 struct PhysParams {
-	Iters: i32,
+	Iterations: i32,
 	Dt: f32,
 	SoftRelax: f32,
 	JointLinearRelax: f32,
@@ -421,7 +421,10 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 		return;
 	}
 	var jpi = JointParentIndex(ji);
-	var jpbi = DynamicIndex(jpi, params.Cur);
+	var jpbi = i32(-1);
+	if (jpi >= 0) {
+		jpbi = DynamicIndex(jpi, params.Cur);
+	}
 	var jci = JointChildIndex(ji);
 	var jcbi = DynamicIndex(jci, params.Cur);
 	var jt = GetJointType(ji);

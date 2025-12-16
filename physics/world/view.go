@@ -62,8 +62,8 @@ func (wr *World) NewBody(wl *physics.World, name string, shape physics.Shapes, c
 
 // NewDynamic adds a new dynamic body with given parameters.
 // Returns the View which can then be further customized.
-func (wr *World) NewDynamic(wl *physics.World, name string, shape physics.Shapes, clr string, size, pos math32.Vector3, rot math32.Quat) *View {
-	idx, dyIdx := wl.NewDynamic(shape, size, pos, rot)
+func (wr *World) NewDynamic(wl *physics.World, name string, shape physics.Shapes, clr string, mass float32, size, pos math32.Vector3, rot math32.Quat) *View {
+	idx, dyIdx := wl.NewDynamic(shape, mass, size, pos, rot)
 	vw := &View{Name: name, Index: idx, DynamicIndex: dyIdx, Shape: shape, Color: clr, Size: size, Pos: pos, Rot: rot}
 	wr.Views = append(wr.Views, vw)
 	return vw
@@ -71,10 +71,11 @@ func (wr *World) NewDynamic(wl *physics.World, name string, shape physics.Shapes
 
 // UpdateFromPhysics updates the View from physics state.
 func (vw *View) UpdateFromPhysics() {
+	params := physics.GetParams(0)
 	if vw.DynamicIndex >= 0 {
 		ix := int32(vw.DynamicIndex)
-		vw.Pos = physics.DynamicPos(ix)
-		vw.Rot = physics.DynamicRot(ix)
+		vw.Pos = physics.DynamicPos(ix, params.Cur)
+		vw.Rot = physics.DynamicRot(ix, params.Cur)
 	} else {
 		ix := int32(vw.Index)
 		vw.Pos = physics.BodyPos(ix)

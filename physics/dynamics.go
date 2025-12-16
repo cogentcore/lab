@@ -183,3 +183,17 @@ func SetDynamicAngDelta(idx, cni int32, angDelta math32.Vector3) {
 }
 
 //gosl:end
+
+// SetMass sets the mass of given body object (only relevant for dynamics),
+// including a default inertia tensor based on solid shape of given size.
+func (wl *World) SetMass(idx int32, shape Shapes, size math32.Vector3, mass float32) {
+	Bodies.Set(mass, int(idx), int(BodyMass))
+	invm := mass
+	if mass > 0 {
+		invm = 1.0 / mass
+	}
+	Bodies.Set(invm, int(idx), int(BodyInvMass))
+	inertia := shape.Inertia(size, mass)
+	SetBodyInertia(idx, inertia)
+	SetBodyInvInertia(idx, inertia.Inverse())
+}

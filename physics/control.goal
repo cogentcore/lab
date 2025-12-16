@@ -10,16 +10,19 @@ import "cogentcore.org/core/math32"
 
 // JointControlVars are external joint control input variables stored in tensor.Float32.
 // These must be in one-to-one correspondence with the joints.
+// The X,Y,Z indexes are used progressively for the increasing degrees of freedom for
+// the joints.
 type JointControlVars int32 //enums:enum
 
 const (
 	// Joint force and torque inputs
-	JointCtrlForceX JointControlVars = iota
-	JointCtrlForceY
-	JointCtrlForceZ
-	JointCtrlTorqueX
-	JointCtrlTorqueY
-	JointCtrlTorqueZ
+	JointControlForceX JointControlVars = iota
+	JointControlForceY
+	JointControlForceZ
+	
+	JointControlTorqueX
+	JointControlTorqueY
+	JointControlTorqueZ
 
 	// target values (1 DoF use JointTargetPosX)
 	JointTargetPosX
@@ -43,23 +46,23 @@ const (
 )
 
 func JointControlForce(idx int32) math32.Vector3 {
-	return math32.Vec3(JointControls[idx, JointCtrlForceX], JointControls[idx, JointCtrlForceY], JointControls[idx, JointCtrlForceZ])
+	return math32.Vec3(JointControls[idx, JointControlForceX], JointControls[idx, JointControlForceY], JointControls[idx, JointControlForceZ])
 }
 
 func SetJointControlForce(idx int32, f math32.Vector3) {
-	JointControls[idx, JointCtrlForceX] = f.X
-	JointControls[idx, JointCtrlForceY] = f.Y
-	JointControls[idx, JointCtrlForceZ] = f.Z
+	JointControls[idx, JointControlForceX] = f.X
+	JointControls[idx, JointControlForceY] = f.Y
+	JointControls[idx, JointControlForceZ] = f.Z
 }
 
 func JointControlTorque(idx int32) math32.Vector3 {
-	return math32.Vec3(JointControls[idx, JointCtrlTorqueX], JointControls[idx, JointCtrlTorqueY], JointControls[idx, JointCtrlTorqueZ])
+	return math32.Vec3(JointControls[idx, JointControlTorqueX], JointControls[idx, JointControlTorqueY], JointControls[idx, JointControlTorqueZ])
 }
 
 func SetJointControlTorque(idx int32, f math32.Vector3) {
-	JointControls[idx, JointCtrlTorqueX] = f.X
-	JointControls[idx, JointCtrlTorqueY] = f.Y
-	JointControls[idx, JointCtrlTorqueZ] = f.Z
+	JointControls[idx, JointControlTorqueX] = f.X
+	JointControls[idx, JointControlTorqueY] = f.Y
+	JointControls[idx, JointControlTorqueZ] = f.Z
 }
 
 func JointTargetPos(idx int32) math32.Vector3 {
@@ -103,3 +106,19 @@ func SetJointTargetAngVel(idx int32, f math32.Vector3) {
 }
 
 //gosl:end
+
+func (wl *World) SetJointTargetPos(idx int32, dim math32.Dims, value float32) {
+	JointControls[idx, int(JointTargetPosX)+int(dim)] = value
+}
+
+func (wl *World) SetJointTargetRot(idx int32, dim math32.Dims, value float32) {
+	JointControls[idx, int(JointTargetRotX)+int(dim)] = value
+}
+
+func (wl *World) SetJointControlForce(idx int32, dim math32.Dims, value float32) {
+	JointControls[idx, int(JointControlForceX)+int(dim)] = value
+}
+
+func (wl *World) SetJointControlTorque(idx int32, dim math32.Dims, value float32) {
+	JointControls[idx, int(JointControlTorqueX)+int(dim)] = value
+}

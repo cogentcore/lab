@@ -212,7 +212,7 @@ const  D6: JointTypes = 6;
 
 //////// import: "params.go"
 struct PhysParams {
-	Iters: i32,
+	Iterations: i32,
 	Dt: f32,
 	SoftRelax: f32,
 	JointLinearRelax: f32,

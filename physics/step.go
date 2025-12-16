@@ -47,7 +47,38 @@ func OneIfNonzero(f float32) float32 {
 
 //gosl:end
 
+func (wl *World) Step() {
+	params := GetParams(0)
+	if params.Cur == 0 {
+		params.Cur = 1
+		params.Next = 0
+	} else {
+		params.Cur = 0
+		params.Next = 1
+	}
+	ToGPU(JointControlsVar)
+	wl.StepJointForces()
+	wl.StepIntegrateBodies()
+
+	for range params.Iterations {
+		wl.StepSolveJoints()
+	}
+	RunDone(DynamicsVar)
+}
+
 func (wl *World) StepJointForces() {
 	params := GetParams(0)
 	RunStepJointForces(int(params.JointsN))
+	RunForcesFromJoints(int(params.DynamicsN))
+}
+
+func (wl *World) StepIntegrateBodies() {
+	params := GetParams(0)
+	RunStepIntegrateBodies(int(params.JointsN))
+}
+
+func (wl *World) StepSolveJoints() {
+	params := GetParams(0)
+	RunStepSolveJoints(int(params.JointsN))
+	RunDeltasFromJoints(int(params.DynamicsN))
 }
