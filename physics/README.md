@@ -69,7 +69,7 @@ The `Group` has a set of `World*` methods that should be used on the top-level w
  
 ### Scripted Mode
 
-For Scripted mode, each update step typically involves manually updating the `Rel.Pos` and `.Quat` fields on `Body` objects to update their relative positions. This field is a `State` type and has `MoveOnAxis` and `RotateOnAxis` (and a number of other rotation methods). The Move methods update the `LinVel` field to reflect any delta in movement.
+For Scripted mode, each update step typically involves manually updating the `Rel.Pos` and `.Quat` fields on `Body` objects to update their relative positions. This field is a `State` type and has `MoveOnAxis` and `QuatateOnAxis` (and a number of other rotation methods). The Move methods update the `LinVel` field to reflect any delta in movement.
 
 It is also possible to manually set the `Abs.LinVel` and `Abs.AngVel` fields and call `Step` to update.
 

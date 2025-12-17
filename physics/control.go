@@ -19,30 +19,29 @@ const (
 	JointTargetVel
 )
 
-// SetJointControlForce sets the control force for given dof for given joint
+// SetJointControl sets the control for given joint, dof and parameter
 // to given value.
+func SetJointControl(idx, dof int32, vr JointControlVars, value float32) {
+	JointControls.Set(value, int(JointDoFIndex(idx, dof)), int(vr))
+}
+
+func JointControl(idx, dof int32, vr JointControlVars) float32 {
+	return JointControls.Value(int(JointDoFIndex(idx, dof)), int(vr))
+}
+
+// SetJointControlForce sets the force for given joint, dof to given value.
 func SetJointControlForce(idx, dof int32, value float32) {
-	JointControls.Set(value, int(JointDoFIndex(idx, dof)), int(JointControlForce))
+	SetJointControl(idx, dof, JointControlForce, value)
 }
 
-func GetJointControlForce(idx, dof int32) float32 {
-	return JointControls.Value(int(JointDoFIndex(idx, dof)), int(JointControlForce))
-}
-
+// SetJointTargetPos sets the target position for given joint, dof to given value.
 func SetJointTargetPos(idx, dof int32, value float32) {
-	JointControls.Set(value, int(JointDoFIndex(idx, dof)), int(JointTargetPos))
+	SetJointControl(idx, dof, JointTargetPos, value)
 }
 
-func GetJointTargetPos(idx, dof int32) float32 {
-	return JointControls.Value(int(JointDoFIndex(idx, dof)), int(JointTargetPos))
-}
-
+// SetJointTargetVel sets the target velocity for given joint, dof to given value.
 func SetJointTargetVel(idx, dof int32, value float32) {
-	JointControls.Set(value, int(JointDoFIndex(idx, dof)), int(JointTargetVel))
-}
-
-func GetJointTargetVel(idx, dof int32) float32 {
-	return JointControls.Value(int(JointDoFIndex(idx, dof)), int(JointTargetVel))
+	SetJointControl(idx, dof, JointTargetVel, value)
 }
 
 //gosl:end

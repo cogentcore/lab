@@ -52,10 +52,10 @@ const (
 	BodyPosZ
 
 	// Quaternion rotation of body.
-	BodyRotX
-	BodyRotY
-	BodyRotZ
-	BodyRotW
+	BodyQuatX
+	BodyQuatY
+	BodyQuatZ
+	BodyQuatW
 
 	// Relative center-of-mass offset from 3D position of body.
 	BodyComX
@@ -113,15 +113,15 @@ func SetBodyPos(idx int32, pos math32.Vector3) {
 	Bodies.Set(pos.Z, int(idx), int(BodyPosZ))
 }
 
-func BodyRot(idx int32) math32.Quat {
-	return math32.NewQuat(Bodies.Value(int(idx), int(BodyRotX)), Bodies.Value(int(idx), int(BodyRotY)), Bodies.Value(int(idx), int(BodyRotZ)), Bodies.Value(int(idx), int(BodyRotW)))
+func BodyQuat(idx int32) math32.Quat {
+	return math32.NewQuat(Bodies.Value(int(idx), int(BodyQuatX)), Bodies.Value(int(idx), int(BodyQuatY)), Bodies.Value(int(idx), int(BodyQuatZ)), Bodies.Value(int(idx), int(BodyQuatW)))
 }
 
-func SetBodyRot(idx int32, rot math32.Quat) {
-	Bodies.Set(rot.X, int(idx), int(BodyRotX))
-	Bodies.Set(rot.Y, int(idx), int(BodyRotY))
-	Bodies.Set(rot.Z, int(idx), int(BodyRotZ))
-	Bodies.Set(rot.W, int(idx), int(BodyRotW))
+func SetBodyQuat(idx int32, rot math32.Quat) {
+	Bodies.Set(rot.X, int(idx), int(BodyQuatX))
+	Bodies.Set(rot.Y, int(idx), int(BodyQuatY))
+	Bodies.Set(rot.Z, int(idx), int(BodyQuatZ))
+	Bodies.Set(rot.W, int(idx), int(BodyQuatW))
 }
 
 func BodyCom(idx int32) math32.Vector3 {

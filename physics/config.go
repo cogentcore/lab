@@ -12,7 +12,6 @@ package physics
 // after everything has been added. Does SetAsCurrent, GPUInit.
 func (wl *World) Config() {
 	wl.ConfigJoints()
-	// todo: other things
 	wl.SetAsCurrent()
 	wl.GPUInit()
 	wl.InitState()
@@ -24,11 +23,10 @@ func (wl *World) ConfigJoints() {
 	params := &wl.Params[0]
 	nj := params.JointsN
 	nd := params.DynamicsN
+
 	bjp := make([][]int32, nd)
 	bjc := make([][]int32, nd)
-
 	maxi := 0
-
 	for ji := range nj {
 		jpi := JointParentIndex(ji)
 		jci := JointChildIndex(ji)

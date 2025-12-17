@@ -83,7 +83,7 @@ func (wl *World) NewBody(shape Shapes, size, pos math32.Vector3, rot math32.Quat
 	SetBodyShape(n, shape)
 	SetBodySize(n, size)
 	SetBodyPos(n, pos)
-	SetBodyRot(n, rot)
+	SetBodyQuat(n, rot)
 	return n
 }
 
@@ -98,42 +98,6 @@ func (wl *World) NewDynamic(shape Shapes, mass float32, size, pos math32.Vector3
 	wl.SetMass(bodyIdx, shape, size, mass)
 	wl.Params[0].DynamicsN = dynIdx + 1
 	return
-}
-
-// NewJoint1D adds a new 1 DoF joint between parent and child dynamic object indexes,
-// for Prismatic and Revolute joint types.
-// Use -1 for parent to add a world-anchored joint.
-// ppos, cpos are the relative positions from the parent, child.
-// Sets relative rotation matricies to identity by default.
-// axis is the axis of articulation for the joint.
-// Use [JointDoFIndex] to access the remaining DoF parameters.
-func (wl *World) NewJoint1D(joint JointTypes, parent, child int32, ppos, cpos, axis math32.Vector3) int32 {
-	sizes := wl.Joints.ShapeSizes()
-	idx := int32(sizes[0])
-	wl.Joints.SetShapeSizes(int(idx+1), int(JointVarsN))
-	SetJointParent(idx, parent)
-	SetJointChild(idx, child)
-	SetJointPPos(idx, ppos)
-	SetJointCPos(idx, cpos)
-	SetJointDoFN(idx, 1)
-	didx := wl.newJointDoF(0, axis)
-	SetJointDoFIndex(idx, 0, didx)
-	wl.JointDefaults(idx)
-	wl.Params[0].JointsN = idx + 1
-	return idx
-}
-
-// newJointDoF adds new JointDoFs and JointControls entries
-// initialized to detfaults. Returns index.
-func (wl *World) newJointDoF(dof int32, axis math32.Vector3) int32 {
-	sizes := wl.JointDoFs.ShapeSizes()
-	idx := int32(sizes[0])
-	wl.JointDoFs.SetShapeSizes(int(idx+1), int(JointDoFVarsN))
-	wl.JointControls.SetShapeSizes(int(idx+1), int(JointControlVarsN))
-	wl.JointDoFDefaults(idx)
-	SetJointAxis(idx, 0, axis)
-	wl.Params[0].JointDoFsN = idx + 1
-	return idx
 }
 
 // SetAsCurrent sets these as the current global values that are

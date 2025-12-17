@@ -32,8 +32,8 @@ type View struct {
 	// Pos is the position.
 	Pos math32.Vector3
 
-	// Rot is the rotation as a quaternion.
-	Rot math32.Quat
+	// Quat is the rotation as a quaternion.
+	Quat math32.Quat
 
 	// NewView is a function that returns a new [xyz.Node]
 	// to represent this element. If nil, uses appropriate defaults.
@@ -55,7 +55,7 @@ type View struct {
 // Use this for Static elements; NewDynamic for dynamic elements.
 func (wr *World) NewBody(wl *physics.World, name string, shape physics.Shapes, clr string, size, pos math32.Vector3, rot math32.Quat) *View {
 	idx := wl.NewBody(shape, size, pos, rot)
-	vw := &View{Name: name, Index: idx, DynamicIndex: -1, Shape: shape, Color: clr, Size: size, Pos: pos, Rot: rot}
+	vw := &View{Name: name, Index: idx, DynamicIndex: -1, Shape: shape, Color: clr, Size: size, Pos: pos, Quat: rot}
 	wr.Views = append(wr.Views, vw)
 	return vw
 }
@@ -64,7 +64,7 @@ func (wr *World) NewBody(wl *physics.World, name string, shape physics.Shapes, c
 // Returns the View which can then be further customized.
 func (wr *World) NewDynamic(wl *physics.World, name string, shape physics.Shapes, clr string, mass float32, size, pos math32.Vector3, rot math32.Quat) *View {
 	idx, dyIdx := wl.NewDynamic(shape, mass, size, pos, rot)
-	vw := &View{Name: name, Index: idx, DynamicIndex: dyIdx, Shape: shape, Color: clr, Size: size, Pos: pos, Rot: rot}
+	vw := &View{Name: name, Index: idx, DynamicIndex: dyIdx, Shape: shape, Color: clr, Size: size, Pos: pos, Quat: rot}
 	wr.Views = append(wr.Views, vw)
 	return vw
 }
@@ -75,18 +75,18 @@ func (vw *View) UpdateFromPhysics() {
 	if vw.DynamicIndex >= 0 {
 		ix := int32(vw.DynamicIndex)
 		vw.Pos = physics.DynamicPos(ix, params.Cur)
-		vw.Rot = physics.DynamicRot(ix, params.Cur)
+		vw.Quat = physics.DynamicQuat(ix, params.Cur)
 	} else {
 		ix := int32(vw.Index)
 		vw.Pos = physics.BodyPos(ix)
-		vw.Rot = physics.BodyRot(ix)
+		vw.Quat = physics.BodyQuat(ix)
 	}
 }
 
 // UpdatePose updates the xyz node pose from view.
 func (vw *View) UpdatePose(sld *xyz.Solid) {
 	sld.Pose.Pos = vw.Pos
-	sld.Pose.Quat = vw.Rot
+	sld.Pose.Quat = vw.Quat
 }
 
 // UpdateColor updates the xyz node color from view.

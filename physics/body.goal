@@ -50,10 +50,10 @@ const (
 	BodyPosZ
 
 	// Quaternion rotation of body.
-	BodyRotX
-	BodyRotY
-	BodyRotZ
-	BodyRotW
+	BodyQuatX
+	BodyQuatY
+	BodyQuatZ
+	BodyQuatW
 
 	// Relative center-of-mass offset from 3D position of body.
 	BodyComX
@@ -111,15 +111,15 @@ func SetBodyPos(idx int32, pos math32.Vector3) {
 	Bodies[idx, BodyPosZ] = pos.Z
 }
 
-func BodyRot(idx int32) math32.Quat {
-	return math32.NewQuat(Bodies[idx, BodyRotX], Bodies[idx, BodyRotY], Bodies[idx, BodyRotZ], Bodies[idx, BodyRotW])
+func BodyQuat(idx int32) math32.Quat {
+	return math32.NewQuat(Bodies[idx, BodyQuatX], Bodies[idx, BodyQuatY], Bodies[idx, BodyQuatZ], Bodies[idx, BodyQuatW])
 }
 
-func SetBodyRot(idx int32, rot math32.Quat) {
-	Bodies[idx, BodyRotX] = rot.X
-	Bodies[idx, BodyRotY] = rot.Y
-	Bodies[idx, BodyRotZ] = rot.Z
-	Bodies[idx, BodyRotW] = rot.W
+func SetBodyQuat(idx int32, rot math32.Quat) {
+	Bodies[idx, BodyQuatX] = rot.X
+	Bodies[idx, BodyQuatY] = rot.Y
+	Bodies[idx, BodyQuatZ] = rot.Z
+	Bodies[idx, BodyQuatW] = rot.W
 }
 
 func BodyCom(idx int32) math32.Vector3 {

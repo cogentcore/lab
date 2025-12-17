@@ -31,10 +31,10 @@ func InitDynamics(i uint32) { //gosl:kernel
 		Dynamics.Set(Bodies.Value(int(bi), int(BodyPosY)), int(ii), int(cni), int(DynPosY))
 		Dynamics.Set(Bodies.Value(int(bi), int(BodyPosZ)), int(ii), int(cni), int(DynPosZ))
 
-		Dynamics.Set(Bodies.Value(int(bi), int(BodyRotX)), int(ii), int(cni), int(DynRotX))
-		Dynamics.Set(Bodies.Value(int(bi), int(BodyRotY)), int(ii), int(cni), int(DynRotY))
-		Dynamics.Set(Bodies.Value(int(bi), int(BodyRotZ)), int(ii), int(cni), int(DynRotZ))
-		Dynamics.Set(Bodies.Value(int(bi), int(BodyRotW)), int(ii), int(cni), int(DynRotW))
+		Dynamics.Set(Bodies.Value(int(bi), int(BodyQuatX)), int(ii), int(cni), int(DynQuatX))
+		Dynamics.Set(Bodies.Value(int(bi), int(BodyQuatY)), int(ii), int(cni), int(DynQuatY))
+		Dynamics.Set(Bodies.Value(int(bi), int(BodyQuatZ)), int(ii), int(cni), int(DynQuatZ))
+		Dynamics.Set(Bodies.Value(int(bi), int(BodyQuatW)), int(ii), int(cni), int(DynQuatW))
 
 		for v := DynVelX; v < DynamicVarsN; v++ {
 			Dynamics.Set(0.0, int(ii), int(cni), int(v))
@@ -131,7 +131,7 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 
 	// current pos
 	p0 := DynamicPos(di, params.Cur)
-	q0 := DynamicRot(di, params.Cur)
+	q0 := DynamicQuat(di, params.Cur)
 
 	// current deltas
 	v0 := DynamicDelta(di, params.Cur)
@@ -152,7 +152,7 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 	tb := slmath.MulQuatVectorInverse(q0, t0).Sub(slmath.Cross3(wb, inertia.MulVector3(wb))) // coriolis forces
 
 	w1 := slmath.MulQuatVector(q0, wb.Add(invInertia.MulVector3(tb).MulScalar(params.Dt)))
-	q1 := slmath.MulQuats(math32.NewQuat(w1.X, w1.Y, w1.Z, 0), q0).MulScalar(0.5 * params.Dt)
+	q1 := slmath.QuatAdd(q0, slmath.MulQuats(math32.NewQuat(w1.X, w1.Y, w1.Z, 0), q0).MulScalar(0.5*params.Dt))
 	q1 = slmath.QuatNormalize(q1)
 
 	// angular damping
@@ -161,7 +161,7 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 	p1a := p1.Sub(slmath.MulQuatVector(q1, com)) // pos corrected to nominal center.
 
 	SetDynamicPos(di, params.Next, p1a)
-	SetDynamicRot(di, params.Next, q1)
+	SetDynamicQuat(di, params.Next, q1)
 	SetDynamicDelta(di, params.Next, v1)
 	SetDynamicAngDelta(di, params.Next, w1)
 }
@@ -184,7 +184,7 @@ func StepBodyDeltas(i uint32) { //gosl:kernel
 
 	// starting pos (from force integration)
 	p0 := DynamicPos(di, params.Next)
-	q0 := DynamicRot(di, params.Next)
+	q0 := DynamicQuat(di, params.Next)
 
 	// starting deltas
 	v0 := DynamicDelta(di, params.Next)
@@ -231,7 +231,7 @@ func StepBodyDeltas(i uint32) { //gosl:kernel
 	}
 
 	SetDynamicPos(di, params.Next, p1)
-	SetDynamicRot(di, params.Next, q1)
+	SetDynamicQuat(di, params.Next, q1)
 	SetDynamicDelta(di, params.Next, v1)
 	SetDynamicAngDelta(di, params.Next, w1)
 }

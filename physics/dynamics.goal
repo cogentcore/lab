@@ -25,10 +25,10 @@ const (
 	DynPosZ
 
 	// Quaternion rotation.
-	DynRotX
-	DynRotY
-	DynRotZ
-	DynRotW
+	DynQuatX
+	DynQuatY
+	DynQuatZ
+	DynQuatW
 
 	// Linear velocity.
 	DynVelX
@@ -89,15 +89,15 @@ func SetDynamicPos(idx, cni int32, pos math32.Vector3) {
 	Dynamics[idx, cni, DynPosZ] = pos.Z
 }
 
-func DynamicRot(idx, cni int32) math32.Quat {
-	return math32.NewQuat(Dynamics[idx, cni, DynRotX], Dynamics[idx, cni, DynRotY], Dynamics[idx, cni, DynRotZ], Dynamics[idx, cni, DynRotW])
+func DynamicQuat(idx, cni int32) math32.Quat {
+	return math32.NewQuat(Dynamics[idx, cni, DynQuatX], Dynamics[idx, cni, DynQuatY], Dynamics[idx, cni, DynQuatZ], Dynamics[idx, cni, DynQuatW])
 }
 
-func SetDynamicRot(idx, cni int32, rot math32.Quat) {
-	Dynamics[idx, cni, DynRotX] = rot.X
-	Dynamics[idx, cni, DynRotY] = rot.Y
-	Dynamics[idx, cni, DynRotZ] = rot.Z
-	Dynamics[idx, cni, DynRotW] = rot.W
+func SetDynamicQuat(idx, cni int32, rot math32.Quat) {
+	Dynamics[idx, cni, DynQuatX] = rot.X
+	Dynamics[idx, cni, DynQuatY] = rot.Y
+	Dynamics[idx, cni, DynQuatZ] = rot.Z
+	Dynamics[idx, cni, DynQuatW] = rot.W
 }
 
 func DynamicVel(idx, cni int32) math32.Vector3 {

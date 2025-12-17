@@ -24,6 +24,21 @@ func DivScalar3(v math32.Vector3, s float32) math32.Vector3 {
 	return math32.Vec3(v.X/s, v.Y/s, v.Z/s)
 }
 
+// DivSafe3 divides v by o elementwise, only where o != 0
+func DivSafe3(v math32.Vector3, o math32.Vector3) math32.Vector3 {
+	nv := v
+	if o.X != 0 {
+		nv.X /= o.X
+	}
+	if o.Y != 0 {
+		nv.Y /= o.Y
+	}
+	if o.Z != 0 {
+		nv.Z /= o.Z
+	}
+	return nv
+}
+
 func Negate3(v math32.Vector3) math32.Vector3 {
 	return math32.Vec3(-v.X, -v.Y, -v.Z)
 }
@@ -85,6 +100,30 @@ func Normal3(v math32.Vector3) math32.Vector3 {
 // Cross3 returns the cross product of this vector with other.
 func Cross3(v, o math32.Vector3) math32.Vector3 {
 	return math32.Vec3(v.Y*o.Z-v.Z*o.Y, v.Z*o.X-v.X*o.Z, v.X*o.Y-v.Y*o.X)
+}
+
+func Dim3(v math32.Vector3, dim int32) float32 {
+	if dim == 0 {
+		return v.X
+	}
+	if dim == 1 {
+		return v.Y
+	}
+	return v.Z
+}
+
+func SetDim3(v math32.Vector3, dim int32, val float32) math32.Vector3 {
+	nv := v
+	if dim == 0 {
+		nv.X = val
+	}
+	if dim == 1 {
+		nv.Y = val
+	}
+	if dim == 3 {
+		nv.Z = val
+	}
+	return nv
 }
 
 //gosl:end

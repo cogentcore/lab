@@ -89,7 +89,7 @@ func (wr *World) RenderFromNode(vw *View, cam *Camera) image.Image {
 	sc.Camera.Near = cam.Near
 	sc.Camera.Far = cam.Far
 	sc.Camera.Pose.Pos = vw.Pos
-	sc.Camera.Pose.Quat = vw.Rot
+	sc.Camera.Pose.Quat = vw.Quat
 	sc.Camera.Pose.Scale.Set(1, 1, 1)
 
 	sc.UseAltFrame(cam.Size)
