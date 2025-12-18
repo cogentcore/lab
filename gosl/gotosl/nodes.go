@@ -1794,8 +1794,10 @@ func (p *printer) getGlobalVar(ae *ast.AssignStmt, gvr *Var) {
 	p.expr(cf.Args[0])
 	p.print(token.RBRACK, token.SEMICOLON)
 	gvars := p.GoToSL.GetVarStack.Peek()
-	gvars[tmpVar] = &GetGlobalVar{Var: gvr, TmpVar: tmpVar, IdxExpr: cf.Args[0], ReadWrite: rwoverride}
-	p.GoToSL.GetVarStack[len(p.GoToSL.GetVarStack)-1] = gvars
+	if gvars != nil {
+		gvars[tmpVar] = &GetGlobalVar{Var: gvr, TmpVar: tmpVar, IdxExpr: cf.Args[0], ReadWrite: rwoverride}
+		p.GoToSL.GetVarStack[len(p.GoToSL.GetVarStack)-1] = gvars
+	}
 }
 
 // gosl: set non-read-only global vars back from temp var

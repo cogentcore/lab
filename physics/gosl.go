@@ -44,9 +44,10 @@ const (
 	JointsVar GPUVars = 2
 	JointDoFsVar GPUVars = 3
 	BodyJointsVar GPUVars = 4
-	DynamicsVar GPUVars = 5
-	ContactsVar GPUVars = 6
-	JointControlsVar GPUVars = 7
+	BodyCollidePairsVar GPUVars = 5
+	DynamicsVar GPUVars = 6
+	ContactsVar GPUVars = 7
+	JointControlsVar GPUVars = 8
 )
 
 // Tensor stride variables
@@ -90,10 +91,11 @@ func GPUInit() {
 			vr = sgp.Add("Joints", gpu.Float32, 1, gpu.ComputeShader)
 			vr = sgp.Add("JointDoFs", gpu.Float32, 1, gpu.ComputeShader)
 			vr = sgp.Add("BodyJoints", gpu.Int32, 1, gpu.ComputeShader)
+			vr = sgp.Add("BodyCollidePairs", gpu.Int32, 1, gpu.ComputeShader)
 			sgp.SetNValues(1)
 		}
 		{
-			sgp := vars.AddGroup(gpu.Storage, "Bodies")
+			sgp := vars.AddGroup(gpu.Storage, "Dynamics")
 			var vr *gpu.Var
 			_ = vr
 			vr = sgp.Add("Dynamics", gpu.Float32, 1, gpu.ComputeShader)
@@ -108,6 +110,10 @@ func GPUInit() {
 			sgp.SetNValues(1)
 		}
 		var pl *gpu.ComputePipeline
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/CollisionBroad.wgsl", sy)
+		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(1, "BodyCollidePairs")
+		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/DeltasFromJoints.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(1, "BodyJoints")
@@ -174,6 +180,48 @@ func GPURelease() {
 	ComputeGPU = nil
 }
 
+// RunCollisionBroad runs the CollisionBroad kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneCollisionBroad call does Run and Done for a
+// single run-and-sync case.
+func RunCollisionBroad(n int) {
+	if UseGPU {
+		RunCollisionBroadGPU(n)
+	} else {
+		RunCollisionBroadCPU(n)
+	}
+}
+
+// RunCollisionBroadGPU runs the CollisionBroad kernel on the GPU. See [RunCollisionBroad] for more info.
+func RunCollisionBroadGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["CollisionBroad"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunCollisionBroadCPU runs the CollisionBroad kernel on the CPU.
+func RunCollisionBroadCPU(n int) {
+	gpu.VectorizeFunc(0, n, CollisionBroad)
+}
+
+// RunOneCollisionBroad runs the CollisionBroad kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneCollisionBroad(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunCollisionBroadGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunCollisionBroadCPU(n)
+	}
+}
 // RunDeltasFromJoints runs the DeltasFromJoints kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -550,6 +598,9 @@ func ToGPU(vars ...GPUVars) {
 		case BodyJointsVar:
 			v, _ := syVars.ValueByIndex(1, "BodyJoints", 0)
 			gpu.SetValueFrom(v, BodyJoints.Values)
+		case BodyCollidePairsVar:
+			v, _ := syVars.ValueByIndex(1, "BodyCollidePairs", 0)
+			gpu.SetValueFrom(v, BodyCollidePairs.Values)
 		case DynamicsVar:
 			v, _ := syVars.ValueByIndex(2, "Dynamics", 0)
 			gpu.SetValueFrom(v, Dynamics.Values)
@@ -580,7 +631,7 @@ func ToGPUTensorStrides() {
 	}
 	sy := GPUSystem
 	syVars := sy.Vars()
-	TensorStrides.SetShapeSizes(70)
+	TensorStrides.SetShapeSizes(80)
 	TensorStrides.SetInt1D(Bodies.Shape().Strides[0], 0)
 	TensorStrides.SetInt1D(Bodies.Shape().Strides[1], 1)
 	TensorStrides.SetInt1D(Joints.Shape().Strides[0], 10)
@@ -590,13 +641,15 @@ func ToGPUTensorStrides() {
 	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[0], 30)
 	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[1], 31)
 	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[2], 32)
-	TensorStrides.SetInt1D(Dynamics.Shape().Strides[0], 40)
-	TensorStrides.SetInt1D(Dynamics.Shape().Strides[1], 41)
-	TensorStrides.SetInt1D(Dynamics.Shape().Strides[2], 42)
-	TensorStrides.SetInt1D(Contacts.Shape().Strides[0], 50)
-	TensorStrides.SetInt1D(Contacts.Shape().Strides[1], 51)
-	TensorStrides.SetInt1D(JointControls.Shape().Strides[0], 60)
-	TensorStrides.SetInt1D(JointControls.Shape().Strides[1], 61)
+	TensorStrides.SetInt1D(BodyCollidePairs.Shape().Strides[0], 40)
+	TensorStrides.SetInt1D(BodyCollidePairs.Shape().Strides[1], 41)
+	TensorStrides.SetInt1D(Dynamics.Shape().Strides[0], 50)
+	TensorStrides.SetInt1D(Dynamics.Shape().Strides[1], 51)
+	TensorStrides.SetInt1D(Dynamics.Shape().Strides[2], 52)
+	TensorStrides.SetInt1D(Contacts.Shape().Strides[0], 60)
+	TensorStrides.SetInt1D(Contacts.Shape().Strides[1], 61)
+	TensorStrides.SetInt1D(JointControls.Shape().Strides[0], 70)
+	TensorStrides.SetInt1D(JointControls.Shape().Strides[1], 71)
 	v, _ := syVars.ValueByIndex(0, "TensorStrides", 0)
 	gpu.SetValueFrom(v, TensorStrides.Values)
 }
@@ -621,6 +674,9 @@ func ReadFromGPU(vars ...GPUVars) {
 			v.GPUToRead(sy.CommandEncoder)
 		case BodyJointsVar:
 			v, _ := syVars.ValueByIndex(1, "BodyJoints", 0)
+			v.GPUToRead(sy.CommandEncoder)
+		case BodyCollidePairsVar:
+			v, _ := syVars.ValueByIndex(1, "BodyCollidePairs", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case DynamicsVar:
 			v, _ := syVars.ValueByIndex(2, "Dynamics", 0)
@@ -661,6 +717,10 @@ func SyncFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(1, "BodyJoints", 0)
 			v.ReadSync()
 			gpu.ReadToBytes(v, BodyJoints.Values)
+		case BodyCollidePairsVar:
+			v, _ := syVars.ValueByIndex(1, "BodyCollidePairs", 0)
+			v.ReadSync()
+			gpu.ReadToBytes(v, BodyCollidePairs.Values)
 		case DynamicsVar:
 			v, _ := syVars.ValueByIndex(2, "Dynamics", 0)
 			v.ReadSync()

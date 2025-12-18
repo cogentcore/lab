@@ -6,6 +6,11 @@
 
 package physics
 
+import (
+	"cogentcore.org/lab/tensor"
+	"fmt"
+)
+
 //gosl:start
 
 // Contact is one pairwise point of contact between two bodies.
@@ -14,28 +19,231 @@ package physics
 type ContactVars int32 //enums:enum
 
 const (
-	// first body
+	// first body index
 	ContactA ContactVars = iota
 
-	// the other body
+	// the other body index
 	ContactB
+
+	// contact point on body A
+	ContactAPointX
+	ContactAPointY
+	ContactAPointZ
+
+	// contact point on body B
+	ContactBPointX
+	ContactBPointY
+	ContactBPointZ
+
+	// Contact depths (thickness in newton)
+	ContactADepth
+	ContactBDepth
 
 	// normal pointing from center of B to center of A
 	ContactNormX
 	ContactNormY
 	ContactNormZ
 
-	// point on spherical shell of B where A is contacting
-	ContactPointX
-	ContactPointY
-	ContactPointZ
-
-	// ContactDist is the distance from PtB along NormB to contact
-	// point on spherical shell of A.
-	ContactDist
+	// computed contact force vector
+	ContactForceX
+	ContactForceY
+	ContactForceZ
 )
 
+func WorldsCollide(wa, wb int32) bool {
+	if wa != -1 && wb != -1 && wa != wb {
+		return false
+	}
+	return true
+}
+
+func GroupsCollide(ga, gb int32) bool {
+	if ga == 0 || gb == 0 {
+		return false
+	}
+	if ga > 0 {
+		return ga == gb || gb < 0
+	}
+	if ga < 0 {
+		return ga != gb
+	}
+	return false
+}
+
+// CollisionBroad
+func CollisionBroad(i uint32) { //gosl:kernel
+	params := GetParams(0)
+	ci := int32(i)
+	if ci >= params.BodyCollidePairsN {
+		return
+	}
+	ba := BodyCollidePairs.Value(int(ci), int(0))
+	bb := BodyCollidePairs.Value(int(ci), int(1))
+	_ = ba
+	_ = bb
+
+	// rigid_a = shape_body[shape_a]
+	// if rigid_a == -1:
+	//
+	//	X_ws_a = shape_transform[shape_a]
+	//
+	// else:
+	//
+	//	X_ws_a = body_q[rigid_a] * shape_transform[shape_a]
+	//
+	// rigid_b = shape_body[shape_b]
+	// if rigid_b == -1:
+	//
+	//	X_ws_b = shape_transform[shape_b]
+	//
+	// else:
+	//
+	//	X_ws_b = body_q[rigid_b] * shape_transform[shape_b]
+	//
+	// type_a = shape_type[shape_a]
+	// type_b = shape_type[shape_b]
+	// # ensure unique ordering of shape pairs
+	// if type_a > type_b:
+	//
+	//	shape_tmp = shape_a
+	//	shape_a = shape_b
+	//	shape_b = shape_tmp
+	//
+	//	type_tmp = type_a
+	//	type_a = type_b
+	//	type_b = type_tmp
+	//
+	//	X_tmp = X_ws_a
+	//	X_ws_a = X_ws_b
+	//	X_ws_b = X_tmp
+	//
+	// p_b = wp.transform_get_translation(X_ws_b)
+	// r_b = shape_radius[shape_b]
+	// if type_a == GeoType.PLANE and type_b == GeoType.PLANE:
+	//
+	//	return
+	//
+	// # Use per-shape contact margins
+	// margin = wp.max(shape_contact_margin[shape_a], shape_contact_margin[shape_b])
+	//
+	// # bounding sphere check
+	// if type_a == GeoType.PLANE:
+	//
+	//	query_b = wp.transform_point(wp.transform_inverse(X_ws_a), p_b)
+	//	scale = shape_scale[shape_a]
+	//	closest = closest_point_plane(scale[0], scale[1], query_b)
+	//	d = wp.length(query_b - closest)
+	//	if d > r_b + margin:
+	//	    return
+	//
+	// else:
+	//
+	//	p_a = wp.transform_get_translation(X_ws_a)
+	//	d = wp.length(p_a - p_b)
+	//	r_a = shape_radius[shape_a]
+	//	r_b = shape_radius[shape_b]
+	//	if d > r_a + r_b + margin:
+	//	    return
+	//
+	// pair_index_ab = shape_a * num_shapes + shape_b
+	// pair_index_ba = shape_b * num_shapes + shape_a
+	//
+	// num_contacts_a, num_contacts_b = count_contact_points_for_pair(
+	//
+	//	shape_a, shape_b, type_a, type_b, shape_scale, shape_source_ptr
+	//
+	// )
+	//
+	// if contact_point_limit:
+	//
+	//	# assign a limit per contact pair, if max_per_pair is set
+	//	if max_per_pair > 0:
+	//	    # distribute maximum number of contact per pair in both directions
+	//	    max_per_pair_half = max_per_pair // 2
+	//	    if num_contacts_b > 0:
+	//	        contact_point_limit[pair_index_ab] = max_per_pair_half
+	//	        contact_point_limit[pair_index_ba] = max_per_pair_half
+	//	    else:
+	//	        contact_point_limit[pair_index_ab] = max_per_pair
+	//	        contact_point_limit[pair_index_ba] = 0
+	//	else:
+	//	    contact_point_limit[pair_index_ab] = 0
+	//	    contact_point_limit[pair_index_ba] = 0
+	//
+	// # Allocate contact points using reusable method
+	// _success = allocate_contact_points(
+	//
+	//	num_contacts_a,
+	//	num_contacts_b,
+	//	shape_a,
+	//	shape_b,
+	//	rigid_contact_max,
+	//	contact_count,
+	//	contact_shape0,
+	//	contact_shape1,
+	//	contact_point_id,
+	//
+	// )
+}
+
 //gosl:end
+
+// IsChildDynamic returns true if dic is a direct child
+// on any joint where dip is the parent.
+func (wl *World) IsChildDynamic(dip, dic int32) bool {
+	npja := wl.BodyJoints.Value(int(dip), int(0), int(0))
+	for j := range npja {
+		ji := wl.BodyJoints.Value(int(dip), int(0), int(1+j))
+		jci := JointChildIndex(ji)
+		if jci == dic {
+			return true
+		}
+	}
+	return false
+}
+
+// ConfigBodyCollidePairs compiles a list of body paris that could collide
+// based on world and group settings and not being direct parent
+// child relationship within a joint.
+func (wl *World) ConfigBodyCollidePairs() {
+	params := &wl.Params[0]
+	nb := params.BodiesN
+	nalc := int(nb) * 10
+	pt := tensor.NewInt32(nalc, 2)
+	np := 0
+	for a := range nb {
+		wa := GetBodyWorld(a)
+		ga := GetBodyGroup(a)
+		dia := GetBodyDynamic(a)
+		for b := range nb {
+			wb := GetBodyWorld(b)
+			gb := GetBodyGroup(b)
+			if !WorldsCollide(wa, wb) {
+				continue
+			}
+			if !GroupsCollide(ga, gb) {
+				continue
+			}
+			dib := GetBodyDynamic(b)
+			// now check joints (ConfigJoints must have been called first)
+			if wl.IsChildDynamic(dia, dib) {
+				continue
+			}
+			if np >= nalc {
+				nalc += int(nb)
+				pt.SetShapeSizes(nalc, 2)
+				fmt.Println("body pairs realoc", nalc)
+			}
+			pt.Set(a, int(np), int(0))
+			pt.Set(b, int(np), int(1))
+			np++
+		}
+	}
+	params.BodyCollidePairsN = int32(np)
+	pt.SetShapeSizes(np, 2)
+	wl.BodyCollidePairs = pt
+	fmt.Println("body pairs over alloc", nalc, np)
+}
 
 // New adds a new contact to the list
 // func (cs *Contacts) New(a, b Body) *Contact {

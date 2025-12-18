@@ -19,9 +19,9 @@ type DynamicVars int32 //enums:enum
 
 const (
 	// Index of body in list of bodies.
-	DynIndex DynamicVars = iota
+	DynBody DynamicVars = iota
 
-	// 3D position of center of mass.
+	// 3D position of structural center.
 	DynPosX
 	DynPosY
 	DynPosZ
@@ -73,12 +73,16 @@ const (
 	DynAngDeltaZ
 )
 
-func SetDynamicIndex(idx, cni, bodyIdx int32) {
-	Dynamics.Set(math.Float32frombits(uint32(bodyIdx)), int(idx), int(cni), int(DynIndex))
+// cni = current / next index
+
+func SetDynamicBody(idx, bodyIdx int32) {
+	bi := math.Float32frombits(uint32(bodyIdx))
+	Dynamics.Set(bi, int(idx), int(0), int(DynBody))
+	Dynamics.Set(bi, int(idx), int(1), int(DynBody))
 }
 
-func DynamicIndex(idx, cni int32) int32 {
-	return int32(math.Float32bits(Dynamics.Value(int(idx), int(cni), int(DynIndex))))
+func DynamicBody(idx int32) int32 {
+	return int32(math.Float32bits(Dynamics.Value(int(idx), int(0), int(DynBody))))
 }
 
 func DynamicPos(idx, cni int32) math32.Vector3 {

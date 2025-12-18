@@ -12,6 +12,7 @@ package physics
 // after everything has been added. Does SetAsCurrent, GPUInit.
 func (wl *World) Config() {
 	wl.ConfigJoints()
+	wl.ConfigBodyCollidePairs()
 	wl.SetAsCurrent()
 	wl.GPUInit()
 	wl.InitState()
@@ -30,6 +31,9 @@ func (wl *World) ConfigJoints() {
 	for ji := range nj {
 		jpi := JointParentIndex(ji)
 		jci := JointChildIndex(ji)
+		// bpi := DynamicBody(jpi)
+		// bci := DynamicBody(jci)
+		// todo: could ensure that all elements are in same world, but not really needed
 		if jpi >= 0 {
 			bjp[jpi] = append(bjp[jpi], ji)
 			maxi = max(maxi, len(bjp[jpi]))

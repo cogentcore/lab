@@ -59,8 +59,11 @@ func main() {
 		math32.Vec3(0, height/2, 0), rot)
 
 	bj := wl.NewJointRevolute(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height/2, 0), math32.Vec3(0, 1, 0))
-	physics.SetJointControlForce(bj, 0, 2)
+	// bj := wl.NewJointPrismatic(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height/2, 0), math32.Vec3(1, 0, 0))
+	// physics.SetJointControlForce(bj, 0, 5)
+	physics.SetJointTargetPos(bj, 0, 1)
 	// physics.SetJointDoF(bj, 0, physics.JointDamp, 0.01)
+	// physics.SetJointDoF(bj, 0, physics.JointStiff, 1) // this makes a big difference
 
 	wl.Config()
 	params := physics.GetParams(0)
@@ -78,8 +81,8 @@ func main() {
 	sc.Camera.LookAt(math32.Vec3(0, 5, 0), math32.Vec3(0, 1, 0))
 	sc.SaveCamera("2")
 
-	sc.Camera.Pose.Pos = math32.Vec3(-.86, .97, 2.7)
-	sc.Camera.LookAt(math32.Vec3(0, .8, 0), math32.Vec3(0, 1, 0))
+	sc.Camera.Pose.Pos = math32.Vec3(-1.33, 2.24, 3.55)
+	sc.Camera.LookAt(math32.Vec3(0, .5, 0), math32.Vec3(0, 1, 0))
 	sc.SaveCamera("1")
 	sc.SaveCamera("default")
 

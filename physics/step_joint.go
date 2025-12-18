@@ -14,6 +14,10 @@ import (
 	"cogentcore.org/lab/gosl/slmath"
 )
 
+// todo: joint types in solve -- seems wrong
+// see if does anything when dofs are empty
+// limits, damping, etc in test.
+
 // notation convention:
 // spatial transform: R = position, Q = quat rotation
 // P = parent, C = child
@@ -38,10 +42,10 @@ func StepJointForces(i uint32) { //gosl:kernel
 	jPi := JointParentIndex(ji)
 	jPbi := int32(-1)
 	if jPi >= 0 {
-		jPbi = DynamicIndex(jPi, params.Cur)
+		jPbi = DynamicBody(jPi)
 	}
 	jCi := JointChildIndex(ji)
-	jCbi := DynamicIndex(jCi, params.Cur)
+	jCbi := DynamicBody(jCi)
 
 	jLinearN := GetJointLinearDoFN(ji)
 	jAngularN := GetJointAngularDoFN(ji)
@@ -118,10 +122,10 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 	jPi := JointParentIndex(ji)
 	jPbi := int32(-1)
 	if jPi >= 0 {
-		jPbi = DynamicIndex(jPi, params.Cur)
+		jPbi = DynamicBody(jPi)
 	}
 	jCi := JointChildIndex(ji)
-	jCbi := DynamicIndex(jCi, params.Cur)
+	jCbi := DynamicBody(jCi)
 
 	jLinearN := GetJointLinearDoFN(ji)
 	jAngularN := GetJointAngularDoFN(ji)
@@ -220,7 +224,7 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 			linDeltaC = linDeltaC.Add(linearC.MulScalar(dLambda * params.JointLinearRelax))
 			angDeltaC = angDeltaC.Add(angularC.MulScalar(dLambda * params.JointAngularRelax))
 		}
-	} else { // compute joint target, stiffness, damping
+	} else if jLinearN > 0 { // compute joint target, stiffness, damping
 		var axisLimitsD, axisLimitsA math32.Vector3
 		var axisTargetPosKeD, axisTargetPosKeA math32.Vector3
 		var axisTargetVelKdD, axisTargetVelKdA math32.Vector3
@@ -304,8 +308,7 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 			}
 		}
 	}
-	// todo: does it make sense to have prismatic, fixed here?
-	if jt == Fixed || jt == Prismatic || jt == Revolute || jt == D6 { // angular
+	if jAngularN > 0 { // angular
 		qP := xwPQ
 		qC := xwCQ
 		// make quats lie in same hemisphere
@@ -407,7 +410,8 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 			damping := float32(0.0)
 
 			targetVel := slmath.Dim3(axisTargetVelKdD, dim)
-			derrRel := derr - targetVel
+			angularClen := slmath.Length3(angularC)
+			derrRel := derr - targetVel*angularClen
 
 			// consider joint limits irrespective of axis mode
 			lower := slmath.Dim3(axisLimitsLower, dim)

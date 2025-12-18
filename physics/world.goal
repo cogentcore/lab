@@ -38,6 +38,11 @@ type World struct {
 	// [dyn body][parent, child][Params.BodyJointsMax]
 	BodyJoints *tensor.Int32 `display:"no-inline"`
 
+	// BodyCollidePairs are pairs of Body indexes that could potentially collide
+	// based on precomputed collision logic, using World, Group, and Joint indexes.
+	// [BodyCollidePairsN][2]
+	BodyCollidePairs *tensor.Int32
+
 	// Dynamics are the dynamic rigid body elements: these actually move.
 	// The first set of variables are for initial values, and the second current.
 	// [body][cur/next][DynamicVarsN]
@@ -80,7 +85,9 @@ func (wl *World) NewBody(shape Shapes, size, pos math32.Vector3, rot math32.Quat
 	sizes := wl.Bodies.ShapeSizes()
 	n := int32(sizes[0])
 	wl.Bodies.SetShapeSizes(int(n+1), int(BodyVarsN))
+	wl.Params[0].BodiesN = n + 1
 	SetBodyShape(n, shape)
+	SetBodyDynamic(n, -1)
 	SetBodySize(n, size)
 	SetBodyPos(n, pos)
 	SetBodyQuat(n, rot)
@@ -93,10 +100,10 @@ func (wl *World) NewDynamic(shape Shapes, mass float32, size, pos math32.Vector3
 	sizes := wl.Dynamics.ShapeSizes()
 	dynIdx = int32(sizes[0])
 	wl.Dynamics.SetShapeSizes(int(dynIdx+1), 2, int(DynamicVarsN))
-	SetDynamicIndex(dynIdx, 0, bodyIdx)
-	SetDynamicIndex(dynIdx, 1, bodyIdx)
-	wl.SetMass(bodyIdx, shape, size, mass)
 	wl.Params[0].DynamicsN = dynIdx + 1
+	SetDynamicBody(dynIdx, bodyIdx)
+	SetBodyDynamic(bodyIdx, dynIdx)
+	wl.SetMass(bodyIdx, shape, size, mass)
 	return
 }
 

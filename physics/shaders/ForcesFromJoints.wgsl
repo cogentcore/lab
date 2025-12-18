@@ -38,54 +38,63 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 //////// import: "body.go"
 alias BodyVars = i32; //enums:enum
 const  BodyShape: BodyVars = 0;
-const  BodyWorldIndex: BodyVars = 1;
-const  BodySizeX: BodyVars = 2;
-const  BodySizeY: BodyVars = 3;
-const  BodySizeZ: BodyVars = 4;
-const  BodyMass: BodyVars = 5;
-const  BodyInvMass: BodyVars = 6;
-const  BodyBounce: BodyVars = 7;
-const  BodyFriction: BodyVars = 8;
-const  BodyPosX: BodyVars = 9;
-const  BodyPosY: BodyVars = 10;
-const  BodyPosZ: BodyVars = 11;
-const  BodyQuatX: BodyVars = 12;
-const  BodyQuatY: BodyVars = 13;
-const  BodyQuatZ: BodyVars = 14;
-const  BodyQuatW: BodyVars = 15;
-const  BodyComX: BodyVars = 16;
-const  BodyComY: BodyVars = 17;
-const  BodyComZ: BodyVars = 18;
-const  BodyInertiaXX: BodyVars = 19;
-const  BodyInertiaYX: BodyVars = 20;
-const  BodyInertiaZX: BodyVars = 21;
-const  BodyInertiaXY: BodyVars = 22;
-const  BodyInertiaYY: BodyVars = 23;
-const  BodyInertiaZY: BodyVars = 24;
-const  BodyInertiaXZ: BodyVars = 25;
-const  BodyInertiaYZ: BodyVars = 26;
-const  BodyInertiaZZ: BodyVars = 27;
-const  BodyInvInertiaXX: BodyVars = 28;
-const  BodyInvInertiaYX: BodyVars = 29;
-const  BodyInvInertiaZX: BodyVars = 30;
-const  BodyInvInertiaXY: BodyVars = 31;
-const  BodyInvInertiaYY: BodyVars = 32;
-const  BodyInvInertiaZY: BodyVars = 33;
-const  BodyInvInertiaXZ: BodyVars = 34;
-const  BodyInvInertiaYZ: BodyVars = 35;
-const  BodyInvInertiaZZ: BodyVars = 36;
+const  BodyDynamic: BodyVars = 1;
+const  BodyWorld: BodyVars = 2;
+const  BodyGroup: BodyVars = 3;
+const  BodySizeX: BodyVars = 4;
+const  BodySizeY: BodyVars = 5;
+const  BodySizeZ: BodyVars = 6;
+const  BodyMass: BodyVars = 7;
+const  BodyInvMass: BodyVars = 8;
+const  BodyBounce: BodyVars = 9;
+const  BodyFriction: BodyVars = 10;
+const  BodyPosX: BodyVars = 11;
+const  BodyPosY: BodyVars = 12;
+const  BodyPosZ: BodyVars = 13;
+const  BodyQuatX: BodyVars = 14;
+const  BodyQuatY: BodyVars = 15;
+const  BodyQuatZ: BodyVars = 16;
+const  BodyQuatW: BodyVars = 17;
+const  BodyComX: BodyVars = 18;
+const  BodyComY: BodyVars = 19;
+const  BodyComZ: BodyVars = 20;
+const  BodyInertiaXX: BodyVars = 21;
+const  BodyInertiaYX: BodyVars = 22;
+const  BodyInertiaZX: BodyVars = 23;
+const  BodyInertiaXY: BodyVars = 24;
+const  BodyInertiaYY: BodyVars = 25;
+const  BodyInertiaZY: BodyVars = 26;
+const  BodyInertiaXZ: BodyVars = 27;
+const  BodyInertiaYZ: BodyVars = 28;
+const  BodyInertiaZZ: BodyVars = 29;
+const  BodyInvInertiaXX: BodyVars = 30;
+const  BodyInvInertiaYX: BodyVars = 31;
+const  BodyInvInertiaZX: BodyVars = 32;
+const  BodyInvInertiaXY: BodyVars = 33;
+const  BodyInvInertiaYY: BodyVars = 34;
+const  BodyInvInertiaZY: BodyVars = 35;
+const  BodyInvInertiaXZ: BodyVars = 36;
+const  BodyInvInertiaYZ: BodyVars = 37;
+const  BodyInvInertiaZZ: BodyVars = 38;
 
 //////// import: "contact.go"
 alias ContactVars = i32; //enums:enum
 const  ContactA: ContactVars = 0;
 const  ContactB: ContactVars = 1;
-const  ContactNormX: ContactVars = 2;
-const  ContactNormY: ContactVars = 3;
-const  ContactNormZ: ContactVars = 4;
-const  ContactPointX: ContactVars = 5;
-const  ContactPointY: ContactVars = 6;
-const  ContactPointZ: ContactVars = 7;
-const  ContactDist: ContactVars = 8;
+const  ContactAPointX: ContactVars = 2;
+const  ContactAPointY: ContactVars = 3;
+const  ContactAPointZ: ContactVars = 4;
+const  ContactBPointX: ContactVars = 5;
+const  ContactBPointY: ContactVars = 6;
+const  ContactBPointZ: ContactVars = 7;
+const  ContactADepth: ContactVars = 8;
+const  ContactBDepth: ContactVars = 9;
+const  ContactNormX: ContactVars = 10;
+const  ContactNormY: ContactVars = 11;
+const  ContactNormZ: ContactVars = 12;
+const  ContactForceX: ContactVars = 13;
+const  ContactForceY: ContactVars = 14;
+const  ContactForceZ: ContactVars = 15;
 
 //////// import: "control.go"
 alias JointControlVars = i32; //enums:enum
@@ -95,7 +104,7 @@ const  JointTargetVel: JointControlVars = 2;
 
 //////// import: "dynamics.go"
 alias DynamicVars = i32; //enums:enum
-const  DynIndex: DynamicVars = 0;
+const  DynBody: DynamicVars = 0;
 const  DynPosX: DynamicVars = 1;
 const  DynPosY: DynamicVars = 2;
 const  DynPosZ: DynamicVars = 3;
@@ -128,22 +137,22 @@ const  DynAngDeltaX: DynamicVars = 29;
 const  DynAngDeltaY: DynamicVars = 30;
 const  DynAngDeltaZ: DynamicVars = 31;
 fn SetDynamicForce(idx: i32,cni: i32, force: vec3<f32>) {
-	Dynamics[Index3D(TensorStrides[40], TensorStrides[41], TensorStrides[42], u32(idx), u32(cni), u32(DynForceX))] = force.x;
-	Dynamics[Index3D(TensorStrides[40], TensorStrides[41], TensorStrides[42], u32(idx), u32(cni), u32(DynForceY))] = force.y;
-	Dynamics[Index3D(TensorStrides[40], TensorStrides[41], TensorStrides[42], u32(idx), u32(cni), u32(DynForceZ))] = force.z;
+	Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynForceX))] = force.x;
+	Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynForceY))] = force.y;
+	Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynForceZ))] = force.z;
 }
 fn SetDynamicTorque(idx: i32,cni: i32, torque: vec3<f32>) {
-	Dynamics[Index3D(TensorStrides[40], TensorStrides[41], TensorStrides[42], u32(idx), u32(cni), u32(DynTorqueX))] = torque.x;
-	Dynamics[Index3D(TensorStrides[40], TensorStrides[41], TensorStrides[42], u32(idx), u32(cni), u32(DynTorqueY))] = torque.y;
-	Dynamics[Index3D(TensorStrides[40], TensorStrides[41], TensorStrides[42], u32(idx), u32(cni), u32(DynTorqueZ))] = torque.z;
+	Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynTorqueX))] = torque.x;
+	Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynTorqueY))] = torque.y;
+	Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynTorqueZ))] = torque.z;
 }
 
 //////// import: "enumgen.go"
-const BodyVarsN: BodyVars = 37;
-const ContactVarsN: ContactVars = 9;
+const BodyVarsN: BodyVars = 39;
+const ContactVarsN: ContactVars = 16;
 const JointControlVarsN: JointControlVars = 3;
 const DynamicVarsN: DynamicVars = 32;
-const GPUVarsN: GPUVars = 8;
+const GPUVarsN: GPUVars = 9;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
 const JointDoFVarsN: JointDoFVars = 7;
@@ -244,15 +253,15 @@ struct PhysParams {
 	AngularDamping: f32,
 	ContactWeighting: i32,
 	Restitution: i32,
+	Cur: i32,
+	Next: i32,
+	BodiesN: i32,
 	DynamicsN: i32,
 	JointsN: i32,
 	JointDoFsN: i32,
 	BodyJointsMax: i32,
-	Cur: i32,
-	Next: i32,
+	BodyCollidePairsN: i32,
 	pad: i32,
-	pad1: i32,
-	pad2: i32,
 	Gravity: vec4<f32>,
 }
 

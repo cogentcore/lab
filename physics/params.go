@@ -46,6 +46,15 @@ type PhysParams struct {
 	// Restitution
 	Restitution slbool.Bool `default:"false"`
 
+	// Index for the current state (0 or 1, alternates with Next).
+	Cur int32 `edit:"-"`
+
+	// Index for the next state (1 or 0, alternates with Cur).
+	Next int32 `edit:"-"`
+
+	// BodiesN is number of rigid bodies.
+	BodiesN int32 `edit:"-"`
+
 	// DynamicsN is number of dynamics bodies.
 	DynamicsN int32 `edit:"-"`
 
@@ -58,13 +67,11 @@ type PhysParams struct {
 	// BodyJointsMax is max number of joints per body + 1 for actual n.
 	BodyJointsMax int32 `edit:"-"`
 
-	// Index for the current state (0 or 1, alternates with Next).
-	Cur int32 `edit:"-"`
+	// BodyCollidePairsN is the total number of pre-compiled collision pairs
+	// to examine.
+	BodyCollidePairsN int32 `edit:"-"`
 
-	// Index for the next state (1 or 0, alternates with Cur).
-	Next int32 `edit:"-"`
-
-	pad, pad1, pad2 int32
+	pad int32
 
 	// Gravity is the gravity acceleration function
 	Gravity slvec.Vector3

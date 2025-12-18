@@ -21,8 +21,29 @@ const (
 	// BodyShape is the shape type of the object, as a Shapes type.
 	BodyShape BodyVars = iota
 
-	// BodyWorldIndex partitions body into different worlds; Global are -1
-	BodyWorldIndex
+	// BodyDynamic is the index into Dynamics for this body,
+	// which is -1 for static bodies. Use this to get current
+	// Pos and Quat values for a dynamic body.
+	BodyDynamic
+
+	// BodyWorld partitions bodies into different worlds for
+	// collision detection: Global bodies = -1 can collide with
+	// everything; otherwise only items within the same world collide.
+	BodyWorld
+
+	// BodyGroup partitions bodies within worlds into different groups
+	// for collision detection. 0 does not collide with anything.
+	// Negative numbers are global within a world, except they don't
+	// collide amongst themselves (all non-dynamic bodies should go
+	// in -1 because they don't collide amongst each-other, but do
+	// potentially collide with dynamics).
+	// Positive numbers only collide amongst themselves, and with
+	// negative groups, but not other positive groups. This is for
+	// more special-purpose dynamics: in general use 1 for all dynamic
+	// bodies. There is an automatic constraint that the two objects
+	// within a single joint do not collide with each other, so this
+	// does not need to be handled here.
+	BodyGroup
 
 	// BodySize is the size of the object (values depend on shape type).
 	BodySizeX
@@ -93,6 +114,30 @@ func SetBodyShape(idx int32, shape Shapes) {
 	Bodies.Set(math.Float32frombits(uint32(shape)), int(idx), int(BodyShape))
 }
 
+func SetBodyDynamic(idx, dynIdx int32) {
+	Bodies.Set(math.Float32frombits(uint32(dynIdx)), int(idx), int(BodyDynamic))
+}
+
+func GetBodyDynamic(idx int32) int32 {
+	return int32(math.Float32bits(Bodies.Value(int(idx), int(BodyDynamic))))
+}
+
+func SetBodyWorld(idx, w int32) {
+	Bodies.Set(math.Float32frombits(uint32(w)), int(idx), int(BodyWorld))
+}
+
+func GetBodyWorld(idx int32) int32 {
+	return int32(math.Float32bits(Bodies.Value(int(idx), int(BodyWorld))))
+}
+
+func SetBodyGroup(idx, w int32) {
+	Bodies.Set(math.Float32frombits(uint32(w)), int(idx), int(BodyGroup))
+}
+
+func GetBodyGroup(idx int32) int32 {
+	return int32(math.Float32bits(Bodies.Value(int(idx), int(BodyGroup))))
+}
+
 func BodySize(idx int32) math32.Vector3 {
 	return math32.Vec3(Bodies.Value(int(idx), int(BodySizeX)), Bodies.Value(int(idx), int(BodySizeY)), Bodies.Value(int(idx), int(BodySizeZ)))
 }
@@ -122,6 +167,26 @@ func SetBodyQuat(idx int32, rot math32.Quat) {
 	Bodies.Set(rot.Y, int(idx), int(BodyQuatY))
 	Bodies.Set(rot.Z, int(idx), int(BodyQuatZ))
 	Bodies.Set(rot.W, int(idx), int(BodyQuatW))
+}
+
+// BodyDynamicPos gets the position for dynamic bodies or
+// static position if not dynamic. cni is the current / next index.
+func BodyDynamicPos(idx, cni int32) math32.Vector3 {
+	didx := GetBodyDynamic(idx)
+	if didx < 0 {
+		return BodyPos(idx)
+	}
+	return DynamicPos(didx, cni)
+}
+
+// BodyDynamicQuat gets the quat rotation for dynamic bodies or
+// static rotation if not dynamic. cni is the current / next index.
+func BodyDynamicQuat(idx, cni int32) math32.Quat {
+	didx := GetBodyDynamic(idx)
+	if didx < 0 {
+		return BodyQuat(idx)
+	}
+	return DynamicQuat(didx, cni)
 }
 
 func BodyCom(idx int32) math32.Vector3 {

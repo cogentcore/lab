@@ -26,7 +26,7 @@ func InitDynamics(i uint32) { //gosl:kernel
 		return
 	}
 	for cni := range 2 {
-		bi := DynamicIndex(ii, int32(cni))
+		bi := DynamicBody(ii)
 		Dynamics.Set(Bodies.Value(int(bi), int(BodyPosX)), int(ii), int(cni), int(DynPosX))
 		Dynamics.Set(Bodies.Value(int(bi), int(BodyPosY)), int(ii), int(cni), int(DynPosY))
 		Dynamics.Set(Bodies.Value(int(bi), int(BodyPosZ)), int(ii), int(cni), int(DynPosZ))
@@ -49,7 +49,7 @@ func DynamicsCurToNext(i uint32) { //gosl:kernel
 	if ii >= params.DynamicsN {
 		return
 	}
-	for di := DynIndex; di < DynamicVarsN; di++ {
+	for di := DynBody; di < DynamicVarsN; di++ {
 		Dynamics.Set(Dynamics.Value(int(ii), int(params.Cur), int(di)), int(ii), int(params.Next), int(di))
 	}
 }
@@ -121,7 +121,7 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 	if di >= params.DynamicsN {
 		return
 	}
-	bi := DynamicIndex(di, params.Cur)
+	bi := DynamicBody(di)
 
 	invMass := Bodies.Value(int(bi), int(BodyInvMass))
 	inertia := BodyInertia(bi)
@@ -130,7 +130,7 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 	com := BodyCom(bi)
 
 	// current pos
-	p0 := DynamicPos(di, params.Cur)
+	r0 := DynamicPos(di, params.Cur)
 	q0 := DynamicQuat(di, params.Cur)
 
 	// current deltas
@@ -141,7 +141,7 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 	f0 := DynamicForce(di, params.Next)
 	t0 := DynamicTorque(di, params.Next)
 
-	pcom := slmath.MulQuatVector(q0, com).Add(p0)
+	pcom := slmath.MulQuatVector(q0, com).Add(r0)
 
 	// linear part
 	v1 := v0.Add(f0.MulScalar(invMass).Add(params.Gravity.V().MulScalar(OneIfNonzero(invMass))).MulScalar(params.Dt))
@@ -173,7 +173,7 @@ func StepBodyDeltas(i uint32) { //gosl:kernel
 	if di >= params.DynamicsN {
 		return
 	}
-	bi := DynamicIndex(di, params.Cur)
+	bi := DynamicBody(di)
 
 	invMass := Bodies.Value(int(bi), int(BodyInvMass))
 	if invMass == 0 {
@@ -183,7 +183,7 @@ func StepBodyDeltas(i uint32) { //gosl:kernel
 	invInertia := BodyInvInertia(bi)
 
 	// starting pos (from force integration)
-	p0 := DynamicPos(di, params.Next)
+	r0 := DynamicPos(di, params.Next)
 	q0 := DynamicQuat(di, params.Next)
 
 	// starting deltas
@@ -213,7 +213,7 @@ func StepBodyDeltas(i uint32) { //gosl:kernel
 
 	// update position
 	com := BodyCom(bi)
-	pcom := slmath.MulQuatVector(q0, com).Add(p0)
+	pcom := slmath.MulQuatVector(q0, com).Add(r0)
 
 	p1 := pcom.Add(dp.MulScalar(params.Dt))
 	p1 = p1.Sub(slmath.MulQuatVector(q1, com))

@@ -43,10 +43,16 @@ var (
 	//gosl:dims 3
 	BodyJoints *tensor.Int32
 
+	// BodyCollidePairs are pairs of Body indexes that could potentially collide
+	// based on precomputed collision logic, using World, Group, and Joint indexes.
+	// [BodyCollidePairsN][2]
+	//gosl:dims 2
+	BodyCollidePairs *tensor.Int32
+
 	// Dynamics are the dynamic rigid body elements: these actually move.
 	// Two alternating states are used: Params.Cur and Params.Next.
 	// [dyn body][cur/next][DynamicVarsN]
-	//gosl:group Bodies
+	//gosl:group Dynamics
 	//gosl:dims 3
 	Dynamics *tensor.Float32
 
