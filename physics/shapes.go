@@ -11,10 +11,15 @@ import "cogentcore.org/core/math32"
 //gosl:start
 
 // Shapes are elemental shapes for rigid bodies.
+// In general, size dimensions are half values
+// (e.g., radius, half-height, etc), which is natural for
+// center-based body coordinates.
 type Shapes int32 //enums:enum
 
 const (
 	// Box is a 3D rectalinear shape.
+	// The sizes are _half_ sizes along each dimension,
+	// relative to the center.
 	Box Shapes = iota
 
 	// Sphere. SizeX is the radius.
@@ -22,12 +27,12 @@ const (
 
 	// Cylinder, natively oriented vertically along the Y axis.
 	// If one radius is 0, then it is a cone.
-	// SizeX = bottom radius, SizeY = height in Y axis, SizeZ = top radius.
+	// SizeX = bottom radius, SizeY = half-height in Y axis, SizeZ = top radius.
 	Cylinder
 
 	// Capsule, which is a cylinder with half-spheres on the ends.
 	// Natively oriented vertically along the Y axis.
-	// SizeX = bottom radius, SizeY = height, SizeZ = top radius.
+	// SizeX = bottom radius, SizeY = half-height, SizeZ = top radius.
 	Capsule
 )
 
@@ -39,16 +44,13 @@ func (sh Shapes) BBox(sz math32.Vector3) math32.Box3 {
 
 	switch sh {
 	case Box:
-		bb.SetMinMax(sz.MulScalar(-.5), sz.MulScalar(.5))
+		bb.SetMinMax(sz.Negate(), sz)
 	case Sphere:
 		bb.SetMinMax(math32.Vec3(-sz.X, -sz.X, -sz.X), math32.Vec3(sz.X, sz.X, sz.X))
 	case Cylinder:
-		h2 := sz.Y / 2
-		bb.SetMinMax(math32.Vec3(-sz.X, -h2, -sz.X), math32.Vec3(sz.Z, h2, sz.Z))
+		bb.SetMinMax(math32.Vec3(-sz.X, -sz.Y, -sz.X), math32.Vec3(sz.Z, sz.Y, sz.Z))
 	case Capsule:
-		th := sz.X + sz.Y + sz.Z
-		h2 := th / 2
-		bb.SetMinMax(math32.Vec3(-sz.X, -h2, -sz.X), math32.Vec3(sz.Z, h2, sz.Z))
+		bb.SetMinMax(math32.Vec3(-sz.X, -sz.Y-sz.X, -sz.X), math32.Vec3(sz.Z, sz.Y+sz.Z, sz.Z))
 	}
 	// bb.Area = 2*sz.X + 2*sz.Y + 2*sz.Z
 	// bb.Volume = sz.X * sz.Y * sz.Z
@@ -66,13 +68,14 @@ func (sh Shapes) Inertia(sz math32.Vector3, mass float32) math32.Matrix3 {
 		ia := 2.0 / 5.0 * mass * r * r
 		inertia = math32.Mat3(ia, 0.0, 0.0, 0.0, ia, 0.0, 0.0, 0.0, ia)
 	case Box:
-		w := sz.X
-		h := sz.Y
-		d := sz.Z
+		w := 2 * sz.X
+		h := 2 * sz.Y
+		d := 2 * sz.Z
 		ia := 1.0 / 12.0 * mass * (h*h + d*d)
 		ib := 1.0 / 12.0 * mass * (w*w + d*d)
 		ic := 1.0 / 12.0 * mass * (w*w + h*h)
 		inertia = math32.Mat3(ia, 0.0, 0.0, 0.0, ib, 0.0, 0.0, 0.0, ic)
+		// todo: others:
 	}
 	return inertia
 }

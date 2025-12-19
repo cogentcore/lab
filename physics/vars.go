@@ -45,7 +45,9 @@ var (
 
 	// BodyCollidePairs are pairs of Body indexes that could potentially collide
 	// based on precomputed collision logic, using World, Group, and Joint indexes.
-	// [BodyCollidePairsN][2]
+	// The last entry is updated to contain the actual number of contacts generated
+	// on each collision iteration.
+	// [BodyCollidePairsN+1][2]
 	//gosl:dims 2
 	BodyCollidePairs *tensor.Int32
 

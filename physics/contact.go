@@ -70,7 +70,7 @@ func GroupsCollide(ga, gb int32) bool {
 	return false
 }
 
-// CollisionBroad
+// CollisionBroad performs broad-phase collision detection, generating Contacts.
 func CollisionBroad(i uint32) { //gosl:kernel
 	params := GetParams(0)
 	ci := int32(i)
@@ -240,8 +240,9 @@ func (wl *World) ConfigBodyCollidePairs() {
 		}
 	}
 	params.BodyCollidePairsN = int32(np)
-	pt.SetShapeSizes(np, 2)
+	pt.SetShapeSizes(np+1, 2) // last one is for current contacts count
 	wl.BodyCollidePairs = pt
+	wl.Contacts.SetShapeSizes(np, int(ContactVarsN))
 	fmt.Println("body pairs over alloc", nalc, np)
 }
 

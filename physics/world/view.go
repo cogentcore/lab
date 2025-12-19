@@ -138,7 +138,7 @@ func (vw *View) BoxInit(sld *xyz.Solid) {
 		xyz.NewBox(sld.Scene, mnm, 1, 1, 1)
 	}
 	sld.SetMeshName(mnm)
-	sld.Pose.Scale = vw.Size
+	sld.Pose.Scale = vw.Size.MulScalar(2)
 	vw.UpdateColor(vw.Color, sld)
 	sld.Updater(func() {
 		vw.UpdatePose(sld)
@@ -155,6 +155,7 @@ func (vw *View) CylinderInit(sld *xyz.Solid) {
 	}
 	sld.SetMeshName(mnm)
 	sld.Pose.Scale = vw.Size
+	sld.Pose.Scale.Y *= 2
 	vw.UpdateColor(vw.Color, sld)
 	sld.Updater(func() {
 		vw.UpdatePose(sld)
@@ -170,7 +171,7 @@ func (vw *View) CapsuleInit(sld *xyz.Solid) {
 		ms = xyz.NewCapsule(sld.Scene, mnm, 1, .2, 32, 1)
 	}
 	sld.SetMeshName(mnm)
-	sld.Pose.Scale.Set(vw.Size.X/.2, vw.Size.Y/1.4, vw.Size.Z/.2)
+	sld.Pose.Scale.Set(vw.Size.X/.2, 2*(vw.Size.Y/1.4), vw.Size.Z/.2)
 	vw.UpdateColor(vw.Color, sld)
 	sld.Updater(func() {
 		vw.UpdatePose(sld)

@@ -50,13 +50,13 @@ func main() {
 	rot := math32.NewQuat(0, 0, 0, 1)
 	thick := float32(0.1)
 	wr.NewBody(wl, "floor", physics.Box, "grey", math32.Vec3(10, thick, 10),
-		math32.Vec3(0, -thick/2, 0), rot)
+		math32.Vec3(0, -thick, 0), rot)
 
-	height := float32(1)
+	height := float32(.5)
 	width := height * .4
 	depth := height * .15
 	b1 := wr.NewDynamic(wl, "body", physics.Box, "purple", 1.0, math32.Vec3(width, height, depth),
-		math32.Vec3(0, height/2, 0), rot)
+		math32.Vec3(0, height, 0), rot)
 
 	bj := wl.NewJointRevolute(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height/2, 0), math32.Vec3(0, 1, 0))
 	// bj := wl.NewJointPrismatic(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height/2, 0), math32.Vec3(1, 0, 0))

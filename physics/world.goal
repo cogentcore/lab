@@ -40,7 +40,9 @@ type World struct {
 
 	// BodyCollidePairs are pairs of Body indexes that could potentially collide
 	// based on precomputed collision logic, using World, Group, and Joint indexes.
-	// [BodyCollidePairsN][2]
+	// The last entry is updated to contain the actual number of contacts generated
+	// on each collision iteration.
+	// [BodyCollidePairsN+1][2]
 	BodyCollidePairs *tensor.Int32
 
 	// Dynamics are the dynamic rigid body elements: these actually move.
@@ -48,8 +50,10 @@ type World struct {
 	// [body][cur/next][DynamicVarsN]
 	Dynamics *tensor.Float32 `display:"no-inline"`
 
-	// Contacts are points of contact between bodies.
-	// [contact][ContactVarsN]
+	// Contacts are points of contact between bodies. Max possible size
+	// is BodyCollidePairsN, but actual size on given run is updated
+	// into last entry in BodyCollidePairs.
+	// [BodyCollidePairsN][ContactVarsN]
 	Contacts *tensor.Float32 `display:"no-inline"`
 
 	// JointControls are dynamic joint control inputs, per joint DoF
@@ -83,15 +87,16 @@ func (wl *World) Init() {
 // Use this for Static elements; NewDynamic for dynamic elements.
 func (wl *World) NewBody(shape Shapes, size, pos math32.Vector3, rot math32.Quat) int32 {
 	sizes := wl.Bodies.ShapeSizes()
-	n := int32(sizes[0])
-	wl.Bodies.SetShapeSizes(int(n+1), int(BodyVarsN))
-	wl.Params[0].BodiesN = n + 1
-	SetBodyShape(n, shape)
-	SetBodyDynamic(n, -1)
-	SetBodySize(n, size)
-	SetBodyPos(n, pos)
-	SetBodyQuat(n, rot)
-	return n
+	idx := int32(sizes[0])
+	wl.Bodies.SetShapeSizes(int(idx+1), int(BodyVarsN))
+	wl.Params[0].BodiesN = idx + 1
+	SetBodyShape(idx, shape)
+	SetBodyDynamic(idx, -1)
+	SetBodySize(idx, size)
+	SetBodyPos(idx, pos)
+	SetBodyQuat(idx, rot)
+	SetBodyGroup(idx, -1) // assume static
+	return idx
 }
 
 // NewDynamic adds a new dynamic body with given parameters. Returns the index.
@@ -103,6 +108,7 @@ func (wl *World) NewDynamic(shape Shapes, mass float32, size, pos math32.Vector3
 	wl.Params[0].DynamicsN = dynIdx + 1
 	SetDynamicBody(dynIdx, bodyIdx)
 	SetBodyDynamic(bodyIdx, dynIdx)
+	SetBodyGroup(bodyIdx, 1) // dynamic
 	wl.SetMass(bodyIdx, shape, size, mass)
 	return
 }

@@ -247,35 +247,39 @@ func (ev *Env) MakeRoom(name string, width, depth, height, thick float32) {
 	wr := ev.World
 	wl := ev.Physics
 	rot := math32.NewQuat(0, 0, 0, 1)
-	wr.NewBody(wl, name+"_floor", physics.Box, "grey", math32.Vec3(width, thick, depth),
-		math32.Vec3(0, -thick/2, 0), rot)
-	wr.NewBody(wl, name+"_back-wall", physics.Box, "blue", math32.Vec3(width, height, thick),
-		math32.Vec3(0, height/2, -depth/2), rot)
-	wr.NewBody(wl, name+"_left-wall", physics.Box, "red", math32.Vec3(thick, height, depth),
-		math32.Vec3(-width/2, height/2, 0), rot)
-	wr.NewBody(wl, name+"_right-wall", physics.Box, "green", math32.Vec3(thick, height, depth),
-		math32.Vec3(width/2, height/2, 0), rot)
-	wr.NewBody(wl, name+"_front-wall", physics.Box, "yellow", math32.Vec3(width, height, thick),
-		math32.Vec3(0, height/2, depth/2), rot)
+	hw := width / 2
+	hd := depth / 2
+	hh := height / 2
+	ht := thick / 2
+	wr.NewBody(wl, name+"_floor", physics.Box, "grey", math32.Vec3(hw, ht, hd),
+		math32.Vec3(0, -ht, 0), rot)
+	wr.NewBody(wl, name+"_back-wall", physics.Box, "blue", math32.Vec3(hw, hh, ht),
+		math32.Vec3(0, hh, -hd), rot)
+	wr.NewBody(wl, name+"_left-wall", physics.Box, "red", math32.Vec3(ht, hh, hd),
+		math32.Vec3(-hw, hh, 0), rot)
+	wr.NewBody(wl, name+"_right-wall", physics.Box, "green", math32.Vec3(ht, hh, hd),
+		math32.Vec3(hw, hh, 0), rot)
+	wr.NewBody(wl, name+"_front-wall", physics.Box, "yellow", math32.Vec3(hw, hh, ht),
+		math32.Vec3(0, hh, hd), rot)
 }
 
 // MakeEmer constructs a new Emer virtual robot of given height (e.g., 1).
 func (ev *Env) MakeEmer(name string, height float32) {
 	wr := ev.World
 	wl := ev.Physics
-	width := height * .4
-	depth := height * .15
-	headsz := depth * 1.5
+	hh := height / 2
+	hw := hh * .4
+	hd := hh * .15
+	headsz := hd * 1.5
 	eyesz := headsz * .2
-	hhsz := .5 * headsz
 	mass := float32(50) // kg
 	rot := math32.NewQuat(0, 0, 0, 1)
-	ev.Emer = wr.NewDynamic(wl, name+"_body", physics.Box, "purple", mass, math32.Vec3(width, height, depth),
-		math32.Vec3(0, height/2, 0), rot)
-	// body := physics.NewCapsule(emr, "body", math32.Vec3(0, height / 2, 0), height, width/2)
-	// body := physics.NewCylinder(emr, "body", math32.Vec3(0, height / 2, 0), height, width/2)
+	ev.Emer = wr.NewDynamic(wl, name+"_body", physics.Box, "purple", mass, math32.Vec3(hw, hh, hd),
+		math32.Vec3(0, hh, 0), rot)
+	// body := physics.NewCapsule(emr, "body", math32.Vec3(0, hh, 0), hh, hw)
+	// body := physics.NewCylinder(emr, "body", math32.Vec3(0, hh, 0), hh, hw)
 
-	headPos := math32.Vec3(0, height+hhsz, 0)
+	headPos := math32.Vec3(0, 2*hh+headsz, 0)
 	head := wr.NewDynamic(wl, name+"_head", physics.Box, "tan", mass*.1, math32.Vec3(headsz, headsz, headsz),
 		headPos, rot)
 	head.InitView = func(sld *xyz.Solid) {
@@ -290,10 +294,10 @@ func (ev *Env) MakeEmer(name string, height float32) {
 	}
 	wl.NewJointBall(ev.Emer.DynamicIndex, head.DynamicIndex, head.Pos, math32.Vec3(0, 0, 0))
 	vw := wr.NewDynamic(wl, name+"_eye-l", physics.Box, "green", mass*.001, math32.Vec3(eyesz, eyesz*.5, eyesz*.2),
-		headPos.Add(math32.Vec3(-hhsz*.6, headsz*.1, -(hhsz+eyesz*.3))), rot)
+		headPos.Add(math32.Vec3(-headsz*.6, headsz*.1, -(headsz+eyesz*.3))), rot)
 	wl.NewJointBall(ev.Emer.DynamicIndex, vw.DynamicIndex, vw.Pos, math32.Vec3(0, 0, 0))
 	ev.EyeR = wr.NewDynamic(wl, name+"_eye-r", physics.Box, "green", mass*.001, math32.Vec3(eyesz, eyesz*.5, eyesz*.2),
-		headPos.Add(math32.Vec3(hhsz*.6, headsz*.1, -(hhsz+eyesz*.3))), rot)
+		headPos.Add(math32.Vec3(headsz*.6, headsz*.1, -(headsz+eyesz*.3))), rot)
 	wl.NewJointBall(ev.Emer.DynamicIndex, ev.EyeR.DynamicIndex, ev.EyeR.Pos, math32.Vec3(0, 0, 0))
 }
 
