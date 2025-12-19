@@ -10,6 +10,8 @@ import "cogentcore.org/core/math32"
 
 //gosl:start
 
+// newton: geometry/types.py
+
 // Shapes are elemental shapes for rigid bodies.
 // In general, size dimensions are half values
 // (e.g., radius, half-height, etc), which is natural for
@@ -17,43 +19,117 @@ import "cogentcore.org/core/math32"
 type Shapes int32 //enums:enum
 
 const (
-	// Box is a 3D rectalinear shape.
-	// The sizes are _half_ sizes along each dimension,
-	// relative to the center.
-	Box Shapes = iota
+	// Plane cannot be a dynamic shape, but is most efficient for
+	// collision computations. Use size = 0 for an infinite plane.
+	Plane Shapes = iota
 
 	// Sphere. SizeX is the radius.
 	Sphere
-
-	// Cylinder, natively oriented vertically along the Y axis.
-	// If one radius is 0, then it is a cone.
-	// SizeX = bottom radius, SizeY = half-height in Y axis, SizeZ = top radius.
-	Cylinder
 
 	// Capsule, which is a cylinder with half-spheres on the ends.
 	// Natively oriented vertically along the Y axis.
 	// SizeX = bottom radius, SizeY = half-height, SizeZ = top radius.
 	Capsule
+
+	// todo: Ellipsoid goes here
+
+	// Cylinder, natively oriented vertically along the Y axis.
+	// If one radius is 0, then it is a cone.
+	// SizeX = bottom radius, SizeY = half-height in Y axis, SizeZ = top radius.
+	// Cylinder can not collide with a Box.
+	Cylinder
+
+	// Box is a 3D rectalinear shape.
+	// The sizes are _half_ sizes along each dimension,
+	// relative to the center.
+	Box
 )
 
+// ShapePairContacts returns the number of contact points possible
+// for given pair of shapes. a <= b ordering. returns from a to b,
+// ba is from b to a (mostly 0).
+// infPlane means that a is a Plane and it is infinite (size = 0).
+func ShapePairContacts(a, b Shapes, infPlane bool, ba *int32) int32 {
+	*ba = 0
+	switch a {
+	case Plane:
+		switch b {
+		case Plane:
+			return 0
+		case Sphere:
+			return 1
+		case Capsule:
+			if infPlane {
+				return 2
+			} else {
+				return 2 + 4
+			}
+		case Cylinder:
+			return 4
+		case Box:
+			if infPlane {
+				return 8
+			} else {
+				return 8 + 4
+			}
+		default:
+			return 0
+		}
+	case Sphere:
+		return 1
+	case Capsule:
+		switch b {
+		case Capsule:
+			return 2
+		case Box:
+			return 8
+		default:
+			return 0
+		}
+	case Cylinder:
+		return 0 // no box collisions!
+	case Box:
+		*ba = 12
+		return 12
+	default:
+		return 0
+	}
+}
+
 //gosl:end
+
+// Radius returns the shape radius for given size.
+// this is used for broad-phase collision.
+func (sh Shapes) Radius(sz math32.Vector3) float32 {
+	switch sh {
+	case Plane:
+		if sz.X > 0 {
+			return sz.Length()
+		}
+		return 1.0e6 // infinite
+	case Sphere:
+		return sz.X
+	case Capsule, Cylinder:
+		return max(sz.X, sz.Z) + sz.Y // over-estimate for cylinder
+	case Box:
+		return sz.Length()
+	}
+	return 0
+}
 
 // BBox returns the bounding box for shape of given size.
 func (sh Shapes) BBox(sz math32.Vector3) math32.Box3 {
 	var bb math32.Box3
-
 	switch sh {
-	case Box:
-		bb.SetMinMax(sz.Negate(), sz)
 	case Sphere:
 		bb.SetMinMax(math32.Vec3(-sz.X, -sz.X, -sz.X), math32.Vec3(sz.X, sz.X, sz.X))
-	case Cylinder:
-		bb.SetMinMax(math32.Vec3(-sz.X, -sz.Y, -sz.X), math32.Vec3(sz.Z, sz.Y, sz.Z))
 	case Capsule:
 		bb.SetMinMax(math32.Vec3(-sz.X, -sz.Y-sz.X, -sz.X), math32.Vec3(sz.Z, sz.Y+sz.Z, sz.Z))
+	case Cylinder:
+		bb.SetMinMax(math32.Vec3(-sz.X, -sz.Y, -sz.X), math32.Vec3(sz.Z, sz.Y, sz.Z))
+	case Box:
+		bb.SetMinMax(sz.Negate(), sz)
 	}
-	// bb.Area = 2*sz.X + 2*sz.Y + 2*sz.Z
-	// bb.Volume = sz.X * sz.Y * sz.Z
 	return bb
 }
 

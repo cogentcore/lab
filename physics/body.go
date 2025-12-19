@@ -104,6 +104,9 @@ const (
 	BodyInvInertiaXZ
 	BodyInvInertiaYZ
 	BodyInvInertiaZZ
+
+	// radius for broadphase collision
+	BodyRadius
 )
 
 func GetBodyShape(idx int32) Shapes {

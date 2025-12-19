@@ -118,14 +118,16 @@ func (vw *View) Init(sld *xyz.Solid) {
 		return
 	}
 	switch vw.Shape {
-	case physics.Box:
-		vw.BoxInit(sld)
-	case physics.Cylinder:
-		vw.CylinderInit(sld)
-	case physics.Capsule:
-		vw.CapsuleInit(sld)
+	case physics.Plane:
+		vw.PlaneInit(sld)
 	case physics.Sphere:
 		vw.SphereInit(sld)
+	case physics.Capsule:
+		vw.CapsuleInit(sld)
+	case physics.Cylinder:
+		vw.CylinderInit(sld)
+	case physics.Box:
+		vw.BoxInit(sld)
 	}
 }
 
@@ -139,6 +141,27 @@ func (vw *View) BoxInit(sld *xyz.Solid) {
 	}
 	sld.SetMeshName(mnm)
 	sld.Pose.Scale = vw.Size.MulScalar(2)
+	vw.UpdateColor(vw.Color, s6ld)
+	sld.Updater(func() {
+		vw.UpdatePose(sld)
+	})
+}
+
+// PlaneInit is the default InitView function for [physics.Plane].
+// Only updates Pose in Updater: if node will change size or color,
+// add updaters for that.
+func (vw *View) PlaneInit(sld *xyz.Solid) {
+	mnm := "physics.Plane"
+	if ms, _ := sld.Scene.MeshByName(mnm); ms == nil {
+		xyz.NewPlane(sld.Scene, mnm, 1, 1)
+	}
+	sld.SetMeshName(mnm)
+	if vw.Size.X == 0 {
+		inf := 1e6
+		sld.Pose.Scale = math32.Vec3(inf, inf, 1)
+	} else {
+		sld.Pose.Scale = vw.Size.MulScalar(2)
+	}
 	vw.UpdateColor(vw.Color, sld)
 	sld.Updater(func() {
 		vw.UpdatePose(sld)

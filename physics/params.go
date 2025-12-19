@@ -46,6 +46,10 @@ type PhysParams struct {
 	// Restitution
 	Restitution slbool.Bool `default:"false"`
 
+	// Contact margin is the extra distance for broadphase collision
+	// around rigid bodies.
+	ContactMargin float32
+
 	// Index for the current state (0 or 1, alternates with Next).
 	Cur int32 `edit:"-"`
 
@@ -71,8 +75,6 @@ type PhysParams struct {
 	// to examine.
 	BodyCollidePairsN int32 `edit:"-"`
 
-	pad int32
-
 	// Gravity is the gravity acceleration function
 	Gravity slvec.Vector3
 }
@@ -90,6 +92,7 @@ func (pr *PhysParams) Defaults() {
 	pr.AngularDamping = 0
 	pr.ContactWeighting.SetBool(true)
 	pr.Restitution.SetBool(false)
+	pr.ContactMargin = 0.1
 }
 
 //gosl:end

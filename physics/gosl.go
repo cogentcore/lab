@@ -112,7 +112,9 @@ func GPUInit() {
 		var pl *gpu.ComputePipeline
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/CollisionBroad.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(1, "Bodies")
 		pl.AddVarUsed(1, "BodyCollidePairs")
+		pl.AddVarUsed(2, "Dynamics")
 		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/DeltasFromJoints.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")

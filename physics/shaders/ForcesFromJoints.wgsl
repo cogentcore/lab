@@ -76,6 +76,7 @@ const  BodyInvInertiaZY: BodyVars = 35;
 const  BodyInvInertiaXZ: BodyVars = 36;
 const  BodyInvInertiaYZ: BodyVars = 37;
 const  BodyInvInertiaZZ: BodyVars = 38;
+const  BodyRadius: BodyVars = 39;
 
 //////// import: "contact.go"
 alias ContactVars = i32; //enums:enum
@@ -148,7 +149,7 @@ fn SetDynamicTorque(idx: i32,cni: i32, torque: vec3<f32>) {
 }
 
 //////// import: "enumgen.go"
-const BodyVarsN: BodyVars = 39;
+const BodyVarsN: BodyVars = 40;
 const ContactVarsN: ContactVars = 16;
 const JointControlVarsN: JointControlVars = 3;
 const DynamicVarsN: DynamicVars = 32;
@@ -156,7 +157,7 @@ const GPUVarsN: GPUVars = 9;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
 const JointDoFVarsN: JointDoFVars = 7;
-const ShapesN: Shapes = 4;
+const ShapesN: Shapes = 5;
 
 //////// import: "joint.go"
 const JointLimitUnlimited = 1e10;
@@ -253,6 +254,7 @@ struct PhysParams {
 	AngularDamping: f32,
 	ContactWeighting: i32,
 	Restitution: i32,
+	ContactMargin: f32,
 	Cur: i32,
 	Next: i32,
 	BodiesN: i32,
@@ -261,16 +263,16 @@ struct PhysParams {
 	JointDoFsN: i32,
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
-	pad: i32,
 	Gravity: vec4<f32>,
 }
 
 //////// import: "shapes.go"
 alias Shapes = i32; //enums:enum
-const  Box: Shapes = 0;
+const  Plane: Shapes = 0;
 const  Sphere: Shapes = 1;
-const  Cylinder: Shapes = 2;
-const  Capsule: Shapes = 3;
+const  Capsule: Shapes = 2;
+const  Cylinder: Shapes = 3;
+const  Box: Shapes = 4;
 
 //////// import: "slmath-matrix3.go"
 

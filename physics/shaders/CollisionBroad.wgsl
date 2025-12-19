@@ -7,9 +7,13 @@ var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
 var<storage, read> Params: array<PhysParams>;
 // // Bodies are the rigid body elements (dynamic and static), // specifying the constant, non-dynamic properties, // which is initial state for dynamics. // [body][BodyVarsN] 
+@group(1) @binding(0)
+var<storage, read_write> Bodies: array<f32>;
 @group(1) @binding(4)
 var<storage, read_write> BodyCollidePairs: array<i32>;
 // // Dynamics are the dynamic rigid body elements: these actually move. // Two alternating states are used: Params.Cur and Params.Next. // [dyn body][cur/next][DynamicVarsN] 
+@group(2) @binding(0)
+var<storage, read_write> Dynamics: array<f32>;
 // // JointControls are dynamic joint control inputs, per joint DoF // (in correspondence with [JointDoFs]). This can be uploaded to the // GPU at every step. // [dof][JointControlVarsN] 
 
 alias GPUVars = i32;
@@ -22,6 +26,10 @@ fn main(@builtin(workgroup_id) wgid: vec3<u32>, @builtin(num_workgroups) nwg: ve
 
 fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
 	return s0 * i0 + s1 * i1;
+}
+
+fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
+	return s0 * i0 + s1 * i1 + s2 * i2;
 }
 
 
@@ -68,6 +76,34 @@ const  BodyInvInertiaZY: BodyVars = 35;
 const  BodyInvInertiaXZ: BodyVars = 36;
 const  BodyInvInertiaYZ: BodyVars = 37;
 const  BodyInvInertiaZZ: BodyVars = 38;
+const  BodyRadius: BodyVars = 39;
+fn GetBodyShape(idx: i32) -> Shapes {
+	return Shapes(bitcast<u32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyShape))]));
+}
+fn GetBodyDynamic(idx: i32) -> i32 {
+	return i32(bitcast<u32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyDynamic))]));
+}
+fn BodySize(idx: i32) -> vec3<f32> {
+	return vec3<f32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodySizeX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodySizeY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodySizeZ))]);
+}
+fn BodyPos(idx: i32) -> vec3<f32> {
+	return vec3<f32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyPosX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyPosY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyPosZ))]);
+}
+fn BodyQuat(idx: i32) -> vec4<f32> {
+	return vec4<f32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyQuatX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyQuatY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyQuatZ))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyQuatW))]);
+}
+fn BodyDynamicPos(idx: i32,cni: i32) -> vec3<f32> {
+	var didx = GetBodyDynamic(idx);
+	if (didx < 0) {
+		return BodyPos(idx);
+	}return DynamicPos(didx, cni);
+}
+fn BodyDynamicQuat(idx: i32,cni: i32) -> vec4<f32> {
+	var didx = GetBodyDynamic(idx);
+	if (didx < 0) {
+		return BodyQuat(idx);
+	}return DynamicQuat(didx, cni);
+}
 
 //////// import: "contact.go"
 alias ContactVars = i32; //enums:enum
@@ -90,8 +126,38 @@ const  ContactForceZ: ContactVars = 15;
 fn CollisionBroad(i: u32) { //gosl:kernel
 let params = Params[0];; var ci = i32(i);; if (ci >= params.BodyCollidePairsN) {
 	return;
-}; var ba = BodyCollidePairs[Index2D(TensorStrides[40], TensorStrides[41], u32(ci), u32(0))];; var bb = BodyCollidePairs[Index2D(TensorStrides[40], TensorStrides[41],
-u32(ci), u32(1))];; _ = ba;; _ = bb; }
+}; var ba = BodyCollidePairs[Index2D(TensorStrides[40], TensorStrides[41], u32(ci), u32(0))];; var bb = BodyCollidePairs[Index2D(TensorStrides[40], TensorStrides[41], u32(ci), u32(1))];; var xwAR = BodyDynamicPos(ba, params.Cur);; var xwAQ = BodyDynamicQuat(ba, params.Cur);; var xwBR = BodyDynamicPos(bb, params.Cur);;
+var sA = GetBodyShape(ba);; var sB = GetBodyShape(bb);; var rb = Bodies[Index2D(TensorStrides[0], TensorStrides[1],
+u32(bb), u32(BodyRadius))];;
+var margin = params.ContactMargin;;
+var infPlane = false;; if (sA == Plane) {
+	var szA = BodySize(ba);
+	if (szA.x == 0) {
+		infPlane = true;
+	}
+	var queryB = MulSpatialPoint(xwAR, xwAQ, xwBR);
+	var closest = ClosestPointPlane(szA, queryB);
+	var d = Length3(queryB-(closest));
+	if (d > rb+margin) {
+		return;
+	}
+} else {
+	var d = Length3(xwAR-(xwBR));
+	var ra = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(ba), u32(BodyRadius))];
+	if (d > ra+rb+margin) {
+		return;
+	}
+};
+var ncB: i32;; var ncA = ShapePairContacts(sA, sB, infPlane, &ncB);; _ = ncA;
+}
+fn ClosestPointPlane(sz: vec3<f32>,pt: vec3<f32>) -> vec3<f32> {
+	var cp = pt;
+	if (sz.x == 0.0) {
+		return cp;
+	}
+	cp.x = clamp(pt.x, -sz.x, sz.x);
+	cp.y = clamp(pt.y, -sz.y, sz.y);return cp;
+}
 
 //////// import: "control.go"
 alias JointControlVars = i32; //enums:enum
@@ -133,9 +199,15 @@ const  DynDeltaZ: DynamicVars = 28;
 const  DynAngDeltaX: DynamicVars = 29;
 const  DynAngDeltaY: DynamicVars = 30;
 const  DynAngDeltaZ: DynamicVars = 31;
+fn DynamicPos(idx: i32,cni: i32) -> vec3<f32> {
+	return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosZ))]);
+}
+fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> {
+	return vec4<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatZ))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatW))]);
+}
 
 //////// import: "enumgen.go"
-const BodyVarsN: BodyVars = 39;
+const BodyVarsN: BodyVars = 40;
 const ContactVarsN: ContactVars = 16;
 const JointControlVarsN: JointControlVars = 3;
 const DynamicVarsN: DynamicVars = 32;
@@ -143,7 +215,7 @@ const GPUVarsN: GPUVars = 9;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
 const JointDoFVarsN: JointDoFVars = 7;
-const ShapesN: Shapes = 4;
+const ShapesN: Shapes = 5;
 
 //////// import: "joint.go"
 const JointLimitUnlimited = 1e10;
@@ -228,6 +300,7 @@ struct PhysParams {
 	AngularDamping: f32,
 	ContactWeighting: i32,
 	Restitution: i32,
+	ContactMargin: f32,
 	Cur: i32,
 	Next: i32,
 	BodiesN: i32,
@@ -236,22 +309,100 @@ struct PhysParams {
 	JointDoFsN: i32,
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
-	pad: i32,
 	Gravity: vec4<f32>,
 }
 
 //////// import: "shapes.go"
 alias Shapes = i32; //enums:enum
-const  Box: Shapes = 0;
+const  Plane: Shapes = 0;
 const  Sphere: Shapes = 1;
-const  Cylinder: Shapes = 2;
-const  Capsule: Shapes = 3;
+const  Capsule: Shapes = 2;
+const  Cylinder: Shapes = 3;
+const  Box: Shapes = 4;
+fn ShapePairContacts(a: Shapes,b: Shapes, infPlane: bool, ba: ptr<function,i32>) -> i32 {
+	*ba = i32(0);
+	switch (a) {
+	case Plane: {
+		switch (b) {
+		case Plane: {
+			return i32(0);
+		}
+		case Sphere: {
+			return i32(1);
+		}
+		case Capsule: {
+			if (infPlane) {
+				return i32(2);
+			} else {
+				return 2 + 4;
+			}
+		}
+		case Cylinder: {
+			return i32(4);
+		}
+		case Box: {
+			if (infPlane) {
+				return i32(8);
+			} else {
+				return 8 + 4;
+			}
+		}
+		default: {
+			return i32(0);
+		}
+		}
+	}
+	case Sphere: {
+		return i32(1);
+	}
+	case Capsule: {
+		switch (b) {
+		case Capsule: {
+			return i32(2);
+		}
+		case Box: {
+			return i32(8);
+		}
+		default: {
+			return i32(0);
+		}
+		}
+	}
+	case Cylinder: {
+		return i32( // no box collisions!
+		0);
+	}
+	case Box: {
+		*ba = i32(12);
+		return i32(12);
+	}
+	default: {
+		return i32(0);
+	}
+	}
+}
 
 //////// import: "slmath-matrix3.go"
 
 //////// import: "slmath-quaternion.go"
+fn MulQuatVector(q: vec4<f32>, v: vec3<f32>) -> vec3<f32> {
+	var xyz = vec3<f32>(q.x, q.y, q.z);
+	var t = MulScalar3(Cross3(xyz, v), f32(f32(2)));return v+(MulScalar3(t, q.w))+(Cross3(xyz, t));
+}
+fn MulSpatialPoint(xP: vec3<f32>, xQ: vec4<f32>, p: vec3<f32>) -> vec3<f32> {
+	var dp = MulQuatVector(xQ, p);return dp+(xP);
+}
 
 //////// import: "slmath-vector3.go"
+fn MulScalar3(v: vec3<f32>, s: f32) -> vec3<f32> {
+	return vec3<f32>(v.x*s, v.y*s, v.z*s);
+}
+fn Length3(v: vec3<f32>) -> f32 {
+	return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+}
+fn Cross3(v: vec3<f32>,o: vec3<f32>) -> vec3<f32> {
+	return vec3<f32>(v.y*o.z-v.z*o.y, v.z*o.x-v.x*o.z, v.x*o.y-v.y*o.x);
+}
 
 //////// import: "step.go"
 

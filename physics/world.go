@@ -102,7 +102,11 @@ func (wl *World) NewBody(shape Shapes, size, pos math32.Vector3, rot math32.Quat
 }
 
 // NewDynamic adds a new dynamic body with given parameters. Returns the index.
+// Shape cannot be [Plane].
 func (wl *World) NewDynamic(shape Shapes, mass float32, size, pos math32.Vector3, rot math32.Quat) (bodyIdx, dynIdx int32) {
+	if shape == Plane {
+		panic("physics.NewDynamic: shape cannot be Plane")
+	}
 	bodyIdx = wl.NewBody(shape, size, pos, rot)
 	sizes := wl.Dynamics.ShapeSizes()
 	dynIdx = int32(sizes[0])

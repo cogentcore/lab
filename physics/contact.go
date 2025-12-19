@@ -7,8 +7,11 @@
 package physics
 
 import (
-	"cogentcore.org/lab/tensor"
 	"fmt"
+
+	"cogentcore.org/core/math32"
+	"cogentcore.org/lab/gosl/slmath"
+	"cogentcore.org/lab/tensor"
 )
 
 //gosl:start
@@ -70,6 +73,8 @@ func GroupsCollide(ga, gb int32) bool {
 	return false
 }
 
+// geometry/kernels.py/broadphase_collision_pairs
+
 // CollisionBroad performs broad-phase collision detection, generating Contacts.
 func CollisionBroad(i uint32) { //gosl:kernel
 	params := GetParams(0)
@@ -79,97 +84,71 @@ func CollisionBroad(i uint32) { //gosl:kernel
 	}
 	ba := BodyCollidePairs.Value(int(ci), int(0))
 	bb := BodyCollidePairs.Value(int(ci), int(1))
-	_ = ba
-	_ = bb
 
-	// rigid_a = shape_body[shape_a]
-	// if rigid_a == -1:
-	//
-	//	X_ws_a = shape_transform[shape_a]
-	//
-	// else:
-	//
-	//	X_ws_a = body_q[rigid_a] * shape_transform[shape_a]
-	//
-	// rigid_b = shape_body[shape_b]
-	// if rigid_b == -1:
-	//
-	//	X_ws_b = shape_transform[shape_b]
-	//
-	// else:
-	//
-	//	X_ws_b = body_q[rigid_b] * shape_transform[shape_b]
-	//
-	// type_a = shape_type[shape_a]
-	// type_b = shape_type[shape_b]
-	// # ensure unique ordering of shape pairs
-	// if type_a > type_b:
-	//
-	//	shape_tmp = shape_a
-	//	shape_a = shape_b
-	//	shape_b = shape_tmp
-	//
-	//	type_tmp = type_a
-	//	type_a = type_b
-	//	type_b = type_tmp
-	//
-	//	X_tmp = X_ws_a
-	//	X_ws_a = X_ws_b
-	//	X_ws_b = X_tmp
-	//
-	// p_b = wp.transform_get_translation(X_ws_b)
-	// r_b = shape_radius[shape_b]
-	// if type_a == GeoType.PLANE and type_b == GeoType.PLANE:
-	//
-	//	return
-	//
-	// # Use per-shape contact margins
+	xwAR := BodyDynamicPos(ba, params.Cur)
+	xwAQ := BodyDynamicQuat(ba, params.Cur)
+	xwBR := BodyDynamicPos(bb, params.Cur)
+	// xwBQ := BodyDynamicQuat(bb, params.Cur)
+
+	// note: at <= bt
+	sA := GetBodyShape(ba)
+	sB := GetBodyShape(bb)
+
+	rb := Bodies.Value(int(bb), int(BodyRadius))
+	//    if type_a == GeoType.PLANE and type_b == GeoType.PLANE:
+	//        return
+
+	// could be per-shape
 	// margin = wp.max(shape_contact_margin[shape_a], shape_contact_margin[shape_b])
-	//
-	// # bounding sphere check
-	// if type_a == GeoType.PLANE:
-	//
-	//	query_b = wp.transform_point(wp.transform_inverse(X_ws_a), p_b)
-	//	scale = shape_scale[shape_a]
-	//	closest = closest_point_plane(scale[0], scale[1], query_b)
-	//	d = wp.length(query_b - closest)
-	//	if d > r_b + margin:
-	//	    return
-	//
-	// else:
-	//
-	//	p_a = wp.transform_get_translation(X_ws_a)
-	//	d = wp.length(p_a - p_b)
-	//	r_a = shape_radius[shape_a]
-	//	r_b = shape_radius[shape_b]
-	//	if d > r_a + r_b + margin:
-	//	    return
-	//
-	// pair_index_ab = shape_a * num_shapes + shape_b
-	// pair_index_ba = shape_b * num_shapes + shape_a
-	//
-	// num_contacts_a, num_contacts_b = count_contact_points_for_pair(
-	//
-	//	shape_a, shape_b, type_a, type_b, shape_scale, shape_source_ptr
-	//
-	// )
-	//
-	// if contact_point_limit:
-	//
-	//	# assign a limit per contact pair, if max_per_pair is set
-	//	if max_per_pair > 0:
-	//	    # distribute maximum number of contact per pair in both directions
-	//	    max_per_pair_half = max_per_pair // 2
-	//	    if num_contacts_b > 0:
-	//	        contact_point_limit[pair_index_ab] = max_per_pair_half
-	//	        contact_point_limit[pair_index_ba] = max_per_pair_half
-	//	    else:
-	//	        contact_point_limit[pair_index_ab] = max_per_pair
-	//	        contact_point_limit[pair_index_ba] = 0
-	//	else:
-	//	    contact_point_limit[pair_index_ab] = 0
-	//	    contact_point_limit[pair_index_ba] = 0
-	//
+	margin := params.ContactMargin
+
+	// bounding sphere check
+	infPlane := false
+	if sA == Plane {
+		szA := BodySize(ba)
+		if szA.X == 0 {
+			infPlane = true
+		}
+		queryB := slmath.MulSpatialPoint(xwAR, xwAQ, xwBR)
+		closest := ClosestPointPlane(szA, queryB)
+		d := slmath.Length3(queryB.Sub(closest))
+		if d > rb+margin {
+			return
+		}
+	} else {
+		d := slmath.Length3(xwAR.Sub(xwBR))
+		ra := Bodies.Value(int(ba), int(BodyRadius))
+		if d > ra+rb+margin {
+			return
+		}
+	}
+	//    pair_index_ab = shape_a * num_shapes + shape_b
+	//    pair_index_ba = shape_b * num_shapes + shape_a
+
+	var ncB int32
+	ncA := ShapePairContacts(sA, sB, infPlane, &ncB)
+	_ = ncA
+
+	// ignoring this for now:
+	//    if contact_point_limit:
+	//        # assign a limit per contact pair, if max_per_pair is set
+	//        if max_per_pair > 0:
+	//            # distribute maximum number of contact per pair in both directions
+	//            max_per_pair_half = max_per_pair // 2
+	//            if num_contacts_b > 0:
+	//                contact_point_limit[pair_index_ab] = max_per_pair_half
+	//                contact_point_limit[pair_index_ba] = max_per_pair_half
+	//            else:
+	//                contact_point_limit[pair_index_ab] = max_per_pair
+	//                contact_point_limit[pair_index_ba] = 0
+	//        else:
+	//            contact_point_limit[pair_index_ab] = 0
+	//            contact_point_limit[pair_index_ba] = 0
+
+	// now we just write results to big buffer of contact points.
+	// Key point is that Contacts needs to have up to 12 elements per pair possible!
+	// just allocate in order.
+
 	// # Allocate contact points using reusable method
 	// _success = allocate_contact_points(
 	//
@@ -184,6 +163,18 @@ func CollisionBroad(i uint32) { //gosl:kernel
 	//	contact_point_id,
 	//
 	// )
+}
+
+// ClosestPointPlane projects the point onto the quad in
+// the xy plane (if size > 0.0, otherwise infinite.
+func ClosestPointPlane(sz, pt math32.Vector3) math32.Vector3 {
+	cp := pt
+	if sz.X == 0.0 {
+		return cp
+	}
+	cp.X = math32.Clamp(pt.X, -sz.X, sz.X)
+	cp.Y = math32.Clamp(pt.Y, -sz.Y, sz.Y)
+	return cp
 }
 
 //gosl:end
@@ -204,7 +195,8 @@ func (wl *World) IsChildDynamic(dip, dic int32) bool {
 
 // ConfigBodyCollidePairs compiles a list of body paris that could collide
 // based on world and group settings and not being direct parent
-// child relationship within a joint.
+// child relationship within a joint. Result has A with lower shape type,
+// so that shapes are in a canonical order.
 func (wl *World) ConfigBodyCollidePairs() {
 	params := &wl.Params[0]
 	nb := params.BodiesN
@@ -234,8 +226,16 @@ func (wl *World) ConfigBodyCollidePairs() {
 				pt.SetShapeSizes(nalc, 2)
 				fmt.Println("body pairs realoc", nalc)
 			}
-			pt.Set(a, int(np), int(0))
-			pt.Set(b, int(np), int(1))
+
+			sA := GetBodyShape(a)
+			sB := GetBodyShape(b)
+			if sA <= sB {
+				pt.Set(a, int(np), int(0))
+				pt.Set(b, int(np), int(1))
+			} else {
+				pt.Set(b, int(np), int(0))
+				pt.Set(a, int(np), int(1))
+			}
 			np++
 		}
 	}
