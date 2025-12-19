@@ -42,9 +42,7 @@ type World struct {
 
 	// BodyCollidePairs are pairs of Body indexes that could potentially collide
 	// based on precomputed collision logic, using World, Group, and Joint indexes.
-	// The last entry is updated to contain the actual number of contacts generated
-	// on each collision iteration.
-	// [BodyCollidePairsN+1][2]
+	// [BodyCollidePairsN][2]
 	BodyCollidePairs *tensor.Int32
 
 	// Dynamics are the dynamic rigid body elements: these actually move.
@@ -52,9 +50,15 @@ type World struct {
 	// [body][cur/next][DynamicVarsN]
 	Dynamics *tensor.Float32 `display:"no-inline"`
 
+	// ContactCount has number of points of contact between bodies.
+	// params.Cur is written to and params.Next is zeroed in
+	// narrow-phase contacts processing, so it is ready for next time.
+	// [2]
+	ContactCount *tensor.Int32 `display:"no-inline"`
+
 	// Contacts are points of contact between bodies. Max possible size
 	// is BodyCollidePairsN, but actual size on given run is updated
-	// into last entry in BodyCollidePairs.
+	// into ContactCount.
 	// [BodyCollidePairsN][ContactVarsN]
 	Contacts *tensor.Float32 `display:"no-inline"`
 
@@ -80,6 +84,7 @@ func (wl *World) Init() {
 	wl.JointDoFs = tensor.NewFloat32(0, int(JointDoFVarsN))
 	wl.BodyJoints = tensor.NewInt32(0, 2, 2)
 	wl.Dynamics = tensor.NewFloat32(0, 2, int(DynamicVarsN))
+	wl.ContactCount = tensor.NewInt32(2)
 	wl.Contacts = tensor.NewFloat32(0, int(ContactVarsN))
 	wl.JointControls = tensor.NewFloat32(0, int(JointControlVarsN))
 	wl.SetAsCurrentVars()
@@ -140,6 +145,7 @@ func (wl *World) SetAsCurrentVars() {
 	BodyJoints = wl.BodyJoints
 	JointDoFs = wl.JointDoFs
 	Dynamics = wl.Dynamics
+	ContactCount = wl.ContactCount
 	Contacts = wl.Contacts
 	JointControls = wl.JointControls
 }
@@ -156,5 +162,5 @@ func (wl *World) GPUInit() {
 // the GPU. This is done in GPUInit, and if current switched.
 func (wl *World) ToGPUInfra() {
 	ToGPUTensorStrides()
-	ToGPU(ParamsVar, BodiesVar, JointsVar, BodyJointsVar, JointDoFsVar)
+	ToGPU(ParamsVar, BodiesVar, JointsVar, BodyJointsVar, JointDoFsVar, DynamicsVar, ContactCountVar, ContactsVar)
 }

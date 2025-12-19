@@ -6,7 +6,7 @@ package physics
 
 import "cogentcore.org/lab/tensor"
 
-//go:generate gosl -exclude=Update,Defaults,ShouldDisplay -max-buffer-size=2147483616
+//go:generate gosl -keep -exclude=Update,Defaults,ShouldDisplay -max-buffer-size=2147483616
 
 //gosl:start
 
@@ -46,7 +46,7 @@ var (
 	// BodyCollidePairs are pairs of Body indexes that could potentially collide
 	// based on precomputed collision logic, using World, Group, and Joint indexes.
 	// The last entry is updated to contain the actual number of contacts generated
-	// on each collision iteration.
+	// in the CollisionBroad routine on each collision iteration.
 	// [BodyCollidePairsN+1][2]
 	//gosl:dims 2
 	BodyCollidePairs *tensor.Int32
@@ -57,6 +57,13 @@ var (
 	//gosl:group Dynamics
 	//gosl:dims 3
 	Dynamics *tensor.Float32
+
+	// ContactCount has number of points of contact between bodies.
+	// params.Cur is written to and params.Next is zeroed in
+	// narrow-phase contacts processing, so it is ready for next time.
+	// [2]
+	//gosl:dims 1
+	ContactCount *tensor.Int32
 
 	// Contacts are points of contact between bodies.
 	// [contact][ContactVarsN]

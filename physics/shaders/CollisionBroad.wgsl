@@ -14,6 +14,10 @@ var<storage, read_write> BodyCollidePairs: array<i32>;
 // // Dynamics are the dynamic rigid body elements: these actually move. // Two alternating states are used: Params.Cur and Params.Next. // [dyn body][cur/next][DynamicVarsN] 
 @group(2) @binding(0)
 var<storage, read_write> Dynamics: array<f32>;
+@group(2) @binding(1)
+var<storage, read_write> ContactCount: array<atomic<i32>>;
+@group(2) @binding(2)
+var<storage, read_write> Contacts: array<f32>;
 // // JointControls are dynamic joint control inputs, per joint DoF // (in correspondence with [JointDoFs]). This can be uploaded to the // GPU at every step. // [dof][JointControlVarsN] 
 
 alias GPUVars = i32;
@@ -30,6 +34,10 @@ fn Index2D(s0: u32, s1: u32, i0: u32, i1: u32) -> u32 {
 
 fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 	return s0 * i0 + s1 * i1 + s2 * i2;
+}
+
+fn Index1D(s0: u32, i0: u32) -> u32 {
+	return s0 * i0;
 }
 
 
@@ -148,8 +156,21 @@ var infPlane = false;; if (sA == Plane) {
 		return;
 	}
 };
-var ncB: i32;; var ncA = ShapePairContacts(sA, sB, infPlane, &ncB);; _ = ncA;
-}
+var ncB: i32;; var ncA = ShapePairContacts(sA, sB, infPlane, &ncB);; _ = ncA;;
+var nci = atomicAdd(&ContactCount[i32(params.Cur)], ncA+ncB);; // returns previous?
+nci += ncA + ncB;; // wgsl returns orig, Go returns new
+if (nci > params.ContactsMax) {
+	return;
+}; for (var i=0; i<ncA; i++) {
+	Contacts[Index2D(TensorStrides[70], TensorStrides[71], u32(nci + i), u32(ContactA))] = ba;
+	Contacts[Index2D(TensorStrides[70], TensorStrides[71],
+	u32(nci + i), u32(ContactB))] = bb;
+}; for (var i=0; i<ncB; i++) {
+	Contacts[Index2D(TensorStrides[70], TensorStrides[71], // flip??
+	u32(nci + ncA + i), u32(ContactA))] = ba;
+	Contacts[Index2D(TensorStrides[70], TensorStrides[71],
+	u32(nci + ncA + i), u32(ContactA))] = bb;
+} }
 fn ClosestPointPlane(sz: vec3<f32>,pt: vec3<f32>) -> vec3<f32> {
 	var cp = pt;
 	if (sz.x == 0.0) {
@@ -211,7 +232,7 @@ const BodyVarsN: BodyVars = 40;
 const ContactVarsN: ContactVars = 16;
 const JointControlVarsN: JointControlVars = 3;
 const DynamicVarsN: DynamicVars = 32;
-const GPUVarsN: GPUVars = 9;
+const GPUVarsN: GPUVars = 10;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
 const JointDoFVarsN: JointDoFVars = 7;

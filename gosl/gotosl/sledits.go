@@ -56,6 +56,7 @@ var Replaces = []Replace{
 	{[]byte("math32.Vec4"), []byte("vec4<f32>")},
 	{[]byte("math32.NewQuat"), []byte("vec4<f32>")},
 	{[]byte("math32.Mat3"), []byte("mat3x3f")},
+	{[]byte(".Values["), []byte("[")},
 	{[]byte("float32"), []byte("f32")},
 	{[]byte("float64"), []byte("f64")}, // TODO: not yet supported
 	{[]byte("uint32"), []byte("u32")},

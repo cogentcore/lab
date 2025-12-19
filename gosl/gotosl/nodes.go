@@ -1719,7 +1719,18 @@ func (p *printer) getNamedType(typ types.Type) (*types.Named, error) {
 func (p *printer) globalVarBasic(idx *ast.IndexExpr) {
 	id, ok := idx.X.(*ast.Ident)
 	if !ok {
-		return
+		if sel, ok := idx.X.(*ast.SelectorExpr); ok {
+			if sel.Sel.Name != "Values" {
+				return
+			}
+			id, ok = sel.X.(*ast.Ident)
+			if !ok {
+				return
+			}
+			// fall through with this..
+		} else {
+			return
+		}
 	}
 	st := p.GoToSL
 	gvr := st.GlobalVar(id.Name)
@@ -1728,6 +1739,9 @@ func (p *printer) globalVarBasic(idx *ast.IndexExpr) {
 	}
 	if p.curFunc != nil {
 		p.curFunc.AddVarUsed(gvr)
+		if p.curMethIsAtomic {
+			p.curFunc.AddAtomic(gvr)
+		}
 	}
 }
 

@@ -115,7 +115,7 @@ const  JointControlForce: JointControlVars = 0;
 const  JointTargetPos: JointControlVars    = 1;
 const  JointTargetVel: JointControlVars = 2;
 fn JointControl(idx: i32,dof: i32, vr: JointControlVars) -> f32 {
-	return JointControls[Index2D(TensorStrides[70], TensorStrides[71], u32(JointDoFIndex(idx, dof)), u32(vr))];
+	return JointControls[Index2D(TensorStrides[80], TensorStrides[81], u32(JointDoFIndex(idx, dof)), u32(vr))];
 }
 
 //////// import: "dynamics.go"
@@ -173,7 +173,7 @@ const BodyVarsN: BodyVars = 40;
 const ContactVarsN: ContactVars = 16;
 const JointControlVarsN: JointControlVars = 3;
 const DynamicVarsN: DynamicVars = 32;
-const GPUVarsN: GPUVars = 9;
+const GPUVarsN: GPUVars = 10;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
 const JointDoFVarsN: JointDoFVars = 7;

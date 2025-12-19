@@ -6,6 +6,7 @@ package physics
 
 import (
 	"fmt"
+	"sync/atomic"
 
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/gosl/slmath"
@@ -144,9 +145,27 @@ func CollisionBroad(i uint32) { //gosl:kernel
 	//            contact_point_limit[pair_index_ba] = 0
 
 	// now we just write results to big buffer of contact points.
-	// Key point is that Contacts needs to have up to 12 elements per pair possible!
-	// just allocate in order.
 	
+	nci := atomic.AddInt32(&ContactCount.Values[int(params.Cur)], ncA + ncB) // returns previous?
+
+	//gosl:wgsl
+	// nci += ncA + ncB // wgsl returns orig, Go returns new
+	//gosl:end
+
+	if nci > params.ContactsMax {
+		return
+	}
+
+	for i := range ncA {
+		// todo: accessors
+		Contacts[nci + i, ContactA] = ba
+		Contacts[nci + i, ContactB] = bb
+		// etc
+	}
+	for i := range ncB {
+		Contacts[nci + ncA + i, ContactA] = ba // flip??
+		Contacts[nci + ncA + i, ContactA] = bb
+	}
 	//    # Allocate contact points using reusable method
 	//    _success = allocate_contact_points(
 	//        num_contacts_a,
@@ -236,7 +255,7 @@ func (wl *World) ConfigBodyCollidePairs() {
 		}
 	}
 	params.BodyCollidePairsN = int32(np)
-	pt.SetShapeSizes(np+1, 2) // last one is for current contacts count
+	pt.SetShapeSizes(np, 2)
 	wl.BodyCollidePairs = pt
 	wl.Contacts.SetShapeSizes(np, int(ContactVarsN))
 	fmt.Println("body pairs over alloc", nalc, np)

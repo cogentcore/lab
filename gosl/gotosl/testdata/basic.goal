@@ -156,6 +156,7 @@ func (ps *ParamStruct) IntegFromRaw(idx int) float32 {
 	integ += newVal
 	Data[idx, Integ] = integ
 	Data[idx, Exp] = math32.Exp(-integ)
+	Data.Values[idx*2] = 55.0
 
 	a := ps.VXYf.X
 	b := ps.VXYf.V()
@@ -170,6 +171,9 @@ func (ps *ParamStruct) IntegFromRaw(idx int) float32 {
 	ctx := GetCtx(0)
 	ps.AnotherMeth(ctx, idx, &a)
 	bv := Big[idx, Integ]
+	//gosl:wgsl
+	// bv *= 2 // will be uncommented in wgsl
+	//gosl:end
 	Big[idx, Exp] = bv*2 + c.Y + d.Z
 	return Data[idx, Exp]
 }

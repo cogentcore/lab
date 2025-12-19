@@ -192,20 +192,20 @@ func (i *DynamicVars) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "DynamicVars")
 }
 
-var _GPUVarsValues = []GPUVars{0, 1, 2, 3, 4, 5, 6, 7, 8}
+var _GPUVarsValues = []GPUVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 // GPUVarsN is the highest valid value for type GPUVars, plus one.
 //
 //gosl:start
-const GPUVarsN GPUVars = 9
+const GPUVarsN GPUVars = 10
 
 //gosl:end
 
-var _GPUVarsValueMap = map[string]GPUVars{`ParamsVar`: 0, `BodiesVar`: 1, `JointsVar`: 2, `JointDoFsVar`: 3, `BodyJointsVar`: 4, `BodyCollidePairsVar`: 5, `DynamicsVar`: 6, `ContactsVar`: 7, `JointControlsVar`: 8}
+var _GPUVarsValueMap = map[string]GPUVars{`ParamsVar`: 0, `BodiesVar`: 1, `JointsVar`: 2, `JointDoFsVar`: 3, `BodyJointsVar`: 4, `BodyCollidePairsVar`: 5, `DynamicsVar`: 6, `ContactCountVar`: 7, `ContactsVar`: 8, `JointControlsVar`: 9}
 
-var _GPUVarsDescMap = map[GPUVars]string{0: ``, 1: ``, 2: ``, 3: ``, 4: ``, 5: ``, 6: ``, 7: ``, 8: ``}
+var _GPUVarsDescMap = map[GPUVars]string{0: ``, 1: ``, 2: ``, 3: ``, 4: ``, 5: ``, 6: ``, 7: ``, 8: ``, 9: ``}
 
-var _GPUVarsMap = map[GPUVars]string{0: `ParamsVar`, 1: `BodiesVar`, 2: `JointsVar`, 3: `JointDoFsVar`, 4: `BodyJointsVar`, 5: `BodyCollidePairsVar`, 6: `DynamicsVar`, 7: `ContactsVar`, 8: `JointControlsVar`}
+var _GPUVarsMap = map[GPUVars]string{0: `ParamsVar`, 1: `BodiesVar`, 2: `JointsVar`, 3: `JointDoFsVar`, 4: `BodyJointsVar`, 5: `BodyCollidePairsVar`, 6: `DynamicsVar`, 7: `ContactCountVar`, 8: `ContactsVar`, 9: `JointControlsVar`}
 
 // String returns the string representation of this GPUVars value.
 func (i GPUVars) String() string { return enums.String(i, _GPUVarsMap) }
