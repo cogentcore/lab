@@ -268,38 +268,39 @@ func (ev *Env) MakeEmer(name string, height float32) {
 	headsz := depth * 1.5
 	eyesz := headsz * .2
 	hhsz := .5 * headsz
+	mass := float32(50) // kg
 	rot := math32.NewQuat(0, 0, 0, 1)
-	ev.Emer = wr.NewDynamic(wl, name+"_body", physics.Box, "purple", math32.Vec3(width, height, depth),
+	ev.Emer = wr.NewDynamic(wl, name+"_body", physics.Box, "purple", mass, math32.Vec3(width, height, depth),
 		math32.Vec3(0, height/2, 0), rot)
 	// body := physics.NewCapsule(emr, "body", math32.Vec3(0, height / 2, 0), height, width/2)
 	// body := physics.NewCylinder(emr, "body", math32.Vec3(0, height / 2, 0), height, width/2)
 
 	headPos := math32.Vec3(0, height+hhsz, 0)
-	vw := wr.NewDynamic(wl, name+"_head", physics.Box, "tan", math32.Vec3(headsz, headsz, headsz),
+	head := wr.NewDynamic(wl, name+"_head", physics.Box, "tan", mass*.1, math32.Vec3(headsz, headsz, headsz),
 		headPos, rot)
-	vw.InitView = func(sld *xyz.Solid) {
-		vw.BoxInit(sld)
+	head.InitView = func(sld *xyz.Solid) {
+		head.BoxInit(sld)
 		sld.Updater(func() {
-			clr := vw.Color
+			clr := head.Color
 			if ev.EmerAngry {
 				clr = "pink"
 			}
-			vw.UpdateColor(clr, sld)
+			head.UpdateColor(clr, sld)
 		})
 	}
-	wl.NewJoint(physics.Fixed, ev.Emer.Index, vw.Index, vw.Pos)
-	vw = wr.NewDynamic(wl, name+"_eye-l", physics.Box, "green", math32.Vec3(eyesz, eyesz*.5, eyesz*.2),
+	wl.NewJointBall(ev.Emer.DynamicIndex, head.DynamicIndex, head.Pos, math32.Vec3(0, 0, 0))
+	vw := wr.NewDynamic(wl, name+"_eye-l", physics.Box, "green", mass*.001, math32.Vec3(eyesz, eyesz*.5, eyesz*.2),
 		headPos.Add(math32.Vec3(-hhsz*.6, headsz*.1, -(hhsz+eyesz*.3))), rot)
-	wl.NewJoint(physics.Glue, ev.Emer.Index, vw.Index, vw.Pos)
-	ev.EyeR = wr.NewDynamic(wl, name+"_eye-r", physics.Box, "green", math32.Vec3(eyesz, eyesz*.5, eyesz*.2),
+	wl.NewJointBall(ev.Emer.DynamicIndex, vw.DynamicIndex, vw.Pos, math32.Vec3(0, 0, 0))
+	ev.EyeR = wr.NewDynamic(wl, name+"_eye-r", physics.Box, "green", mass*.001, math32.Vec3(eyesz, eyesz*.5, eyesz*.2),
 		headPos.Add(math32.Vec3(hhsz*.6, headsz*.1, -(hhsz+eyesz*.3))), rot)
-	wl.NewJoint(physics.Glue, ev.Emer.Index, ev.EyeR.Index, ev.EyeR.Pos)
+	wl.NewJointBall(ev.Emer.DynamicIndex, ev.EyeR.DynamicIndex, ev.EyeR.Pos, math32.Vec3(0, 0, 0))
 }
 
 func (ev *Env) ConfigGUI() *core.Body {
 	// vgpu.Debug = true
 
-	b := core.NewBody("virtroom").SetTitle("Emergent Virtual Engine")
+	b := core.NewBody("virtroom").SetTitle("Physics Virtual Room")
 	split := core.NewSplits(b)
 
 	tv := core.NewTree(core.NewFrame(split))

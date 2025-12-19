@@ -396,8 +396,7 @@ func (wl *World) JointDoFDefaults(didx int32) {
 func (wl *World) NewJointPrismatic(parent, child int32, ppos, cpos, axis math32.Vector3) int32 {
 	idx := wl.newJoint(Prismatic, parent, child, ppos, cpos)
 	SetJointLinearDoFN(idx, 1)
-	didx := wl.newJointDoF(0, axis)
-	SetJointDoFIndex(idx, 0, didx)
+	wl.newJointDoF(idx, 0, axis)
 	return idx
 }
 
@@ -411,8 +410,7 @@ func (wl *World) NewJointPrismatic(parent, child int32, ppos, cpos, axis math32.
 func (wl *World) NewJointRevolute(parent, child int32, ppos, cpos, axis math32.Vector3) int32 {
 	idx := wl.newJoint(Revolute, parent, child, ppos, cpos)
 	SetJointAngularDoFN(idx, 1)
-	didx := wl.newJointDoF(0, axis)
-	SetJointDoFIndex(idx, 0, didx)
+	wl.newJointDoF(idx, 0, axis)
 	return idx
 }
 
@@ -428,8 +426,7 @@ func (wl *World) NewJointBall(parent, child int32, ppos, cpos math32.Vector3) in
 	for d := range math32.W {
 		axis := math32.Vector3{}
 		axis.SetDim(d, 1)
-		didx := wl.newJointDoF(int32(d), axis)
-		SetJointDoFIndex(idx, int32(d), didx)
+		wl.newJointDoF(idx, int32(d), axis)
 	}
 	return idx
 }
@@ -448,14 +445,12 @@ func (wl *World) NewJointDistance(parent, child int32, ppos, cpos math32.Vector3
 	for d := range math32.W {
 		axis := math32.Vector3{}
 		axis.SetDim(d, 1)
-		didx := wl.newJointDoF(int32(d), axis)
-		SetJointDoFIndex(idx, int32(d), didx)
+		wl.newJointDoF(idx, int32(d), axis)
 	}
 	for d := range math32.W {
 		axis := math32.Vector3{}
 		axis.SetDim(d, 1)
-		didx := wl.newJointDoF(int32(d), axis)
-		SetJointDoFIndex(idx, int32(d), didx)
+		wl.newJointDoF(idx, int32(d), axis)
 	}
 	// only on the X linear axis
 	SetJointDoF(idx, 0, JointLimitLower, minDist)
@@ -485,14 +480,15 @@ func (wl *World) newJoint(joint JointTypes, parent, child int32, ppos, cpos math
 
 // newJointDoF adds new JointDoFs and JointControls entries
 // initialized to detfaults. Returns index.
-func (wl *World) newJointDoF(dof int32, axis math32.Vector3) int32 {
+func (wl *World) newJointDoF(jidx, dof int32, axis math32.Vector3) int32 {
 	sizes := wl.JointDoFs.ShapeSizes()
-	idx := int32(sizes[0])
-	wl.JointDoFs.SetShapeSizes(int(idx+1), int(JointDoFVarsN))
-	wl.JointControls.SetShapeSizes(int(idx+1), int(JointControlVarsN))
-	wl.JointDoFDefaults(idx)
-	SetJointAxis(idx, 0, axis)
-	wl.Params[0].JointDoFsN = idx + 1
-	return idx
+	didx := int32(sizes[0])
+	wl.JointDoFs.SetShapeSizes(int(didx+1), int(JointDoFVarsN))
+	wl.JointControls.SetShapeSizes(int(didx+1), int(JointControlVarsN))
+	wl.Params[0].JointDoFsN = didx + 1
+	wl.JointDoFDefaults(didx)
+	SetJointDoFIndex(jidx, dof, didx)
+	SetJointAxis(jidx, dof, axis)
+	return didx
 }
 

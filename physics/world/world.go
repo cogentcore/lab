@@ -42,10 +42,12 @@ func NewWorld(sc *xyz.Scene) *World {
 	return wr
 }
 
-// Init configures the visual world based on Views.
+// Init configures the visual world based on Views,
+// and calls Config on [physics.World].
 // Call this _once_ after making all the new Views and Bodies.
 // (will return if already called).
 func (wr *World) Init(wl *physics.World) {
+	wl.Config()
 	if len(wr.Root.Makers.Normal) > 0 {
 		return
 	}

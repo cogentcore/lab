@@ -65,12 +65,12 @@ func main() {
 	// physics.SetJointDoF(bj, 0, physics.JointDamp, 0.01)
 	// physics.SetJointDoF(bj, 0, physics.JointStiff, 1) // this makes a big difference
 
-	wl.Config()
+	wr.Init(wl)
+
 	params := physics.GetParams(0)
 	params.Dt = 0.05
 	params.Gravity.Y = 0
 
-	wr.Init(wl)
 	wr.Update()
 
 	sc.Camera.Pose.Pos = math32.Vec3(0, 40, 3.5)

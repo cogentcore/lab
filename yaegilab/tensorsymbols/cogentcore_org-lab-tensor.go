@@ -56,6 +56,7 @@ func init() {
 		"ContainsFloat":           reflect.ValueOf(tensor.ContainsFloat),
 		"ContainsInt":             reflect.ValueOf(tensor.ContainsInt),
 		"ContainsString":          reflect.ValueOf(tensor.ContainsString),
+		"CopyFromLargerShape":     reflect.ValueOf(tensor.CopyFromLargerShape),
 		"DefaultNumThreads":       reflect.ValueOf(tensor.DefaultNumThreads),
 		"DelimsN":                 reflect.ValueOf(tensor.DelimsN),
 		"DelimsValues":            reflect.ValueOf(tensor.DelimsValues),
