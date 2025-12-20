@@ -50,6 +50,9 @@ type PhysParams struct {
 	// around rigid bodies.
 	ContactMargin float32
 
+	// Maximum number of contacts to process at any given point.
+	ContactsMax int32
+
 	// Index for the current state (0 or 1, alternates with Next).
 	Cur int32 `edit:"-"`
 
@@ -74,6 +77,8 @@ type PhysParams struct {
 	// BodyCollidePairsN is the total number of pre-compiled collision pairs
 	// to examine.
 	BodyCollidePairsN int32 `edit:"-"`
+
+	pad, pad1, pad2 int32
 
 	// Gravity is the gravity acceleration function
 	Gravity slvec.Vector3

@@ -13,6 +13,7 @@ package physics
 func (wl *World) Config() {
 	wl.ConfigJoints()
 	wl.ConfigBodyCollidePairs()
+	wl.SetMaxContacts()
 	wl.SetAsCurrent()
 	wl.GPUInit()
 	wl.InitState()

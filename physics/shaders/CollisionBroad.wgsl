@@ -117,60 +117,87 @@ fn BodyDynamicQuat(idx: i32,cni: i32) -> vec4<f32> {
 alias ContactVars = i32; //enums:enum
 const  ContactA: ContactVars = 0;
 const  ContactB: ContactVars = 1;
-const  ContactAPointX: ContactVars = 2;
-const  ContactAPointY: ContactVars = 3;
-const  ContactAPointZ: ContactVars = 4;
-const  ContactBPointX: ContactVars = 5;
-const  ContactBPointY: ContactVars = 6;
-const  ContactBPointZ: ContactVars = 7;
-const  ContactADepth: ContactVars = 8;
-const  ContactBDepth: ContactVars = 9;
-const  ContactNormX: ContactVars = 10;
-const  ContactNormY: ContactVars = 11;
-const  ContactNormZ: ContactVars = 12;
-const  ContactForceX: ContactVars = 13;
-const  ContactForceY: ContactVars = 14;
-const  ContactForceZ: ContactVars = 15;
+const  ContactPointIdx: ContactVars = 2;
+const  ContactAPointX: ContactVars = 3;
+const  ContactAPointY: ContactVars = 4;
+const  ContactAPointZ: ContactVars = 5;
+const  ContactBPointX: ContactVars = 6;
+const  ContactBPointY: ContactVars = 7;
+const  ContactBPointZ: ContactVars = 8;
+const  ContactADepth: ContactVars = 9;
+const  ContactBDepth: ContactVars = 10;
+const  ContactNormX: ContactVars = 11;
+const  ContactNormY: ContactVars = 12;
+const  ContactNormZ: ContactVars = 13;
+const  ContactForceX: ContactVars = 14;
+const  ContactForceY: ContactVars = 15;
+const  ContactForceZ: ContactVars = 16;
+fn SetContactA(idx: i32,bodIdx: i32) {
+	Contacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactA))] = bitcast<f32>(u32(bodIdx));
+}
+fn SetContactB(idx: i32,bodIdx: i32) {
+	Contacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactB))] = bitcast<f32>(u32(bodIdx));
+}
+fn SetContactPointIdx(idx: i32,ptIdx: i32) {
+	Contacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactPointIdx))] = bitcast<f32>(u32(ptIdx));
+}
 fn CollisionBroad(i: u32) { //gosl:kernel
-let params = Params[0];; var ci = i32(i);; if (ci >= params.BodyCollidePairsN) {
-	return;
-}; var ba = BodyCollidePairs[Index2D(TensorStrides[40], TensorStrides[41], u32(ci), u32(0))];; var bb = BodyCollidePairs[Index2D(TensorStrides[40], TensorStrides[41], u32(ci), u32(1))];; var xwAR = BodyDynamicPos(ba, params.Cur);; var xwAQ = BodyDynamicQuat(ba, params.Cur);; var xwBR = BodyDynamicPos(bb, params.Cur);;
-var sA = GetBodyShape(ba);; var sB = GetBodyShape(bb);; var rb = Bodies[Index2D(TensorStrides[0], TensorStrides[1],
-u32(bb), u32(BodyRadius))];;
-var margin = params.ContactMargin;;
-var infPlane = false;; if (sA == Plane) {
-	var szA = BodySize(ba);
-	if (szA.x == 0) {
-		infPlane = true;
-	}
-	var queryB = MulSpatialPoint(xwAR, xwAQ, xwBR);
-	var closest = ClosestPointPlane(szA, queryB);
-	var d = Length3(queryB-(closest));
-	if (d > rb+margin) {
+	let params = Params[0];
+	var ci = i32(i);
+	if (ci >= params.BodyCollidePairsN) {
 		return;
 	}
-} else {
-	var d = Length3(xwAR-(xwBR));
-	var ra = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(ba), u32(BodyRadius))];
-	if (d > ra+rb+margin) {
+	var biA = BodyCollidePairs[Index2D(TensorStrides[40], TensorStrides[41], u32(ci), u32(0))];
+	var biB = BodyCollidePairs[Index2D(TensorStrides[40], TensorStrides[41], u32(ci), u32(1))];
+	var xwAR = BodyDynamicPos(biA, params.Cur);
+	var xwAQ = BodyDynamicQuat(biA, params.Cur);
+	var xwBR = BodyDynamicPos(biB, params.Cur);
+	var sA = GetBodyShape(biA);
+	var sB = GetBodyShape(biB);
+	var rb = Bodies[Index2D(TensorStrides[0], TensorStrides[1],
+	u32(biB), u32(BodyRadius))];
+	var margin = params.ContactMargin;
+	var infPlane = false;
+	if (sA == Plane) {
+		var szA = BodySize(biA);
+		if (szA.x == 0) {
+			infPlane = true;
+		}
+		var queryB = MulSpatialPoint(xwAR, xwAQ, xwBR);
+		var closest = ClosestPointPlane(szA, queryB);
+		var d = Length3(queryB-(closest));
+		if (d > rb+margin) {
+			return;
+		}
+	} else {
+		var d = Length3(xwAR-(xwBR));
+		var ra = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biA), u32(BodyRadius))];
+		if (d > ra+rb+margin) {
+			return;
+		}
+	}
+	var ncB: i32;
+	var ncA = ShapePairContacts(sA, sB, infPlane, &ncB);
+	var enci = atomicAdd(&ContactCount[i32(params.Cur)], ncA+ncB);
+	enci += ncA + ncB; // wgsl now matches Go
+	var nci = enci - (ncA + ncB);    // starting index
+	if (nci >= params.ContactsMax) { // shouldn't happen!
 		return;
 	}
-};
-var ncB: i32;; var ncA = ShapePairContacts(sA, sB, infPlane, &ncB);; _ = ncA;;
-var nci = atomicAdd(&ContactCount[i32(params.Cur)], ncA+ncB);; // returns previous?
-nci += ncA + ncB;; // wgsl returns orig, Go returns new
-if (nci > params.ContactsMax) {
-	return;
-}; for (var i=0; i<ncA; i++) {
-	Contacts[Index2D(TensorStrides[70], TensorStrides[71], u32(nci + i), u32(ContactA))] = ba;
-	Contacts[Index2D(TensorStrides[70], TensorStrides[71],
-	u32(nci + i), u32(ContactB))] = bb;
-}; for (var i=0; i<ncB; i++) {
-	Contacts[Index2D(TensorStrides[70], TensorStrides[71], // flip??
-	u32(nci + ncA + i), u32(ContactA))] = ba;
-	Contacts[Index2D(TensorStrides[70], TensorStrides[71],
-	u32(nci + ncA + i), u32(ContactA))] = bb;
-} }
+	AddContacts(biA, biB, ci, ncA, ncB);
+}
+fn AddContacts(biA: i32,biB: i32,ci: i32,ncA: i32,ncB: i32) {
+	for (var i=0; i<ncA; i++) {
+		SetContactA(ci+i, biA);
+		SetContactB(ci+i, biB);
+		SetContactPointIdx(ci+i, i);
+	}
+	for (var i=0; i<ncB; i++) {
+		SetContactA(ci+ncA+i, biB); // flipped
+		SetContactB(ci+ncA+i, biA);
+		SetContactPointIdx(ci+i, i);
+	}
+}
 fn ClosestPointPlane(sz: vec3<f32>,pt: vec3<f32>) -> vec3<f32> {
 	var cp = pt;
 	if (sz.x == 0.0) {
@@ -229,7 +256,7 @@ fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> {
 
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 40;
-const ContactVarsN: ContactVars = 16;
+const ContactVarsN: ContactVars = 17;
 const JointControlVarsN: JointControlVars = 3;
 const DynamicVarsN: DynamicVars = 32;
 const GPUVarsN: GPUVars = 10;
@@ -322,6 +349,7 @@ struct PhysParams {
 	ContactWeighting: i32,
 	Restitution: i32,
 	ContactMargin: f32,
+	ContactsMax: i32,
 	Cur: i32,
 	Next: i32,
 	BodiesN: i32,
@@ -330,6 +358,9 @@ struct PhysParams {
 	JointDoFsN: i32,
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
+	pad: i32,
+	pad1: i32,
+	pad2: i32,
 	Gravity: vec4<f32>,
 }
 

@@ -6,7 +6,8 @@ package physics
 
 import "cogentcore.org/lab/tensor"
 
-//go:generate gosl -keep -exclude=Update,Defaults,ShouldDisplay -max-buffer-size=2147483616
+// note: add -keep to inspect intermediate .go code
+//go:generate gosl -exclude=Update,Defaults,ShouldDisplay -max-buffer-size=2147483616
 
 //gosl:start
 
@@ -66,7 +67,7 @@ var (
 	ContactCount *tensor.Int32
 
 	// Contacts are points of contact between bodies.
-	// [contact][ContactVarsN]
+	// [ContactsMax][ContactVarsN]
 	//gosl:dims 2
 	Contacts *tensor.Float32
 

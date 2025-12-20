@@ -82,20 +82,21 @@ const  BodyRadius: BodyVars = 39;
 alias ContactVars = i32; //enums:enum
 const  ContactA: ContactVars = 0;
 const  ContactB: ContactVars = 1;
-const  ContactAPointX: ContactVars = 2;
-const  ContactAPointY: ContactVars = 3;
-const  ContactAPointZ: ContactVars = 4;
-const  ContactBPointX: ContactVars = 5;
-const  ContactBPointY: ContactVars = 6;
-const  ContactBPointZ: ContactVars = 7;
-const  ContactADepth: ContactVars = 8;
-const  ContactBDepth: ContactVars = 9;
-const  ContactNormX: ContactVars = 10;
-const  ContactNormY: ContactVars = 11;
-const  ContactNormZ: ContactVars = 12;
-const  ContactForceX: ContactVars = 13;
-const  ContactForceY: ContactVars = 14;
-const  ContactForceZ: ContactVars = 15;
+const  ContactPointIdx: ContactVars = 2;
+const  ContactAPointX: ContactVars = 3;
+const  ContactAPointY: ContactVars = 4;
+const  ContactAPointZ: ContactVars = 5;
+const  ContactBPointX: ContactVars = 6;
+const  ContactBPointY: ContactVars = 7;
+const  ContactBPointZ: ContactVars = 8;
+const  ContactADepth: ContactVars = 9;
+const  ContactBDepth: ContactVars = 10;
+const  ContactNormX: ContactVars = 11;
+const  ContactNormY: ContactVars = 12;
+const  ContactNormZ: ContactVars = 13;
+const  ContactForceX: ContactVars = 14;
+const  ContactForceY: ContactVars = 15;
+const  ContactForceZ: ContactVars = 16;
 
 //////// import: "control.go"
 alias JointControlVars = i32; //enums:enum
@@ -150,7 +151,7 @@ fn SetDynamicTorque(idx: i32,cni: i32, torque: vec3<f32>) {
 
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 40;
-const ContactVarsN: ContactVars = 16;
+const ContactVarsN: ContactVars = 17;
 const JointControlVarsN: JointControlVars = 3;
 const DynamicVarsN: DynamicVars = 32;
 const GPUVarsN: GPUVars = 10;
@@ -255,6 +256,7 @@ struct PhysParams {
 	ContactWeighting: i32,
 	Restitution: i32,
 	ContactMargin: f32,
+	ContactsMax: i32,
 	Cur: i32,
 	Next: i32,
 	BodiesN: i32,
@@ -263,6 +265,9 @@ struct PhysParams {
 	JointDoFsN: i32,
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
+	pad: i32,
+	pad1: i32,
+	pad2: i32,
 	Gravity: vec4<f32>,
 }
 

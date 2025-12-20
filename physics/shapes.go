@@ -45,6 +45,8 @@ const (
 	Box
 )
 
+// newton: geometry/kernels.py: count_contact_points_for_pair
+
 // ShapePairContacts returns the number of contact points possible
 // for given pair of shapes. a <= b ordering. returns from a to b,
 // ba is from b to a (mostly 0).

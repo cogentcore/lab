@@ -51,20 +51,20 @@ func (i BodyVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *BodyVars) UnmarshalText(text []byte) error { return enums.UnmarshalText(i, text, "BodyVars") }
 
-var _ContactVarsValues = []ContactVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
+var _ContactVarsValues = []ContactVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 // ContactVarsN is the highest valid value for type ContactVars, plus one.
 //
 //gosl:start
-const ContactVarsN ContactVars = 16
+const ContactVarsN ContactVars = 17
 
 //gosl:end
 
-var _ContactVarsValueMap = map[string]ContactVars{`ContactA`: 0, `ContactB`: 1, `ContactAPointX`: 2, `ContactAPointY`: 3, `ContactAPointZ`: 4, `ContactBPointX`: 5, `ContactBPointY`: 6, `ContactBPointZ`: 7, `ContactADepth`: 8, `ContactBDepth`: 9, `ContactNormX`: 10, `ContactNormY`: 11, `ContactNormZ`: 12, `ContactForceX`: 13, `ContactForceY`: 14, `ContactForceZ`: 15}
+var _ContactVarsValueMap = map[string]ContactVars{`ContactA`: 0, `ContactB`: 1, `ContactPointIdx`: 2, `ContactAPointX`: 3, `ContactAPointY`: 4, `ContactAPointZ`: 5, `ContactBPointX`: 6, `ContactBPointY`: 7, `ContactBPointZ`: 8, `ContactADepth`: 9, `ContactBDepth`: 10, `ContactNormX`: 11, `ContactNormY`: 12, `ContactNormZ`: 13, `ContactForceX`: 14, `ContactForceY`: 15, `ContactForceZ`: 16}
 
-var _ContactVarsDescMap = map[ContactVars]string{0: `first body index`, 1: `the other body index`, 2: `contact point on body A`, 3: ``, 4: ``, 5: `contact point on body B`, 6: ``, 7: ``, 8: `Contact depths (thickness in newton)`, 9: ``, 10: `normal pointing from center of B to center of A`, 11: ``, 12: ``, 13: `computed contact force vector`, 14: ``, 15: ``}
+var _ContactVarsDescMap = map[ContactVars]string{0: `first body index`, 1: `the other body index`, 2: `contact point index for A-B pair`, 3: `contact point on body A`, 4: ``, 5: ``, 6: `contact point on body B`, 7: ``, 8: ``, 9: `Contact depths (thickness in newton)`, 10: ``, 11: `normal pointing from center of B to center of A`, 12: ``, 13: ``, 14: `computed contact force vector`, 15: ``, 16: ``}
 
-var _ContactVarsMap = map[ContactVars]string{0: `ContactA`, 1: `ContactB`, 2: `ContactAPointX`, 3: `ContactAPointY`, 4: `ContactAPointZ`, 5: `ContactBPointX`, 6: `ContactBPointY`, 7: `ContactBPointZ`, 8: `ContactADepth`, 9: `ContactBDepth`, 10: `ContactNormX`, 11: `ContactNormY`, 12: `ContactNormZ`, 13: `ContactForceX`, 14: `ContactForceY`, 15: `ContactForceZ`}
+var _ContactVarsMap = map[ContactVars]string{0: `ContactA`, 1: `ContactB`, 2: `ContactPointIdx`, 3: `ContactAPointX`, 4: `ContactAPointY`, 5: `ContactAPointZ`, 6: `ContactBPointX`, 7: `ContactBPointY`, 8: `ContactBPointZ`, 9: `ContactADepth`, 10: `ContactBDepth`, 11: `ContactNormX`, 12: `ContactNormY`, 13: `ContactNormZ`, 14: `ContactForceX`, 15: `ContactForceY`, 16: `ContactForceZ`}
 
 // String returns the string representation of this ContactVars value.
 func (i ContactVars) String() string { return enums.String(i, _ContactVarsMap) }

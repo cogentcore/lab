@@ -8,6 +8,7 @@ package physics
 
 import (
 	"fmt"
+	"math"
 	"sync/atomic"
 
 	"cogentcore.org/core/math32"
@@ -28,6 +29,9 @@ const (
 
 	// the other body index
 	ContactB
+
+	// contact point index for A-B pair
+	ContactPointIdx
 
 	// contact point on body A
 	ContactAPointX
@@ -54,6 +58,70 @@ const (
 	ContactForceZ
 )
 
+func SetContactA(idx, bodIdx int32) {
+	Contacts.Set(math.Float32frombits(uint32(bodIdx)), int(idx), int(ContactA))
+}
+
+func GetContactA(idx int32) int32 {
+	return int32(math.Float32bits(Contacts.Value(int(idx), int(ContactA))))
+}
+
+func SetContactB(idx, bodIdx int32) {
+	Contacts.Set(math.Float32frombits(uint32(bodIdx)), int(idx), int(ContactB))
+}
+
+func GetContactB(idx int32) int32 {
+	return int32(math.Float32bits(Contacts.Value(int(idx), int(ContactB))))
+}
+
+func SetContactPointIdx(idx, ptIdx int32) {
+	Contacts.Set(math.Float32frombits(uint32(ptIdx)), int(idx), int(ContactPointIdx))
+}
+
+func GetContactPointIdx(idx int32) int32 {
+	return int32(math.Float32bits(Contacts.Value(int(idx), int(ContactPointIdx))))
+}
+
+func ContactAPoint(idx int32) math32.Vector3 {
+	return math32.Vec3(Contacts.Value(int(idx), int(ContactAPointX)), Contacts.Value(int(idx), int(ContactAPointY)), Contacts.Value(int(idx), int(ContactAPointZ)))
+}
+
+func SetContactAPoint(idx int32, pos math32.Vector3) {
+	Contacts.Set(pos.X, int(idx), int(ContactAPointX))
+	Contacts.Set(pos.Y, int(idx), int(ContactAPointY))
+	Contacts.Set(pos.Z, int(idx), int(ContactAPointZ))
+}
+
+func ContactBPoint(idx int32) math32.Vector3 {
+	return math32.Vec3(Contacts.Value(int(idx), int(ContactBPointX)), Contacts.Value(int(idx), int(ContactBPointY)), Contacts.Value(int(idx), int(ContactBPointZ)))
+}
+
+func SetContactBPoint(idx int32, pos math32.Vector3) {
+	Contacts.Set(pos.X, int(idx), int(ContactBPointX))
+	Contacts.Set(pos.Y, int(idx), int(ContactBPointY))
+	Contacts.Set(pos.Z, int(idx), int(ContactBPointZ))
+}
+
+func ContactNorm(idx int32) math32.Vector3 {
+	return math32.Vec3(Contacts.Value(int(idx), int(ContactNormX)), Contacts.Value(int(idx), int(ContactNormY)), Contacts.Value(int(idx), int(ContactNormZ)))
+}
+
+func SetContactNorm(idx int32, pos math32.Vector3) {
+	Contacts.Set(pos.X, int(idx), int(ContactNormX))
+	Contacts.Set(pos.Y, int(idx), int(ContactNormY))
+	Contacts.Set(pos.Z, int(idx), int(ContactNormZ))
+}
+
+func ContactForce(idx int32) math32.Vector3 {
+	return math32.Vec3(Contacts.Value(int(idx), int(ContactForceX)), Contacts.Value(int(idx), int(ContactForceY)), Contacts.Value(int(idx), int(ContactForceZ)))
+}
+
+func SetContactForce(idx int32, pos math32.Vector3) {
+	Contacts.Set(pos.X, int(idx), int(ContactForceX))
+	Contacts.Set(pos.Y, int(idx), int(ContactForceY))
+	Contacts.Set(pos.Z, int(idx), int(ContactForceZ))
+}
+
 func WorldsCollide(wa, wb int32) bool {
 	if wa != -1 && wb != -1 && wa != wb {
 		return false
@@ -74,7 +142,7 @@ func GroupsCollide(ga, gb int32) bool {
 	return false
 }
 
-// geometry/kernels.py/broadphase_collision_pairs
+// newton: geometry/kernels.py: broadphase_collision_pairs
 
 // CollisionBroad performs broad-phase collision detection, generating Contacts.
 func CollisionBroad(i uint32) { //gosl:kernel
@@ -83,19 +151,19 @@ func CollisionBroad(i uint32) { //gosl:kernel
 	if ci >= params.BodyCollidePairsN {
 		return
 	}
-	ba := BodyCollidePairs.Value(int(ci), int(0))
-	bb := BodyCollidePairs.Value(int(ci), int(1))
+	biA := BodyCollidePairs.Value(int(ci), int(0))
+	biB := BodyCollidePairs.Value(int(ci), int(1))
 
-	xwAR := BodyDynamicPos(ba, params.Cur)
-	xwAQ := BodyDynamicQuat(ba, params.Cur)
-	xwBR := BodyDynamicPos(bb, params.Cur)
+	xwAR := BodyDynamicPos(biA, params.Cur)
+	xwAQ := BodyDynamicQuat(biA, params.Cur)
+	xwBR := BodyDynamicPos(biB, params.Cur)
 	// xwBQ := BodyDynamicQuat(bb, params.Cur)
 
-	// note: at <= bt
-	sA := GetBodyShape(ba)
-	sB := GetBodyShape(bb)
+	// note: sA <= sB
+	sA := GetBodyShape(biA)
+	sB := GetBodyShape(biB)
 
-	rb := Bodies.Value(int(bb), int(BodyRadius))
+	rb := Bodies.Value(int(biB), int(BodyRadius))
 	//    if type_a == GeoType.PLANE and type_b == GeoType.PLANE:
 	//        return
 
@@ -106,7 +174,7 @@ func CollisionBroad(i uint32) { //gosl:kernel
 	// bounding sphere check
 	infPlane := false
 	if sA == Plane {
-		szA := BodySize(ba)
+		szA := BodySize(biA)
 		if szA.X == 0 {
 			infPlane = true
 		}
@@ -118,7 +186,7 @@ func CollisionBroad(i uint32) { //gosl:kernel
 		}
 	} else {
 		d := slmath.Length3(xwAR.Sub(xwBR))
-		ra := Bodies.Value(int(ba), int(BodyRadius))
+		ra := Bodies.Value(int(biA), int(BodyRadius))
 		if d > ra+rb+margin {
 			return
 		}
@@ -128,60 +196,37 @@ func CollisionBroad(i uint32) { //gosl:kernel
 
 	var ncB int32
 	ncA := ShapePairContacts(sA, sB, infPlane, &ncB)
-	_ = ncA
 
-	// ignoring this for now:
-	//    if contact_point_limit:
-	//        # assign a limit per contact pair, if max_per_pair is set
-	//        if max_per_pair > 0:
-	//            # distribute maximum number of contact per pair in both directions
-	//            max_per_pair_half = max_per_pair // 2
-	//            if num_contacts_b > 0:
-	//                contact_point_limit[pair_index_ab] = max_per_pair_half
-	//                contact_point_limit[pair_index_ba] = max_per_pair_half
-	//            else:
-	//                contact_point_limit[pair_index_ab] = max_per_pair
-	//                contact_point_limit[pair_index_ba] = 0
-	//        else:
-	//            contact_point_limit[pair_index_ab] = 0
-	//            contact_point_limit[pair_index_ba] = 0
+	// note: ignoring contact_point_limit code for now
 
-	// now we just write results to big buffer of contact points.
-
-	nci := atomic.AddInt32(&ContactCount.Values[int(params.Cur)], ncA+ncB) // returns previous?
+	enci := atomic.AddInt32(&ContactCount.Values[int(params.Cur)], ncA+ncB)
+	// Go returns post-added value, while WGSL returns pre-added value
 
 	//gosl:wgsl
-	// nci += ncA + ncB // wgsl returns orig, Go returns new
+	// enci += ncA + ncB // wgsl now matches Go
 	//gosl:end
 
-	if nci > params.ContactsMax {
+	nci := enci - (ncA + ncB)      // starting index
+	if nci >= params.ContactsMax { // shouldn't happen!
 		return
 	}
+	AddContacts(biA, biB, ci, ncA, ncB)
+}
 
+// newton: geometry/kernels.py: allocate_contact_points
+
+// AddContacts adds contact records in prep for narrow phase.
+func AddContacts(biA, biB, ci, ncA, ncB int32) {
 	for i := range ncA {
-		// todo: accessors
-		Contacts.Set(ba, int(nci+i), int(ContactA))
-		Contacts.Set(bb, int(nci+i), int(ContactB))
-		// etc
+		SetContactA(ci+i, biA)
+		SetContactB(ci+i, biB)
+		SetContactPointIdx(ci+i, i)
 	}
 	for i := range ncB {
-		Contacts.Set(ba, int(nci+ncA+i), int(ContactA)) // flip??
-		Contacts.Set(bb, int(nci+ncA+i), int(ContactA))
+		SetContactA(ci+ncA+i, biB) // flipped
+		SetContactB(ci+ncA+i, biA)
+		SetContactPointIdx(ci+i, i)
 	}
-	// # Allocate contact points using reusable method
-	// _success = allocate_contact_points(
-	//
-	//	num_contacts_a,
-	//	num_contacts_b,
-	//	shape_a,
-	//	shape_b,
-	//	rigid_contact_max,
-	//	contact_count,
-	//	contact_shape0,
-	//	contact_shape1,
-	//	contact_point_id,
-	//
-	// )
 }
 
 // ClosestPointPlane projects the point onto the quad in
@@ -211,6 +256,8 @@ func (wl *World) IsChildDynamic(dip, dic int32) bool {
 	}
 	return false
 }
+
+// newton: sim/builder.py: find_shape_contact_pairs
 
 // ConfigBodyCollidePairs compiles a list of body paris that could collide
 // based on world and group settings and not being direct parent
@@ -261,50 +308,40 @@ func (wl *World) ConfigBodyCollidePairs() {
 	params.BodyCollidePairsN = int32(np)
 	pt.SetShapeSizes(np, 2)
 	wl.BodyCollidePairs = pt
-	wl.Contacts.SetShapeSizes(np, int(ContactVarsN))
 	fmt.Println("body pairs over alloc", nalc, np)
 }
 
-// New adds a new contact to the list
-// func (cs *Contacts) New(a, b Body) *Contact {
-// 	c := &Contact{A: a, B: b}
-// 	*cs = append(*cs, c)
-// 	return c
-// }
-//
-// // BodyVelBBoxIntersects returns the list of potential contact nodes between a and b
-// // (could be the same or different groups) that have intersecting velocity-projected
-// // bounding boxes. In general a should be dynamic bodies and b either dynamic or static.
-// // This is the broad first-pass filtering.
-// func BodyVelBBoxIntersects(a, b Node) Contacts {
-// 	var cts Contacts
-// 	a.AsTree().WalkDown(func(k tree.Node) bool {
-// 		aii, ai := AsNode(k)
-// 		if aii == nil {
-// 			return false // going into a different type of thing, bail
-// 		}
-// 		abod := aii.AsBody() // only consider bodies for collision
-// 		if abod == nil {
-// 			return true
-// 		}
-//
-// 		b.AsTree().WalkDown(func(k tree.Node) bool {
-// 			bii, bi := AsNode(k)
-// 			if bii == nil {
-// 				return false // going into a different type of thing, bail
-// 			}
-// 			if !ai.BBox.IntersectsVelBox(&bi.BBox) {
-// 				return false // done
-// 			}
-// 			bbod := bii.AsBody() // only consider bodies for collision
-// 			if bbod == nil {
-// 				return true
-// 			}
-// 			cts.New(abod, bbod)
-// 			return false // done
-// 		})
-//
-// 		return false
-// 	})
-// 	return cts
-// }
+// newton: geometry/kernels.py: count_contact_points
+
+// SetMaxContacts computes [Params.MaxContacts] based on current list of
+// [BodyCollidePairs].
+func (wl *World) SetMaxContacts() {
+	params := &wl.Params[0]
+
+	n := int32(0)
+	for ci := range params.BodyCollidePairsN {
+		biA := BodyCollidePairs.Value(int(ci), int(0))
+		biB := BodyCollidePairs.Value(int(ci), int(1))
+
+		// note: sA <= sB
+		sA := GetBodyShape(biA)
+		sB := GetBodyShape(biB)
+
+		infPlane := false
+		szA := BodySize(biA)
+		if szA.X == 0 {
+			infPlane = true
+		}
+
+		var ncB int32
+		ncA := ShapePairContacts(sA, sB, infPlane, &ncB)
+		n += ncA + ncB
+	}
+	// todo: this is a massive over-estimate, b/c there is no way everyone could be
+	// colliding at once. Except.. if it is a very small model.
+	if params.BodyCollidePairsN > 1000 {
+		n = n / 2 // todo: could do more of this as N gets larger
+	}
+	params.ContactsMax = n
+	wl.Contacts.SetShapeSizes(int(n), int(ContactVarsN))
+}
