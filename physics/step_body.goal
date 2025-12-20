@@ -112,6 +112,8 @@ func DeltasFromJoints(i uint32) { //gosl:kernel
 	SetDynamicAngDelta(di, params.Next, ta)
 }
 
+// newton: solvers/solver.py: integrate_rigid_body
+
 // StepIntegrateBodies applies forces to update pos and deltas
 func StepIntegrateBodies(i uint32) { //gosl:kernel
 	params := GetParams(0)
@@ -163,6 +165,8 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 	SetDynamicDelta(di, params.Next, v1)
 	SetDynamicAngDelta(di, params.Next, w1)
 }
+
+// newton: solvers/xpbd/kernels.py: apply_body_deltas
 
 // StepBodyDeltas updates Next position with deltas.
 func StepBodyDeltas(i uint32) { //gosl:kernel
