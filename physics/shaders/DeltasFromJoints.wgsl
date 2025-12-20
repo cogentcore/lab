@@ -271,13 +271,7 @@ struct PhysParams {
 	Gravity: vec4<f32>,
 }
 
-//////// import: "shapes.go"
-alias Shapes = i32; //enums:enum
-const  Plane: Shapes = 0;
-const  Sphere: Shapes = 1;
-const  Capsule: Shapes = 2;
-const  Cylinder: Shapes = 3;
-const  Box: Shapes = 4;
+//////// import: "shapecollide.go"
 struct GeomData {
 	BodyIdx: i32,
 	Shape: Shapes,
@@ -290,6 +284,14 @@ struct GeomData {
 	BtoWR: vec3<f32>,
 	BtoWQ: vec4<f32>,
 }
+
+//////// import: "shapes.go"
+alias Shapes = i32; //enums:enum
+const  Plane: Shapes = 0;
+const  Sphere: Shapes = 1;
+const  Capsule: Shapes = 2;
+const  Cylinder: Shapes = 3;
+const  Box: Shapes = 4;
 
 //////// import: "slmath-matrix3.go"
 

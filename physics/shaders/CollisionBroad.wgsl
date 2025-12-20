@@ -364,6 +364,20 @@ struct PhysParams {
 	Gravity: vec4<f32>,
 }
 
+//////// import: "shapecollide.go"
+struct GeomData {
+	BodyIdx: i32,
+	Shape: Shapes,
+	MinSize: f32,
+	Thickness: f32,
+	Radius: f32,
+	Size: vec3<f32>,
+	WtoBR: vec3<f32>,
+	WtoBQ: vec4<f32>,
+	BtoWR: vec3<f32>,
+	BtoWQ: vec4<f32>,
+}
+
 //////// import: "shapes.go"
 alias Shapes = i32; //enums:enum
 const  Plane: Shapes = 0;
@@ -432,18 +446,6 @@ fn ShapePairContacts(a: Shapes,b: Shapes, infPlane: bool, ba: ptr<function,i32>)
 		return i32(0);
 	}
 	}
-}
-struct GeomData {
-	BodyIdx: i32,
-	Shape: Shapes,
-	MinSize: f32,
-	Thickness: f32,
-	Radius: f32,
-	Size: vec3<f32>,
-	WtoBR: vec3<f32>,
-	WtoBQ: vec4<f32>,
-	BtoWR: vec3<f32>,
-	BtoWQ: vec4<f32>,
 }
 
 //////// import: "slmath-matrix3.go"

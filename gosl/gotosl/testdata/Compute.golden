@@ -177,6 +177,7 @@ fn ParamStruct_IntegFromRaw(ps: ParamStruct, idx: i32) -> f32 {
 	integ += newVal;
 	Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ))] = integ;
 	Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Exp))] = exp(-integ);
+	Data[idx*2] = 55.0;
 	var a = ps.VXYf.x;
 	var b = vec2<f32>(ps.VXYf.x,ps.VXYf.y);
 	var c = b*(b+(b)); // converted to direct ops
@@ -187,7 +188,9 @@ fn ParamStruct_IntegFromRaw(ps: ParamStruct, idx: i32) -> f32 {
 	d = TransformPoint(op, oq, d);
 	let ctx = Ctx[0];
 	ParamStruct_AnotherMeth(ps, ctx, idx, &a);
-	var bv = BigGet(Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(Integ)));
+	var bv = BigGet(Index2D(TensorStrides[10], TensorStrides[11],
+	u32(idx), u32(Integ)));
+	bv *= f32(2);
 	BigSet(bv*2 + c.y + d.z, Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(Exp)));return Data[Index2D(TensorStrides[0], TensorStrides[1],
 u32(idx), u32(Exp))];
 }
