@@ -88,19 +88,19 @@ func StepJointForces(i uint32) { //gosl:kernel
 		t = math32.Vec3(JointControl(ji, 0, JointControlForce), JointControl(ji, 1, JointControlForce), JointControl(ji, 2, JointControlForce))
 	case Revolute:
 		axis := JointAxis(ji, 0)
-		t = slmath.MulScalar3(slmath.MulQuatVector(xwPQ, axis), JointControl(ji, 0, JointControlForce))
+		t = slmath.MulQuatVector(xwPQ, axis).MulScalar(JointControl(ji, 0, JointControlForce))
 	case Prismatic:
 		axis := JointAxis(ji, 0)
-		f = slmath.MulScalar3(slmath.MulQuatVector(xwPQ, axis), JointControl(ji, 0, JointControlForce))
+		f = slmath.MulQuatVector(xwPQ, axis).MulScalar(JointControl(ji, 0, JointControlForce))
 	default:
 		for dof := range jLinearN {
 			axis := JointAxis(ji, int32(dof))
-			f = f.Add(slmath.MulScalar3(slmath.MulQuatVector(xwPQ, axis), JointControl(ji, int32(dof), JointControlForce)))
+			f = f.Add(slmath.MulQuatVector(xwPQ, axis).MulScalar(JointControl(ji, int32(dof), JointControlForce)))
 		}
 		for dof := range jAngularN {
 			di := int32(jLinearN) + int32(dof)
 			axis := JointAxis(ji, di)
-			t = t.Add(slmath.MulScalar3(slmath.MulQuatVector(xwPQ, axis), JointControl(ji, di, JointControlForce)))
+			t = t.Add(slmath.MulQuatVector(xwPQ, axis).MulScalar(JointControl(ji, di, JointControlForce)))
 		}
 	}
 	// These are unique to joint: aggregate into dynamics Next in [ForcesFromJoints]

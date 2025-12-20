@@ -50,6 +50,10 @@ const (
 	BodySizeY
 	BodySizeZ
 
+	// BodyThick is the thickness of the body, as a hollow shape.
+	// If 0, then it is a solid shape (default).
+	BodyThick
+
 	// physical properties
 
 	// BodyMass is the mass of the object.

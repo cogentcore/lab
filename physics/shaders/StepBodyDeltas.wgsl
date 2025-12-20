@@ -42,39 +42,40 @@ const  BodyGroup: BodyVars = 3;
 const  BodySizeX: BodyVars = 4;
 const  BodySizeY: BodyVars = 5;
 const  BodySizeZ: BodyVars = 6;
-const  BodyMass: BodyVars = 7;
-const  BodyInvMass: BodyVars = 8;
-const  BodyBounce: BodyVars = 9;
-const  BodyFriction: BodyVars = 10;
-const  BodyPosX: BodyVars = 11;
-const  BodyPosY: BodyVars = 12;
-const  BodyPosZ: BodyVars = 13;
-const  BodyQuatX: BodyVars = 14;
-const  BodyQuatY: BodyVars = 15;
-const  BodyQuatZ: BodyVars = 16;
-const  BodyQuatW: BodyVars = 17;
-const  BodyComX: BodyVars = 18;
-const  BodyComY: BodyVars = 19;
-const  BodyComZ: BodyVars = 20;
-const  BodyInertiaXX: BodyVars = 21;
-const  BodyInertiaYX: BodyVars = 22;
-const  BodyInertiaZX: BodyVars = 23;
-const  BodyInertiaXY: BodyVars = 24;
-const  BodyInertiaYY: BodyVars = 25;
-const  BodyInertiaZY: BodyVars = 26;
-const  BodyInertiaXZ: BodyVars = 27;
-const  BodyInertiaYZ: BodyVars = 28;
-const  BodyInertiaZZ: BodyVars = 29;
-const  BodyInvInertiaXX: BodyVars = 30;
-const  BodyInvInertiaYX: BodyVars = 31;
-const  BodyInvInertiaZX: BodyVars = 32;
-const  BodyInvInertiaXY: BodyVars = 33;
-const  BodyInvInertiaYY: BodyVars = 34;
-const  BodyInvInertiaZY: BodyVars = 35;
-const  BodyInvInertiaXZ: BodyVars = 36;
-const  BodyInvInertiaYZ: BodyVars = 37;
-const  BodyInvInertiaZZ: BodyVars = 38;
-const  BodyRadius: BodyVars = 39;
+const  BodyThick: BodyVars = 7;
+const  BodyMass: BodyVars = 8;
+const  BodyInvMass: BodyVars = 9;
+const  BodyBounce: BodyVars = 10;
+const  BodyFriction: BodyVars = 11;
+const  BodyPosX: BodyVars = 12;
+const  BodyPosY: BodyVars = 13;
+const  BodyPosZ: BodyVars = 14;
+const  BodyQuatX: BodyVars = 15;
+const  BodyQuatY: BodyVars = 16;
+const  BodyQuatZ: BodyVars = 17;
+const  BodyQuatW: BodyVars = 18;
+const  BodyComX: BodyVars = 19;
+const  BodyComY: BodyVars = 20;
+const  BodyComZ: BodyVars = 21;
+const  BodyInertiaXX: BodyVars = 22;
+const  BodyInertiaYX: BodyVars = 23;
+const  BodyInertiaZX: BodyVars = 24;
+const  BodyInertiaXY: BodyVars = 25;
+const  BodyInertiaYY: BodyVars = 26;
+const  BodyInertiaZY: BodyVars = 27;
+const  BodyInertiaXZ: BodyVars = 28;
+const  BodyInertiaYZ: BodyVars = 29;
+const  BodyInertiaZZ: BodyVars = 30;
+const  BodyInvInertiaXX: BodyVars = 31;
+const  BodyInvInertiaYX: BodyVars = 32;
+const  BodyInvInertiaZX: BodyVars = 33;
+const  BodyInvInertiaXY: BodyVars = 34;
+const  BodyInvInertiaYY: BodyVars = 35;
+const  BodyInvInertiaZY: BodyVars = 36;
+const  BodyInvInertiaXZ: BodyVars = 37;
+const  BodyInvInertiaYZ: BodyVars = 38;
+const  BodyInvInertiaZZ: BodyVars = 39;
+const  BodyRadius: BodyVars = 40;
 fn BodyCom(idx: i32) -> vec3<f32> {
 	return vec3<f32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyComX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyComY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyComZ))]);
 }
@@ -187,7 +188,7 @@ fn SetDynamicAngDelta(idx: i32,cni: i32, angDelta: vec3<f32>) {
 }
 
 //////// import: "enumgen.go"
-const BodyVarsN: BodyVars = 40;
+const BodyVarsN: BodyVars = 41;
 const ContactVarsN: ContactVars = 17;
 const JointControlVarsN: JointControlVars = 3;
 const DynamicVarsN: DynamicVars = 32;
@@ -195,7 +196,7 @@ const GPUVarsN: GPUVars = 10;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
 const JointDoFVarsN: JointDoFVars = 7;
-const ShapesN: Shapes = 5;
+const ShapesN: Shapes = 6;
 
 //////// import: "joint.go"
 const JointLimitUnlimited = 1e10;
@@ -301,14 +302,16 @@ struct GeomData {
 	BodyIdx: i32,
 	Shape: Shapes,
 	MinSize: f32,
-	Thickness: f32,
+	Thick: f32,
 	Radius: f32,
 	Size: vec3<f32>,
-	WtoBR: vec3<f32>,
-	WtoBQ: vec4<f32>,
-	BtoWR: vec3<f32>,
-	BtoWQ: vec4<f32>,
+	WbR: vec3<f32>,
+	WbQ: vec4<f32>,
+	BwR: vec3<f32>,
+	BwQ: vec4<f32>,
 }
+
+//////// import: "shapegeom.go"
 
 //////// import: "shapes.go"
 alias Shapes = i32; //enums:enum
@@ -317,6 +320,7 @@ const  Sphere: Shapes = 1;
 const  Capsule: Shapes = 2;
 const  Cylinder: Shapes = 3;
 const  Box: Shapes = 4;
+const  Cone: Shapes = 5;
 
 //////// import: "slmath-matrix3.go"
 
@@ -342,11 +346,11 @@ fn QuatNormalize(q: vec4<f32>) -> vec4<f32> {
 }
 fn MulQuatVector(q: vec4<f32>, v: vec3<f32>) -> vec3<f32> {
 	var xyz = vec3<f32>(q.x, q.y, q.z);
-	var t = MulScalar3(Cross3(xyz, v), f32(f32(2)));return v+(MulScalar3(t, q.w))+(Cross3(xyz, t));
+	var t = Cross3(xyz, v)*(2);return v+(t*(q.w))+(Cross3(xyz, t));
 }
 fn MulQuatVectorInverse(q: vec4<f32>, v: vec3<f32>) -> vec3<f32> {
 	var xyz = vec3<f32>(q.x, q.y, q.z);
-	var t = MulScalar3(Cross3(xyz, v), f32(f32(2)));return v-(MulScalar3(t, q.w))+(Cross3(xyz, t));
+	var t = Cross3(xyz, v)*(2);return v-(t*(q.w))+(Cross3(xyz, t));
 }
 fn MulQuats(a: vec4<f32>,b: vec4<f32>) -> vec4<f32> {
 	var q: vec4<f32>;
@@ -356,10 +360,9 @@ fn MulQuats(a: vec4<f32>,b: vec4<f32>) -> vec4<f32> {
 	q.w = a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z;return q;
 }
 
+//////// import: "slmath-vector2.go"
+
 //////// import: "slmath-vector3.go"
-fn MulScalar3(v: vec3<f32>, s: f32) -> vec3<f32> {
-	return vec3<f32>(v.x*s, v.y*s, v.z*s);
-}
 fn Length3(v: vec3<f32>) -> f32 {
 	return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
 }

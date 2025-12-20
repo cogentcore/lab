@@ -8,22 +8,6 @@ import "cogentcore.org/core/math32"
 
 //gosl:start
 
-func AddScalar3(v math32.Vector3, s float32) math32.Vector3 {
-	return math32.Vec3(v.X+s, v.Y+s, v.Z+s)
-}
-
-func SubScalar3(v math32.Vector3, s float32) math32.Vector3 {
-	return math32.Vec3(v.X-s, v.Y-s, v.Z-s)
-}
-
-func MulScalar3(v math32.Vector3, s float32) math32.Vector3 {
-	return math32.Vec3(v.X*s, v.Y*s, v.Z*s)
-}
-
-func DivScalar3(v math32.Vector3, s float32) math32.Vector3 {
-	return math32.Vec3(v.X/s, v.Y/s, v.Z/s)
-}
-
 // DivSafe3 divides v by o elementwise, only where o != 0
 func DivSafe3(v math32.Vector3, o math32.Vector3) math32.Vector3 {
 	nv := v
@@ -94,7 +78,7 @@ func Clamp3(v, min, max math32.Vector3) math32.Vector3 {
 
 // Normal3 returns this vector divided by its length (its unit vector).
 func Normal3(v math32.Vector3) math32.Vector3 {
-	return DivScalar3(v, Length3(v))
+	return v.DivScalar(Length3(v))
 }
 
 // Cross3 returns the cross product of this vector with other.

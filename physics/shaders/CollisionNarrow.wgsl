@@ -44,39 +44,40 @@ const  BodyGroup: BodyVars = 3;
 const  BodySizeX: BodyVars = 4;
 const  BodySizeY: BodyVars = 5;
 const  BodySizeZ: BodyVars = 6;
-const  BodyMass: BodyVars = 7;
-const  BodyInvMass: BodyVars = 8;
-const  BodyBounce: BodyVars = 9;
-const  BodyFriction: BodyVars = 10;
-const  BodyPosX: BodyVars = 11;
-const  BodyPosY: BodyVars = 12;
-const  BodyPosZ: BodyVars = 13;
-const  BodyQuatX: BodyVars = 14;
-const  BodyQuatY: BodyVars = 15;
-const  BodyQuatZ: BodyVars = 16;
-const  BodyQuatW: BodyVars = 17;
-const  BodyComX: BodyVars = 18;
-const  BodyComY: BodyVars = 19;
-const  BodyComZ: BodyVars = 20;
-const  BodyInertiaXX: BodyVars = 21;
-const  BodyInertiaYX: BodyVars = 22;
-const  BodyInertiaZX: BodyVars = 23;
-const  BodyInertiaXY: BodyVars = 24;
-const  BodyInertiaYY: BodyVars = 25;
-const  BodyInertiaZY: BodyVars = 26;
-const  BodyInertiaXZ: BodyVars = 27;
-const  BodyInertiaYZ: BodyVars = 28;
-const  BodyInertiaZZ: BodyVars = 29;
-const  BodyInvInertiaXX: BodyVars = 30;
-const  BodyInvInertiaYX: BodyVars = 31;
-const  BodyInvInertiaZX: BodyVars = 32;
-const  BodyInvInertiaXY: BodyVars = 33;
-const  BodyInvInertiaYY: BodyVars = 34;
-const  BodyInvInertiaZY: BodyVars = 35;
-const  BodyInvInertiaXZ: BodyVars = 36;
-const  BodyInvInertiaYZ: BodyVars = 37;
-const  BodyInvInertiaZZ: BodyVars = 38;
-const  BodyRadius: BodyVars = 39;
+const  BodyThick: BodyVars = 7;
+const  BodyMass: BodyVars = 8;
+const  BodyInvMass: BodyVars = 9;
+const  BodyBounce: BodyVars = 10;
+const  BodyFriction: BodyVars = 11;
+const  BodyPosX: BodyVars = 12;
+const  BodyPosY: BodyVars = 13;
+const  BodyPosZ: BodyVars = 14;
+const  BodyQuatX: BodyVars = 15;
+const  BodyQuatY: BodyVars = 16;
+const  BodyQuatZ: BodyVars = 17;
+const  BodyQuatW: BodyVars = 18;
+const  BodyComX: BodyVars = 19;
+const  BodyComY: BodyVars = 20;
+const  BodyComZ: BodyVars = 21;
+const  BodyInertiaXX: BodyVars = 22;
+const  BodyInertiaYX: BodyVars = 23;
+const  BodyInertiaZX: BodyVars = 24;
+const  BodyInertiaXY: BodyVars = 25;
+const  BodyInertiaYY: BodyVars = 26;
+const  BodyInertiaZY: BodyVars = 27;
+const  BodyInertiaXZ: BodyVars = 28;
+const  BodyInertiaYZ: BodyVars = 29;
+const  BodyInertiaZZ: BodyVars = 30;
+const  BodyInvInertiaXX: BodyVars = 31;
+const  BodyInvInertiaYX: BodyVars = 32;
+const  BodyInvInertiaZX: BodyVars = 33;
+const  BodyInvInertiaXY: BodyVars = 34;
+const  BodyInvInertiaYY: BodyVars = 35;
+const  BodyInvInertiaZY: BodyVars = 36;
+const  BodyInvInertiaXZ: BodyVars = 37;
+const  BodyInvInertiaYZ: BodyVars = 38;
+const  BodyInvInertiaZZ: BodyVars = 39;
+const  BodyRadius: BodyVars = 40;
 fn GetBodyShape(idx: i32) -> Shapes {
 	return Shapes(bitcast<u32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyShape))]));
 }
@@ -147,9 +148,8 @@ fn CollisionNarrow(i: u32) { //gosl:kernel
 	var gdA = NewGeomData(biA, params.Cur, sA);
 	var gdB = NewGeomData(biB, params.Cur, sB);
 	var margin = params.ContactMargin;
-	var thickness = gdA.Thickness + gdB.Thickness; // todo
+	var thick = gdA.Thick + gdB.Thick;
 	var dist = f32(1.0e6);
-	var cni = params.Cur;
 	var ptA: vec3<f32>;
 	var ptB: vec3<f32>;
 	var norm: vec3<f32>;
@@ -157,7 +157,7 @@ fn CollisionNarrow(i: u32) { //gosl:kernel
 	case Sphere: {
 		switch (gdB.Shape) {
 		case Sphere: {
-			dist = ColSphereSphere(cni, &gdA, &gdB, &ptA, &ptB, &norm);
+			dist = ColSphereSphere(cpi, &gdA, &gdB, &ptA, &ptB, &norm);
 		}
 		case Box: {
 		}
@@ -220,7 +220,7 @@ fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> {
 }
 
 //////// import: "enumgen.go"
-const BodyVarsN: BodyVars = 40;
+const BodyVarsN: BodyVars = 41;
 const ContactVarsN: ContactVars = 17;
 const JointControlVarsN: JointControlVars = 3;
 const DynamicVarsN: DynamicVars = 32;
@@ -228,7 +228,7 @@ const GPUVarsN: GPUVars = 10;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
 const JointDoFVarsN: JointDoFVars = 7;
-const ShapesN: Shapes = 5;
+const ShapesN: Shapes = 6;
 
 //////// import: "joint.go"
 const JointLimitUnlimited = 1e10;
@@ -334,39 +334,44 @@ struct GeomData {
 	BodyIdx: i32,
 	Shape: Shapes,
 	MinSize: f32,
-	Thickness: f32,
+	Thick: f32,
 	Radius: f32,
 	Size: vec3<f32>,
-	WtoBR: vec3<f32>,
-	WtoBQ: vec4<f32>,
-	BtoWR: vec3<f32>,
-	BtoWQ: vec4<f32>,
+	WbR: vec3<f32>,
+	WbQ: vec4<f32>,
+	BwR: vec3<f32>,
+	BwQ: vec4<f32>,
 }
 fn NewGeomData(bi: i32,cni: i32, shp: Shapes) -> GeomData {
 	var gd: GeomData;
 	gd.BodyIdx = bi;
 	gd.Shape = shp;
 	gd.Size = BodySize(bi);
+	gd.Thick = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyThick))];
 	gd.MinSize = min(gd.Size.x, gd.Size.y);
 	gd.MinSize = min(gd.MinSize, gd.Size.z);
-	gd.WtoBR = BodyDynamicPos(bi, cni);
-	gd.WtoBQ = BodyDynamicQuat(bi, cni);
+	gd.WbR = BodyDynamicPos(bi, cni);
+	gd.WbQ = BodyDynamicQuat(bi, cni);
 	var bwR: vec3<f32>;
 	var bwQ: vec4<f32>;
-	SpatialTransformInverse(gd.WtoBR, gd.WtoBQ, &bwR, &bwQ);
-	gd.BtoWR = bwR;
-	gd.BtoWQ = bwQ;
+	SpatialTransformInverse(gd.WbR, gd.WbQ, &bwR, &bwQ);
+	gd.BwR = bwR;
+	gd.BwQ = bwQ;
 	gd.Radius = f32(0);
 	if (shp == Sphere || shp == Capsule) { // todo: cone is separate
 		gd.Radius = gd.Size.x;
 	}return gd;
 }
-fn ColSphereSphere(cni: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, ptA: ptr<function,vec3<f32>>,ptB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
-	*ptA = (*gdA).WtoBR;
-	*ptB = (*gdB).WtoBR;
-	var diff = (*ptA)-(*ptB);
+fn ColSphereSphere(cpi: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, ptA: ptr<function,vec3<f32>>,ptB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
+	var ptAw = (*gdA).WbR;
+	var ptBw = (*gdB).WbR;
+	var diff = ptAw-(ptBw);
+	*ptA = ptAw;
+	*ptB = ptBw;
 	*norm = Normal3(diff);return Dot3(diff, *norm);
 }
+
+//////// import: "shapegeom.go"
 
 //////// import: "shapes.go"
 alias Shapes = i32; //enums:enum
@@ -375,6 +380,7 @@ const  Sphere: Shapes = 1;
 const  Capsule: Shapes = 2;
 const  Cylinder: Shapes = 3;
 const  Box: Shapes = 4;
+const  Cone: Shapes = 5;
 
 //////// import: "slmath-matrix3.go"
 
@@ -400,7 +406,7 @@ fn QuatNormalize(q: vec4<f32>) -> vec4<f32> {
 }
 fn MulQuatVector(q: vec4<f32>, v: vec3<f32>) -> vec3<f32> {
 	var xyz = vec3<f32>(q.x, q.y, q.z);
-	var t = MulScalar3(Cross3(xyz, v), f32(f32(2)));return v+(MulScalar3(t, q.w))+(Cross3(xyz, t));
+	var t = Cross3(xyz, v)*(2);return v+(t*(q.w))+(Cross3(xyz, t));
 }
 fn SpatialTransformInverse(p: vec3<f32>, q: vec4<f32>, oP: ptr<function,vec3<f32>>, oQ: ptr<function,vec4<f32>>) {
 	var qi = QuatInverse(q);
@@ -414,13 +420,9 @@ fn QuatInverse(q: vec4<f32>) -> vec4<f32> {
 	nq.z *= f32(-1);return QuatNormalize(nq);
 }
 
+//////// import: "slmath-vector2.go"
+
 //////// import: "slmath-vector3.go"
-fn MulScalar3(v: vec3<f32>, s: f32) -> vec3<f32> {
-	return vec3<f32>(v.x*s, v.y*s, v.z*s);
-}
-fn DivScalar3(v: vec3<f32>, s: f32) -> vec3<f32> {
-	return vec3<f32>(v.x/s, v.y/s, v.z/s);
-}
 fn Negate3(v: vec3<f32>) -> vec3<f32> {
 	return vec3<f32>(-v.x, -v.y, -v.z);
 }
@@ -431,7 +433,7 @@ fn Dot3(v: vec3<f32>,o: vec3<f32>) -> f32 {
 	return v.x*o.x + v.y*o.y + v.z*o.z;
 }
 fn Normal3(v: vec3<f32>) -> vec3<f32> {
-	return DivScalar3(v, Length3(v));
+	return v/(Length3(v));
 }
 fn Cross3(v: vec3<f32>,o: vec3<f32>) -> vec3<f32> {
 	return vec3<f32>(v.y*o.z-v.z*o.y, v.z*o.x-v.x*o.z, v.x*o.y-v.y*o.x);

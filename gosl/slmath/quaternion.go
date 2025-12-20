@@ -36,16 +36,16 @@ func QuatNormalize(q math32.Quat) math32.Quat {
 // to the [math32.Vector3].
 func MulQuatVector(q math32.Quat, v math32.Vector3) math32.Vector3 {
 	xyz := math32.Vec3(q.X, q.Y, q.Z)
-	t := MulScalar3(Cross3(xyz, v), 2)
-	return v.Add(MulScalar3(t, q.W)).Add(Cross3(xyz, t))
+	t := Cross3(xyz, v).MulScalar(2)
+	return v.Add(t.MulScalar(q.W)).Add(Cross3(xyz, t))
 }
 
 // MulQuatVectorInverse applies the inverse of the rotation encoded
 // in the [math32.Quat] to the [math32.Vector3].
 func MulQuatVectorInverse(q math32.Quat, v math32.Vector3) math32.Vector3 {
 	xyz := math32.Vec3(q.X, q.Y, q.Z)
-	t := MulScalar3(Cross3(xyz, v), 2)
-	return v.Sub(MulScalar3(t, q.W)).Add(Cross3(xyz, t))
+	t := Cross3(xyz, v).MulScalar(2)
+	return v.Sub(t.MulScalar(q.W)).Add(Cross3(xyz, t))
 }
 
 // MulQuats returns multiplication of a by b quaternions.

@@ -23,30 +23,38 @@ type Shapes int32 //enums:enum
 const (
 	// Plane cannot be a dynamic shape, but is most efficient for
 	// collision computations. Use size = 0 for an infinite plane.
+	// Natively extends in the X-Z plane: SizeX x SizeZ.
 	Plane Shapes = iota
+
+	// todo: HeightField here (terrain)
 
 	// Sphere. SizeX is the radius.
 	Sphere
 
-	// Capsule, which is a cylinder with half-spheres on the ends.
+	// Capsule is a cylinder with half-spheres on the ends.
 	// Natively oriented vertically along the Y axis.
-	// SizeX = bottom radius, SizeY = half-height, SizeZ = top radius.
+	// SizeX = radius, SizeY = half-height.
 	Capsule
 
 	// todo: Ellipsoid goes here
 
 	// Cylinder, natively oriented vertically along the Y axis.
-	// If one radius is 0, then it is a cone.
-	// SizeX = bottom radius, SizeY = half-height in Y axis, SizeZ = top radius.
+	// SizeX = radius, SizeY = half-height in Y axis.
 	// Cylinder can not collide with a Box.
 	Cylinder
-
-	// todo: add separate Cone
 
 	// Box is a 3D rectalinear shape.
 	// The sizes are _half_ sizes along each dimension,
 	// relative to the center.
 	Box
+
+	// todo: Mesh, SDF here
+
+	// Cone is like a cylinder with the top radius = 0,
+	// oriented up. SizeX = bottom radius, SizeY = half-height in Y.
+	// Cone does not support any collisions and is not recommended for
+	// interacting bodies.
+	Cone
 )
 
 // newton: geometry/kernels.py: count_contact_points_for_pair
@@ -97,7 +105,7 @@ func ShapePairContacts(a, b Shapes, infPlane bool, ba *int32) int32 {
 	case Box:
 		*ba = 12
 		return 12
-	default:
+	default: // note: Cone has no collision points!
 		return 0
 	}
 }

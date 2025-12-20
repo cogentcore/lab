@@ -178,7 +178,7 @@ func CollisionBroad(i uint32) { //gosl:kernel
 			infPlane = true
 		}
 		queryB := slmath.MulSpatialPoint(xwAR, xwAQ, xwBR)
-		closest := ClosestPointPlane(szA, queryB)
+		closest := ClosestPointPlane(szA.X, szA.Z, queryB)
 		d := slmath.Length3(queryB.Sub(closest))
 		if d > rb+margin {
 			return
@@ -251,16 +251,15 @@ func CollisionNarrow(i uint32) { //gosl:kernel
 	// could be per-shape
 	// margin = wp.max(shape_contact_margin[shape_a], shape_contact_margin[shape_b])
 	margin := params.ContactMargin
-    thickness := gdA.Thickness + gdB.Thickness // todo
+    thick := gdA.Thick + gdB.Thick
 	
     dist := float32(1.0e6)
-	cni := params.Cur
 	var ptA, ptB, norm math32.Vector3
 	switch gdA.Shape {
 	case Sphere:
 		switch gdB.Shape {
 		case Sphere:
-			dist = ColSphereSphere(cni, &gdA, &gdB, &ptA, &ptB, &norm)
+			dist = ColSphereSphere(cpi, &gdA, &gdB, &ptA, &ptB, &norm)
 		case Box:
 		case Capsule:
 		default:
@@ -269,18 +268,6 @@ func CollisionNarrow(i uint32) { //gosl:kernel
 	}
 }
 
-
-// ClosestPointPlane projects the point onto the quad in
-// the xy plane (if size > 0.0, otherwise infinite.
-func ClosestPointPlane(sz, pt math32.Vector3) math32.Vector3 {
-	cp := pt
-    if sz.X == 0.0 {
-		return cp
-	}
-	cp.X = math32.Clamp(pt.X, -sz.X, sz.X)
-	cp.Y = math32.Clamp(pt.Y, -sz.Y, sz.Y)
-	return cp
-}
 
 //gosl:end
 

@@ -28,7 +28,11 @@ There is a special constraint where the parent and child on a same joint do not 
 
 ## Shapes
 
-The elemental shapes are a `Box`, `Sphere`, `Cylinder` (Cone if one radius is 0), and `Capsule`: [[doc:physics.Shapes]]. The `Size` property on bodies is always the _half_ size, such as the radius or the half-height of a cylinder or capsule. This is used in `newton-physics` and makes more sense for center-based computations: physics operates on the center-of-mass of a body. Consistent with the overall coordinate system, the `Cylinder` and `Capsule` are oriented with `Y` as the height dimension, which is unfortunately inconsistent with the Z=up convention in `newton-physics`.
+The elemental shapes are a `Plane`, `Sphere`, `Capsule`, `Cylinder`, `Cone`, and `Box`: [[doc:physics.Shapes]]. The `Size` property on bodies is always the _half_ size, such as the radius or the half-height of a cylinder or capsule. This is used in `newton-physics` and makes more sense for center-based computations: physics operates on the center-of-mass of a body. Consistent with the overall coordinate system, the `Cylinder` and `Capsule` are oriented with `Y` as the height dimension, which is unfortunately inconsistent with the Z=up convention in `newton-physics`.
+
+### Multi-shape bodies
+
+The newton-physics framework, and MuJoCo upon which it is based, support multiple shapes per body, which can then be integrated to produce an aggregate inertia. This adds an additional level of complexity and management overhead, which we are currently avoiding in favor of putting the shapes directly on the body, so each body has 1 and only 1 shape. This simplifies collision considerably as well. It would not be difficult to add a shape layer at some point in the future. The same goes for Mesh, SDF, and HeightField types.
 
 ## Joints
 
@@ -56,7 +60,7 @@ Typically, bodies are created using the enhanced functions in the [[doc:physics/
 
 ## Physics solver algorithms
 
-This section provides a brief overview of different physics solver algorithms, and motivates why we're using XPBD (see [[@MacklinMullerChentanez16]] and [[@MullerMacklinChentanezEtAl20]] for full info). There are two main categories of mathematical problems that these engines solve:
+This section provides a brief overview of different physics solver algorithms, and motivates why we're using XPBD (see [[@MacklinMullerChentanez16]] and [[@MullerMacklinChentanezEtAl20]] for full info). See [[@CollinsChandVanderkopEtAl21]] for a recent review of relevant software and approaches. There are two main categories of mathematical problems that these engines solve:
 
 * Impacts from contact / collisions among bodies. When two billiard balls hit each other, they rebound in an _elastic_ collision, for example. There are also forces of friction and graded levels of inelasticity in these dynamics. The primary problem here is that the instantaneous forces involved in these impacts can be huge (this is why objects tend to shatter when you drop them on a hard surface), because the momentum reverses within a very short period of time. Numerical integration techniques tend to perform poorly when dealing with such huge forces and resulting accelerations.
 
