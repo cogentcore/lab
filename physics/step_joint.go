@@ -27,6 +27,8 @@ import (
 //gosl:start
 //gosl:import "cogentcore.org/lab/gosl/slmath"
 
+// newton: solvers/xpbd/kernels.py: apply_joint_forces
+
 // StepJointForces computes joint forces.
 func StepJointForces(i uint32) { //gosl:kernel
 	params := GetParams(0)
@@ -107,6 +109,8 @@ func StepJointForces(i uint32) { //gosl:kernel
 	SetJointPTorque(ji, t.Add(slmath.Cross3(dP, f)))
 	SetJointCTorque(ji, t.Add(slmath.Cross3(dC, f)))
 }
+
+// newton: solvers/xpbd/kernels.py: solve_body_joints
 
 // StepSolveJoints fixes joints after updating bodies.
 func StepSolveJoints(i uint32) { //gosl:kernel

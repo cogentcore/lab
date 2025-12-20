@@ -120,6 +120,12 @@ func GPUInit() {
 		pl.AddVarUsed(2, "Contacts")
 		pl.AddVarUsed(2, "Dynamics")
 		pl.AddVarUsed(0, "Params")
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/CollisionNarrow.wgsl", sy)
+		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(1, "Bodies")
+		pl.AddVarUsed(2, "Contacts")
+		pl.AddVarUsed(2, "Dynamics")
+		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/DeltasFromJoints.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(1, "BodyJoints")
@@ -226,6 +232,48 @@ func RunOneCollisionBroad(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunCollisionBroadCPU(n)
+	}
+}
+// RunCollisionNarrow runs the CollisionNarrow kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneCollisionNarrow call does Run and Done for a
+// single run-and-sync case.
+func RunCollisionNarrow(n int) {
+	if UseGPU {
+		RunCollisionNarrowGPU(n)
+	} else {
+		RunCollisionNarrowCPU(n)
+	}
+}
+
+// RunCollisionNarrowGPU runs the CollisionNarrow kernel on the GPU. See [RunCollisionNarrow] for more info.
+func RunCollisionNarrowGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["CollisionNarrow"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunCollisionNarrowCPU runs the CollisionNarrow kernel on the CPU.
+func RunCollisionNarrowCPU(n int) {
+	gpu.VectorizeFunc(0, n, CollisionNarrow)
+}
+
+// RunOneCollisionNarrow runs the CollisionNarrow kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneCollisionNarrow(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunCollisionNarrowGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunCollisionNarrowCPU(n)
 	}
 }
 // RunDeltasFromJoints runs the DeltasFromJoints kernel with given number of elements,

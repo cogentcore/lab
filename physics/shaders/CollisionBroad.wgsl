@@ -433,6 +433,18 @@ fn ShapePairContacts(a: Shapes,b: Shapes, infPlane: bool, ba: ptr<function,i32>)
 	}
 	}
 }
+struct GeomData {
+	BodyIdx: i32,
+	Shape: Shapes,
+	MinSize: f32,
+	Thickness: f32,
+	Radius: f32,
+	Size: vec3<f32>,
+	WtoBR: vec3<f32>,
+	WtoBQ: vec4<f32>,
+	BtoWR: vec3<f32>,
+	BtoWQ: vec4<f32>,
+}
 
 //////// import: "slmath-matrix3.go"
 

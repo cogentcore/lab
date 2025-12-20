@@ -439,6 +439,7 @@ func (p *printer) parameters(fields *ast.FieldList, mode paramMode) {
 					p.expr(atyp)
 					if isPtr {
 						p.print(">")
+						p.curPtrArgs = append(p.curPtrArgs, par.Names[0])
 					}
 				} else {
 					atyp, isPtr := p.ptrParamType(stripParensAlways(par.Type))
@@ -700,7 +701,15 @@ func (p *printer) ptrParamType(x ast.Expr) (ast.Expr, bool) {
 			typ := p.getIdType(pt)
 			if typ != nil {
 				if _, ok := typ.Underlying().(*types.Struct); ok {
-					return u.X, false
+					tn := getLocalTypeName(typ)
+					pi := strings.Index(tn, ".")
+					if pi > 0 {
+						tn = tn[pi+1:]
+					}
+					// fmt.Printf("struct typ: %s\n", tn)
+					if _, ok := p.GoToSL.VarStructTypes[tn]; ok {
+						return u.X, false // no pointer, else ok
+					}
 				}
 			}
 			p.print("ptr<function", token.COMMA)

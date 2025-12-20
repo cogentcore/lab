@@ -257,6 +257,18 @@ const  Sphere: Shapes = 1;
 const  Capsule: Shapes = 2;
 const  Cylinder: Shapes = 3;
 const  Box: Shapes = 4;
+struct GeomData {
+	BodyIdx: i32,
+	Shape: Shapes,
+	MinSize: f32,
+	Thickness: f32,
+	Radius: f32,
+	Size: vec3<f32>,
+	WtoBR: vec3<f32>,
+	WtoBQ: vec4<f32>,
+	BtoWR: vec3<f32>,
+	BtoWQ: vec4<f32>,
+}
 
 //////// import: "slmath-matrix3.go"
 

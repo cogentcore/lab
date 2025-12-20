@@ -42,12 +42,6 @@ func (st *State) TranslateDir(pf string) error {
 	// return nil, err
 	files := pkg.GoFiles
 
-	serr := alignsl.CheckPackage(pkg)
-
-	if serr != nil {
-		fmt.Println(serr)
-	}
-
 	st.FuncGraph = make(map[string]*Function)
 	st.GetFuncGraph = true
 
@@ -181,6 +175,18 @@ func (st *State) TranslateDir(pf string) error {
 	fmt.Println("\n###################################\nMaximum number of variables used per shader:", maxVarsUsed)
 	if nOverBase > 0 {
 		fmt.Printf("WARNING: %d shaders exceed maxStorageBuffersPerShaderStage min of 10\n", nOverBase)
+	}
+
+	//////// check types
+
+	structTypes := make(map[string]bool)
+	for nm := range st.VarStructTypes {
+		structTypes[nm] = true
+	}
+
+	serr := alignsl.CheckPackage(pkg, structTypes)
+	if serr != nil {
+		fmt.Println(serr)
 	}
 	return nil
 }

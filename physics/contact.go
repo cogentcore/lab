@@ -229,6 +229,46 @@ func AddContacts(biA, biB, ci, ncA, ncB int32) {
 	}
 }
 
+// newton: geometry/kernels.py: generate_handle_contact_pairs / handle_contact_pairs
+
+// CollisionNarrow performs narrow-phase collision on Contacts.
+func CollisionNarrow(i uint32) { //gosl:kernel
+	params := GetParams(0)
+	ci := int32(i)
+	if ci >= params.ContactsMax {
+		return
+	}
+	biA := GetContactA(ci)
+	biB := GetContactB(ci)
+	cpi := GetContactPointIdx(ci)
+
+	sA := GetBodyShape(biA)
+	sB := GetBodyShape(biB)
+
+	gdA := NewGeomData(biA, params.Cur, sA)
+	gdB := NewGeomData(biB, params.Cur, sB)
+
+	// could be per-shape
+	// margin = wp.max(shape_contact_margin[shape_a], shape_contact_margin[shape_b])
+	margin := params.ContactMargin
+	thickness := gdA.Thickness + gdB.Thickness // todo
+
+	dist := float32(1.0e6)
+	cni := params.Cur
+	var ptA, ptB, norm math32.Vector3
+	switch gdA.Shape {
+	case Sphere:
+		switch gdB.Shape {
+		case Sphere:
+			dist = ColSphereSphere(cni, &gdA, &gdB, &ptA, &ptB, &norm)
+		case Box:
+		case Capsule:
+		default:
+		}
+	default:
+	}
+}
+
 // ClosestPointPlane projects the point onto the quad in
 // the xy plane (if size > 0.0, otherwise infinite.
 func ClosestPointPlane(sz, pt math32.Vector3) math32.Vector3 {

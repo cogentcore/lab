@@ -202,29 +202,31 @@ The flags are:
 
 `gosl` always operates on the current directory, looking for all files with `//gosl:` tags, and accumulating all the `import` files that they include, etc.
   
-Any `struct` types encountered will be checked for 16-byte alignment of sub-types and overall sizes as an even multiple of 16 bytes (4 `float32` or `int32` values), which is the alignment used in WGSL and glsl shader languages, and the underlying GPU hardware presumably.  Look for error messages on the output from the gosl run.  This ensures that direct byte-wise copies of data between CPU and GPU will be successful.  The fact that `gosl` operates directly on the original CPU-side Go code uniquely enables it to perform these alignment checks, which are otherwise a major source of difficult-to-diagnose bugs.
+Any `struct` types encountered will be checked for 16-byte alignment of sub-types and overall sizes as an even multiple of 16 bytes (4 `float32` or `int32` values), which is the alignment used in WGSL and glsl shader languages, and the underlying GPU hardware presumably. Look for error messages on the output from the gosl run. This ensures that direct byte-wise copies of data between CPU and GPU will be successful. The fact that `gosl` operates directly on the original CPU-side Go code uniquely enables it to perform these alignment checks, which are otherwise a major source of difficult-to-diagnose bugs.
 
 ## Restrictions    
 
-In general shader code should be simple mathematical expressions and data types, with minimal control logic via `if`, `for` statements, and only using the subset of Go that is consistent with C.  Here are specific restrictions:
+In general shader code should be simple mathematical expressions and data types, with minimal control logic via `if`, `for` statements, and only using the subset of Go that is consistent with C. Here are specific restrictions:
 
-* Can only use `float32`, `[u]int32` for basic types (`int` is converted to `int32` automatically), and `struct` types composed of these same types -- no other Go types (i.e., `map`, slices, `string`, etc) are compatible.  There are strict alignment restrictions on 16 byte (e.g., 4 `float32`'s) intervals that are enforced via the `alignsl` sub-package.
+* Can only use `float32`, `[u]int32` for basic types (`int` is converted to `int32` automatically), and `struct` types composed of these same types -- no other Go types (i.e., `map`, slices, `string`, etc) are compatible. There are strict alignment restrictions on 16 byte (e.g., 4 `float32`'s) intervals that are enforced via the `alignsl` sub-package.
 
 * WGSL does _not_ support 64 bit float or int.
 
 * Use `slbool.Bool` instead of `bool` -- it defines a Go-friendly interface based on a `int32` basic type.
 
-* Alignment and padding of `struct` fields is key -- this is automatically checked by `gosl`.
+* Alignment and padding of `struct` fields is key -- this is automatically checked by `gosl`. Any purely internally-used struct that is not used for variables passed between CPU and GPU is not checked and can use non-auto-aligned types, because we don't care about bit-wise identity between CPU and GPU.
 
-* WGSL does not support enum types, but standard go `const` declarations will be converted.  Use an `int32` or `uint32` data type.  It will automatically deal with the simple incrementing `iota` values, but not more complex cases.  Also, for bitflags, define explicitly, not using `bitflags` package, and use `0x01`, `0x02`, `0x04` etc instead of `1<<2` -- in theory the latter should be ok but in practice it complains.
+* Cannot use a pointer type for the first argument to any function. This is because all methods with pointer method receivers are automatically converted into functions where the receiver is the first argument, which cannot be a pointer. It is too hard to distinguish all of these cases.
+
+* WGSL does not support enum types, but standard go `const` declarations will be converted. Use an `int32` or `uint32` data type. It will automatically deal with the simple incrementing `iota` values, but not more complex cases. Also, for bitflags, define explicitly, not using `bitflags` package, and use `0x01`, `0x02`, `0x04` etc instead of `1<<2` -- in theory the latter should be ok but in practice it complains.
 
 * Cannot use multiple return values, or multiple assignment of variables in a single `=` expression.
 
 * *Can* use multiple variable names with the same type (e.g., `min, max float32`) -- this will be properly converted to the more redundant form with the type repeated, for WGSL.
 
-* `switch` `case` statements are _purely_ self-contained -- no `fallthrough` allowed!  does support multiple items per `case` however. Every `switch` _must_ have a `default` case.
+* `switch` `case` statements are _purely_ self-contained -- no `fallthrough` allowed! Does support multiple items per `case` however. Every `switch` _must_ have a `default` case.
 
-* WGSL does specify that new variables are initialized to 0, like Go, but also somehow discourages that use-case.  It is safer to initialize directly:
+* WGSL does specify that new variables are initialized to 0, like Go, but also somehow discourages that use-case. It is safer to initialize directly:
 ```go
     val := float32(0) // guaranteed 0 value
     var val float32 // ok but generally avoid
@@ -243,7 +245,7 @@ This automatically does the right thing on GPU while returning a pointer to the 
 * [tour-of-wgsl](https://google.github.io/tour-of-wgsl/types/pointers/passing_pointers/) is a good reference to explain things more directly than the spec.
 
 * `ptr<function,MyStruct>` provides a pointer arg
-* `private` scope = within the shader code "module", i.e., one thread.  
+* `private` scope = within the shader code "module", i.e., one thread. 
 * `function` = within the function, not outside it.
 * `workgroup` = shared across workgroup -- coudl be powerful (but slow!) -- need to learn more.
 
