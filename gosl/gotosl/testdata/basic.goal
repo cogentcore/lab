@@ -206,8 +206,12 @@ func (ps *ParamStruct) AnotherMeth(ctx *Context, idx int, ptrarg *float32) {
 	Data[idx, Exp] = ps.Subs.SumPlus(b)
 	Data[idx, Integ] = a
 
-	for i := range 10 {
-		_ = i
+	// for i := range 10 {
+	// 	_ = i
+	// 	Data[idx, Exp] *= 0.99
+	// }
+
+	for range 10 {
 		Data[idx, Exp] *= 0.99
 	}
 

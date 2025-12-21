@@ -59,14 +59,24 @@ var (
 	//gosl:dims 3
 	Dynamics *tensor.Float32
 
-	// ContactCount has number of points of contact between bodies.
-	// params.Cur is written to and params.Next is zeroed in
-	// narrow-phase contacts processing, so it is ready for next time.
-	// [2]
+	// BroadContactsN has number of points of broad contact
+	// between bodies. [1]
 	//gosl:dims 1
-	ContactCount *tensor.Int32
+	BroadContactsN *tensor.Int32
 
-	// Contacts are points of contact between bodies.
+	// BroadContacts are the results of broad-phase contact processing,
+	// establishing possible points of contact between bodies.
+	// [ContactsMax][BroadContactVarsN]
+	//gosl:dims 2
+	BroadContacts *tensor.Float32
+
+	// ContactsN has number of points of narrow (final) contact
+	// between bodies. [1]
+	//gosl:dims 1
+	ContactsN *tensor.Int32
+
+	// Contacts are the results of narrow-phase contact processing,
+	// where only actual contacts with fully-specified values are present.
 	// [ContactsMax][ContactVarsN]
 	//gosl:dims 2
 	Contacts *tensor.Float32

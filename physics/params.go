@@ -46,6 +46,10 @@ type PhysParams struct {
 	// Restitution
 	Restitution slbool.Bool `default:"false"`
 
+	// MaxGeomIter is number of iterations to perform in shape-based
+	// geometry collision computations
+	MaxGeomIter int32 `default:"10"`
+
 	// Contact margin is the extra distance for broadphase collision
 	// around rigid bodies.
 	ContactMargin float32
@@ -78,7 +82,7 @@ type PhysParams struct {
 	// to examine.
 	BodyCollidePairsN int32 `edit:"-"`
 
-	pad, pad1, pad2 int32
+	pad, pad1 int32
 
 	// Gravity is the gravity acceleration function
 	Gravity slvec.Vector3
@@ -95,6 +99,7 @@ func (pr *PhysParams) Defaults() {
 	pr.JointAngularComply = 0
 	pr.ContactRelax = 0.8
 	pr.AngularDamping = 0
+	pr.MaxGeomIter = 10
 	pr.ContactWeighting.SetBool(true)
 	pr.Restitution.SetBool(false)
 	pr.ContactMargin = 0.1

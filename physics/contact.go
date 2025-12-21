@@ -43,9 +43,19 @@ const (
 	ContactBPointY
 	ContactBPointZ
 
-	// Contact depths (thickness in newton)
-	ContactADepth
-	ContactBDepth
+	// contact offset on body A
+	ContactAOffX
+	ContactAOffY
+	ContactAOffZ
+
+	// contact offset on body B
+	ContactBOffX
+	ContactBOffY
+	ContactBOffZ
+
+	// Contact thickness
+	ContactAThick
+	ContactBThick
 
 	// normal pointing from center of B to center of A
 	ContactNormX
@@ -57,6 +67,35 @@ const (
 	ContactForceY
 	ContactForceZ
 )
+
+// number of broad-phase contact values: just the indexes
+const BroadContactVarsN = ContactAPointX
+
+func SetBroadContactA(idx, bodIdx int32) {
+	BroadContacts.Set(math.Float32frombits(uint32(bodIdx)), int(idx), int(ContactA))
+}
+
+func GetBroadContactA(idx int32) int32 {
+	return int32(math.Float32bits(BroadContacts.Value(int(idx), int(ContactA))))
+}
+
+func SetBroadContactB(idx, bodIdx int32) {
+	BroadContacts.Set(math.Float32frombits(uint32(bodIdx)), int(idx), int(ContactB))
+}
+
+func GetBroadContactB(idx int32) int32 {
+	return int32(math.Float32bits(BroadContacts.Value(int(idx), int(ContactB))))
+}
+
+func SetBroadContactPointIdx(idx, ptIdx int32) {
+	BroadContacts.Set(math.Float32frombits(uint32(ptIdx)), int(idx), int(ContactPointIdx))
+}
+
+func GetBroadContactPointIdx(idx int32) int32 {
+	return int32(math.Float32bits(BroadContacts.Value(int(idx), int(ContactPointIdx))))
+}
+
+//////// Narrow
 
 func SetContactA(idx, bodIdx int32) {
 	Contacts.Set(math.Float32frombits(uint32(bodIdx)), int(idx), int(ContactA))
@@ -102,6 +141,26 @@ func SetContactBPoint(idx int32, pos math32.Vector3) {
 	Contacts.Set(pos.Z, int(idx), int(ContactBPointZ))
 }
 
+func ContactAOff(idx int32) math32.Vector3 {
+	return math32.Vec3(Contacts.Value(int(idx), int(ContactAOffX)), Contacts.Value(int(idx), int(ContactAOffY)), Contacts.Value(int(idx), int(ContactAOffZ)))
+}
+
+func SetContactAOff(idx int32, pos math32.Vector3) {
+	Contacts.Set(pos.X, int(idx), int(ContactAOffX))
+	Contacts.Set(pos.Y, int(idx), int(ContactAOffY))
+	Contacts.Set(pos.Z, int(idx), int(ContactAOffZ))
+}
+
+func ContactBOff(idx int32) math32.Vector3 {
+	return math32.Vec3(Contacts.Value(int(idx), int(ContactBOffX)), Contacts.Value(int(idx), int(ContactBOffY)), Contacts.Value(int(idx), int(ContactBOffZ)))
+}
+
+func SetContactBOff(idx int32, pos math32.Vector3) {
+	Contacts.Set(pos.X, int(idx), int(ContactBOffX))
+	Contacts.Set(pos.Y, int(idx), int(ContactBOffY))
+	Contacts.Set(pos.Z, int(idx), int(ContactBOffZ))
+}
+
 func ContactNorm(idx int32) math32.Vector3 {
 	return math32.Vec3(Contacts.Value(int(idx), int(ContactNormX)), Contacts.Value(int(idx), int(ContactNormY)), Contacts.Value(int(idx), int(ContactNormZ)))
 }
@@ -142,6 +201,15 @@ func GroupsCollide(ga, gb int32) bool {
 	return false
 }
 
+// CollisionInit performs initialization at start of collision (i=1)
+func CollisionInit(i uint32) { //gosl:kernel
+	if i > 0 {
+		return
+	}
+	BroadContactsN.Values[0] = 0
+	ContactsN.Values[0] = 0
+}
+
 // newton: geometry/kernels.py: broadphase_collision_pairs
 
 // CollisionBroad performs broad-phase collision detection, generating Contacts.
@@ -174,7 +242,7 @@ func CollisionBroad(i uint32) { //gosl:kernel
 	// bounding sphere check
 	infPlane := false
 	if sA == Plane {
-		szA := BodySize(biA)
+		szA := BodyHSize(biA)
 		if szA.X == 0 {
 			infPlane = true
 		}
@@ -199,7 +267,7 @@ func CollisionBroad(i uint32) { //gosl:kernel
 
 	// note: ignoring contact_point_limit code for now
 
-	enci := atomic.AddInt32(&ContactCount.Values[int(params.Cur)], ncA+ncB)
+	enci := atomic.AddInt32(&BroadContactsN.Values[0], ncA+ncB)
 	// Go returns post-added value, while WGSL returns pre-added value
 
 	//gosl:wgsl
@@ -210,22 +278,22 @@ func CollisionBroad(i uint32) { //gosl:kernel
 	if nci >= params.ContactsMax { // shouldn't happen!
 		return
 	}
-	AddContacts(biA, biB, ci, ncA, ncB)
+	AddBroadContacts(biA, biB, nci, ncA, ncB)
 }
 
 // newton: geometry/kernels.py: allocate_contact_points
 
-// AddContacts adds contact records in prep for narrow phase.
-func AddContacts(biA, biB, ci, ncA, ncB int32) {
+// AddBroadContacts adds broad-phase contact records in prep for narrow phase.
+func AddBroadContacts(biA, biB, nci, ncA, ncB int32) {
 	for i := range ncA {
-		SetContactA(ci+i, biA)
-		SetContactB(ci+i, biB)
-		SetContactPointIdx(ci+i, i)
+		SetBroadContactA(nci+i, biA)
+		SetBroadContactB(nci+i, biB)
+		SetBroadContactPointIdx(nci+i, i)
 	}
 	for i := range ncB {
-		SetContactA(ci+ncA+i, biB) // flipped
-		SetContactB(ci+ncA+i, biA)
-		SetContactPointIdx(ci+i, i)
+		SetBroadContactA(nci+ncA+i, biB) // flipped
+		SetBroadContactB(nci+ncA+i, biA)
+		SetBroadContactPointIdx(nci+i, i)
 	}
 }
 
@@ -235,12 +303,13 @@ func AddContacts(biA, biB, ci, ncA, ncB int32) {
 func CollisionNarrow(i uint32) { //gosl:kernel
 	params := GetParams(0)
 	ci := int32(i)
-	if ci >= params.ContactsMax {
+	cmax := BroadContactsN.Values[0]
+	if ci >= cmax {
 		return
 	}
-	biA := GetContactA(ci)
-	biB := GetContactB(ci)
-	cpi := GetContactPointIdx(ci)
+	biA := GetBroadContactA(ci)
+	biB := GetBroadContactB(ci)
+	cpi := GetBroadContactPointIdx(ci)
 
 	sA := GetBodyShape(biA)
 	sB := GetBodyShape(biB)
@@ -251,21 +320,83 @@ func CollisionNarrow(i uint32) { //gosl:kernel
 	// could be per-shape
 	// margin = wp.max(shape_contact_margin[shape_a], shape_contact_margin[shape_b])
 	margin := params.ContactMargin
-	thick := gdA.Thick + gdB.Thick
-
 	dist := float32(1.0e6)
-	var ptA, ptB, norm math32.Vector3
+	maxIter := params.MaxGeomIter
+
+	// note: no Cone on anything
+	var ptA, ptB, norm, nnorm math32.Vector3
 	switch gdA.Shape {
+	case Plane:
+		switch gdB.Shape {
+		case Sphere:
+			dist = ColSpherePlane(cpi, maxIter, &gdB, &gdA, &ptB, &ptA, &nnorm) // reverse
+			norm = slmath.Negate3(nnorm)
+		case Capsule:
+			dist = ColCapsulePlane(cpi, maxIter, &gdB, &gdA, &ptB, &ptA, &nnorm) // reverse
+			norm = slmath.Negate3(nnorm)
+		case Cylinder:
+			dist = ColCylinderPlane(cpi, maxIter, &gdB, &gdA, &ptB, &ptA, &nnorm) // reverse
+			norm = slmath.Negate3(nnorm)
+		case Box:
+			dist = ColBoxPlane(cpi, maxIter, &gdB, &gdA, &ptB, &ptA, &nnorm) // reverse
+			norm = slmath.Negate3(nnorm)
+		default:
+		}
 	case Sphere:
 		switch gdB.Shape {
 		case Sphere:
-			dist = ColSphereSphere(cpi, &gdA, &gdB, &ptA, &ptB, &norm)
-		case Box:
+			dist = ColSphereSphere(cpi, maxIter, &gdA, &gdB, &ptA, &ptB, &norm)
 		case Capsule:
+			dist = ColSphereCapsule(cpi, maxIter, &gdA, &gdB, &ptA, &ptB, &norm)
+		// no cylinder
+		case Box:
+			dist = ColSphereBox(cpi, maxIter, &gdA, &gdB, &ptA, &ptB, &norm)
+		default:
+		}
+	case Capsule:
+		switch gdB.Shape {
+		case Capsule:
+			dist = ColCapsuleCapsule(cpi, maxIter, &gdA, &gdB, &ptA, &ptB, &norm)
+		// no cylinder
+		case Box:
+			dist = ColBoxCapsule(cpi, maxIter, &gdB, &gdA, &ptB, &ptA, &nnorm) // reverse
+			norm = slmath.Negate3(nnorm)
+		default:
+		}
+	case Box:
+		switch gdB.Shape {
+		case Box:
+			dist = ColBoxBox(cpi, maxIter, &gdA, &gdB, &ptA, &ptB, &norm)
 		default:
 		}
 	default:
 	}
+	var ctA, ctB, offA, offB math32.Vector3
+	var distActual, offMagA, offMagB float32
+	actual := ContactPoints(dist, margin, &gdA, &gdB, ptA, ptB, norm, &ctA, &ctB, &offA, &offB, &distActual, &offMagA, &offMagB)
+	if !actual {
+		return
+	}
+
+	enci := atomic.AddInt32(&ContactsN.Values[0], 1)
+	// Go returns post-added value, while WGSL returns pre-added value
+
+	//gosl:wgsl
+	// enci += int32(1) // wgsl now matches Go
+	//gosl:end
+
+	nci := enci - 1
+
+	SetContactA(nci, biA)
+	SetContactB(nci, biB)
+	SetContactPointIdx(nci, cpi)
+	SetContactAPoint(nci, ctA)
+	SetContactBPoint(nci, ctB)
+	SetContactAOff(nci, offA)
+	SetContactBOff(nci, offB)
+	SetContactNorm(nci, norm)
+	Contacts.Set(offMagA, int(nci), int(ContactAThick))
+	Contacts.Set(offMagB, int(nci), int(ContactBThick))
 }
 
 //gosl:end
@@ -355,7 +486,7 @@ func (wl *World) SetMaxContacts() {
 		sB := GetBodyShape(biB)
 
 		infPlane := false
-		szA := BodySize(biA)
+		szA := BodyHSize(biA)
 		if szA.X == 0 {
 			infPlane = true
 		}
@@ -370,5 +501,6 @@ func (wl *World) SetMaxContacts() {
 		n = n / 2 // todo: could do more of this as N gets larger
 	}
 	params.ContactsMax = n
+	wl.BroadContacts.SetShapeSizes(int(n), int(BroadContactVarsN))
 	wl.Contacts.SetShapeSizes(int(n), int(ContactVarsN))
 }

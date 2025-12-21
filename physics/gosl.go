@@ -46,9 +46,11 @@ const (
 	BodyJointsVar GPUVars = 4
 	BodyCollidePairsVar GPUVars = 5
 	DynamicsVar GPUVars = 6
-	ContactCountVar GPUVars = 7
-	ContactsVar GPUVars = 8
-	JointControlsVar GPUVars = 9
+	BroadContactsNVar GPUVars = 7
+	BroadContactsVar GPUVars = 8
+	ContactsNVar GPUVars = 9
+	ContactsVar GPUVars = 10
+	JointControlsVar GPUVars = 11
 )
 
 // Tensor stride variables
@@ -100,7 +102,9 @@ func GPUInit() {
 			var vr *gpu.Var
 			_ = vr
 			vr = sgp.Add("Dynamics", gpu.Float32, 1, gpu.ComputeShader)
-			vr = sgp.Add("ContactCount", gpu.Int32, 1, gpu.ComputeShader)
+			vr = sgp.Add("BroadContactsN", gpu.Int32, 1, gpu.ComputeShader)
+			vr = sgp.Add("BroadContacts", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("ContactsN", gpu.Int32, 1, gpu.ComputeShader)
 			vr = sgp.Add("Contacts", gpu.Float32, 1, gpu.ComputeShader)
 			sgp.SetNValues(1)
 		}
@@ -116,14 +120,21 @@ func GPUInit() {
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(1, "Bodies")
 		pl.AddVarUsed(1, "BodyCollidePairs")
-		pl.AddVarUsed(2, "ContactCount")
-		pl.AddVarUsed(2, "Contacts")
+		pl.AddVarUsed(2, "BroadContacts")
+		pl.AddVarUsed(2, "BroadContactsN")
 		pl.AddVarUsed(2, "Dynamics")
 		pl.AddVarUsed(0, "Params")
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/CollisionInit.wgsl", sy)
+		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(2, "BroadContactsN")
+		pl.AddVarUsed(2, "ContactsN")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/CollisionNarrow.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(1, "Bodies")
+		pl.AddVarUsed(2, "BroadContacts")
+		pl.AddVarUsed(2, "BroadContactsN")
 		pl.AddVarUsed(2, "Contacts")
+		pl.AddVarUsed(2, "ContactsN")
 		pl.AddVarUsed(2, "Dynamics")
 		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/DeltasFromJoints.wgsl", sy)
@@ -232,6 +243,48 @@ func RunOneCollisionBroad(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunCollisionBroadCPU(n)
+	}
+}
+// RunCollisionInit runs the CollisionInit kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneCollisionInit call does Run and Done for a
+// single run-and-sync case.
+func RunCollisionInit(n int) {
+	if UseGPU {
+		RunCollisionInitGPU(n)
+	} else {
+		RunCollisionInitCPU(n)
+	}
+}
+
+// RunCollisionInitGPU runs the CollisionInit kernel on the GPU. See [RunCollisionInit] for more info.
+func RunCollisionInitGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["CollisionInit"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunCollisionInitCPU runs the CollisionInit kernel on the CPU.
+func RunCollisionInitCPU(n int) {
+	gpu.VectorizeFunc(0, n, CollisionInit)
+}
+
+// RunOneCollisionInit runs the CollisionInit kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneCollisionInit(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunCollisionInitGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunCollisionInitCPU(n)
 	}
 }
 // RunCollisionNarrow runs the CollisionNarrow kernel with given number of elements,
@@ -658,9 +711,15 @@ func ToGPU(vars ...GPUVars) {
 		case DynamicsVar:
 			v, _ := syVars.ValueByIndex(2, "Dynamics", 0)
 			gpu.SetValueFrom(v, Dynamics.Values)
-		case ContactCountVar:
-			v, _ := syVars.ValueByIndex(2, "ContactCount", 0)
-			gpu.SetValueFrom(v, ContactCount.Values)
+		case BroadContactsNVar:
+			v, _ := syVars.ValueByIndex(2, "BroadContactsN", 0)
+			gpu.SetValueFrom(v, BroadContactsN.Values)
+		case BroadContactsVar:
+			v, _ := syVars.ValueByIndex(2, "BroadContacts", 0)
+			gpu.SetValueFrom(v, BroadContacts.Values)
+		case ContactsNVar:
+			v, _ := syVars.ValueByIndex(2, "ContactsN", 0)
+			gpu.SetValueFrom(v, ContactsN.Values)
 		case ContactsVar:
 			v, _ := syVars.ValueByIndex(2, "Contacts", 0)
 			gpu.SetValueFrom(v, Contacts.Values)
@@ -688,7 +747,7 @@ func ToGPUTensorStrides() {
 	}
 	sy := GPUSystem
 	syVars := sy.Vars()
-	TensorStrides.SetShapeSizes(90)
+	TensorStrides.SetShapeSizes(110)
 	TensorStrides.SetInt1D(Bodies.Shape().Strides[0], 0)
 	TensorStrides.SetInt1D(Bodies.Shape().Strides[1], 1)
 	TensorStrides.SetInt1D(Joints.Shape().Strides[0], 10)
@@ -703,11 +762,14 @@ func ToGPUTensorStrides() {
 	TensorStrides.SetInt1D(Dynamics.Shape().Strides[0], 50)
 	TensorStrides.SetInt1D(Dynamics.Shape().Strides[1], 51)
 	TensorStrides.SetInt1D(Dynamics.Shape().Strides[2], 52)
-	TensorStrides.SetInt1D(ContactCount.Shape().Strides[0], 60)
-	TensorStrides.SetInt1D(Contacts.Shape().Strides[0], 70)
-	TensorStrides.SetInt1D(Contacts.Shape().Strides[1], 71)
-	TensorStrides.SetInt1D(JointControls.Shape().Strides[0], 80)
-	TensorStrides.SetInt1D(JointControls.Shape().Strides[1], 81)
+	TensorStrides.SetInt1D(BroadContactsN.Shape().Strides[0], 60)
+	TensorStrides.SetInt1D(BroadContacts.Shape().Strides[0], 70)
+	TensorStrides.SetInt1D(BroadContacts.Shape().Strides[1], 71)
+	TensorStrides.SetInt1D(ContactsN.Shape().Strides[0], 80)
+	TensorStrides.SetInt1D(Contacts.Shape().Strides[0], 90)
+	TensorStrides.SetInt1D(Contacts.Shape().Strides[1], 91)
+	TensorStrides.SetInt1D(JointControls.Shape().Strides[0], 100)
+	TensorStrides.SetInt1D(JointControls.Shape().Strides[1], 101)
 	v, _ := syVars.ValueByIndex(0, "TensorStrides", 0)
 	gpu.SetValueFrom(v, TensorStrides.Values)
 }
@@ -739,8 +801,14 @@ func ReadFromGPU(vars ...GPUVars) {
 		case DynamicsVar:
 			v, _ := syVars.ValueByIndex(2, "Dynamics", 0)
 			v.GPUToRead(sy.CommandEncoder)
-		case ContactCountVar:
-			v, _ := syVars.ValueByIndex(2, "ContactCount", 0)
+		case BroadContactsNVar:
+			v, _ := syVars.ValueByIndex(2, "BroadContactsN", 0)
+			v.GPUToRead(sy.CommandEncoder)
+		case BroadContactsVar:
+			v, _ := syVars.ValueByIndex(2, "BroadContacts", 0)
+			v.GPUToRead(sy.CommandEncoder)
+		case ContactsNVar:
+			v, _ := syVars.ValueByIndex(2, "ContactsN", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case ContactsVar:
 			v, _ := syVars.ValueByIndex(2, "Contacts", 0)
@@ -786,10 +854,18 @@ func SyncFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(2, "Dynamics", 0)
 			v.ReadSync()
 			gpu.ReadToBytes(v, Dynamics.Values)
-		case ContactCountVar:
-			v, _ := syVars.ValueByIndex(2, "ContactCount", 0)
+		case BroadContactsNVar:
+			v, _ := syVars.ValueByIndex(2, "BroadContactsN", 0)
 			v.ReadSync()
-			gpu.ReadToBytes(v, ContactCount.Values)
+			gpu.ReadToBytes(v, BroadContactsN.Values)
+		case BroadContactsVar:
+			v, _ := syVars.ValueByIndex(2, "BroadContacts", 0)
+			v.ReadSync()
+			gpu.ReadToBytes(v, BroadContacts.Values)
+		case ContactsNVar:
+			v, _ := syVars.ValueByIndex(2, "ContactsN", 0)
+			v.ReadSync()
+			gpu.ReadToBytes(v, ContactsN.Values)
 		case ContactsVar:
 			v, _ := syVars.ValueByIndex(2, "Contacts", 0)
 			v.ReadSync()

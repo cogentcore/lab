@@ -2541,6 +2541,16 @@ func (p *printer) stmt(stmt ast.Stmt, nextIsRBrace bool, nosemi bool) {
 			// p.print(blank)
 			// p.setPos(s.TokPos)
 			// p.print(s.Tok, blank)
+		} else {
+			p.print(token.LPAREN, "var", blank)
+			p.print("i")
+			p.print(token.ASSIGN, "0", token.SEMICOLON, blank)
+			p.print("i")
+			p.print(token.LSS)
+			p.expr(stripParens(s.X))
+			p.print(token.SEMICOLON, blank)
+			p.print("i")
+			p.print(token.INC, token.RPAREN)
 		}
 		// p.print(token.RANGE, blank)
 		// p.expr(stripParens(s.X))

@@ -48,16 +48,22 @@ type World struct {
 	// [body][cur/next][DynamicVarsN]
 	Dynamics *tensor.Float32 `display:"no-inline"`
 
-	// ContactCount has number of points of contact between bodies.
-	// params.Cur is written to and params.Next is zeroed in
-	// narrow-phase contacts processing, so it is ready for next time.
-	// [2]
-	ContactCount *tensor.Int32 `display:"no-inline"`
+	// BroadContactsN has number of points of broad contact
+	// between bodies. [1]
+	BroadContactsN *tensor.Int32
 
-	// Contacts are points of contact between bodies. Max possible size
-	// is BodyCollidePairsN, but actual size on given run is updated
-	// into ContactCount.
-	// [BodyCollidePairsN][ContactVarsN]
+	// BroadContacts are the results of broad-phase contact processing,
+	// establishing possible points of contact between bodies.
+	// [ContactsMax][BroadContactVarsN]
+	BroadContacts *tensor.Float32 `display:"no-inline"`
+
+	// ContactsN has number of points of narrow (final) contact
+	// between bodies. [1]
+	ContactsN *tensor.Int32 `display:"no-inline"`
+
+	// Contacts are the results of narrow-phase contact processing,
+	// where only actual contacts with fully-specified values are present.
+	// [ContactsMax][ContactVarsN]
 	Contacts *tensor.Float32 `display:"no-inline"`
 
 	// JointControls are dynamic joint control inputs, per joint DoF
@@ -82,7 +88,9 @@ func (wl *World) Init() {
 	wl.JointDoFs = tensor.NewFloat32(0, int(JointDoFVarsN))
 	wl.BodyJoints = tensor.NewInt32(0, 2, 2)
 	wl.Dynamics = tensor.NewFloat32(0, 2, int(DynamicVarsN))
-	wl.ContactCount = tensor.NewInt32(2)
+	wl.BroadContactsN = tensor.NewInt32(1)
+	wl.BroadContacts = tensor.NewFloat32(0, int(ContactVarsN))
+	wl.ContactsN = tensor.NewInt32(1)
 	wl.Contacts = tensor.NewFloat32(0, int(ContactVarsN))
 	wl.JointControls = tensor.NewFloat32(0, int(JointControlVarsN))
 	wl.SetAsCurrentVars()
@@ -97,7 +105,7 @@ func (wl *World) NewBody(shape Shapes, size, pos math32.Vector3, rot math32.Quat
 	wl.Params[0].BodiesN = idx + 1
 	SetBodyShape(idx, shape)
 	SetBodyDynamic(idx, -1)
-	SetBodySize(idx, size)
+	SetBodyHSize(idx, size)
 	SetBodyPos(idx, pos)
 	SetBodyQuat(idx, rot)
 	SetBodyGroup(idx, -1) // assume static
@@ -143,7 +151,9 @@ func (wl *World) SetAsCurrentVars() {
 	BodyJoints = wl.BodyJoints
 	JointDoFs = wl.JointDoFs
 	Dynamics = wl.Dynamics
-	ContactCount = wl.ContactCount
+	BroadContactsN = wl.BroadContactsN
+	BroadContacts = wl.BroadContacts
+	ContactsN = wl.ContactsN
 	Contacts = wl.Contacts
 	JointControls = wl.JointControls
 }
@@ -160,5 +170,5 @@ func (wl *World) GPUInit() {
 // the GPU. This is done in GPUInit, and if current switched.
 func (wl *World) ToGPUInfra() {
 	ToGPUTensorStrides()
-	ToGPU(ParamsVar, BodiesVar, JointsVar, BodyJointsVar, JointDoFsVar, DynamicsVar, ContactCountVar, ContactsVar)
+	ToGPU(ParamsVar, BodiesVar, JointsVar, BodyJointsVar, JointDoFsVar, DynamicsVar, BroadContactsNVar, BroadContactsVar, ContactsNVar, ContactsVar)
 }

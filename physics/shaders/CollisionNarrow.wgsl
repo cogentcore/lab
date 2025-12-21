@@ -12,7 +12,13 @@ var<storage, read_write> Bodies: array<f32>;
 // // Dynamics are the dynamic rigid body elements: these actually move. // Two alternating states are used: Params.Cur and Params.Next. // [dyn body][cur/next][DynamicVarsN] 
 @group(2) @binding(0)
 var<storage, read_write> Dynamics: array<f32>;
+@group(2) @binding(1)
+var<storage, read_write> BroadContactsN: array<i32>;
 @group(2) @binding(2)
+var<storage, read_write> BroadContacts: array<f32>;
+@group(2) @binding(3)
+var<storage, read_write> ContactsN: array<atomic<i32>>;
+@group(2) @binding(4)
 var<storage, read_write> Contacts: array<f32>;
 // // JointControls are dynamic joint control inputs, per joint DoF // (in correspondence with [JointDoFs]). This can be uploaded to the // GPU at every step. // [dof][JointControlVarsN] 
 
@@ -32,6 +38,10 @@ fn Index3D(s0: u32, s1: u32, s2: u32, i0: u32, i1: u32, i2: u32) -> u32 {
 	return s0 * i0 + s1 * i1 + s2 * i2;
 }
 
+fn Index1D(s0: u32, i0: u32) -> u32 {
+	return s0 * i0;
+}
+
 
 //////// import: "vars.go"
 
@@ -41,9 +51,9 @@ const  BodyShape: BodyVars = 0;
 const  BodyDynamic: BodyVars = 1;
 const  BodyWorld: BodyVars = 2;
 const  BodyGroup: BodyVars = 3;
-const  BodySizeX: BodyVars = 4;
-const  BodySizeY: BodyVars = 5;
-const  BodySizeZ: BodyVars = 6;
+const  BodyHSizeX: BodyVars = 4;
+const  BodyHSizeY: BodyVars = 5;
+const  BodyHSizeZ: BodyVars = 6;
 const  BodyThick: BodyVars = 7;
 const  BodyMass: BodyVars = 8;
 const  BodyInvMass: BodyVars = 9;
@@ -84,8 +94,8 @@ fn GetBodyShape(idx: i32) -> Shapes {
 fn GetBodyDynamic(idx: i32) -> i32 {
 	return i32(bitcast<u32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyDynamic))]));
 }
-fn BodySize(idx: i32) -> vec3<f32> {
-	return vec3<f32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodySizeX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodySizeY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodySizeZ))]);
+fn BodyHSize(idx: i32) -> vec3<f32> {
+	return vec3<f32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyHSizeX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyHSizeY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyHSizeZ))]);
 }
 fn BodyPos(idx: i32) -> vec3<f32> {
 	return vec3<f32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyPosX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyPosY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyPosZ))]);
@@ -117,51 +127,141 @@ const  ContactAPointZ: ContactVars = 5;
 const  ContactBPointX: ContactVars = 6;
 const  ContactBPointY: ContactVars = 7;
 const  ContactBPointZ: ContactVars = 8;
-const  ContactADepth: ContactVars = 9;
-const  ContactBDepth: ContactVars = 10;
-const  ContactNormX: ContactVars = 11;
-const  ContactNormY: ContactVars = 12;
-const  ContactNormZ: ContactVars = 13;
-const  ContactForceX: ContactVars = 14;
-const  ContactForceY: ContactVars = 15;
-const  ContactForceZ: ContactVars = 16;
-fn GetContactA(idx: i32) -> i32 {
-	return i32(bitcast<u32>(Contacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactA))]));
+const  ContactAOffX: ContactVars = 9;
+const  ContactAOffY: ContactVars = 10;
+const  ContactAOffZ: ContactVars = 11;
+const  ContactBOffX: ContactVars = 12;
+const  ContactBOffY: ContactVars = 13;
+const  ContactBOffZ: ContactVars = 14;
+const  ContactAThick: ContactVars = 15;
+const  ContactBThick: ContactVars = 16;
+const  ContactNormX: ContactVars = 17;
+const  ContactNormY: ContactVars = 18;
+const  ContactNormZ: ContactVars = 19;
+const  ContactForceX: ContactVars = 20;
+const  ContactForceY: ContactVars = 21;
+const  ContactForceZ: ContactVars = 22;
+const BroadContactVarsN = ContactAPointX;
+fn GetBroadContactA(idx: i32) -> i32 {
+	return i32(bitcast<u32>(BroadContacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactA))]));
 }
-fn GetContactB(idx: i32) -> i32 {
-	return i32(bitcast<u32>(Contacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactB))]));
+fn GetBroadContactB(idx: i32) -> i32 {
+	return i32(bitcast<u32>(BroadContacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactB))]));
 }
-fn GetContactPointIdx(idx: i32) -> i32 {
-	return i32(bitcast<u32>(Contacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactPointIdx))]));
+fn GetBroadContactPointIdx(idx: i32) -> i32 {
+	return i32(bitcast<u32>(BroadContacts[Index2D(TensorStrides[70], TensorStrides[71],
+	u32(idx), u32(ContactPointIdx))]));
+}
+fn SetContactA(idx: i32,bodIdx: i32) {
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactA))] = bitcast<f32>(u32(bodIdx));
+}
+fn SetContactB(idx: i32,bodIdx: i32) {
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactB))] = bitcast<f32>(u32(bodIdx));
+}
+fn SetContactPointIdx(idx: i32,ptIdx: i32) {
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactPointIdx))] = bitcast<f32>(u32(ptIdx));
+}
+fn SetContactAPoint(idx: i32, pos: vec3<f32>) {
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactAPointX))] = pos.x;
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactAPointY))] = pos.y;
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactAPointZ))] = pos.z;
+}
+fn SetContactBPoint(idx: i32, pos: vec3<f32>) {
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBPointX))] = pos.x;
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBPointY))] = pos.y;
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBPointZ))] = pos.z;
+}
+fn SetContactAOff(idx: i32, pos: vec3<f32>) {
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactAOffX))] = pos.x;
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactAOffY))] = pos.y;
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactAOffZ))] = pos.z;
+}
+fn SetContactBOff(idx: i32, pos: vec3<f32>) {
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBOffX))] = pos.x;
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBOffY))] = pos.y;
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBOffZ))] = pos.z;
+}
+fn SetContactNorm(idx: i32, pos: vec3<f32>) {
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactNormX))] = pos.x;
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactNormY))] = pos.y;
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactNormZ))] = pos.z;
 }
 fn CollisionNarrow(i: u32) { //gosl:kernel
 	let params = Params[0];
 	var ci = i32(i);
-	if (ci >= params.ContactsMax) {
+	var cmax = BroadContactsN[0];
+	if (ci >= cmax) {
 		return;
 	}
-	var biA = GetContactA(ci);
-	var biB = GetContactB(ci);
-	var cpi = GetContactPointIdx(ci);
+	var biA = GetBroadContactA(ci);
+	var biB = GetBroadContactB(ci);
+	var cpi = GetBroadContactPointIdx(ci);
 	var sA = GetBodyShape(biA);
 	var sB = GetBodyShape(biB);
 	var gdA = NewGeomData(biA, params.Cur, sA);
 	var gdB = NewGeomData(biB, params.Cur, sB);
 	var margin = params.ContactMargin;
-	var thick = gdA.Thick + gdB.Thick;
 	var dist = f32(1.0e6);
+	var maxIter = params.MaxGeomIter;
 	var ptA: vec3<f32>;
 	var ptB: vec3<f32>;
 	var norm: vec3<f32>;
+	var nnorm: vec3<f32>;
 	switch (gdA.Shape) {
+	case Plane: {
+		switch (gdB.Shape) {
+		case Sphere: {
+			dist = ColSpherePlane(cpi, maxIter, &gdB, &gdA, &ptB, &ptA, &nnorm); // reverse
+			norm = Negate3(nnorm);
+		}
+		case Capsule: {
+			dist = ColCapsulePlane(cpi, maxIter, &gdB, &gdA, &ptB, &ptA, &nnorm); // reverse
+			norm = Negate3(nnorm);
+		}
+		case Cylinder: {
+			dist = ColCylinderPlane(cpi, maxIter, &gdB, &gdA, &ptB, &ptA, &nnorm); // reverse
+			norm = Negate3(nnorm);
+		}
+		case Box: {
+			dist = ColBoxPlane(cpi, maxIter, &gdB, &gdA, &ptB, &ptA, &nnorm); // reverse
+			norm = Negate3(nnorm);
+		}
+		default: {
+		}
+		}
+	}
 	case Sphere: {
 		switch (gdB.Shape) {
 		case Sphere: {
-			dist = ColSphereSphere(cpi, &gdA, &gdB, &ptA, &ptB, &norm);
-		}
-		case Box: {
+			dist = ColSphereSphere(cpi, maxIter, &gdA, &gdB, &ptA, &ptB, &norm);
 		}
 		case Capsule: {
+			dist = ColSphereCapsule(cpi, maxIter, &gdA, &gdB, &ptA, &ptB, &norm);
+		}
+		case Box: {
+			dist = ColSphereBox(cpi, maxIter, &gdA, &gdB, &ptA, &ptB, &norm);
+		}
+		default: {
+		}
+		}
+	}
+	case Capsule: {
+		switch (gdB.Shape) {
+		case Capsule: {
+			dist = ColCapsuleCapsule(cpi, maxIter, &gdA, &gdB, &ptA, &ptB, &norm);
+		}
+		case Box: {
+			dist = ColBoxCapsule(cpi, maxIter, &gdB, &gdA, &ptB, &ptA, &nnorm); // reverse
+			norm = Negate3(nnorm);
+		}
+		default: {
+		}
+		}
+	}
+	case Box: {
+		switch (gdB.Shape) {
+		case Box: {
+			dist = ColBoxBox(cpi, maxIter, &gdA, &gdB, &ptA, &ptB, &norm);
 		}
 		default: {
 		}
@@ -170,6 +270,30 @@ fn CollisionNarrow(i: u32) { //gosl:kernel
 	default: {
 	}
 	}
+	var ctA: vec3<f32>;
+	var ctB: vec3<f32>;
+	var offA: vec3<f32>;
+	var offB: vec3<f32>;
+	var distActual: f32;
+	var offMagA: f32;
+	var offMagB: f32;
+	var actual = ContactPoints(dist, margin, &gdA, &gdB, ptA, ptB, norm, &ctA, &ctB, &offA, &offB, &distActual, &offMagA, &offMagB);
+	if (!actual) {
+		return;
+	}
+	var enci = atomicAdd(&ContactsN[0], 1);
+	enci += i32(1); // wgsl now matches Go
+	var nci = enci - 1;
+	SetContactA(nci, biA);
+	SetContactB(nci, biB);
+	SetContactPointIdx(nci, cpi);
+	SetContactAPoint(nci, ctA);
+	SetContactBPoint(nci, ctB);
+	SetContactAOff(nci, offA);
+	SetContactBOff(nci, offB);
+	SetContactNorm(nci, norm);
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(nci), u32(ContactAThick))] = offMagA;
+	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(nci), u32(ContactBThick))] = offMagB;
 }
 
 //////// import: "control.go"
@@ -221,10 +345,10 @@ fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> {
 
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 41;
-const ContactVarsN: ContactVars = 17;
+const ContactVarsN: ContactVars = 23;
 const JointControlVarsN: JointControlVars = 3;
 const DynamicVarsN: DynamicVars = 32;
-const GPUVarsN: GPUVars = 10;
+const GPUVarsN: GPUVars = 12;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
 const JointDoFVarsN: JointDoFVars = 7;
@@ -313,6 +437,7 @@ struct PhysParams {
 	AngularDamping: f32,
 	ContactWeighting: i32,
 	Restitution: i32,
+	MaxGeomIter: i32,
 	ContactMargin: f32,
 	ContactsMax: i32,
 	Cur: i32,
@@ -325,7 +450,6 @@ struct PhysParams {
 	BodyCollidePairsN: i32,
 	pad: i32,
 	pad1: i32,
-	pad2: i32,
 	Gravity: vec4<f32>,
 }
 
@@ -346,32 +470,438 @@ fn NewGeomData(bi: i32,cni: i32, shp: Shapes) -> GeomData {
 	var gd: GeomData;
 	gd.BodyIdx = bi;
 	gd.Shape = shp;
-	gd.Size = BodySize(bi);
+	gd.Size = BodyHSize(bi);
 	gd.Thick = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyThick))];
 	gd.MinSize = min(gd.Size.x, gd.Size.y);
 	gd.MinSize = min(gd.MinSize, gd.Size.z);
 	gd.WbR = BodyDynamicPos(bi, cni);
 	gd.WbQ = BodyDynamicQuat(bi, cni);
+	InitGeomData(bi, &gd);return gd;
+}
+fn InitGeomData(bi: i32, gd: ptr<function,GeomData>) {
 	var bwR: vec3<f32>;
 	var bwQ: vec4<f32>;
-	SpatialTransformInverse(gd.WbR, gd.WbQ, &bwR, &bwQ);
-	gd.BwR = bwR;
-	gd.BwQ = bwQ;
-	gd.Radius = f32(0);
-	if (shp == Sphere || shp == Capsule) { // todo: cone is separate
-		gd.Radius = gd.Size.x;
-	}return gd;
+	SpatialTransformInverse((*gd).WbR, (*gd).WbQ, &bwR, &bwQ);
+	(*gd).BwR = bwR;
+	(*gd).BwQ = bwQ;
+	(*gd).Radius = f32(0);
+	if ((*gd).Shape == Sphere || (*gd).Shape == Capsule || (*gd).Shape == Cone) {
+		(*gd).Radius = (*gd).Size.x;
+	}
 }
-fn ColSphereSphere(cpi: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, ptA: ptr<function,vec3<f32>>,ptB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
-	var ptAw = (*gdA).WbR;
-	var ptBw = (*gdB).WbR;
-	var diff = ptAw-(ptBw);
-	*ptA = ptAw;
-	*ptB = ptBw;
+fn ContactPoints(dist: f32,margin: f32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, ptA: vec3<f32>,ptB: vec3<f32>,norm: vec3<f32>, ctA: ptr<function,vec3<f32>>,ctB: ptr<function,vec3<f32>>,offA: ptr<function,vec3<f32>>,offB: ptr<function,vec3<f32>>, distActual: ptr<function,f32>,offMagA: ptr<function,f32>,offMagB: ptr<function,f32>) -> bool {
+	var thick = (*gdA).Thick + (*gdB).Thick;
+	var totSepReq = (*gdA).Radius + (*gdB).Radius + thick;
+	*distActual = dist - totSepReq;
+	if (*distActual >= margin) {
+		return false;
+	}
+	*ctA = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, ptA);
+	*ctB = MulSpatialPoint((*gdB).BwR, (*gdB).BwQ, ptB);
+	*offMagA = (*gdA).Radius + (*gdA).Thick;
+	*offMagB = (*gdB).Radius + (*gdB).Thick;
+	*offA = MulQuatVector((*gdA).BwQ, norm*(-(*offMagA)));
+	*offB = MulQuatVector((*gdB).BwQ, norm*(*offMagB));return true;
+}
+fn ColSphereSphere(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
+	var pAw = (*gdA).WbR;
+	var pBw = (*gdB).WbR;
+	var diff = pAw-(pBw);
+	*pA = pAw;
+	*pB = pBw;
 	*norm = Normal3(diff);return Dot3(diff, *norm);
+}
+fn ColCapsulePlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
+	var pAw: vec3<f32>;
+	var pBw: vec3<f32>;
+	var diff: vec3<f32>;
+	var hh = (*gdA).Size.y;
+	if (cpi < 2) { // vertex
+		var side = f32(cpi)*2 - 1;
+		pAw = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, vec3<f32>(0, side*hh, 0));
+		var queryB = MulSpatialPoint((*gdB).BwR, (*gdB).BwQ, pAw);
+		var pBb = ClosestPointPlane((*gdB).Size.x, (*gdB).Size.z, queryB);
+		pBw = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, pBb);
+		diff = pAw-(pBw);
+		if ((*gdB).Size.x > 0) {
+			*norm = Normal3(diff);
+		} else {
+			*norm = MulQuatVector((*gdB).WbQ, vec3<f32>(0, 1, 0));
+		}
+	} else { // edges of finite plane -- only here if plane is finite
+		var edge0: vec3<f32>;
+		var edge1: vec3<f32>;
+		PlaneEdge(cpi-2, (*gdB).Size.x, (*gdB).Size.z, &edge0, &edge1);
+		var edge0w = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, edge0);
+		var edge1w = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, edge1);
+		var edge0a = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge0w);
+		var edge1a = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge1w);
+		var u = ClosestEdgeCapsule((*gdA).Size.x, (*gdA).Size.y, edge0a, edge1a, maxIter);
+		pBw = edge0w*(1 - u)+(edge1w*(u));
+		var p0Aw = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, vec3<f32>(0, hh, 0));
+		var p1Aw = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, vec3<f32>(0, -hh, 0));
+		pAw = ClosestPointLineSegment(p0Aw, p1Aw, pBw);
+		diff = pAw-(pBw);
+		*norm = MulQuatVector((*gdB).WbQ, vec3<f32>(0, 1, 0));
+	}
+	*pA = pAw;
+	*pB = pBw;return Dot3(diff, *norm);
+}
+fn ColCapsuleCapsule(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
+	var hhA = (*gdA).Size.y;
+	var hhB = (*gdB).Size.y;
+	var e0 = vec3<f32>(0.0, 0.0, hhA*f32(cpi%2));
+	var e1 = vec3<f32>(0.0, 0.0, -hhA*f32((cpi+1)%2));
+	var edge0w = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, e0);
+	var edge1w = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, e1);
+	var edge0b = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge0w);
+	var edge1b = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge1w);
+	var u = ClosestEdgeCapsule((*gdB).Size.x, (*gdB).Size.y, edge0b, edge1b, maxIter);
+	var pAw = edge0w*(1 - u)+(edge1w*(u));
+	var p0Bw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0.0, 0.0, hhB));
+	var p1Bw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0.0, 0.0, -hhB));
+	var pBw = ClosestPointLineSegment(p0Bw, p1Bw, pAw);
+	var diff = pAw-(pBw);
+	*norm = Normal3(diff);
+	*pA = pAw;
+	*pB = pBw;return Dot3(diff, *norm);
+}
+fn ColBoxBox(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
+	var edge0: vec3<f32>;
+	var edge1: vec3<f32>;
+	BoxEdge(cpi, (*gdA).Size, &edge0, &edge1);
+	var edge0w = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, edge0);
+	var edge1w = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, edge1);
+	var edge0b = MulSpatialPoint((*gdB).BwR, (*gdB).BwQ, edge0w);
+	var edge1b = MulSpatialPoint((*gdB).BwR, (*gdB).BwQ, edge1w);
+	var u = ClosestEdgeBox((*gdB).Size, edge0b, edge1b, maxIter);
+	var pAw = edge0w*(1 - u)+(edge1w*(u));
+	var queryB = MulSpatialPoint((*gdB).BwR, (*gdB).BwQ, pAw);
+	var pBody = ClosestPointBox((*gdB).Size, queryB);
+	var pBw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, pBody);
+	var diff = pAw-(pBw);
+	*norm = MulQuatVector((*gdB).WbQ, BoxSDFGrad((*gdB).Size, queryB));
+	*pA = pAw;
+	*pB = pBw;return Dot3(diff, *norm);
+}
+fn ColBoxCapsule(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
+	var hhB = (*gdB).Size.y;
+	var e0 = vec3<f32>(0.0, 0.0, -hhB*f32(cpi%2));
+	var e1 = vec3<f32>(0.0, 0.0, hhB*f32((cpi+1)%2));
+	var edge0w = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, e0);
+	var edge1w = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, e1);
+	var edge0a = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge0w);
+	var edge1a = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge1w);
+	var u = ClosestEdgeBox((*gdA).Size, edge0a, edge1a, maxIter);
+	var pBw = edge0w*(1 - u)+(edge1w*(u));
+	var queryA = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, pBw);
+	var pABody = ClosestPointBox((*gdA).Size, queryA);
+	var pAw = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, pABody);
+	var diff = pAw-(pBw);
+	*norm = Negate3(MulQuatVector((*gdA).WbQ, BoxSDFGrad((*gdA).Size, queryA)));
+	*pA = pAw;
+	*pB = pBw;return Dot3(diff, *norm);
+}
+fn ColBoxPlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
+	var width = (*gdB).Size.x;
+	var length = (*gdB).Size.z;
+	var pAw: vec3<f32>;
+	var pBw: vec3<f32>;
+	var diff: vec3<f32>;
+	if (cpi < 8) {
+		var pABody = BoxVertex(cpi, (*gdA).Size);
+		pAw = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, pABody);
+		var queryB = MulSpatialPoint((*gdB).BwR, (*gdB).BwQ, pAw);
+		var pBody = ClosestPointPlane(width, length, queryB);
+		pBw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, pBody);
+		diff = pAw-(pBw);
+		*norm = MulQuatVector((*gdB).WbQ, vec3<f32>(0.0, 0.0, 1.0));
+		if (width > 0.0 && length > 0.0) {
+			if (abs(queryB.x) > width || abs(queryB.z) > length) {
+				return f32( // invalid
+				1.0e6);
+			}
+		}
+	} else {
+		var edge0: vec3<f32>;
+		var edge1: vec3<f32>;
+		PlaneEdge(cpi-8, width, length, &edge0, &edge1);
+		var edge0w = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, edge0);
+		var edge1w = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, edge1);
+		var edge0a = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge0w);
+		var edge1a = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge1w);
+		var u = ClosestEdgeBox((*gdA).Size, edge0a, edge1a, maxIter);
+		pBw = edge0w*(1 - u)+(edge1w*(u));
+		var queryA = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, pBw);
+		var pABody = ClosestPointBox((*gdA).Size, queryA);
+		pAw = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, pABody);
+		var queryB = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, pAw);
+		if (abs(queryB.x) > width || abs(queryB.z) > length) {
+			return f32( // invalid
+			1.0e6);
+		}
+		diff = pAw-(pBw);
+		var comA = (*gdA).WbR;
+		queryB = MulSpatialPoint((*gdB).BwR, (*gdB).BwQ, comA);
+		if (abs(queryB.x) > width || abs(queryB.z) > length) {
+			*norm = Normal3(comA-(pBw));
+		} else {
+			*norm = MulQuatVector((*gdB).WbQ, vec3<f32>(0.0, 0.0, 1.0));
+		}
+	}
+	*pA = pAw;
+	*pB = pBw;return Dot3(diff, *norm);
+}
+fn ColSphereBox(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
+	var pAw = (*gdA).WbR;
+	var pABody = MulSpatialPoint((*gdB).BwR, (*gdB).BwQ, pAw);
+	var pBody = ClosestPointBox((*gdB).Size, pABody);
+	var pBw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, pBody);
+	var diff = pAw-(pBw);
+	*norm = Normal3(diff);
+	*pA = pAw;
+	*pB = pBw;return Dot3(diff, *norm);
+}
+fn ColSphereCapsule(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
+	var pAw = (*gdA).WbR;
+	var hhB = (*gdB).Size.y;
+	var AB = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0.0, 0.0, hhB));
+	var BB = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0.0, 0.0, -hhB));
+	var pBw = ClosestPointLineSegment(AB, BB, pAw);
+	var diff = pAw-(pBw);
+	*norm = Normal3(diff);
+	*pA = pAw;
+	*pB = pBw;return Dot3(diff, *norm);
+}
+fn ColSpherePlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
+	var pAw = (*gdA).WbR;
+	var pBody = ClosestPointPlane((*gdB).Size.x, (*gdB).Size.z, MulSpatialPoint((*gdB).BwR, (*gdB).BwQ, pAw));
+	var pBw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, pBody);
+	var diff = pAw-(pBw);
+	*norm = MulQuatVector((*gdB).WbQ, vec3<f32>(0.0, 0.0, 1.0));
+	*pA = pAw;
+	*pB = pBw;return Dot3(diff, *norm);
+}
+fn ColCylinderPlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
+	var plNorm = MulQuatVector((*gdB).WbQ, vec3<f32>(0.0, 1.0, 0.0));
+	var plPos = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0.0, 0.0, 0.0));
+	var cylCtr = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, vec3<f32>(0.0, 0.0, 0.0));
+	var cylAx = Normal3(MulQuatVector((*gdA).WbQ, vec3<f32>(0.0, 0.0, 1.0)));
+	var cylRad = (*gdA).Size.x;
+	var cylHh = (*gdA).Size.y;
+	var dist: f32;
+	var pos: vec3<f32>;
+	var n = plNorm;
+	var axis = cylAx;
+	var prjaxis = Dot3(n, axis);
+	if (prjaxis > 0) {
+		axis = Negate3(axis);
+		prjaxis = -prjaxis;
+	}
+	var dist0 = Dot3(cylCtr-(plPos), n);
+	var vec = axis*(prjaxis)-(n);
+	var prjvec = Dot3(vec, n);
+	axis = axis*(cylHh);
+	prjaxis *= cylHh;
+	switch (cpi) {
+	case 0: { // First contact point (end cap closer to plane)
+		dist = dist0 + prjaxis + prjvec;
+		pos = cylCtr+(vec)+(axis)-(n*(dist * 0.5));
+	}
+	case 1: { // Second contact point (end cap farther from plane)
+		dist = dist0 - prjaxis + prjvec;
+		pos = cylCtr+(vec)-(axis)-(n*(dist * 0.5));
+	}
+	case 2, 3: { // Try triangle contact points on side closer to plane
+		var prjvec1 = prjvec * -0.5;
+		dist = dist0 + prjaxis + prjvec1;
+		var vec1 = Cross3(vec, axis);
+		vec1 = Normal3(vec1)*(cylRad * sqrt(3.0) * 0.5);
+		var pextra = vec1+(axis)-(vec*(0.5))-(n*(dist * 0.5));
+		pos = cylCtr+(pextra);
+		if (cpi == 3) { // Add contact point B - adjust to closest side
+			pos = cylCtr-(pextra);
+		}
+	}
+	default: {
+	}
+	}
+	*pA = pos+(n*(dist * 0.5));
+	*pB = pos-(n*(dist * 0.5));return dist;
 }
 
 //////// import: "shapegeom.go"
+fn BoxSDF(upper: vec3<f32>,p: vec3<f32>) -> f32 {
+	var qx = abs(p.x) - upper.x;
+	var qy = abs(p.y) - upper.y;
+	var qz = abs(p.z) - upper.z;
+	var e = vec3<f32>(max(qx, 0.0), max(qy, 0.0), max(qz, 0.0));return Length3(e) + min(max(qx, max(qy, qz)), 0.0);
+}
+fn BoxSDFGrad(upper: vec3<f32>,p: vec3<f32>) -> vec3<f32> {
+	var qx = abs(p.x) - upper.x;
+	var qy = abs(p.y) - upper.y;
+	var qz = abs(p.z) - upper.z;
+	if (qx > 0.0 || qy > 0.0 || qz > 0.0) {
+		var x = clamp(p.x, -upper.x, upper.x);
+		var y = clamp(p.y, -upper.y, upper.y);
+		var z = clamp(p.z, -upper.z, upper.z);return Normal3(p-(vec3<f32>(x, y, z)));
+	}
+	var sx = sign(p.x);
+	var sy = sign(p.y);
+	var sz = sign(p.z);
+	if ((qx > qy && qx > qz) || (qy == 0.0 && qz == 0.0)) {
+		return vec3<f32>(sx, 0.0, 0.0);
+	}
+	if ((qy > qx && qy > qz) || (qx == 0.0 && qz == 0.0)) {
+		return vec3<f32>(0.0, sy, 0.0);
+	}return vec3<f32>(// z projection
+0.0, 0.0, sz);
+}
+fn CylinderSDF(radius: f32,hh: f32, p: vec3<f32>) -> f32 {
+	var dx = Length3(vec3<f32>(p.x, 0.0, p.z)) - radius;
+	var dy = abs(p.y) - hh;return min(max(dx, dy), 0.0) + Length2(vec2<f32>(max(dx, 0.0), max(dy, 0.0)));
+}
+fn ClosestPointPlane(width: f32,length: f32, pt: vec3<f32>) -> vec3<f32> {
+	var cp = pt;
+	if (width == 0.0) {
+		cp.y = f32(0);return cp;
+	}
+	cp.x = clamp(pt.x, -width, width);
+	cp.z = clamp(pt.z, -length, length);return cp;
+}
+fn ClosestPointLineSegment(a: vec3<f32>,b: vec3<f32>,pt: vec3<f32>) -> vec3<f32> {
+	var ab = b-(a);
+	var ap = pt-(a);
+	var t = Dot3(ap, ab) / Dot3(ab, ab);
+	t = clamp(t, 0.0, 1.0);return a+(ab*(t));
+}
+fn ClosestPointBox(upper: vec3<f32>,pt: vec3<f32>) -> vec3<f32> {
+	var x = clamp(pt.x, -upper.x, upper.x);
+	var y = clamp(pt.y, -upper.y, upper.y);
+	var z = clamp(pt.z, -upper.z, upper.z);
+	if (abs(pt.x) <= upper.x && abs(pt.y) <= upper.y && abs(pt.z) <= upper.z) {
+		var sx = abs(abs(pt.x) - upper.x);
+		var sy = abs(abs(pt.y) - upper.y);
+		var sz = abs(abs(pt.z) - upper.z);
+		if ((sx < sy && sx < sz) || (sy == 0.0 && sz == 0.0)) {
+			x = sign(pt.x) * upper.x;
+		} else if ((sy < sx && sy < sz) || (sx == 0.0 && sz == 0.0)) {
+			y = sign(pt.y) * upper.y;
+		} else {
+			z = sign(pt.z) * upper.z;
+		}
+	}return vec3<f32>(x, y, z);
+}
+fn BoxVertex(ptId: i32, upper: vec3<f32>) -> vec3<f32> {
+	var sign_x = f32(ptId%2)*2.0 - 1.0;
+	var sign_y = f32((ptId/2)%2)*2.0 - 1.0;
+	var sign_z = f32((ptId/4)%2)*2.0 - 1.0;return vec3<f32>(sign_x*upper.x, sign_y*upper.y, sign_z*upper.z);
+}
+fn BoxEdge(edgeId: i32, upper: vec3<f32>, edge0: ptr<function,vec3<f32>>,edge1: ptr<function,vec3<f32>>) {
+	var eid = edgeId;
+	if (eid < 4) {
+		var i = eid * 2;
+		var j = i + 1;
+		*edge0 = BoxVertex(i, upper);
+		*edge1 = BoxVertex(j, upper);
+	} else if (eid < 8) {
+		eid -= i32(4);
+		var i = eid%2 + eid; // 2 * 4
+		var j = i + 2;
+		*edge0 = BoxVertex(i, upper);
+		*edge1 = BoxVertex(j, upper);
+	}
+	eid -= i32(8);
+	var i = eid;
+	var j = i + 4;
+	*edge0 = BoxVertex(i, upper);
+	*edge1 = BoxVertex(j, upper);
+}
+fn PlaneEdge(edgeId: i32, width: f32,length: f32, edge0: ptr<function,vec3<f32>>,edge1: ptr<function,vec3<f32>>) {
+	var p0x = (2*f32(edgeId%2) - 1) * width;
+	var p0z = (2*f32(edgeId/2) - 1) * length;
+	var p1x: f32;
+	var p1z: f32;
+	if (edgeId == 0 || edgeId == 3) {
+		p1x = p0x;
+		p1z = -p0z;
+	} else {
+		p1x = -p0x;
+		p1z = p0z;
+	}
+	*edge0 = vec3<f32>(p0x, 0, p0z);
+	*edge1 = vec3<f32>(p1x, 0, p1z);
+}
+fn ClosestEdgeBox(upper: vec3<f32>,edgeA: vec3<f32>,edgeB: vec3<f32>, maxIter: i32) -> f32 {
+	var a = f32(0.0);
+	var b = f32(1.0);
+	var h = b - a;
+	var invphi = f32(0.61803398875);  // 1 / phi
+	var invphi2 = f32(0.38196601125); // 1 / phi^2
+	var c = a + invphi2*h;
+	var d = a + invphi*h;
+	var query = edgeA*(1.0 - c)+(edgeB*(c));
+	var yc = BoxSDF(upper, query);
+	query = edgeA*(1.0 - d)+(edgeB*(d));
+	var yd = BoxSDF(upper, query);
+	for (var i=0; i<maxIter; i++) {
+		if (yc < yd) { // yc > yd to find the maximum
+			b = d;
+			d = c;
+			yd = yc;
+			h = invphi * h;
+			c = a + invphi2*h;
+			query = edgeA*(1.0 - c)+(edgeB*(c));
+			yc = BoxSDF(upper, query);
+		} else {
+			a = c;
+			c = d;
+			yc = yd;
+			h = invphi * h;
+			d = a + invphi*h;
+			query = edgeA*(1.0 - d)+(edgeB*(d));
+			yd = BoxSDF(upper, query);
+		}
+	}
+	if (yc < yd) {
+		return 0.5 * (a + d);
+	}return 0.5 * (c + b);
+}
+fn ClosestEdgeCapsule(radius: f32,hh: f32, edgeA: vec3<f32>,edgeB: vec3<f32>, maxIter: i32) -> f32 {
+	var a = f32(0.0);
+	var b = f32(1.0);
+	var h = b - a;
+	var invphi = f32(0.61803398875);  // 1 / phi
+	var invphi2 = f32(0.38196601125); // 1 / phi^2
+	var c = a + invphi2*h;
+	var d = a + invphi*h;
+	var query = edgeA*(1.0 - c)+(edgeB*(c));
+	var yc = CylinderSDF(radius, hh, query);
+	query = edgeA*(1.0 - d)+(edgeB*(d));
+	var yd = CylinderSDF(radius, hh, query);
+	for (var i=0; i<maxIter; i++) {
+		if (yc < yd) { // yc > yd to find the maximum
+			b = d;
+			d = c;
+			yd = yc;
+			h = invphi * h;
+			c = a + invphi2*h;
+			query = edgeA*(1.0 - c)+(edgeB*(c));
+			yc = CylinderSDF(radius, hh, query);
+		} else {
+			a = c;
+			c = d;
+			yc = yd;
+			h = invphi * h;
+			d = a + invphi*h;
+			query = edgeA*(1.0 - d)+(edgeB*(d));
+			yd = CylinderSDF(radius, hh, query);
+		}
+	}
+	if (yc < yd) {
+		return 0.5 * (a + d);
+	}return 0.5 * (c + b);
+}
 
 //////// import: "shapes.go"
 alias Shapes = i32; //enums:enum
@@ -408,6 +938,9 @@ fn MulQuatVector(q: vec4<f32>, v: vec3<f32>) -> vec3<f32> {
 	var xyz = vec3<f32>(q.x, q.y, q.z);
 	var t = Cross3(xyz, v)*(2);return v+(t*(q.w))+(Cross3(xyz, t));
 }
+fn MulSpatialPoint(xP: vec3<f32>, xQ: vec4<f32>, p: vec3<f32>) -> vec3<f32> {
+	var dp = MulQuatVector(xQ, p);return dp+(xP);
+}
 fn SpatialTransformInverse(p: vec3<f32>, q: vec4<f32>, oP: ptr<function,vec3<f32>>, oQ: ptr<function,vec4<f32>>) {
 	var qi = QuatInverse(q);
 	*oP = Negate3(MulQuatVector(qi, p));
@@ -421,6 +954,9 @@ fn QuatInverse(q: vec4<f32>) -> vec4<f32> {
 }
 
 //////// import: "slmath-vector2.go"
+fn Length2(v: vec2<f32>) -> f32 {
+	return sqrt(v.x*v.x + v.y*v.y);
+}
 
 //////// import: "slmath-vector3.go"
 fn Negate3(v: vec3<f32>) -> vec3<f32> {

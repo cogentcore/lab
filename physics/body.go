@@ -45,10 +45,10 @@ const (
 	// does not need to be handled here.
 	BodyGroup
 
-	// BodySize is the size of the object (values depend on shape type).
-	BodySizeX
-	BodySizeY
-	BodySizeZ
+	// BodyHSize is the size of the object (values depend on shape type).
+	BodyHSizeX
+	BodyHSizeY
+	BodyHSizeZ
 
 	// BodyThick is the thickness of the body, as a hollow shape.
 	// If 0, then it is a solid shape (default).
@@ -145,14 +145,14 @@ func GetBodyGroup(idx int32) int32 {
 	return int32(math.Float32bits(Bodies.Value(int(idx), int(BodyGroup))))
 }
 
-func BodySize(idx int32) math32.Vector3 {
-	return math32.Vec3(Bodies.Value(int(idx), int(BodySizeX)), Bodies.Value(int(idx), int(BodySizeY)), Bodies.Value(int(idx), int(BodySizeZ)))
+func BodyHSize(idx int32) math32.Vector3 {
+	return math32.Vec3(Bodies.Value(int(idx), int(BodyHSizeX)), Bodies.Value(int(idx), int(BodyHSizeY)), Bodies.Value(int(idx), int(BodyHSizeZ)))
 }
 
-func SetBodySize(idx int32, size math32.Vector3) {
-	Bodies.Set(size.X, int(idx), int(BodySizeX))
-	Bodies.Set(size.Y, int(idx), int(BodySizeY))
-	Bodies.Set(size.Z, int(idx), int(BodySizeZ))
+func SetBodyHSize(idx int32, size math32.Vector3) {
+	Bodies.Set(size.X, int(idx), int(BodyHSizeX))
+	Bodies.Set(size.Y, int(idx), int(BodyHSizeY))
+	Bodies.Set(size.Z, int(idx), int(BodyHSizeZ))
 }
 
 func BodyPos(idx int32) math32.Vector3 {

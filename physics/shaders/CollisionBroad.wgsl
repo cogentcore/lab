@@ -15,9 +15,9 @@ var<storage, read_write> BodyCollidePairs: array<i32>;
 @group(2) @binding(0)
 var<storage, read_write> Dynamics: array<f32>;
 @group(2) @binding(1)
-var<storage, read_write> ContactCount: array<atomic<i32>>;
+var<storage, read_write> BroadContactsN: array<atomic<i32>>;
 @group(2) @binding(2)
-var<storage, read_write> Contacts: array<f32>;
+var<storage, read_write> BroadContacts: array<f32>;
 // // JointControls are dynamic joint control inputs, per joint DoF // (in correspondence with [JointDoFs]). This can be uploaded to the // GPU at every step. // [dof][JointControlVarsN] 
 
 alias GPUVars = i32;
@@ -49,9 +49,9 @@ const  BodyShape: BodyVars = 0;
 const  BodyDynamic: BodyVars = 1;
 const  BodyWorld: BodyVars = 2;
 const  BodyGroup: BodyVars = 3;
-const  BodySizeX: BodyVars = 4;
-const  BodySizeY: BodyVars = 5;
-const  BodySizeZ: BodyVars = 6;
+const  BodyHSizeX: BodyVars = 4;
+const  BodyHSizeY: BodyVars = 5;
+const  BodyHSizeZ: BodyVars = 6;
 const  BodyThick: BodyVars = 7;
 const  BodyMass: BodyVars = 8;
 const  BodyInvMass: BodyVars = 9;
@@ -92,8 +92,8 @@ fn GetBodyShape(idx: i32) -> Shapes {
 fn GetBodyDynamic(idx: i32) -> i32 {
 	return i32(bitcast<u32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyDynamic))]));
 }
-fn BodySize(idx: i32) -> vec3<f32> {
-	return vec3<f32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodySizeX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodySizeY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodySizeZ))]);
+fn BodyHSize(idx: i32) -> vec3<f32> {
+	return vec3<f32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyHSizeX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyHSizeY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyHSizeZ))]);
 }
 fn BodyPos(idx: i32) -> vec3<f32> {
 	return vec3<f32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyPosX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyPosY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyPosZ))]);
@@ -125,22 +125,29 @@ const  ContactAPointZ: ContactVars = 5;
 const  ContactBPointX: ContactVars = 6;
 const  ContactBPointY: ContactVars = 7;
 const  ContactBPointZ: ContactVars = 8;
-const  ContactADepth: ContactVars = 9;
-const  ContactBDepth: ContactVars = 10;
-const  ContactNormX: ContactVars = 11;
-const  ContactNormY: ContactVars = 12;
-const  ContactNormZ: ContactVars = 13;
-const  ContactForceX: ContactVars = 14;
-const  ContactForceY: ContactVars = 15;
-const  ContactForceZ: ContactVars = 16;
-fn SetContactA(idx: i32,bodIdx: i32) {
-	Contacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactA))] = bitcast<f32>(u32(bodIdx));
+const  ContactAOffX: ContactVars = 9;
+const  ContactAOffY: ContactVars = 10;
+const  ContactAOffZ: ContactVars = 11;
+const  ContactBOffX: ContactVars = 12;
+const  ContactBOffY: ContactVars = 13;
+const  ContactBOffZ: ContactVars = 14;
+const  ContactAThick: ContactVars = 15;
+const  ContactBThick: ContactVars = 16;
+const  ContactNormX: ContactVars = 17;
+const  ContactNormY: ContactVars = 18;
+const  ContactNormZ: ContactVars = 19;
+const  ContactForceX: ContactVars = 20;
+const  ContactForceY: ContactVars = 21;
+const  ContactForceZ: ContactVars = 22;
+const BroadContactVarsN = ContactAPointX;
+fn SetBroadContactA(idx: i32,bodIdx: i32) {
+	BroadContacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactA))] = bitcast<f32>(u32(bodIdx));
 }
-fn SetContactB(idx: i32,bodIdx: i32) {
-	Contacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactB))] = bitcast<f32>(u32(bodIdx));
+fn SetBroadContactB(idx: i32,bodIdx: i32) {
+	BroadContacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactB))] = bitcast<f32>(u32(bodIdx));
 }
-fn SetContactPointIdx(idx: i32,ptIdx: i32) {
-	Contacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactPointIdx))] = bitcast<f32>(u32(ptIdx));
+fn SetBroadContactPointIdx(idx: i32,ptIdx: i32) {
+	BroadContacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactPointIdx))] = bitcast<f32>(u32(ptIdx));
 }
 fn CollisionBroad(i: u32) { //gosl:kernel
 	let params = Params[0];
@@ -160,7 +167,7 @@ fn CollisionBroad(i: u32) { //gosl:kernel
 	var margin = params.ContactMargin;
 	var infPlane = false;
 	if (sA == Plane) {
-		var szA = BodySize(biA);
+		var szA = BodyHSize(biA);
 		if (szA.x == 0) {
 			infPlane = true;
 		}
@@ -179,24 +186,24 @@ fn CollisionBroad(i: u32) { //gosl:kernel
 	}
 	var ncB: i32;
 	var ncA = ShapePairContacts(sA, sB, infPlane, &ncB);
-	var enci = atomicAdd(&ContactCount[i32(params.Cur)], ncA+ncB);
+	var enci = atomicAdd(&BroadContactsN[0], ncA+ncB);
 	enci += ncA + ncB; // wgsl now matches Go
 	var nci = enci - (ncA + ncB);    // starting index
 	if (nci >= params.ContactsMax) { // shouldn't happen!
 		return;
 	}
-	AddContacts(biA, biB, ci, ncA, ncB);
+	AddBroadContacts(biA, biB, nci, ncA, ncB);
 }
-fn AddContacts(biA: i32,biB: i32,ci: i32,ncA: i32,ncB: i32) {
+fn AddBroadContacts(biA: i32,biB: i32,nci: i32,ncA: i32,ncB: i32) {
 	for (var i=0; i<ncA; i++) {
-		SetContactA(ci+i, biA);
-		SetContactB(ci+i, biB);
-		SetContactPointIdx(ci+i, i);
+		SetBroadContactA(nci+i, biA);
+		SetBroadContactB(nci+i, biB);
+		SetBroadContactPointIdx(nci+i, i);
 	}
 	for (var i=0; i<ncB; i++) {
-		SetContactA(ci+ncA+i, biB); // flipped
-		SetContactB(ci+ncA+i, biA);
-		SetContactPointIdx(ci+i, i);
+		SetBroadContactA(nci+ncA+i, biB); // flipped
+		SetBroadContactB(nci+ncA+i, biA);
+		SetBroadContactPointIdx(nci+i, i);
 	}
 }
 
@@ -249,10 +256,10 @@ fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> {
 
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 41;
-const ContactVarsN: ContactVars = 17;
+const ContactVarsN: ContactVars = 23;
 const JointControlVarsN: JointControlVars = 3;
 const DynamicVarsN: DynamicVars = 32;
-const GPUVarsN: GPUVars = 10;
+const GPUVarsN: GPUVars = 12;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
 const JointDoFVarsN: JointDoFVars = 7;
@@ -341,6 +348,7 @@ struct PhysParams {
 	AngularDamping: f32,
 	ContactWeighting: i32,
 	Restitution: i32,
+	MaxGeomIter: i32,
 	ContactMargin: f32,
 	ContactsMax: i32,
 	Cur: i32,
@@ -353,7 +361,6 @@ struct PhysParams {
 	BodyCollidePairsN: i32,
 	pad: i32,
 	pad1: i32,
-	pad2: i32,
 	Gravity: vec4<f32>,
 }
 

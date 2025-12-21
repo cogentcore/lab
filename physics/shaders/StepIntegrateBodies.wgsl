@@ -39,9 +39,9 @@ const  BodyShape: BodyVars = 0;
 const  BodyDynamic: BodyVars = 1;
 const  BodyWorld: BodyVars = 2;
 const  BodyGroup: BodyVars = 3;
-const  BodySizeX: BodyVars = 4;
-const  BodySizeY: BodyVars = 5;
-const  BodySizeZ: BodyVars = 6;
+const  BodyHSizeX: BodyVars = 4;
+const  BodyHSizeY: BodyVars = 5;
+const  BodyHSizeZ: BodyVars = 6;
 const  BodyThick: BodyVars = 7;
 const  BodyMass: BodyVars = 8;
 const  BodyInvMass: BodyVars = 9;
@@ -101,14 +101,21 @@ const  ContactAPointZ: ContactVars = 5;
 const  ContactBPointX: ContactVars = 6;
 const  ContactBPointY: ContactVars = 7;
 const  ContactBPointZ: ContactVars = 8;
-const  ContactADepth: ContactVars = 9;
-const  ContactBDepth: ContactVars = 10;
-const  ContactNormX: ContactVars = 11;
-const  ContactNormY: ContactVars = 12;
-const  ContactNormZ: ContactVars = 13;
-const  ContactForceX: ContactVars = 14;
-const  ContactForceY: ContactVars = 15;
-const  ContactForceZ: ContactVars = 16;
+const  ContactAOffX: ContactVars = 9;
+const  ContactAOffY: ContactVars = 10;
+const  ContactAOffZ: ContactVars = 11;
+const  ContactBOffX: ContactVars = 12;
+const  ContactBOffY: ContactVars = 13;
+const  ContactBOffZ: ContactVars = 14;
+const  ContactAThick: ContactVars = 15;
+const  ContactBThick: ContactVars = 16;
+const  ContactNormX: ContactVars = 17;
+const  ContactNormY: ContactVars = 18;
+const  ContactNormZ: ContactVars = 19;
+const  ContactForceX: ContactVars = 20;
+const  ContactForceY: ContactVars = 21;
+const  ContactForceZ: ContactVars = 22;
+const BroadContactVarsN = ContactAPointX;
 
 //////// import: "control.go"
 alias JointControlVars = i32; //enums:enum
@@ -195,10 +202,10 @@ fn SetDynamicAngDelta(idx: i32,cni: i32, angDelta: vec3<f32>) {
 
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 41;
-const ContactVarsN: ContactVars = 17;
+const ContactVarsN: ContactVars = 23;
 const JointControlVarsN: JointControlVars = 3;
 const DynamicVarsN: DynamicVars = 32;
-const GPUVarsN: GPUVars = 10;
+const GPUVarsN: GPUVars = 12;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
 const JointDoFVarsN: JointDoFVars = 7;
@@ -287,6 +294,7 @@ struct PhysParams {
 	AngularDamping: f32,
 	ContactWeighting: i32,
 	Restitution: i32,
+	MaxGeomIter: i32,
 	ContactMargin: f32,
 	ContactsMax: i32,
 	Cur: i32,
@@ -299,7 +307,6 @@ struct PhysParams {
 	BodyCollidePairsN: i32,
 	pad: i32,
 	pad1: i32,
-	pad2: i32,
 	Gravity: vec4<f32>,
 }
 

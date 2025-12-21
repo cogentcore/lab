@@ -24,6 +24,38 @@ func BoxSDF(upper, p math32.Vector3) float32 {
 	return slmath.Length3(e) + min(max(qx, max(qy, qz)), 0.0)
 }
 
+func BoxSDFGrad(upper, p math32.Vector3) math32.Vector3 {
+	qx := math32.Abs(p.X) - upper.X
+	qy := math32.Abs(p.Y) - upper.Y
+	qz := math32.Abs(p.Z) - upper.Z
+
+	// exterior case
+	if qx > 0.0 || qy > 0.0 || qz > 0.0 {
+		x := math32.Clamp(p.X, -upper.X, upper.X)
+		y := math32.Clamp(p.Y, -upper.Y, upper.Y)
+		z := math32.Clamp(p.Z, -upper.Z, upper.Z)
+
+		return slmath.Normal3(p.Sub(math32.Vec3(x, y, z)))
+	}
+
+	sx := math32.Sign(p.X)
+	sy := math32.Sign(p.Y)
+	sz := math32.Sign(p.Z)
+
+	// x projection
+	if (qx > qy && qx > qz) || (qy == 0.0 && qz == 0.0) {
+		return math32.Vec3(sx, 0.0, 0.0)
+	}
+
+	// y projection
+	if (qy > qx && qy > qz) || (qx == 0.0 && qz == 0.0) {
+		return math32.Vec3(0.0, sy, 0.0)
+	}
+
+	// z projection
+	return math32.Vec3(0.0, 0.0, sz)
+}
+
 func CapsuleSDF(radius, hh float32, p math32.Vector3) float32 {
 	if p.Y > hh {
 		return slmath.Length3(math32.Vec3(p.X, p.Y-hh, p.Z)) - radius
@@ -118,23 +150,24 @@ func BoxVertex(ptId int32, upper math32.Vector3) math32.Vector3 {
 
 // get the edge of the box given its ID (0-11)
 func BoxEdge(edgeId int32, upper math32.Vector3, edge0, edge1 *math32.Vector3) {
-	if edgeId < 4 {
+	eid := edgeId
+	if eid < 4 {
 		// edges along x: 0-1, 2-3, 4-5, 6-7
-		i := edgeId * 2
+		i := eid * 2
 		j := i + 1
 		*edge0 = BoxVertex(i, upper)
 		*edge1 = BoxVertex(j, upper)
-	} else if edgeId < 8 {
+	} else if eid < 8 {
 		// edges along y: 0-2, 1-3, 4-6, 5-7
-		edgeId -= 4
-		i := edgeId%2 + edgeId // 2 * 4
+		eid -= 4
+		i := eid%2 + eid // 2 * 4
 		j := i + 2
 		*edge0 = BoxVertex(i, upper)
 		*edge1 = BoxVertex(j, upper)
 	}
 	// edges along z: 0-4, 1-5, 2-6, 3-7
-	edgeId -= 8
-	i := edgeId
+	eid -= 8
+	i := eid
 	j := i + 4
 	*edge0 = BoxVertex(i, upper)
 	*edge1 = BoxVertex(j, upper)
@@ -152,8 +185,8 @@ func PlaneEdge(edgeId int32, width, length float32, edge0, edge1 *math32.Vector3
 		p1x = -p0x
 		p1z = p0z
 	}
-	(*edge0).Set(p0x, 0, p0z)
-	(*edge1).Set(p1x, 0, p1z)
+	*edge0 = math32.Vec3(p0x, 0, p0z)
+	*edge1 = math32.Vec3(p1x, 0, p1z)
 }
 
 // find point on edge closest to box, return its barycentric edge coordinate
