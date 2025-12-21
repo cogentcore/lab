@@ -73,7 +73,6 @@ func NewGeomData(bi, cni int32, shp Shapes) GeomData {
 // X_bw, X_sw -> BtoW
 
 // ptAw = point in A, world coords; b = body coords
-// spatial_vector = w,v = top, bottom = delta, angDelta
 
 func ColSphereSphere(cpi int32, gdA *GeomData, gdB *GeomData, ptA, ptB, norm *math32.Vector3) float32 {
 	ptAw := gdA.WbR
