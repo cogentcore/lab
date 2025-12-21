@@ -48,22 +48,26 @@ func main() {
 	split.SetSplits(0.2, 0.8)
 
 	rot := math32.NewQuat(0, 0, 0, 1)
-	thick := float32(0.1)
-	wr.NewBody(wl, "floor", physics.Box, "grey", math32.Vec3(10, thick, 10),
-		math32.Vec3(0, -thick, 0), rot)
+	// thick := float32(0.1)
+	wr.NewBody(wl, "floor", physics.Plane, "grey", math32.Vec3(10, 0, 10),
+		math32.Vec3(0, 0, 0), rot)
 
 	height := float32(.5)
 	width := height * .4
 	depth := height * .15
-	b1 := wr.NewDynamic(wl, "body", physics.Box, "purple", 1.0, math32.Vec3(width, height, depth),
-		math32.Vec3(0, height, 0), rot)
+	_ = width
+	b1 := wr.NewDynamic(wl, "body", physics.Sphere, "purple", 1.0, math32.Vec3(height, height, depth),
+		math32.Vec3(0, height+2, 0), rot)
+	_ = b1
 
-	bj := wl.NewJointRevolute(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height/2, 0), math32.Vec3(0, 1, 0))
-	// bj := wl.NewJointPrismatic(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height/2, 0), math32.Vec3(1, 0, 0))
+	// bj := wl.NewJointRevolute(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height, 0), math32.Vec3(0, 1, 0))
+	// bj := wl.NewJointPrismatic(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height, 0), math32.Vec3(1, 0, 0))
 	// physics.SetJointControlForce(bj, 0, 5)
-	physics.SetJointTargetPos(bj, 0, 1)
+	// physics.SetJointTargetPos(bj, 0, 1)
 	// physics.SetJointDoF(bj, 0, physics.JointDamp, 0.01)
 	// physics.SetJointDoF(bj, 0, physics.JointStiff, 1) // this makes a big difference
+	bj := wl.NewJointFree(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height, 0))
+	_ = bj
 
 	wr.Init(wl)
 

@@ -458,6 +458,30 @@ func (wl *World) NewJointDistance(parent, child int32, ppos, cpos math32.Vector3
 	return idx
 }
 
+// NewJointFree adds a new Free joint
+// between parent and child dynamic object indexes,
+// with distance constrained only on the first linear X axis.
+// Use -1 for parent to add a world-anchored joint.
+// ppos, cpos are the relative positions from the parent, child.
+// Sets relative rotation matricies to identity by default.
+// Use [SetJointDoF] to set the remaining DoF parameters.
+func (wl *World) NewJointFree(parent, child int32, ppos, cpos math32.Vector3) int32 {
+	idx := wl.newJoint(Distance, parent, child, ppos, cpos)
+	SetJointLinearDoFN(idx, 0)
+	SetJointAngularDoFN(idx, 0)
+	for d := range math32.W {
+		axis := math32.Vector3{}
+		axis.SetDim(d, 1)
+		wl.newJointDoF(idx, int32(d), axis)
+	}
+	for d := range math32.W {
+		axis := math32.Vector3{}
+		axis.SetDim(d, 1)
+		wl.newJointDoF(idx, int32(d), axis)
+	}
+	return idx
+}
+
 // newJoint adds a new joint between parent and child
 // dynamic object indexes.
 // Use -1 for parent to add a world-anchored joint.
