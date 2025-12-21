@@ -137,6 +137,12 @@ func GPUInit() {
 		pl.AddVarUsed(2, "ContactsN")
 		pl.AddVarUsed(2, "Dynamics")
 		pl.AddVarUsed(0, "Params")
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/DeltasFromContacts.wgsl", sy)
+		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(2, "Contacts")
+		pl.AddVarUsed(2, "ContactsN")
+		pl.AddVarUsed(2, "Dynamics")
+		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/DeltasFromJoints.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(1, "BodyJoints")
@@ -156,6 +162,13 @@ func GPUInit() {
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/InitDynamics.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(1, "Bodies")
+		pl.AddVarUsed(2, "Dynamics")
+		pl.AddVarUsed(0, "Params")
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepBodyContacts.wgsl", sy)
+		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(1, "Bodies")
+		pl.AddVarUsed(2, "Contacts")
+		pl.AddVarUsed(2, "ContactsN")
 		pl.AddVarUsed(2, "Dynamics")
 		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepBodyDeltas.wgsl", sy)
@@ -329,6 +342,48 @@ func RunOneCollisionNarrow(n int, syncVars ...GPUVars) {
 		RunCollisionNarrowCPU(n)
 	}
 }
+// RunDeltasFromContacts runs the DeltasFromContacts kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneDeltasFromContacts call does Run and Done for a
+// single run-and-sync case.
+func RunDeltasFromContacts(n int) {
+	if UseGPU {
+		RunDeltasFromContactsGPU(n)
+	} else {
+		RunDeltasFromContactsCPU(n)
+	}
+}
+
+// RunDeltasFromContactsGPU runs the DeltasFromContacts kernel on the GPU. See [RunDeltasFromContacts] for more info.
+func RunDeltasFromContactsGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["DeltasFromContacts"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunDeltasFromContactsCPU runs the DeltasFromContacts kernel on the CPU.
+func RunDeltasFromContactsCPU(n int) {
+	gpu.VectorizeFunc(0, n, DeltasFromContacts)
+}
+
+// RunOneDeltasFromContacts runs the DeltasFromContacts kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneDeltasFromContacts(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunDeltasFromContactsGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunDeltasFromContactsCPU(n)
+	}
+}
 // RunDeltasFromJoints runs the DeltasFromJoints kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -495,6 +550,48 @@ func RunOneInitDynamics(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunInitDynamicsCPU(n)
+	}
+}
+// RunStepBodyContacts runs the StepBodyContacts kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneStepBodyContacts call does Run and Done for a
+// single run-and-sync case.
+func RunStepBodyContacts(n int) {
+	if UseGPU {
+		RunStepBodyContactsGPU(n)
+	} else {
+		RunStepBodyContactsCPU(n)
+	}
+}
+
+// RunStepBodyContactsGPU runs the StepBodyContacts kernel on the GPU. See [RunStepBodyContacts] for more info.
+func RunStepBodyContactsGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["StepBodyContacts"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunStepBodyContactsCPU runs the StepBodyContacts kernel on the CPU.
+func RunStepBodyContactsCPU(n int) {
+	gpu.VectorizeFunc(0, n, StepBodyContacts)
+}
+
+// RunOneStepBodyContacts runs the StepBodyContacts kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneStepBodyContacts(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunStepBodyContactsGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunStepBodyContactsCPU(n)
 	}
 }
 // RunStepBodyDeltas runs the StepBodyDeltas kernel with given number of elements,

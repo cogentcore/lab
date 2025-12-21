@@ -53,35 +53,37 @@ const  BodyMass: BodyVars = 8;
 const  BodyInvMass: BodyVars = 9;
 const  BodyBounce: BodyVars = 10;
 const  BodyFriction: BodyVars = 11;
-const  BodyPosX: BodyVars = 12;
-const  BodyPosY: BodyVars = 13;
-const  BodyPosZ: BodyVars = 14;
-const  BodyQuatX: BodyVars = 15;
-const  BodyQuatY: BodyVars = 16;
-const  BodyQuatZ: BodyVars = 17;
-const  BodyQuatW: BodyVars = 18;
-const  BodyComX: BodyVars = 19;
-const  BodyComY: BodyVars = 20;
-const  BodyComZ: BodyVars = 21;
-const  BodyInertiaXX: BodyVars = 22;
-const  BodyInertiaYX: BodyVars = 23;
-const  BodyInertiaZX: BodyVars = 24;
-const  BodyInertiaXY: BodyVars = 25;
-const  BodyInertiaYY: BodyVars = 26;
-const  BodyInertiaZY: BodyVars = 27;
-const  BodyInertiaXZ: BodyVars = 28;
-const  BodyInertiaYZ: BodyVars = 29;
-const  BodyInertiaZZ: BodyVars = 30;
-const  BodyInvInertiaXX: BodyVars = 31;
-const  BodyInvInertiaYX: BodyVars = 32;
-const  BodyInvInertiaZX: BodyVars = 33;
-const  BodyInvInertiaXY: BodyVars = 34;
-const  BodyInvInertiaYY: BodyVars = 35;
-const  BodyInvInertiaZY: BodyVars = 36;
-const  BodyInvInertiaXZ: BodyVars = 37;
-const  BodyInvInertiaYZ: BodyVars = 38;
-const  BodyInvInertiaZZ: BodyVars = 39;
-const  BodyRadius: BodyVars = 40;
+const  BodyFrictionTortion: BodyVars = 12;
+const  BodyFrictionRolling: BodyVars = 13;
+const  BodyPosX: BodyVars = 14;
+const  BodyPosY: BodyVars = 15;
+const  BodyPosZ: BodyVars = 16;
+const  BodyQuatX: BodyVars = 17;
+const  BodyQuatY: BodyVars = 18;
+const  BodyQuatZ: BodyVars = 19;
+const  BodyQuatW: BodyVars = 20;
+const  BodyComX: BodyVars = 21;
+const  BodyComY: BodyVars = 22;
+const  BodyComZ: BodyVars = 23;
+const  BodyInertiaXX: BodyVars = 24;
+const  BodyInertiaYX: BodyVars = 25;
+const  BodyInertiaZX: BodyVars = 26;
+const  BodyInertiaXY: BodyVars = 27;
+const  BodyInertiaYY: BodyVars = 28;
+const  BodyInertiaZY: BodyVars = 29;
+const  BodyInertiaXZ: BodyVars = 30;
+const  BodyInertiaYZ: BodyVars = 31;
+const  BodyInertiaZZ: BodyVars = 32;
+const  BodyInvInertiaXX: BodyVars = 33;
+const  BodyInvInertiaYX: BodyVars = 34;
+const  BodyInvInertiaZX: BodyVars = 35;
+const  BodyInvInertiaXY: BodyVars = 36;
+const  BodyInvInertiaYY: BodyVars = 37;
+const  BodyInvInertiaZY: BodyVars = 38;
+const  BodyInvInertiaXZ: BodyVars = 39;
+const  BodyInvInertiaYZ: BodyVars = 40;
+const  BodyInvInertiaZZ: BodyVars = 41;
+const  BodyRadius: BodyVars = 42;
 fn BodyCom(idx: i32) -> vec3<f32> {
 	return vec3<f32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyComX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyComY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyComZ))]);
 }
@@ -113,9 +115,18 @@ const  ContactBThick: ContactVars = 16;
 const  ContactNormX: ContactVars = 17;
 const  ContactNormY: ContactVars = 18;
 const  ContactNormZ: ContactVars = 19;
-const  ContactForceX: ContactVars = 20;
-const  ContactForceY: ContactVars = 21;
-const  ContactForceZ: ContactVars = 22;
+const  ContactADeltaX: ContactVars = 20;
+const  ContactADeltaY: ContactVars = 21;
+const  ContactADeltaZ: ContactVars = 22;
+const  ContactAAngDeltaX: ContactVars = 23;
+const  ContactAAngDeltaY: ContactVars = 24;
+const  ContactAAngDeltaZ: ContactVars = 25;
+const  ContactBDeltaX: ContactVars = 26;
+const  ContactBDeltaY: ContactVars = 27;
+const  ContactBDeltaZ: ContactVars = 28;
+const  ContactBAngDeltaX: ContactVars = 29;
+const  ContactBAngDeltaY: ContactVars = 30;
+const  ContactBAngDeltaZ: ContactVars = 31;
 const BroadContactVarsN = ContactAPointX;
 
 //////// import: "control.go"
@@ -178,8 +189,8 @@ fn DynamicAngDelta(idx: i32,cni: i32) -> vec3<f32> {
 }
 
 //////// import: "enumgen.go"
-const BodyVarsN: BodyVars = 41;
-const ContactVarsN: ContactVars = 23;
+const BodyVarsN: BodyVars = 43;
+const ContactVarsN: ContactVars = 32;
 const JointControlVarsN: JointControlVars = 3;
 const DynamicVarsN: DynamicVars = 32;
 const GPUVarsN: GPUVars = 12;
@@ -803,20 +814,20 @@ fn JointAxisTarget(axis: vec3<f32>, targ: f32,weight: f32, axisTargets: ptr<func
 	*axisTargets = (*axisTargets)+(weightedAxis*(targ)); // weighted target (to be normalized later by sum of weights)
 	*axisWeights = (*axisWeights)+(Abs3(weightedAxis));
 }
-fn PositionalCorrection(err: f32,derr: f32, tfaQ: vec4<f32>,tfbQ: vec4<f32>, mInva: f32,mInvb: f32, iInva: mat3x3f,iInvb: mat3x3f, lineara: vec3<f32>,linearb: vec3<f32>,angulara: vec3<f32>,angularb: vec3<f32>, lambdaIn: f32,compliance: f32,damping: f32,dt: f32) -> f32 {
+fn PositionalCorrection(err: f32,derr: f32, tfaQ: vec4<f32>,tfbQ: vec4<f32>, mInvA: f32,mInvB: f32, iInvA: mat3x3f,iInvB: mat3x3f, linA: vec3<f32>,linB: vec3<f32>,angA: vec3<f32>,angB: vec3<f32>, lambdaIn: f32,compliance: f32,damping: f32,dt: f32) -> f32 {
 	var denom = f32(0.0);
-	denom += LengthSquared3(lineara) * mInva;
-	denom += LengthSquared3(linearb) * mInvb;
-	var rotAngulara = MulQuatVectorInverse(tfaQ, angulara);
-	var rotAngularb = MulQuatVectorInverse(tfbQ, angularb);
-	denom += Dot3(rotAngulara, iInva*(rotAngulara));
-	denom += Dot3(rotAngularb, iInvb*(rotAngularb));
+	denom += LengthSquared3(linA) * mInvA;
+	denom += LengthSquared3(linB) * mInvB;
+	var rotAngA = MulQuatVectorInverse(tfaQ, angA);
+	var rotAngB = MulQuatVectorInverse(tfbQ, angB);
+	denom += Dot3(rotAngA, iInvA*(rotAngA));
+	denom += Dot3(rotAngB, iInvB*(rotAngB));
 	var alpha = compliance;
 	var gamma = compliance * damping;
-	var deltaLambda = -(err + alpha*lambdaIn + gamma*derr);
+	var lambda = -(err + alpha*lambdaIn + gamma*derr);
 	if (denom+alpha > 0.0) {
-		deltaLambda /= (dt+gamma)*denom + alpha/dt;
-	}return deltaLambda;
+		lambda /= (dt+gamma)*denom + alpha/dt;
+	}return lambda;
 }
 fn AngularCorrection(err: f32,derr: f32, tfaQ: vec4<f32>,tfbQ: vec4<f32>, iInva: mat3x3f,iInvb: mat3x3f, angulara: vec3<f32>,angularb: vec3<f32>, lambdaIn: f32,compliance: f32,damping: f32,dt: f32) -> f32 {
 	var rotAngulara = MulQuatVectorInverse(tfaQ, angulara);

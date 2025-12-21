@@ -40,7 +40,7 @@ type PhysParams struct {
 	// AngularDamping is damping of angular motion.
 	AngularDamping float32 `default:"0"`
 
-	// Contact weighting
+	// Contact weighting: todo: requires atomic add
 	ContactWeighting slbool.Bool `default:"true"`
 
 	// Restitution

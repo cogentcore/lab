@@ -47,7 +47,7 @@ func TestSphereSphere(t *testing.T) {
 		InitGeomData(0, &gdB)
 
 		var ptA, ptB, norm math32.Vector3
-		dist := ColSphereSphere(0, &gdA, &gdB, &ptA, &ptB, &norm)
+		dist := ColSphereSphere(0, 10, &gdA, &gdB, &ptA, &ptB, &norm)
 		margin := float32(0.01)
 
 		var ctA, ctB, offA, offB math32.Vector3

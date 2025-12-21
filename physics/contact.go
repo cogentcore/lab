@@ -62,10 +62,23 @@ const (
 	ContactNormY
 	ContactNormZ
 
-	// computed contact force vector
-	ContactForceX
-	ContactForceY
-	ContactForceZ
+	// computed contact deltas, A
+	ContactADeltaX
+	ContactADeltaY
+	ContactADeltaZ
+
+	ContactAAngDeltaX
+	ContactAAngDeltaY
+	ContactAAngDeltaZ
+
+	// computed contact deltas, B
+	ContactBDeltaX
+	ContactBDeltaY
+	ContactBDeltaZ
+
+	ContactBAngDeltaX
+	ContactBAngDeltaY
+	ContactBAngDeltaZ
 )
 
 // number of broad-phase contact values: just the indexes
@@ -171,14 +184,44 @@ func SetContactNorm(idx int32, pos math32.Vector3) {
 	Contacts.Set(pos.Z, int(idx), int(ContactNormZ))
 }
 
-func ContactForce(idx int32) math32.Vector3 {
-	return math32.Vec3(Contacts.Value(int(idx), int(ContactForceX)), Contacts.Value(int(idx), int(ContactForceY)), Contacts.Value(int(idx), int(ContactForceZ)))
+func ContactADelta(idx int32) math32.Vector3 {
+	return math32.Vec3(Contacts.Value(int(idx), int(ContactADeltaX)), Contacts.Value(int(idx), int(ContactADeltaY)), Contacts.Value(int(idx), int(ContactADeltaZ)))
 }
 
-func SetContactForce(idx int32, pos math32.Vector3) {
-	Contacts.Set(pos.X, int(idx), int(ContactForceX))
-	Contacts.Set(pos.Y, int(idx), int(ContactForceY))
-	Contacts.Set(pos.Z, int(idx), int(ContactForceZ))
+func SetContactADelta(idx int32, pos math32.Vector3) {
+	Contacts.Set(pos.X, int(idx), int(ContactADeltaX))
+	Contacts.Set(pos.Y, int(idx), int(ContactADeltaY))
+	Contacts.Set(pos.Z, int(idx), int(ContactADeltaZ))
+}
+
+func ContactAAngDelta(idx int32) math32.Vector3 {
+	return math32.Vec3(Contacts.Value(int(idx), int(ContactAAngDeltaX)), Contacts.Value(int(idx), int(ContactAAngDeltaY)), Contacts.Value(int(idx), int(ContactAAngDeltaZ)))
+}
+
+func SetContactAAngDelta(idx int32, pos math32.Vector3) {
+	Contacts.Set(pos.X, int(idx), int(ContactAAngDeltaX))
+	Contacts.Set(pos.Y, int(idx), int(ContactAAngDeltaY))
+	Contacts.Set(pos.Z, int(idx), int(ContactAAngDeltaZ))
+}
+
+func ContactBDelta(idx int32) math32.Vector3 {
+	return math32.Vec3(Contacts.Value(int(idx), int(ContactBDeltaX)), Contacts.Value(int(idx), int(ContactBDeltaY)), Contacts.Value(int(idx), int(ContactBDeltaZ)))
+}
+
+func SetContactBDelta(idx int32, pos math32.Vector3) {
+	Contacts.Set(pos.X, int(idx), int(ContactBDeltaX))
+	Contacts.Set(pos.Y, int(idx), int(ContactBDeltaY))
+	Contacts.Set(pos.Z, int(idx), int(ContactBDeltaZ))
+}
+
+func ContactBAngDelta(idx int32) math32.Vector3 {
+	return math32.Vec3(Contacts.Value(int(idx), int(ContactBAngDeltaX)), Contacts.Value(int(idx), int(ContactBAngDeltaY)), Contacts.Value(int(idx), int(ContactBAngDeltaZ)))
+}
+
+func SetContactBAngDelta(idx int32, pos math32.Vector3) {
+	Contacts.Set(pos.X, int(idx), int(ContactBAngDeltaX))
+	Contacts.Set(pos.Y, int(idx), int(ContactBAngDeltaY))
+	Contacts.Set(pos.Z, int(idx), int(ContactBAngDeltaZ))
 }
 
 func WorldsCollide(wa, wb int32) bool {
@@ -399,11 +442,211 @@ func CollisionNarrow(i uint32) { //gosl:kernel
 	Contacts.Set(offMagB, int(nci), int(ContactBThick))
 }
 
+// newton: solvers/xpbd/kernels.py: solve_body_contact_positions
+
+// StepBodyContacts generates contact forces for bodies.
+func StepBodyContacts(i uint32) { //gosl:kernel
+	params := GetParams(0)
+	ci := int32(i)
+	cmax := ContactsN.Values[0]
+	if ci >= cmax {
+		return
+	}
+	biA := GetContactA(ci)
+	biB := GetContactB(ci)
+	diA := GetBodyDynamic(biA)
+	diB := GetBodyDynamic(biB)
+
+	r0A := BodyDynamicPos(biA, params.Next)
+	q0A := BodyDynamicQuat(biA, params.Next)
+
+	r0B := BodyDynamicPos(biB, params.Next)
+	q0B := BodyDynamicQuat(biB, params.Next)
+
+	ctA := ContactAPoint(ci)
+	offA := ContactAOff(ci)
+	ctB := ContactBPoint(ci)
+	offB := ContactBOff(ci)
+
+	ctAw := slmath.MulSpatialPoint(r0A, q0A, ctA)
+	ctBw := slmath.MulSpatialPoint(r0B, q0B, ctB)
+	thickA := Contacts.Value(int(ci), int(ContactAThick))
+	thickB := Contacts.Value(int(ci), int(ContactBThick))
+	thick := thickA + thickB
+	norm := ContactNorm(ci)
+	nnorm := slmath.Negate3(norm)
+
+	d := slmath.Dot3(norm, ctBw.Sub(ctAw)) - thick
+	if d >= 0.0 { // now separated
+		return
+	}
+	comA := BodyCom(biA)
+	mInvA := Bodies.Value(int(biA), int(BodyInvMass))
+	iInvA := BodyInvInertia(biA)
+
+	comB := BodyCom(biB)
+	mInvB := Bodies.Value(int(biB), int(BodyInvMass))
+	iInvB := BodyInvInertia(biB)
+
+	var w0A, w0B math32.Vector3
+	if diA >= 0 {
+		w0A = DynamicAngDelta(diA, params.Next)
+	}
+	if diB >= 0 {
+		w0B = DynamicAngDelta(diB, params.Next)
+	}
+
+	// use average contact material properties
+	mu := 0.5 * (Bodies.Value(int(biA), int(BodyFriction)) + Bodies.Value(int(biB), int(BodyFriction)))
+	frTors := 0.5 * (Bodies.Value(int(biA), int(BodyFrictionTortion)) + Bodies.Value(int(biB), int(BodyFrictionTortion)))
+	frRoll := 0.5 * (Bodies.Value(int(biA), int(BodyFrictionRolling)) + Bodies.Value(int(biB), int(BodyFrictionRolling)))
+
+	// moment arms
+	dA := ctAw.Sub(slmath.MulSpatialPoint(r0A, q0A, comA))
+	dB := ctBw.Sub(slmath.MulSpatialPoint(r0B, q0B, comB))
+
+	angA := slmath.Negate3(slmath.Cross3(dA, norm))
+	angB := slmath.Cross3(dB, norm)
+
+	// todo: contact_inv_weight -- requires atomic
+
+	lambdaN := ContactConstraint(d, q0A, q0B, mInvA, mInvB, iInvA, iInvB, nnorm, norm, angA, angB, params.ContactRelax, params.Dt)
+
+	linDeltaA := slmath.Negate3(norm).MulScalar(lambdaN)
+	linDeltaB := norm.MulScalar(lambdaN)
+	angDeltaA := angA.MulScalar(lambdaN)
+	angDeltaB := angB.MulScalar(lambdaN)
+
+	// linear friction
+	if mu > 0.0 {
+		// add on displacement from surface offsets, this ensures
+		// we include any rotational effects due to thickness from feature
+		// need to use the current rotation to account for friction due to
+		// angular effects (e.g.: slipping contact)
+		ctAw = ctAw.Add(slmath.MulQuatVector(q0A, offA))
+		ctBw = ctBw.Add(slmath.MulQuatVector(q0B, offB))
+
+		// update delta
+		delta := ctBw.Sub(ctAw)
+		frDelta := delta.Sub(norm.MulScalar(slmath.Dot3(norm, delta)))
+
+		perp := slmath.Normal3(frDelta)
+
+		angA = slmath.Negate3(slmath.Cross3(dA, perp))
+		angB = slmath.Cross3(dB, perp)
+
+		err := slmath.Length3(frDelta)
+
+		if err > 0.0 {
+			lambdaFr := ContactConstraint(err, q0A, q0B, mInvA, mInvB, iInvA, iInvB, slmath.Negate3(perp), perp, angA, angB, params.ContactRelax, params.Dt)
+
+			// limit friction based on incremental normal force,
+			// good approximation to limiting on total force
+			lambdaFr = max(lambdaFr, -lambdaN*mu)
+
+			linDeltaA = linDeltaA.Sub(perp.MulScalar(lambdaFr))
+			linDeltaB = linDeltaB.Add(perp.MulScalar(lambdaFr))
+			angDeltaA = angDeltaA.Add(angA.MulScalar(lambdaFr))
+			angDeltaB = angDeltaB.Add(angB.MulScalar(lambdaFr))
+		}
+	}
+
+	deltaW := w0B.Sub(w0A)
+
+	if frTors > 0.0 {
+		err := slmath.Dot3(deltaW, norm) * params.Dt
+
+		if math32.Abs(err) > 0.0 {
+			lin := math32.Vec3(0, 0, 0)
+			lambdaTors := ContactConstraint(err, q0A, q0B, mInvA, mInvB, iInvA, iInvB, lin, lin, nnorm, norm, params.ContactRelax, params.Dt)
+
+			lambdaTors = math32.Clamp(lambdaTors, -lambdaN*frTors, lambdaN*frTors)
+			angDeltaA = angDeltaA.Sub(norm.MulScalar(lambdaTors))
+			angDeltaB = angDeltaB.Add(norm.MulScalar(lambdaTors))
+		}
+	}
+
+	if frRoll > 0.0 {
+		deltaW = deltaW.Sub(norm.MulScalar(slmath.Dot3(norm, deltaW)))
+		err := slmath.Length3(deltaW) * params.Dt
+		if err > 0.0 {
+			lin := math32.Vec3(0, 0, 0)
+			rollN := slmath.Normal3(deltaW)
+			lambdaRoll := ContactConstraint(err, q0A, q0B, mInvA, mInvB, iInvA, iInvB, lin, lin, slmath.Negate3(rollN), rollN, params.ContactRelax, params.Dt)
+			lambdaRoll = max(lambdaRoll, -lambdaN*frRoll)
+
+			angDeltaA = angDeltaA.Sub(rollN.MulScalar(lambdaRoll))
+			angDeltaB = angDeltaB.Add(rollN.MulScalar(lambdaRoll))
+		}
+	}
+
+	SetContactADelta(ci, linDeltaA)
+	SetContactBDelta(ci, linDeltaB)
+	SetContactAAngDelta(ci, angDeltaA)
+	SetContactBAngDelta(ci, angDeltaB)
+}
+
+// DeltasFromContacts gathers deltas, angDeltas from contacts per dynamic.
+func DeltasFromContacts(i uint32) { //gosl:kernel
+	params := GetParams(0)
+	di := int32(i)
+	if di >= params.DynamicsN {
+		return
+	}
+	cmax := ContactsN.Values[0]
+
+	bi := DynamicBody(di)
+
+	td := DynamicDelta(di, params.Next)
+	ta := DynamicAngDelta(di, params.Next)
+	for ci := range cmax {
+		biA := GetContactA(ci)
+		biB := GetContactB(ci)
+		if biA == bi {
+			d := ContactADelta(ci)
+			td = td.Add(d)
+			a := ContactAAngDelta(ci)
+			ta = ta.Add(a)
+		}
+		if biB == bi {
+			d := ContactBDelta(ci)
+			td = td.Add(d)
+			a := ContactBAngDelta(ci)
+			ta = ta.Add(a)
+		}
+	}
+	SetDynamicDelta(di, params.Next, td)
+	SetDynamicAngDelta(di, params.Next, ta)
+}
+
+func ContactConstraint(err float32, q0A, q0B math32.Quat, mInvA, mInvB float32, iInvA, iInvB math32.Matrix3, linA, linB, angA, angB math32.Vector3, relaxation, dt float32) float32 {
+	denom := float32(0.0)
+	denom += slmath.LengthSquared3(linA) * mInvA
+	denom += slmath.LengthSquared3(linB) * mInvB
+
+	// Eq. 2-3 (make sure to project into the frame of the body)
+	rotAngA := slmath.MulQuatVectorInverse(q0A, angA)
+	rotAngB := slmath.MulQuatVectorInverse(q0B, angB)
+
+	denom += slmath.Dot3(rotAngA, iInvA.MulVector3(rotAngA))
+	denom += slmath.Dot3(rotAngB, iInvB.MulVector3(rotAngB))
+
+	lambda := -err
+	if denom > 0.0 {
+		lambda /= dt * denom
+	}
+
+	return lambda * relaxation
+}
+
 //gosl:end
 
 // IsChildDynamic returns true if dic is a direct child
 // on any joint where dip is the parent.
 func (wl *World) IsChildDynamic(dip, dic int32) bool {
+	if dip < 0 || dic < 0 {
+		return false
+	}
 	npja := wl.BodyJoints.Value(int(dip), int(0), int(0))
 	for j := range npja {
 		ji := wl.BodyJoints.Value(int(dip), int(0), int(1+j))
@@ -466,6 +709,7 @@ func (wl *World) ConfigBodyCollidePairs() {
 	params.BodyCollidePairsN = int32(np)
 	pt.SetShapeSizes(np, 2)
 	wl.BodyCollidePairs = pt
+	BodyCollidePairs = pt
 	fmt.Println("body pairs over alloc", nalc, np)
 }
 

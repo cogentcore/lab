@@ -19,6 +19,7 @@ func OneIfNonzero(f float32) float32 {
 
 // step does the following:
 // if self.compute_body_velocity_from_position_delta or self.enable_restitution:
+// 	// save initial state:
 // 	body_q_init = wp.clone(state_in.body_q)
 // 	body_qd_init = wp.clone(state_in.body_qd)
 // body_deltas = wp.empty_like(state_out.body_qd)
@@ -55,13 +56,24 @@ func (wl *World) Step() {
 		params.Next = 1
 	}
 	ToGPU(JointControlsVar)
+	wl.StepCollision()
 	wl.StepJointForces()
 	wl.StepIntegrateBodies()
 
 	for range params.Iterations {
 		wl.StepSolveJoints()
+		wl.StepBodyContacts()
 	}
 	RunDone(DynamicsVar)
+}
+
+func (wl *World) StepCollision() {
+	params := GetParams(0)
+	RunCollisionInit(1) // could also just copy up
+	RunCollisionBroad(int(params.BodyCollidePairsN))
+	// note: time getting BroadContactsN back down and using that vs. running full
+	RunCollisionNarrow(int(params.ContactsMax))
+	RunDone(ContactsNVar) // we do multiple iterations so useful to have this
 }
 
 func (wl *World) StepJointForces() {
@@ -79,4 +91,11 @@ func (wl *World) StepSolveJoints() {
 	params := GetParams(0)
 	RunStepSolveJoints(int(params.JointsN))
 	RunDeltasFromJoints(int(params.DynamicsN))
+}
+
+func (wl *World) StepBodyContacts() {
+	params := GetParams(0)
+	cmax := int(ContactsN.Values[0])
+	RunStepBodyContacts(cmax)
+	RunDeltasFromContacts(int(params.DynamicsN))
 }

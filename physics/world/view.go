@@ -141,7 +141,7 @@ func (vw *View) BoxInit(sld *xyz.Solid) {
 	}
 	sld.SetMeshName(mnm)
 	sld.Pose.Scale = vw.Size.MulScalar(2)
-	vw.UpdateColor(vw.Color, s6ld)
+	vw.UpdateColor(vw.Color, sld)
 	sld.Updater(func() {
 		vw.UpdatePose(sld)
 	})
@@ -157,7 +157,7 @@ func (vw *View) PlaneInit(sld *xyz.Solid) {
 	}
 	sld.SetMeshName(mnm)
 	if vw.Size.X == 0 {
-		inf := 1e6
+		inf := float32(1e6)
 		sld.Pose.Scale = math32.Vec3(inf, inf, 1)
 	} else {
 		sld.Pose.Scale = vw.Size.MulScalar(2)

@@ -461,27 +461,27 @@ func JointAxisTarget(axis math32.Vector3, targ, weight float32, axisTargets, axi
 	*axisWeights = (*axisWeights).Add(slmath.Abs3(weightedAxis))
 }
 
-func PositionalCorrection(err, derr float32, tfaQ, tfbQ math32.Quat, mInva, mInvb float32, iInva, iInvb math32.Matrix3, lineara, linearb, angulara, angularb math32.Vector3, lambdaIn, compliance, damping, dt float32) float32 {
+func PositionalCorrection(err, derr float32, tfaQ, tfbQ math32.Quat, mInvA, mInvB float32, iInvA, iInvB math32.Matrix3, linA, linB, angA, angB math32.Vector3, lambdaIn, compliance, damping, dt float32) float32 {
 	denom := float32(0.0)
-	denom += slmath.LengthSquared3(lineara) * mInva
-	denom += slmath.LengthSquared3(linearb) * mInvb
+	denom += slmath.LengthSquared3(linA) * mInvA
+	denom += slmath.LengthSquared3(linB) * mInvB
 
 	// # Eq. 2-3 (make sure to project into the frame of the body)
-	rotAngulara := slmath.MulQuatVectorInverse(tfaQ, angulara)
-	rotAngularb := slmath.MulQuatVectorInverse(tfbQ, angularb)
+	rotAngA := slmath.MulQuatVectorInverse(tfaQ, angA)
+	rotAngB := slmath.MulQuatVectorInverse(tfbQ, angB)
 
-	denom += slmath.Dot3(rotAngulara, iInva.MulVector3(rotAngulara))
-	denom += slmath.Dot3(rotAngularb, iInvb.MulVector3(rotAngularb))
+	denom += slmath.Dot3(rotAngA, iInvA.MulVector3(rotAngA))
+	denom += slmath.Dot3(rotAngB, iInvB.MulVector3(rotAngB))
 
 	alpha := compliance
 	gamma := compliance * damping
 
-	deltaLambda := -(err + alpha*lambdaIn + gamma*derr)
+	lambda := -(err + alpha*lambdaIn + gamma*derr)
 	if denom+alpha > 0.0 {
-		deltaLambda /= (dt+gamma)*denom + alpha/dt
+		lambda /= (dt+gamma)*denom + alpha/dt
 	}
 
-	return deltaLambda
+	return lambda
 }
 
 func AngularCorrection(err, derr float32, tfaQ, tfbQ math32.Quat, iInva, iInvb math32.Matrix3, angulara, angularb math32.Vector3, lambdaIn, compliance, damping, dt float32) float32 {

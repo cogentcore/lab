@@ -89,6 +89,7 @@ func (wl *World) Init() {
 	wl.Joints = tensor.NewFloat32(0, int(JointVarsN))
 	wl.JointDoFs = tensor.NewFloat32(0, int(JointDoFVarsN))
 	wl.BodyJoints = tensor.NewInt32(0, 2, 2)
+	wl.BodyCollidePairs = tensor.NewInt32(0, 2)
 	wl.Dynamics = tensor.NewFloat32(0, 2, int(DynamicVarsN))
 	wl.BroadContactsN = tensor.NewInt32(1)
 	wl.BroadContacts = tensor.NewFloat32(0, int(ContactVarsN))
@@ -151,6 +152,7 @@ func (wl *World) SetAsCurrentVars() {
 	Bodies = wl.Bodies
 	Joints = wl.Joints
 	BodyJoints = wl.BodyJoints
+	BodyCollidePairs = wl.BodyCollidePairs
 	JointDoFs = wl.JointDoFs
 	Dynamics = wl.Dynamics
 	BroadContactsN = wl.BroadContactsN
@@ -172,5 +174,5 @@ func (wl *World) GPUInit() {
 // the GPU. This is done in GPUInit, and if current switched.
 func (wl *World) ToGPUInfra() {
 	ToGPUTensorStrides()
-	ToGPU(ParamsVar, BodiesVar, JointsVar, BodyJointsVar, JointDoFsVar, DynamicsVar, BroadContactsNVar, BroadContactsVar, ContactsNVar, ContactsVar)
+	ToGPU(ParamsVar, BodiesVar, JointsVar, BodyJointsVar, BodyCollidePairsVar, JointDoFsVar, DynamicsVar, BroadContactsNVar, BroadContactsVar, ContactsNVar, ContactsVar)
 }
