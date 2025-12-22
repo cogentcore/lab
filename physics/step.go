@@ -57,7 +57,7 @@ func (wl *World) Step() {
 		params.Cur = 0
 		params.Next = 1
 	}
-	ToGPU(JointControlsVar)
+	ToGPU(ParamsVar, JointControlsVar)
 	wl.StepCollision()
 	wl.StepJointForces()
 	wl.StepIntegrateBodies()
@@ -76,6 +76,7 @@ func (wl *World) StepCollision() {
 	// note: time getting BroadContactsN back down and using that vs. running full
 	RunCollisionNarrow(int(params.ContactsMax))
 	RunDone(ContactsNVar) // we do multiple iterations so useful to have this
+	// fmt.Println("contacts:", ContactsN.Value(0), "max:", params.ContactsMax)
 }
 
 func (wl *World) StepJointForces() {
@@ -98,6 +99,8 @@ func (wl *World) StepSolveJoints() {
 func (wl *World) StepBodyContacts() {
 	params := GetParams(0)
 	cmax := int(ContactsN.Values[0])
-	RunStepBodyContacts(cmax)
-	RunDeltasFromContacts(int(params.DynamicsN))
+	if cmax > 0 {
+		RunStepBodyContacts(cmax)
+		RunDeltasFromContacts(int(params.DynamicsN))
+	}
 }

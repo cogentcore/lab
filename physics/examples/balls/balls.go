@@ -8,7 +8,7 @@ package main
 
 import (
 	"fmt"
-	"time"
+	"math/rand/v2"
 
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/core"
@@ -26,7 +26,7 @@ import (
 
 func main() {
 	// gpu.Debug = true
-	b := core.NewBody("test1").SetTitle("Physics Test")
+	b := core.NewBody("test1").SetTitle("Physics Balls")
 	split := core.NewSplits(b)
 	// tv := core.NewTree(core.NewFrame(split))
 	fv := core.NewForm(split)
@@ -52,38 +52,36 @@ func main() {
 	split.SetSplits(0.2, 0.8)
 
 	rot := math32.NewQuat(0, 0, 0, 1)
-	// thick := float32(0.1)
-	wr.NewBody(wl, "floor", physics.Plane, "grey", math32.Vec3(10, 0, 10),
+	wr.NewBody(wl, "floor", physics.Plane, "#D0D0D040", math32.Vec3(0, 0, 0),
 		math32.Vec3(0, 0, 0), rot)
 
-	height := float32(.5)
-	width := height * .4
-	depth := height * .15
-	_ = width
-	b1 := wr.NewDynamic(wl, "body", physics.Sphere, "purple", 1.0, math32.Vec3(height, height, depth),
-		math32.Vec3(0, height+2, 0), rot)
-	_ = b1
-
-	// bj := wl.NewJointRevolute(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height, 0), math32.Vec3(0, 1, 0))
-	// bj := wl.NewJointPrismatic(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height, 0), math32.Vec3(1, 0, 0))
-	// physics.SetJointControlForce(bj, 0, 5)
-	// physics.SetJointTargetPos(bj, 0, 1)
-	// physics.SetJointDoF(bj, 0, physics.JointDamp, 0.01)
-	// physics.SetJointDoF(bj, 0, physics.JointStiff, 1) // this makes a big difference
-	// bj := wl.NewJointFree(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height, 0))
-	// _ = bj
-
+	nballs := 10000
+	size := float32(0.1)
+	bounce := float32(0.5)
+	box := 2 * size * math32.Sqrt(float32(nballs))
+	height := float32(20)
+	for i := range nballs {
+		_ = i
+		ht := rand.Float32() * height
+		x := rand.Float32()*box - 0.5*box
+		z := rand.Float32()*box - 0.5*box
+		clr := colors.Names[i%len(colors.Names)]
+		b1 := wr.NewDynamic(wl, "body", physics.Sphere, clr, 1.0, math32.Vec3(size, size, size),
+			math32.Vec3(x, size+ht, z), rot)
+		// todo: helper methods on view to set this stuff:
+		physics.Bodies.Set(bounce, int(b1.Index), int(physics.BodyBounce))
+		physics.SetBodyGroup(b1.Index, int32(i)) // no self collisions
+	}
 	wr.Init(wl)
 
 	params := physics.GetParams(0)
-	params.Dt = 0.01
+	params.Dt = 0.001
 	// params.Gravity.Y = 0
 	params.ContactRelax = 0.1
 	params.Restitution.SetBool(false)
 	fmt.Println(params.ContactRelax)
 
 	wl.Config()
-
 	wr.Update()
 
 	sc.Camera.Pose.Pos = math32.Vec3(0, 40, 3.5)
@@ -100,6 +98,7 @@ func main() {
 	sc.SaveCamera("default")
 
 	isRunning := false
+	stop := false
 
 	stepNButton := func(p *tree.Plan, n int) {
 		nm := fmt.Sprintf("Step %d", n)
@@ -119,7 +118,11 @@ func main() {
 								se.AsyncLock()
 								se.NeedsRender()
 								se.AsyncUnlock()
-								time.Sleep(1 * time.Millisecond)
+								// time.Sleep(1 * time.Nanosecond)
+							}
+							if stop {
+								stop = false
+								break
 							}
 						}
 						isRunning = false
@@ -144,10 +147,18 @@ func main() {
 						}
 					})
 			})
+			tree.Add(p, func(w *core.Button) {
+				w.SetText("Stop").SetIcon(icons.Stop).
+					SetTooltip("Stop running").
+					OnClick(func(e events.Event) {
+						stop = true
+					})
+			})
 			stepNButton(p, 1)
 			stepNButton(p, 10)
 			stepNButton(p, 100)
 			stepNButton(p, 1000)
+			stepNButton(p, 10000)
 		})
 	})
 	b.RunMainWindow()

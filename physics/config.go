@@ -6,7 +6,11 @@
 
 package physics
 
-// import "fmt"
+import (
+	// "fmt"
+
+	"cogentcore.org/lab/tensor"
+)
 
 // Config does final configuration prior to running
 // after everything has been added. Does SetAsCurrent, GPUInit.
@@ -43,8 +47,13 @@ func (wl *World) ConfigJoints() {
 		bjc[jci] = append(bjc[jci], ji)
 		maxi = max(maxi, len(bjc[jci]))
 	}
-	maxi = maxi + 1 // extra for n
 	params.BodyJointsMax = int32(maxi)
+	if nd == 0 {
+		nd = 1
+	}
+	if maxi == 0 {
+		maxi = 1
+	}
 	wl.BodyJoints.SetShapeSizes(int(nd), 2, maxi)
 	for di := range nd {
 		np := int32(len(bjp[di]))
@@ -57,6 +66,11 @@ func (wl *World) ConfigJoints() {
 		for i, ji := range bjc[di] {
 			wl.BodyJoints.Set(ji, int(di), int(1), int(1+i))
 		}
+	}
+	if nj == 0 {
+		wl.Joints = tensor.NewFloat32(1, int(JointVarsN))
+		wl.JointDoFs = tensor.NewFloat32(1, int(JointDoFVarsN))
+		wl.JointControls = tensor.NewFloat32(1, int(JointControlVarsN))
 	}
 }
 
@@ -76,5 +90,7 @@ func (wl *World) ConfigBodies() {
 // InitState initializes the simulation state.
 func (wl *World) InitState() {
 	params := GetParams(0)
+	wl.ToGPUInfra()
 	RunInitDynamics(int(params.DynamicsN))
+	RunDone(DynamicsVar)
 }

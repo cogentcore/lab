@@ -153,9 +153,9 @@ func (wl *World) SetAsCurrentVars() {
 	Params = wl.Params
 	Bodies = wl.Bodies
 	Joints = wl.Joints
+	JointDoFs = wl.JointDoFs
 	BodyJoints = wl.BodyJoints
 	BodyCollidePairs = wl.BodyCollidePairs
-	JointDoFs = wl.JointDoFs
 	Dynamics = wl.Dynamics
 	BroadContactsN = wl.BroadContactsN
 	BroadContacts = wl.BroadContacts
@@ -176,5 +176,5 @@ func (wl *World) GPUInit() {
 // the GPU. This is done in GPUInit, and if current switched.
 func (wl *World) ToGPUInfra() {
 	ToGPUTensorStrides()
-	ToGPU(ParamsVar, BodiesVar, JointsVar, BodyJointsVar, BodyCollidePairsVar, JointDoFsVar, DynamicsVar, BroadContactsNVar, BroadContactsVar, ContactsNVar, ContactsVar)
+	ToGPU(ParamsVar, BodiesVar, JointsVar, JointDoFsVar, BodyJointsVar, BodyCollidePairsVar, DynamicsVar, BroadContactsNVar, BroadContactsVar, ContactsNVar, ContactsVar, JointControlsVar)
 }

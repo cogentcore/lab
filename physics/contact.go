@@ -747,6 +747,9 @@ func (wl *World) ConfigBodyCollidePairs() {
 		ga := GetBodyGroup(a)
 		dia := GetBodyDynamic(a)
 		for b := range nb {
+			if a == b {
+				continue
+			}
 			wb := GetBodyWorld(b)
 			gb := GetBodyGroup(b)
 			if !WorldsCollide(wa, wb) {
@@ -763,7 +766,7 @@ func (wl *World) ConfigBodyCollidePairs() {
 			if np >= nalc {
 				nalc += int(nb)
 				pt.SetShapeSizes(nalc, 2)
-				fmt.Println("body pairs realoc", nalc)
+				// fmt.Println("body pairs realoc", nalc)
 			}
 
 			sA := GetBodyShape(a)
@@ -782,7 +785,7 @@ func (wl *World) ConfigBodyCollidePairs() {
 	pt.SetShapeSizes(np, 2)
 	wl.BodyCollidePairs = pt
 	BodyCollidePairs = pt
-	fmt.Println("body pairs over alloc", nalc, np)
+	fmt.Println("body pairs over alloc", nalc-np, "total:", np)
 }
 
 // newton: geometry/kernels.py: count_contact_points
