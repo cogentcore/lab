@@ -115,18 +115,19 @@ const  ContactBThick: ContactVars = 16;
 const  ContactNormX: ContactVars = 17;
 const  ContactNormY: ContactVars = 18;
 const  ContactNormZ: ContactVars = 19;
-const  ContactADeltaX: ContactVars = 20;
-const  ContactADeltaY: ContactVars = 21;
-const  ContactADeltaZ: ContactVars = 22;
-const  ContactAAngDeltaX: ContactVars = 23;
-const  ContactAAngDeltaY: ContactVars = 24;
-const  ContactAAngDeltaZ: ContactVars = 25;
-const  ContactBDeltaX: ContactVars = 26;
-const  ContactBDeltaY: ContactVars = 27;
-const  ContactBDeltaZ: ContactVars = 28;
-const  ContactBAngDeltaX: ContactVars = 29;
-const  ContactBAngDeltaY: ContactVars = 30;
-const  ContactBAngDeltaZ: ContactVars = 31;
+const  ContactWeight: ContactVars = 20;
+const  ContactADeltaX: ContactVars = 21;
+const  ContactADeltaY: ContactVars = 22;
+const  ContactADeltaZ: ContactVars = 23;
+const  ContactAAngDeltaX: ContactVars = 24;
+const  ContactAAngDeltaY: ContactVars = 25;
+const  ContactAAngDeltaZ: ContactVars = 26;
+const  ContactBDeltaX: ContactVars = 27;
+const  ContactBDeltaY: ContactVars = 28;
+const  ContactBDeltaZ: ContactVars = 29;
+const  ContactBAngDeltaX: ContactVars = 30;
+const  ContactBAngDeltaY: ContactVars = 31;
+const  ContactBAngDeltaZ: ContactVars = 32;
 const BroadContactVarsN = ContactAPointX;
 
 //////// import: "control.go"
@@ -172,15 +173,10 @@ const  DynDeltaZ: DynamicVars = 28;
 const  DynAngDeltaX: DynamicVars = 29;
 const  DynAngDeltaY: DynamicVars = 30;
 const  DynAngDeltaZ: DynamicVars = 31;
-fn DynamicBody(idx: i32) -> i32 {
-	return i32(bitcast<u32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(0), u32(DynBody))]));
-}
-fn DynamicPos(idx: i32,cni: i32) -> vec3<f32> {
-	return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosZ))]);
-}
-fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> {
-	return vec4<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatZ))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatW))]);
-}
+const  DynContactWeight: DynamicVars = 32;
+fn DynamicBody(idx: i32) -> i32 { return i32(bitcast<u32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(0), u32(DynBody))])); }
+fn DynamicPos(idx: i32,cni: i32) -> vec3<f32> { return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosZ))]); }
+fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> { return vec4<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatZ))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatW))]); }
 fn DynamicDelta(idx: i32,cni: i32) -> vec3<f32> {
 	return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaZ))]);
 }
@@ -190,9 +186,9 @@ fn DynamicAngDelta(idx: i32,cni: i32) -> vec3<f32> {
 
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 43;
-const ContactVarsN: ContactVars = 32;
+const ContactVarsN: ContactVars = 33;
 const JointControlVarsN: JointControlVars = 3;
-const DynamicVarsN: DynamicVars = 32;
+const DynamicVarsN: DynamicVars = 33;
 const GPUVarsN: GPUVars = 12;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
@@ -264,7 +260,8 @@ fn GetJointType(idx: i32) -> JointTypes {
 	return JointTypes(bitcast<u32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointType))]));
 }
 fn GetJointEnabled(idx: i32) -> bool {
-	var je = bitcast<u32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointEnabled))]);return je != 0;
+	var je = bitcast<u32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointEnabled))]);
+return je != 0;
 }
 fn JointParentIndex(idx: i32) -> i32 {
 	return i32(bitcast<u32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointParent))]));
@@ -409,25 +406,29 @@ fn QuatNormalize(q: vec4<f32>) -> vec4<f32> {
 }
 fn MulQuatVector(q: vec4<f32>, v: vec3<f32>) -> vec3<f32> {
 	var xyz = vec3<f32>(q.x, q.y, q.z);
-	var t = Cross3(xyz, v)*(2);return v+(t*(q.w))+(Cross3(xyz, t));
+	var t = Cross3(xyz, v)*(2);
+return v+(t*(q.w))+(Cross3(xyz, t));
 }
 fn MulQuatVectorInverse(q: vec4<f32>, v: vec3<f32>) -> vec3<f32> {
 	var xyz = vec3<f32>(q.x, q.y, q.z);
-	var t = Cross3(xyz, v)*(2);return v-(t*(q.w))+(Cross3(xyz, t));
+	var t = Cross3(xyz, v)*(2);
+return v-(t*(q.w))+(Cross3(xyz, t));
 }
 fn MulQuats(a: vec4<f32>,b: vec4<f32>) -> vec4<f32> {
 	var q: vec4<f32>;
 	q.x = a.x*b.w + a.w*b.x + a.y*b.z - a.z*b.y;
 	q.y = a.y*b.w + a.w*b.y + a.z*b.x - a.x*b.z;
 	q.z = a.z*b.w + a.w*b.z + a.x*b.y - a.y*b.x;
-	q.w = a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z;return q;
+	q.w = a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z;
+return q;
 }
 fn MulSpatialTransforms(aP: vec3<f32>, aQ: vec4<f32>, bP: vec3<f32>, bQ: vec4<f32>, oP: ptr<function,vec3<f32>>, oQ: ptr<function,vec4<f32>>) {
 	*oP = MulQuatVector(aQ, bP)+(aP);
 	*oQ = MulQuats(aQ, bQ);
 }
 fn MulSpatialPoint(xP: vec3<f32>, xQ: vec4<f32>, p: vec3<f32>) -> vec3<f32> {
-	var dp = MulQuatVector(xQ, p);return dp+(xP);
+	var dp = MulQuatVector(xQ, p);
+return dp+(xP);
 }
 fn SpatialTransformInverse(p: vec3<f32>, q: vec4<f32>, oP: ptr<function,vec3<f32>>, oQ: ptr<function,vec4<f32>>) {
 	var qi = QuatInverse(q);
@@ -438,7 +439,8 @@ fn QuatInverse(q: vec4<f32>) -> vec4<f32> {
 	var nq = q;
 	nq.x *= f32(-1);
 	nq.y *= f32(-1);
-	nq.z *= f32(-1);return QuatNormalize(nq);
+	nq.z *= f32(-1);
+return QuatNormalize(nq);
 }
 fn QuatDot(q: vec4<f32>,o: vec4<f32>) -> f32 {
 	return q.x*o.x + q.y*o.y + q.z*o.z + q.w*o.w;
@@ -448,7 +450,8 @@ fn QuatMulScalar(q: vec4<f32>, s: f32) -> vec4<f32> {
 	nq.x *= s;
 	nq.y *= s;
 	nq.z *= s;
-	nq.w *= s;return nq;
+	nq.w *= s;
+return nq;
 }
 
 //////// import: "slmath-vector2.go"

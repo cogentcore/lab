@@ -2396,6 +2396,7 @@ func (p *printer) stmt(stmt ast.Stmt, nextIsRBrace bool, nosemi bool) {
 		if !nosemi {
 			p.print(token.SEMICOLON)
 		}
+		p.print(newline)
 
 	case *ast.GoStmt:
 		p.print(token.GO, blank)

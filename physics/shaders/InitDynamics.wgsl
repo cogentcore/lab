@@ -101,18 +101,19 @@ const  ContactBThick: ContactVars = 16;
 const  ContactNormX: ContactVars = 17;
 const  ContactNormY: ContactVars = 18;
 const  ContactNormZ: ContactVars = 19;
-const  ContactADeltaX: ContactVars = 20;
-const  ContactADeltaY: ContactVars = 21;
-const  ContactADeltaZ: ContactVars = 22;
-const  ContactAAngDeltaX: ContactVars = 23;
-const  ContactAAngDeltaY: ContactVars = 24;
-const  ContactAAngDeltaZ: ContactVars = 25;
-const  ContactBDeltaX: ContactVars = 26;
-const  ContactBDeltaY: ContactVars = 27;
-const  ContactBDeltaZ: ContactVars = 28;
-const  ContactBAngDeltaX: ContactVars = 29;
-const  ContactBAngDeltaY: ContactVars = 30;
-const  ContactBAngDeltaZ: ContactVars = 31;
+const  ContactWeight: ContactVars = 20;
+const  ContactADeltaX: ContactVars = 21;
+const  ContactADeltaY: ContactVars = 22;
+const  ContactADeltaZ: ContactVars = 23;
+const  ContactAAngDeltaX: ContactVars = 24;
+const  ContactAAngDeltaY: ContactVars = 25;
+const  ContactAAngDeltaZ: ContactVars = 26;
+const  ContactBDeltaX: ContactVars = 27;
+const  ContactBDeltaY: ContactVars = 28;
+const  ContactBDeltaZ: ContactVars = 29;
+const  ContactBAngDeltaX: ContactVars = 30;
+const  ContactBAngDeltaY: ContactVars = 31;
+const  ContactBAngDeltaZ: ContactVars = 32;
 const BroadContactVarsN = ContactAPointX;
 
 //////// import: "control.go"
@@ -155,15 +156,14 @@ const  DynDeltaZ: DynamicVars = 28;
 const  DynAngDeltaX: DynamicVars = 29;
 const  DynAngDeltaY: DynamicVars = 30;
 const  DynAngDeltaZ: DynamicVars = 31;
-fn DynamicBody(idx: i32) -> i32 {
-	return i32(bitcast<u32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(0), u32(DynBody))]));
-}
+const  DynContactWeight: DynamicVars = 32;
+fn DynamicBody(idx: i32) -> i32 { return i32(bitcast<u32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(0), u32(DynBody))])); }
 
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 43;
-const ContactVarsN: ContactVars = 32;
+const ContactVarsN: ContactVars = 33;
 const JointControlVarsN: JointControlVars = 3;
-const DynamicVarsN: DynamicVars = 32;
+const DynamicVarsN: DynamicVars = 33;
 const GPUVarsN: GPUVars = 12;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
@@ -320,7 +320,8 @@ fn InitDynamics(i: u32) { //gosl:kernel
 		Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(ii), u32(cni), u32(DynQuatY))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyQuatY))];
 		Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(ii), u32(cni), u32(DynQuatZ))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyQuatZ))];
 		Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(ii), u32(cni), u32(DynQuatW))] = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyQuatW))];
-		for (var v = DynVelX; v < DynamicVarsN; v++) {
+		for (var v = DynVelX;
+		 v < DynamicVarsN; v++) {
 			Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52],
 			u32(ii), u32(cni), u32(v))] = 0.0;
 		}

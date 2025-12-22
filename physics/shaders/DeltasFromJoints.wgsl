@@ -103,18 +103,19 @@ const  ContactBThick: ContactVars = 16;
 const  ContactNormX: ContactVars = 17;
 const  ContactNormY: ContactVars = 18;
 const  ContactNormZ: ContactVars = 19;
-const  ContactADeltaX: ContactVars = 20;
-const  ContactADeltaY: ContactVars = 21;
-const  ContactADeltaZ: ContactVars = 22;
-const  ContactAAngDeltaX: ContactVars = 23;
-const  ContactAAngDeltaY: ContactVars = 24;
-const  ContactAAngDeltaZ: ContactVars = 25;
-const  ContactBDeltaX: ContactVars = 26;
-const  ContactBDeltaY: ContactVars = 27;
-const  ContactBDeltaZ: ContactVars = 28;
-const  ContactBAngDeltaX: ContactVars = 29;
-const  ContactBAngDeltaY: ContactVars = 30;
-const  ContactBAngDeltaZ: ContactVars = 31;
+const  ContactWeight: ContactVars = 20;
+const  ContactADeltaX: ContactVars = 21;
+const  ContactADeltaY: ContactVars = 22;
+const  ContactADeltaZ: ContactVars = 23;
+const  ContactAAngDeltaX: ContactVars = 24;
+const  ContactAAngDeltaY: ContactVars = 25;
+const  ContactAAngDeltaZ: ContactVars = 26;
+const  ContactBDeltaX: ContactVars = 27;
+const  ContactBDeltaY: ContactVars = 28;
+const  ContactBDeltaZ: ContactVars = 29;
+const  ContactBAngDeltaX: ContactVars = 30;
+const  ContactBAngDeltaY: ContactVars = 31;
+const  ContactBAngDeltaZ: ContactVars = 32;
 const BroadContactVarsN = ContactAPointX;
 
 //////// import: "control.go"
@@ -157,6 +158,7 @@ const  DynDeltaZ: DynamicVars = 28;
 const  DynAngDeltaX: DynamicVars = 29;
 const  DynAngDeltaY: DynamicVars = 30;
 const  DynAngDeltaZ: DynamicVars = 31;
+const  DynContactWeight: DynamicVars = 32;
 fn SetDynamicDelta(idx: i32,cni: i32, delta: vec3<f32>) {
 	Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaX))] = delta.x;
 	Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaY))] = delta.y;
@@ -170,9 +172,9 @@ fn SetDynamicAngDelta(idx: i32,cni: i32, angDelta: vec3<f32>) {
 
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 43;
-const ContactVarsN: ContactVars = 32;
+const ContactVarsN: ContactVars = 33;
 const JointControlVarsN: JointControlVars = 3;
-const DynamicVarsN: DynamicVars = 32;
+const DynamicVarsN: DynamicVars = 33;
 const GPUVarsN: GPUVars = 12;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
@@ -336,14 +338,16 @@ fn DeltasFromJoints(i: u32) { //gosl:kernel
 	var nc = BodyJoints[Index3D(TensorStrides[30], TensorStrides[31], TensorStrides[32], u32(di), u32(1), u32(0))];
 	var td = vec3<f32>(0, 0, 0);
 	var ta = vec3<f32>(0, 0, 0);
-	for (var i = i32(1); i <= np; i++) {
+	for (var i = i32(1);
+	 i <= np; i++) {
 		var ji = BodyJoints[Index3D(TensorStrides[30], TensorStrides[31], TensorStrides[32], u32(di), u32(0), u32(i))];
 		var d = JointPDelta(ji);
 		td = td+(d);
 		var a = JointPAngDelta(ji);
 		ta = ta+(a);
 	}
-	for (var i = i32(1); i <= nc; i++) {
+	for (var i = i32(1);
+	 i <= nc; i++) {
 		var ji = BodyJoints[Index3D(TensorStrides[30], TensorStrides[31], TensorStrides[32], u32(di), u32(1), u32(i))];
 		var d = JointCDelta(ji);
 		td = td+(d);

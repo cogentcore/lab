@@ -15,6 +15,7 @@ func (wl *World) Config() {
 	wl.ConfigBodyCollidePairs()
 	wl.SetMaxContacts()
 	wl.SetAsCurrent()
+	wl.ConfigBodies()
 	wl.GPUInit()
 	wl.InitState()
 }
@@ -56,6 +57,19 @@ func (wl *World) ConfigJoints() {
 		for i, ji := range bjc[di] {
 			wl.BodyJoints.Set(ji, int(di), int(1), int(1+i))
 		}
+	}
+}
+
+// ConfigBodies updates computed body values from current values.
+// Call if body params (mass, size) change.
+func (wl *World) ConfigBodies() {
+	params := &wl.Params[0]
+	nb := params.BodiesN
+	for bi := range nb {
+		shape := GetBodyShape(bi)
+		size := BodyHSize(bi)
+		mass := Bodies.Value(int(bi), int(BodyMass))
+		wl.SetMass(bi, shape, size, mass)
 	}
 }
 

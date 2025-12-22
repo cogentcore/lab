@@ -69,6 +69,9 @@ const (
 	DynAngDeltaX
 	DynAngDeltaY
 	DynAngDeltaZ
+
+	// integrated weight of all contacts
+	DynContactWeight
 )
 
 // cni = current / next index
@@ -189,6 +192,7 @@ func SetDynamicAngDelta(idx, cni int32, angDelta math32.Vector3) {
 // SetMass sets the mass of given body object (only relevant for dynamics),
 // including a default inertia tensor based on solid shape of given size.
 func (wl *World) SetMass(idx int32, shape Shapes, size math32.Vector3, mass float32) {
+	Bodies[idx, BodyRadius] = shape.Radius(size)
 	Bodies[idx, BodyMass] = mass
 	invm := mass
 	if mass > 0 {

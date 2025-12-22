@@ -86,7 +86,7 @@ func (wl *World) StepJointForces() {
 
 func (wl *World) StepIntegrateBodies() {
 	params := GetParams(0)
-	RunStepIntegrateBodies(int(params.JointsN))
+	RunStepIntegrateBodies(int(params.DynamicsN))
 }
 
 func (wl *World) StepSolveJoints() {

@@ -111,7 +111,8 @@ func (wl *World) NewBody(shape Shapes, size, pos math32.Vector3, rot math32.Quat
 	SetBodyHSize(idx, size)
 	SetBodyPos(idx, pos)
 	SetBodyQuat(idx, rot)
-	SetBodyGroup(idx, -1) // assume static
+	SetBodyGroup(idx, -1)           // assume static
+	wl.SetMass(idx, shape, size, 0) // assume static
 	return idx
 }
 

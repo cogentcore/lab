@@ -138,18 +138,19 @@ const  ContactBThick: ContactVars = 16;
 const  ContactNormX: ContactVars = 17;
 const  ContactNormY: ContactVars = 18;
 const  ContactNormZ: ContactVars = 19;
-const  ContactADeltaX: ContactVars = 20;
-const  ContactADeltaY: ContactVars = 21;
-const  ContactADeltaZ: ContactVars = 22;
-const  ContactAAngDeltaX: ContactVars = 23;
-const  ContactAAngDeltaY: ContactVars = 24;
-const  ContactAAngDeltaZ: ContactVars = 25;
-const  ContactBDeltaX: ContactVars = 26;
-const  ContactBDeltaY: ContactVars = 27;
-const  ContactBDeltaZ: ContactVars = 28;
-const  ContactBAngDeltaX: ContactVars = 29;
-const  ContactBAngDeltaY: ContactVars = 30;
-const  ContactBAngDeltaZ: ContactVars = 31;
+const  ContactWeight: ContactVars = 20;
+const  ContactADeltaX: ContactVars = 21;
+const  ContactADeltaY: ContactVars = 22;
+const  ContactADeltaZ: ContactVars = 23;
+const  ContactAAngDeltaX: ContactVars = 24;
+const  ContactAAngDeltaY: ContactVars = 25;
+const  ContactAAngDeltaZ: ContactVars = 26;
+const  ContactBDeltaX: ContactVars = 27;
+const  ContactBDeltaY: ContactVars = 28;
+const  ContactBDeltaZ: ContactVars = 29;
+const  ContactBAngDeltaX: ContactVars = 30;
+const  ContactBAngDeltaY: ContactVars = 31;
+const  ContactBAngDeltaZ: ContactVars = 32;
 const BroadContactVarsN = ContactAPointX;
 fn SetBroadContactA(idx: i32,bodIdx: i32) {
 	BroadContacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactA))] = bitcast<f32>(u32(bodIdx));
@@ -258,6 +259,7 @@ const  DynDeltaZ: DynamicVars = 28;
 const  DynAngDeltaX: DynamicVars = 29;
 const  DynAngDeltaY: DynamicVars = 30;
 const  DynAngDeltaZ: DynamicVars = 31;
+const  DynContactWeight: DynamicVars = 32;
 fn DynamicPos(idx: i32,cni: i32) -> vec3<f32> {
 	return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosZ))]);
 }
@@ -267,9 +269,9 @@ fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> {
 
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 43;
-const ContactVarsN: ContactVars = 32;
+const ContactVarsN: ContactVars = 33;
 const JointControlVarsN: JointControlVars = 3;
-const DynamicVarsN: DynamicVars = 32;
+const DynamicVarsN: DynamicVars = 33;
 const GPUVarsN: GPUVars = 12;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
@@ -393,10 +395,12 @@ struct GeomData {
 fn ClosestPointPlane(width: f32,length: f32, pt: vec3<f32>) -> vec3<f32> {
 	var cp = pt;
 	if (width == 0.0) {
-		cp.y = f32(0);return cp;
+		cp.y = f32(0);
+	return cp;
 	}
 	cp.x = clamp(pt.x, -width, width);
-	cp.z = clamp(pt.z, -length, length);return cp;
+	cp.z = clamp(pt.z, -length, length);
+return cp;
 }
 
 //////// import: "shapes.go"
@@ -475,10 +479,12 @@ fn ShapePairContacts(a: Shapes,b: Shapes, infPlane: bool, ba: ptr<function,i32>)
 //////// import: "slmath-quaternion.go"
 fn MulQuatVector(q: vec4<f32>, v: vec3<f32>) -> vec3<f32> {
 	var xyz = vec3<f32>(q.x, q.y, q.z);
-	var t = Cross3(xyz, v)*(2);return v+(t*(q.w))+(Cross3(xyz, t));
+	var t = Cross3(xyz, v)*(2);
+return v+(t*(q.w))+(Cross3(xyz, t));
 }
 fn MulSpatialPoint(xP: vec3<f32>, xQ: vec4<f32>, p: vec3<f32>) -> vec3<f32> {
-	var dp = MulQuatVector(xQ, p);return dp+(xP);
+	var dp = MulQuatVector(xQ, p);
+return dp+(xP);
 }
 
 //////// import: "slmath-vector2.go"

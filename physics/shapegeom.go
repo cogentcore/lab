@@ -89,11 +89,11 @@ func PlaneSDF(width, length float32, p math32.Vector3) float32 {
 }
 
 // ClosestPointPlane projects the point onto the quad in
-// the xz plane (if size > 0.0, otherwise infinite.
+// the xz plane (if size > 0.0), otherwise infinite.
 func ClosestPointPlane(width, length float32, pt math32.Vector3) math32.Vector3 {
 	cp := pt
+	cp.Y = 0
 	if width == 0.0 {
-		cp.Y = 0
 		return cp
 	}
 	cp.X = math32.Clamp(pt.X, -width, width)

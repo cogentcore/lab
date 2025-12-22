@@ -51,20 +51,20 @@ func (i BodyVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *BodyVars) UnmarshalText(text []byte) error { return enums.UnmarshalText(i, text, "BodyVars") }
 
-var _ContactVarsValues = []ContactVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31}
+var _ContactVarsValues = []ContactVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32}
 
 // ContactVarsN is the highest valid value for type ContactVars, plus one.
 //
 //gosl:start
-const ContactVarsN ContactVars = 32
+const ContactVarsN ContactVars = 33
 
 //gosl:end
 
-var _ContactVarsValueMap = map[string]ContactVars{`ContactA`: 0, `ContactB`: 1, `ContactPointIdx`: 2, `ContactAPointX`: 3, `ContactAPointY`: 4, `ContactAPointZ`: 5, `ContactBPointX`: 6, `ContactBPointY`: 7, `ContactBPointZ`: 8, `ContactAOffX`: 9, `ContactAOffY`: 10, `ContactAOffZ`: 11, `ContactBOffX`: 12, `ContactBOffY`: 13, `ContactBOffZ`: 14, `ContactAThick`: 15, `ContactBThick`: 16, `ContactNormX`: 17, `ContactNormY`: 18, `ContactNormZ`: 19, `ContactADeltaX`: 20, `ContactADeltaY`: 21, `ContactADeltaZ`: 22, `ContactAAngDeltaX`: 23, `ContactAAngDeltaY`: 24, `ContactAAngDeltaZ`: 25, `ContactBDeltaX`: 26, `ContactBDeltaY`: 27, `ContactBDeltaZ`: 28, `ContactBAngDeltaX`: 29, `ContactBAngDeltaY`: 30, `ContactBAngDeltaZ`: 31}
+var _ContactVarsValueMap = map[string]ContactVars{`ContactA`: 0, `ContactB`: 1, `ContactPointIdx`: 2, `ContactAPointX`: 3, `ContactAPointY`: 4, `ContactAPointZ`: 5, `ContactBPointX`: 6, `ContactBPointY`: 7, `ContactBPointZ`: 8, `ContactAOffX`: 9, `ContactAOffY`: 10, `ContactAOffZ`: 11, `ContactBOffX`: 12, `ContactBOffY`: 13, `ContactBOffZ`: 14, `ContactAThick`: 15, `ContactBThick`: 16, `ContactNormX`: 17, `ContactNormY`: 18, `ContactNormZ`: 19, `ContactWeight`: 20, `ContactADeltaX`: 21, `ContactADeltaY`: 22, `ContactADeltaZ`: 23, `ContactAAngDeltaX`: 24, `ContactAAngDeltaY`: 25, `ContactAAngDeltaZ`: 26, `ContactBDeltaX`: 27, `ContactBDeltaY`: 28, `ContactBDeltaZ`: 29, `ContactBAngDeltaX`: 30, `ContactBAngDeltaY`: 31, `ContactBAngDeltaZ`: 32}
 
-var _ContactVarsDescMap = map[ContactVars]string{0: `first body index`, 1: `the other body index`, 2: `contact point index for A-B pair`, 3: `contact point on body A`, 4: ``, 5: ``, 6: `contact point on body B`, 7: ``, 8: ``, 9: `contact offset on body A`, 10: ``, 11: ``, 12: `contact offset on body B`, 13: ``, 14: ``, 15: `Contact thickness`, 16: ``, 17: `normal pointing from center of B to center of A`, 18: ``, 19: ``, 20: `computed contact deltas, A`, 21: ``, 22: ``, 23: ``, 24: ``, 25: ``, 26: `computed contact deltas, B`, 27: ``, 28: ``, 29: ``, 30: ``, 31: ``}
+var _ContactVarsDescMap = map[ContactVars]string{0: `first body index`, 1: `the other body index`, 2: `contact point index for A-B pair`, 3: `contact point on body A`, 4: ``, 5: ``, 6: `contact point on body B`, 7: ``, 8: ``, 9: `contact offset on body A`, 10: ``, 11: ``, 12: `contact offset on body B`, 13: ``, 14: ``, 15: `Contact thickness`, 16: ``, 17: `normal pointing from center of B to center of A`, 18: ``, 19: ``, 20: `contact weighting -- 1 if contact made; for restitution use this to filter contacts when updating body.`, 21: `computed contact deltas, A`, 22: ``, 23: ``, 24: ``, 25: ``, 26: ``, 27: `computed contact deltas, B`, 28: ``, 29: ``, 30: ``, 31: ``, 32: ``}
 
-var _ContactVarsMap = map[ContactVars]string{0: `ContactA`, 1: `ContactB`, 2: `ContactPointIdx`, 3: `ContactAPointX`, 4: `ContactAPointY`, 5: `ContactAPointZ`, 6: `ContactBPointX`, 7: `ContactBPointY`, 8: `ContactBPointZ`, 9: `ContactAOffX`, 10: `ContactAOffY`, 11: `ContactAOffZ`, 12: `ContactBOffX`, 13: `ContactBOffY`, 14: `ContactBOffZ`, 15: `ContactAThick`, 16: `ContactBThick`, 17: `ContactNormX`, 18: `ContactNormY`, 19: `ContactNormZ`, 20: `ContactADeltaX`, 21: `ContactADeltaY`, 22: `ContactADeltaZ`, 23: `ContactAAngDeltaX`, 24: `ContactAAngDeltaY`, 25: `ContactAAngDeltaZ`, 26: `ContactBDeltaX`, 27: `ContactBDeltaY`, 28: `ContactBDeltaZ`, 29: `ContactBAngDeltaX`, 30: `ContactBAngDeltaY`, 31: `ContactBAngDeltaZ`}
+var _ContactVarsMap = map[ContactVars]string{0: `ContactA`, 1: `ContactB`, 2: `ContactPointIdx`, 3: `ContactAPointX`, 4: `ContactAPointY`, 5: `ContactAPointZ`, 6: `ContactBPointX`, 7: `ContactBPointY`, 8: `ContactBPointZ`, 9: `ContactAOffX`, 10: `ContactAOffY`, 11: `ContactAOffZ`, 12: `ContactBOffX`, 13: `ContactBOffY`, 14: `ContactBOffZ`, 15: `ContactAThick`, 16: `ContactBThick`, 17: `ContactNormX`, 18: `ContactNormY`, 19: `ContactNormZ`, 20: `ContactWeight`, 21: `ContactADeltaX`, 22: `ContactADeltaY`, 23: `ContactADeltaZ`, 24: `ContactAAngDeltaX`, 25: `ContactAAngDeltaY`, 26: `ContactAAngDeltaZ`, 27: `ContactBDeltaX`, 28: `ContactBDeltaY`, 29: `ContactBDeltaZ`, 30: `ContactBAngDeltaX`, 31: `ContactBAngDeltaY`, 32: `ContactBAngDeltaZ`}
 
 // String returns the string representation of this ContactVars value.
 func (i ContactVars) String() string { return enums.String(i, _ContactVarsMap) }
@@ -145,20 +145,20 @@ func (i *JointControlVars) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "JointControlVars")
 }
 
-var _DynamicVarsValues = []DynamicVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31}
+var _DynamicVarsValues = []DynamicVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32}
 
 // DynamicVarsN is the highest valid value for type DynamicVars, plus one.
 //
 //gosl:start
-const DynamicVarsN DynamicVars = 32
+const DynamicVarsN DynamicVars = 33
 
 //gosl:end
 
-var _DynamicVarsValueMap = map[string]DynamicVars{`DynBody`: 0, `DynPosX`: 1, `DynPosY`: 2, `DynPosZ`: 3, `DynQuatX`: 4, `DynQuatY`: 5, `DynQuatZ`: 6, `DynQuatW`: 7, `DynVelX`: 8, `DynVelY`: 9, `DynVelZ`: 10, `DynAngVelX`: 11, `DynAngVelY`: 12, `DynAngVelZ`: 13, `DynAccX`: 14, `DynAccY`: 15, `DynAccZ`: 16, `DynAngAccX`: 17, `DynAngAccY`: 18, `DynAngAccZ`: 19, `DynForceX`: 20, `DynForceY`: 21, `DynForceZ`: 22, `DynTorqueX`: 23, `DynTorqueY`: 24, `DynTorqueZ`: 25, `DynDeltaX`: 26, `DynDeltaY`: 27, `DynDeltaZ`: 28, `DynAngDeltaX`: 29, `DynAngDeltaY`: 30, `DynAngDeltaZ`: 31}
+var _DynamicVarsValueMap = map[string]DynamicVars{`DynBody`: 0, `DynPosX`: 1, `DynPosY`: 2, `DynPosZ`: 3, `DynQuatX`: 4, `DynQuatY`: 5, `DynQuatZ`: 6, `DynQuatW`: 7, `DynVelX`: 8, `DynVelY`: 9, `DynVelZ`: 10, `DynAngVelX`: 11, `DynAngVelY`: 12, `DynAngVelZ`: 13, `DynAccX`: 14, `DynAccY`: 15, `DynAccZ`: 16, `DynAngAccX`: 17, `DynAngAccY`: 18, `DynAngAccZ`: 19, `DynForceX`: 20, `DynForceY`: 21, `DynForceZ`: 22, `DynTorqueX`: 23, `DynTorqueY`: 24, `DynTorqueZ`: 25, `DynDeltaX`: 26, `DynDeltaY`: 27, `DynDeltaZ`: 28, `DynAngDeltaX`: 29, `DynAngDeltaY`: 30, `DynAngDeltaZ`: 31, `DynContactWeight`: 32}
 
-var _DynamicVarsDescMap = map[DynamicVars]string{0: `Index of body in list of bodies.`, 1: `3D position of structural center.`, 2: ``, 3: ``, 4: `Quaternion rotation.`, 5: ``, 6: ``, 7: ``, 8: `Linear velocity.`, 9: ``, 10: ``, 11: `Angular velocity.`, 12: ``, 13: ``, 14: `Linear acceleration.`, 15: ``, 16: ``, 17: `Angular acceleration due to applied torques.`, 18: ``, 19: ``, 20: `Linear force driving linear acceleration (from joints, etc).`, 21: ``, 22: ``, 23: `Torque driving angular acceleration (from joints, etc).`, 24: ``, 25: ``, 26: `Linear deltas.`, 27: ``, 28: ``, 29: `Angular deltas.`, 30: ``, 31: ``}
+var _DynamicVarsDescMap = map[DynamicVars]string{0: `Index of body in list of bodies.`, 1: `3D position of structural center.`, 2: ``, 3: ``, 4: `Quaternion rotation.`, 5: ``, 6: ``, 7: ``, 8: `Linear velocity.`, 9: ``, 10: ``, 11: `Angular velocity.`, 12: ``, 13: ``, 14: `Linear acceleration.`, 15: ``, 16: ``, 17: `Angular acceleration due to applied torques.`, 18: ``, 19: ``, 20: `Linear force driving linear acceleration (from joints, etc).`, 21: ``, 22: ``, 23: `Torque driving angular acceleration (from joints, etc).`, 24: ``, 25: ``, 26: `Linear deltas.`, 27: ``, 28: ``, 29: `Angular deltas.`, 30: ``, 31: ``, 32: `integrated weight of all contacts`}
 
-var _DynamicVarsMap = map[DynamicVars]string{0: `DynBody`, 1: `DynPosX`, 2: `DynPosY`, 3: `DynPosZ`, 4: `DynQuatX`, 5: `DynQuatY`, 6: `DynQuatZ`, 7: `DynQuatW`, 8: `DynVelX`, 9: `DynVelY`, 10: `DynVelZ`, 11: `DynAngVelX`, 12: `DynAngVelY`, 13: `DynAngVelZ`, 14: `DynAccX`, 15: `DynAccY`, 16: `DynAccZ`, 17: `DynAngAccX`, 18: `DynAngAccY`, 19: `DynAngAccZ`, 20: `DynForceX`, 21: `DynForceY`, 22: `DynForceZ`, 23: `DynTorqueX`, 24: `DynTorqueY`, 25: `DynTorqueZ`, 26: `DynDeltaX`, 27: `DynDeltaY`, 28: `DynDeltaZ`, 29: `DynAngDeltaX`, 30: `DynAngDeltaY`, 31: `DynAngDeltaZ`}
+var _DynamicVarsMap = map[DynamicVars]string{0: `DynBody`, 1: `DynPosX`, 2: `DynPosY`, 3: `DynPosZ`, 4: `DynQuatX`, 5: `DynQuatY`, 6: `DynQuatZ`, 7: `DynQuatW`, 8: `DynVelX`, 9: `DynVelY`, 10: `DynVelZ`, 11: `DynAngVelX`, 12: `DynAngVelY`, 13: `DynAngVelZ`, 14: `DynAccX`, 15: `DynAccY`, 16: `DynAccZ`, 17: `DynAngAccX`, 18: `DynAngAccY`, 19: `DynAngAccZ`, 20: `DynForceX`, 21: `DynForceY`, 22: `DynForceZ`, 23: `DynTorqueX`, 24: `DynTorqueY`, 25: `DynTorqueZ`, 26: `DynDeltaX`, 27: `DynDeltaY`, 28: `DynDeltaZ`, 29: `DynAngDeltaX`, 30: `DynAngDeltaY`, 31: `DynAngDeltaZ`, 32: `DynContactWeight`}
 
 // String returns the string representation of this DynamicVars value.
 func (i DynamicVars) String() string { return enums.String(i, _DynamicVarsMap) }

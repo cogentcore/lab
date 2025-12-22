@@ -7,6 +7,9 @@ package main
 //go:generate core generate
 
 import (
+	"fmt"
+	"time"
+
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/events"
@@ -66,14 +69,15 @@ func main() {
 	// physics.SetJointTargetPos(bj, 0, 1)
 	// physics.SetJointDoF(bj, 0, physics.JointDamp, 0.01)
 	// physics.SetJointDoF(bj, 0, physics.JointStiff, 1) // this makes a big difference
-	bj := wl.NewJointFree(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height, 0))
-	_ = bj
+	// bj := wl.NewJointFree(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height, 0))
+	// _ = bj
 
 	wr.Init(wl)
 
 	params := physics.GetParams(0)
-	params.Dt = 0.05
-	params.Gravity.Y = 0
+	params.Dt = 0.01
+	// params.Gravity.Y = 0
+	fmt.Println(params.ContactRelax)
 
 	wr.Update()
 
@@ -90,6 +94,31 @@ func main() {
 	sc.SaveCamera("1")
 	sc.SaveCamera("default")
 
+	stepNButton := func(p *tree.Plan, n int) {
+		nm := fmt.Sprintf("Step %d", n)
+		tree.AddAt(p, nm, func(w *core.Button) {
+			w.SetText(nm).SetIcon(icons.PlayArrow).
+				SetTooltip(fmt.Sprintf("Step state %d times", n)).
+				OnClick(func(e events.Event) {
+					go func() {
+						for range n {
+							wl.Step()
+							wr.Update()
+							if se.IsVisible() {
+								se.AsyncLock()
+								se.NeedsRender()
+								se.AsyncUnlock()
+								time.Sleep(10 * time.Millisecond)
+							}
+						}
+					}()
+				})
+			w.Styler(func(s *styles.Style) {
+				s.SetAbilities(true, abilities.RepeatClickable)
+			})
+		})
+	}
+
 	b.AddTopBar(func(bar *core.Frame) {
 		core.NewToolbar(bar).Maker(func(p *tree.Plan) {
 			tree.Add(p, func(w *core.Button) {
@@ -103,20 +132,9 @@ func main() {
 						}
 					})
 			})
-			tree.Add(p, func(w *core.Button) {
-				w.SetText("Step").SetIcon(icons.PlayArrow).
-					SetTooltip("Step state").
-					OnClick(func(e events.Event) {
-						wl.Step()
-						wr.Update()
-						if se.IsVisible() {
-							se.NeedsRender()
-						}
-					})
-				w.Styler(func(s *styles.Style) {
-					s.SetAbilities(true, abilities.RepeatClickable)
-				})
-			})
+			stepNButton(p, 1)
+			stepNButton(p, 10)
+			stepNButton(p, 100)
 		})
 	})
 	b.RunMainWindow()

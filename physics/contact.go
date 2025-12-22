@@ -62,6 +62,10 @@ const (
 	ContactNormY
 	ContactNormZ
 
+	// contact weighting -- 1 if contact made; for restitution
+	// use this to filter contacts when updating body.
+	ContactWeight
+
 	// computed contact deltas, A
 	ContactADeltaX
 	ContactADeltaY
@@ -295,6 +299,7 @@ func CollisionBroad(i uint32) { //gosl:kernel
 		if d > rb+margin {
 			return
 		}
+		// fmt.Println("broad ct plane:", queryB, szA, closest, d, rb, margin)
 	} else {
 		d := slmath.Length3(xwAR.Sub(xwBR))
 		ra := Bodies.Value(int(biA), int(BodyRadius))
@@ -302,9 +307,6 @@ func CollisionBroad(i uint32) { //gosl:kernel
 			return
 		}
 	}
-	//    pair_index_ab = shape_a * num_shapes + shape_b
-	//    pair_index_ba = shape_b * num_shapes + shape_a
-
 	var ncB int32
 	ncA := ShapePairContacts(sA, sB, infPlane, &ncB)
 
@@ -452,6 +454,7 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 	if ci >= cmax {
 		return
 	}
+
 	biA := GetContactA(ci)
 	biB := GetContactB(ci)
 	diA := GetBodyDynamic(biA)
@@ -473,11 +476,17 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 	thickA := Contacts.Value(int(ci), int(ContactAThick))
 	thickB := Contacts.Value(int(ci), int(ContactBThick))
 	thick := thickA + thickB
-	norm := ContactNorm(ci)
-	nnorm := slmath.Negate3(norm)
+	nnorm := ContactNorm(ci)
+	norm := slmath.Negate3(nnorm)
 
 	d := slmath.Dot3(norm, ctBw.Sub(ctAw)) - thick
 	if d >= 0.0 { // now separated
+		Contacts.Set(0.0, int(ci), int(ContactWeight))
+		z := math32.Vec3(0, 0, 0)
+		SetContactADelta(ci, z)
+		SetContactBDelta(ci, z)
+		SetContactAAngDelta(ci, z)
+		SetContactBAngDelta(ci, z)
 		return
 	}
 	comA := BodyCom(biA)
@@ -507,8 +516,6 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 
 	angA := slmath.Negate3(slmath.Cross3(dA, norm))
 	angB := slmath.Cross3(dB, norm)
-
-	// todo: contact_inv_weight -- requires atomic
 
 	lambdaN := ContactConstraint(d, q0A, q0B, mInvA, mInvB, iInvA, iInvB, nnorm, norm, angA, angB, params.ContactRelax, params.Dt)
 
@@ -580,6 +587,7 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 		}
 	}
 
+	Contacts.Set(1.0, int(ci), int(ContactWeight))
 	SetContactADelta(ci, linDeltaA)
 	SetContactBDelta(ci, linDeltaB)
 	SetContactAAngDelta(ci, angDeltaA)
@@ -597,26 +605,38 @@ func DeltasFromContacts(i uint32) { //gosl:kernel
 
 	bi := DynamicBody(di)
 
-	td := DynamicDelta(di, params.Next)
-	ta := DynamicAngDelta(di, params.Next)
+	td := math32.Vec3(0, 0, 0)
+	ta := math32.Vec3(0, 0, 0)
+	tw := float32(0)
 	for ci := range cmax {
+		wt := Contacts.Value(int(ci), int(ContactWeight))
+		if wt == 0 {
+			continue
+		}
 		biA := GetContactA(ci)
 		biB := GetContactB(ci)
 		if biA == bi {
+			tw += wt
 			d := ContactADelta(ci)
 			td = td.Add(d)
 			a := ContactAAngDelta(ci)
 			ta = ta.Add(a)
 		}
 		if biB == bi {
+			tw += wt
 			d := ContactBDelta(ci)
 			td = td.Add(d)
 			a := ContactBAngDelta(ci)
 			ta = ta.Add(a)
 		}
 	}
-	SetDynamicDelta(di, params.Next, td)
-	SetDynamicAngDelta(di, params.Next, ta)
+	v0 := DynamicDelta(di, params.Next)
+	w0 := DynamicAngDelta(di, params.Next)
+	// fmt.Println(params.Next, "contact:", v0, td)
+
+	SetDynamicDelta(di, params.Next, td.Add(v0))
+	SetDynamicAngDelta(di, params.Next, ta.Add(w0))
+	Dynamics.Set(tw, int(di), int(params.Next), int(DynContactWeight))
 }
 
 func ContactConstraint(err float32, q0A, q0B math32.Quat, mInvA, mInvB float32, iInvA, iInvB math32.Matrix3, linA, linB, angA, angB math32.Vector3, relaxation, dt float32) float32 {

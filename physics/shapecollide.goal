@@ -160,16 +160,16 @@ func ColCapsuleCapsule(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB,
 	hhB := gdB.Size.Y
 	// edge from capsule A
 	// depending on point id, we query an edge from 0 to 0.5 or 0.5 to 1
-	e0 := math32.Vec3(0.0, 0.0, hhA*float32(cpi%2))
-	e1 := math32.Vec3(0.0, 0.0, -hhA*float32((cpi+1)%2))
+	e0 := math32.Vec3(0, 0, hhA*float32(cpi%2))
+	e1 := math32.Vec3(0, 0, -hhA*float32((cpi+1)%2))
 	edge0w := slmath.MulSpatialPoint(gdA.WbR, gdA.WbQ, e0)
 	edge1w := slmath.MulSpatialPoint(gdA.WbR, gdA.WbQ, e1)
 	edge0b := slmath.MulSpatialPoint(gdA.BwR, gdA.BwQ, edge0w)
 	edge1b := slmath.MulSpatialPoint(gdA.BwR, gdA.BwQ, edge1w)
 	u := ClosestEdgeCapsule(gdB.Size.X, gdB.Size.Y, edge0b, edge1b, maxIter)
 	pAw := edge0w.MulScalar(1 - u).Add(edge1w.MulScalar(u))
-	p0Bw := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0.0, 0.0, hhB))
-	p1Bw := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0.0, 0.0, -hhB))
+	p0Bw := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0, hhB, 0))
+	p1Bw := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0, -hhB, 0))
 	pBw := ClosestPointLineSegment(p0Bw, p1Bw, pAw)
 	diff := pAw.Sub(pBw)
 	*norm = slmath.Normal3(diff)
@@ -207,8 +207,8 @@ func ColBoxCapsule(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, nor
 	hhB := gdB.Size.Y
 	// capsule B
 	// depending on point id, we query an edge from 0 to 0.5 or 0.5 to 1
-	e0 := math32.Vec3(0.0, 0.0, -hhB*float32(cpi%2))
-	e1 := math32.Vec3(0.0, 0.0, hhB*float32((cpi+1)%2))
+	e0 := math32.Vec3(0, -hhB*float32(cpi%2), 0)
+	e1 := math32.Vec3(0, hhB*float32((cpi+1)%2), 0)
 	edge0w := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, e0)
 	edge1w := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, e1)
 	edge0a := slmath.MulSpatialPoint(gdA.BwR, gdA.BwQ, edge0w)
@@ -241,15 +241,16 @@ func ColBoxPlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, norm 
 		pBody := ClosestPointPlane(width, length, queryB)
 		pBw = slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, pBody)
 		diff = pAw.Sub(pBw)
-		*norm = slmath.MulQuatVector(gdB.WbQ, math32.Vec3(0.0, 0.0, 1.0))
-		if width > 0.0 && length > 0.0 {
+		*norm = slmath.MulQuatVector(gdB.WbQ, math32.Vec3(0, 1, 0))
+		if width > 0 && length > 0 {
 			if math32.Abs(queryB.X) > width || math32.Abs(queryB.Z) > length {
 				// skip, we will evaluate the plane edge contact with the box later
-				return 1.0e6 // invalid
+				return 1e6 // invalid
 			}
+			// note: commented out in original:
 			// check whether the COM is above the plane
 			// sign = wp.sign(slmath.Dot3(wp.transform_get_translation(gdA.X_ws) - pBw, normal))
-			// if sign < 0.0:
+			// if sign < 0:
 			//     // the entire box is most likely below the plane
 			//     return
 		}
@@ -272,7 +273,7 @@ func ColBoxPlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, norm 
 		queryB := slmath.MulSpatialPoint(gdA.BwR, gdA.BwQ, pAw)
 		if math32.Abs(queryB.X) > width || math32.Abs(queryB.Z) > length {
 			// ensure that the closest point is actually inside the plane
-			return 1.0e6 // invalid
+			return 1e6 // invalid
 		}
 		diff = pAw.Sub(pBw)
 		comA := gdA.WbR
@@ -281,7 +282,7 @@ func ColBoxPlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, norm 
 			// the COM is outside the plane
 			*norm = slmath.Normal3(comA.Sub(pBw))
 		} else {
-			*norm = slmath.MulQuatVector(gdB.WbQ, math32.Vec3(0.0, 0.0, 1.0))
+			*norm = slmath.MulQuatVector(gdB.WbQ, math32.Vec3(0, 0, 1))
 		}
 	}
 	*pA = pAw
@@ -308,8 +309,8 @@ func ColSphereCapsule(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, 
 	pAw := gdA.WbR
 	hhB := gdB.Size.Y
 	// capsule B
-	AB := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0.0, 0.0, hhB))
-	BB := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0.0, 0.0, -hhB))
+	AB := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0, hhB, 0))
+	BB := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0, -hhB, 0))
 	pBw := ClosestPointLineSegment(AB, BB, pAw)
 	diff := pAw.Sub(pBw)
 	*norm = slmath.Normal3(diff)
@@ -324,7 +325,7 @@ func ColSpherePlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, no
 	pBody := ClosestPointPlane(gdB.Size.X, gdB.Size.Z, slmath.MulSpatialPoint(gdB.BwR, gdB.BwQ, pAw))
 	pBw := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, pBody)
 	diff := pAw.Sub(pBw)
-	*norm = slmath.MulQuatVector(gdB.WbQ, math32.Vec3(0.0, 0.0, 1.0))
+	*norm = slmath.MulQuatVector(gdB.WbQ, math32.Vec3(0, 1, 0))
 	*pA = pAw
 	*pB = pBw
 	return slmath.Dot3(diff, *norm)
@@ -333,12 +334,12 @@ func ColSpherePlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, no
 // Handle collision between a cylinder (geo_a) and an infinite plane (geo_b).
 func ColCylinderPlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, norm *math32.Vector3) float32 {
 	// World-space plane
-	plNorm := slmath.MulQuatVector(gdB.WbQ, math32.Vec3(0.0, 1.0, 0.0))
-	plPos := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0.0, 0.0, 0.0))
+	plNorm := slmath.MulQuatVector(gdB.WbQ, math32.Vec3(0, 1, 0))
+	plPos := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0, 0, 0))
 
 	// World-space cylinder params
-	cylCtr := slmath.MulSpatialPoint(gdA.WbR, gdA.WbQ, math32.Vec3(0.0, 0.0, 0.0))
-	cylAx := slmath.Normal3(slmath.MulQuatVector(gdA.WbQ, math32.Vec3(0.0, 0.0, 1.0)))
+	cylCtr := slmath.MulSpatialPoint(gdA.WbR, gdA.WbQ, math32.Vec3(0, 0, 0))
+	cylAx := slmath.Normal3(slmath.MulQuatVector(gdA.WbQ, math32.Vec3(0, 1, 0)))
 	cylRad := gdA.Size.X
 	cylHh := gdA.Size.Y
 
@@ -368,7 +369,7 @@ func ColCylinderPlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, 
 	//    vec = wp.where(
 	//        len_sqr >= 1e-12,
 	//        vec * safe_div(cylinder_radius, wp.sqrt(len_sqr)),
-	//        math32.Vec3(1.0, 0.0, 0.0).MuScalar(cylRad),  // Default x-axis when degenerate
+	//        math32.Vec3(1, 0, 0).MuScalar(cylRad),  // Default x-axis when degenerate
 	//    )
 
 	// Project scaled vector on normal

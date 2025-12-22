@@ -110,8 +110,12 @@ func DeltasFromJoints(i uint32) { //gosl:kernel
 		a := JointCAngDelta(ji)
 		ta = ta.Add(a)
 	}
-	SetDynamicDelta(di, params.Next, td)
-	SetDynamicAngDelta(di, params.Next, ta)
+	v0 := DynamicDelta(di, params.Next)
+	w0 := DynamicAngDelta(di, params.Next)
+	// fmt.Println(params.Next, "joint v:", v0, td)
+
+	SetDynamicDelta(di, params.Next, td.Add(v0))
+	SetDynamicAngDelta(di, params.Next, ta.Add(w0))
 }
 
 // newton: solvers/solver.py: integrate_rigid_body
@@ -162,6 +166,8 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 
 	p1a := p1.Sub(slmath.MulQuatVector(q1, com)) // pos corrected to nominal center.
 
+	// fmt.Println(params.Next, "integrate:", v0, v1)
+
 	SetDynamicPos(di, params.Next, p1a)
 	SetDynamicQuat(di, params.Next, q1)
 	SetDynamicDelta(di, params.Next, v1)
@@ -195,11 +201,10 @@ func StepBodyDeltas(i uint32) { //gosl:kernel
 	w0 := DynamicAngDelta(di, params.Next)
 
 	weight := float32(1.0)
-	// todo: this is rigid_contact_inv_weight in solver_xpbd.py: from contacts, with restitution
-	//    if constraint_inv_weights:
-	//        inv_weight = constraint_inv_weights[tid]
-	//        if inv_weight > 0.0:
-	//            weight = 1.0 / inv_weight
+	cWt := Dynamics.Value(int(di), int(params.Next), int(DynContactWeight))
+	if cWt > 0 {
+		weight = 1.0 / cWt
+	}
 
 	dp := v0.MulScalar(invMass * weight)
 	dq := w0.MulScalar(weight)
@@ -233,6 +238,8 @@ func StepBodyDeltas(i uint32) { //gosl:kernel
 	if slmath.Length3(w1) < 1e-4 {
 		w1 = math32.Vec3(0, 0, 0)
 	}
+
+	// fmt.Println(params.Next, "delta:", v0, v1)
 
 	SetDynamicPos(di, params.Next, p1)
 	SetDynamicQuat(di, params.Next, q1)
