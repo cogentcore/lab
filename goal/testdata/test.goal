@@ -9,9 +9,6 @@ fmt.Println(x)
 fmt.Println(nd)
 fmt.Println(sz)
 fmt.Println(sh)
-//gosl:wgsl
-// a += 5
-//gosl:end
 
 type MyStru struct {
 	Name string
