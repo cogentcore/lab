@@ -526,6 +526,7 @@ func (p *printer) goslFixArgs(args []ast.Expr, params *types.Tuple) ([]ast.Expr,
 			if gvar := p.GoToSL.GetTempVar(x.Name); gvar != nil {
 				if !(gvar.Var.ReadOnly && !gvar.ReadWrite) {
 					x.Name = "&" + x.Name
+					fmt.Println("fix amper", x.Name)
 					ags[i] = x
 				}
 			}
@@ -1977,8 +1978,16 @@ func (p *printer) methodExpr(x *ast.CallExpr, depth int) {
 					recvType = id.Name // is a package path
 				}
 			} else {
-				pathType = typ
-				recvPath = recvPath
+				if gvar := p.GoToSL.GetTempVar(id.Name); gvar != nil {
+					recvType = gvar.Var.SLType()
+					if !(gvar.Var.ReadOnly && !gvar.ReadWrite) {
+						recvPath = "&" + recvPath
+					}
+					pathType = p.getTypeNameType(gvar.Var.SLType())
+				} else {
+					pathType = typ
+					recvPath = recvPath
+				}
 			}
 		} else {
 			pathIsPackage = true

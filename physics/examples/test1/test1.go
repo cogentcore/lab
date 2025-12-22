@@ -75,7 +75,7 @@ func main() {
 	wr.Init(wl)
 
 	params := physics.GetParams(0)
-	params.Dt = 0.01
+	params.Dt = 0.001
 	// params.Gravity.Y = 0
 	fmt.Println(params.ContactRelax)
 
@@ -94,13 +94,19 @@ func main() {
 	sc.SaveCamera("1")
 	sc.SaveCamera("default")
 
+	isRunning := false
+
 	stepNButton := func(p *tree.Plan, n int) {
 		nm := fmt.Sprintf("Step %d", n)
 		tree.AddAt(p, nm, func(w *core.Button) {
 			w.SetText(nm).SetIcon(icons.PlayArrow).
 				SetTooltip(fmt.Sprintf("Step state %d times", n)).
 				OnClick(func(e events.Event) {
+					if isRunning {
+						return
+					}
 					go func() {
+						isRunning = true
 						for range n {
 							wl.Step()
 							wr.Update()
@@ -108,9 +114,10 @@ func main() {
 								se.AsyncLock()
 								se.NeedsRender()
 								se.AsyncUnlock()
-								time.Sleep(10 * time.Millisecond)
+								time.Sleep(1 * time.Millisecond)
 							}
 						}
+						isRunning = false
 					}()
 				})
 			w.Styler(func(s *styles.Style) {
@@ -135,6 +142,7 @@ func main() {
 			stepNButton(p, 1)
 			stepNButton(p, 10)
 			stepNButton(p, 100)
+			stepNButton(p, 1000)
 		})
 	})
 	b.RunMainWindow()
