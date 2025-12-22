@@ -70,4 +70,6 @@ fn CycleUpdt(i: u32) { //gosl:kernel read-write:Ctx
 
 //////// import: "slmath-quaternion.go"
 
+//////// import: "slmath-vector2.go"
+
 //////// import: "slmath-vector3.go"

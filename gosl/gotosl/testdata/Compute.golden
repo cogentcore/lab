@@ -127,7 +127,8 @@ const  Integ: i32 = 1;
 const  Exp: i32 = 2;
 const  NVars: i32 = 3;
 fn TransformPoint(xP: vec3<f32>, xQ: vec4<f32>, p: vec3<f32>) -> vec3<f32> {
-	var dp = MulQuatVector(xQ, p);return dp+(xP);
+	var dp = MulQuatVector(xQ, p);
+return dp+(xP);
 }
 fn MulTransforms(aP: vec3<f32>, aQ: vec4<f32>, bP: vec3<f32>, bQ: vec4<f32>, oP: ptr<function,vec3<f32>>, oQ: ptr<function,vec4<f32>>) {
 	var br = MulQuatVector(aQ, bP);
@@ -195,7 +196,8 @@ fn ParamStruct_IntegFromRaw(ps: ParamStruct, idx: i32) -> f32 {
 u32(idx), u32(Exp))];
 }
 fn ParamStruct_AnotherMeth(ps: ParamStruct, ctx: Context, idx: i32, ptrarg: ptr<function,f32>) {
-	for (var i = 0; i < 10; i++) {
+	for (var i = 0;
+	 i < 10; i++) {
 		Data[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(Integ))] *= 0.99;
 	}
 	var flag: NeuronFlags;
@@ -244,20 +246,21 @@ fn Compute(i: u32) { //gosl:kernel
 //////// import: "slmath-quaternion.go"
 fn MulQuatVector(q: vec4<f32>, v: vec3<f32>) -> vec3<f32> {
 	var xyz = vec3<f32>(q.x, q.y, q.z);
-	var t = MulScalar3(Cross3(xyz, v), f32(f32(2)));return v+(MulScalar3(t, q.w))+(Cross3(xyz, t));
+	var t = Cross3(xyz, v)*(2);
+return v+(t*(q.w))+(Cross3(xyz, t));
 }
 fn MulQuats(a: vec4<f32>,b: vec4<f32>) -> vec4<f32> {
 	var q: vec4<f32>;
 	q.x = a.x*b.w + a.w*b.x + a.y*b.z - a.z*b.y;
 	q.y = a.y*b.w + a.w*b.y + a.z*b.x - a.x*b.z;
 	q.z = a.z*b.w + a.w*b.z + a.x*b.y - a.y*b.x;
-	q.w = a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z;return q;
+	q.w = a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z;
+return q;
 }
 
+//////// import: "slmath-vector2.go"
+
 //////// import: "slmath-vector3.go"
-fn MulScalar3(v: vec3<f32>, s: f32) -> vec3<f32> {
-	return vec3<f32>(v.x*s, v.y*s, v.z*s);
-}
 fn Cross3(v: vec3<f32>,o: vec3<f32>) -> vec3<f32> {
 	return vec3<f32>(v.y*o.z-v.z*o.y, v.z*o.x-v.x*o.z, v.x*o.y-v.y*o.x);
 }
