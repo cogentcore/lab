@@ -223,13 +223,15 @@ u32(biB), u32(BodyBounce))]);
 ; var angDeltaB = angB*(lambdaN);
 ;
 if (mu > 0.0) {
-	ctAw = ctAw+(MulQuatVector(q1A, offA));
-	ctBw = ctBw+(MulQuatVector(q1B, offB));
-	var delta = ctBw-(ctAw);
+	var ctAm = ctAw+(MulQuatVector(q1A, offA));
+	var ctBm = ctBw+(MulQuatVector(q1B, offB));
+	var delta = ctBm-(ctAm);
 	var frDelta = delta-(norm*(Dot3(norm, delta)));
 	var perp = Normal3(frDelta);
-	angA = Negate3(Cross3(dA, perp));
-	angB = Cross3(dB, perp);
+	var dAm = ctAm-(MulSpatialPoint(r1A, q1A, comA));
+	var dBm = ctBm-(MulSpatialPoint(r1B, q1B, comB));
+	angA = Negate3(Cross3(dAm, perp));
+	angB = Cross3(dBm, perp);
 	var err = Length3(frDelta);
 	if (err > 0.0) {
 		var lambdaFr = ContactConstraint(err, q1A, q1B, mInvA, mInvB, iInvA, iInvB, Negate3(perp), perp, angA, angB, params.ContactRelax, params.Dt);

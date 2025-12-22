@@ -529,17 +529,20 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 		// we include any rotational effects due to thickness from feature
         // need to use the current rotation to account for friction due to
 		// angular effects (e.g.: slipping contact)
-        ctAw = ctAw.Add(slmath.MulQuatVector(q1A, offA))
-        ctBw = ctBw.Add(slmath.MulQuatVector(q1B, offB))
+        ctAm := ctAw.Add(slmath.MulQuatVector(q1A, offA))
+        ctBm := ctBw.Add(slmath.MulQuatVector(q1B, offB))
 
         // update delta
-        delta := ctBw.Sub(ctAw)
+        delta := ctBm.Sub(ctAm)
         frDelta := delta.Sub(norm.MulScalar(slmath.Dot3(norm, delta)))
 
         perp := slmath.Normal3(frDelta)
 
-        angA = slmath.Negate3(slmath.Cross3(dA, perp))
-        angB = slmath.Cross3(dB, perp)
+		dAm := ctAm.Sub(slmath.MulSpatialPoint(r1A, q1A, comA))
+		dBm := ctBm.Sub(slmath.MulSpatialPoint(r1B, q1B, comB))
+		
+        angA = slmath.Negate3(slmath.Cross3(dAm, perp))
+        angB = slmath.Cross3(dBm, perp)
 
         err := slmath.Length3(frDelta)
 

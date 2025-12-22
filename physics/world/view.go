@@ -157,8 +157,8 @@ func (vw *View) PlaneInit(sld *xyz.Solid) {
 	}
 	sld.SetMeshName(mnm)
 	if vw.Size.X == 0 {
-		inf := float32(1e6)
-		sld.Pose.Scale = math32.Vec3(inf, inf, 1)
+		inf := float32(1e3)
+		sld.Pose.Scale = math32.Vec3(inf, 1, inf)
 	} else {
 		sld.Pose.Scale = vw.Size.MulScalar(2)
 	}

@@ -83,6 +83,7 @@ func NewWorld() *World {
 
 // Init makes initial vars.
 func (wl *World) Init() {
+	wl.GPU = true
 	wl.Params = make([]PhysParams, 1)
 	wl.Params[0].Defaults()
 	wl.Bodies = tensor.NewFloat32(0, int(BodyVarsN))

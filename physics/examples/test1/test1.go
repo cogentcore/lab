@@ -46,6 +46,7 @@ func main() {
 	wr := world.NewWorld(sc)
 
 	wl := physics.NewWorld()
+	// wl.GPU = true
 	fv.SetStruct(wl)
 
 	split.SetSplits(0.2, 0.8)
@@ -75,8 +76,10 @@ func main() {
 	wr.Init(wl)
 
 	params := physics.GetParams(0)
-	params.Dt = 0.001
+	params.Dt = 0.01
 	// params.Gravity.Y = 0
+	params.ContactRelax = 0.1
+	params.Restitution.SetBool(false)
 	fmt.Println(params.ContactRelax)
 
 	wr.Update()

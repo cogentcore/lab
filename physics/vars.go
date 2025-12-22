@@ -7,7 +7,7 @@ package physics
 import "cogentcore.org/lab/tensor"
 
 // note: add -keep to inspect intermediate .go code
-//go:generate gosl -keep -exclude=Update,Defaults,ShouldDisplay -max-buffer-size=2147483616
+//go:generate gosl -exclude=Update,Defaults,ShouldDisplay -max-buffer-size=2147483616
 
 //gosl:start
 
