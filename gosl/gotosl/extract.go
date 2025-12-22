@@ -156,6 +156,7 @@ func (st *State) AppendGoHeader(lines [][]byte) [][]byte {
 	olns = append(olns, []byte("package imports"))
 	olns = append(olns, []byte(`import (
 	"math"
+	"sync/atomic"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/gosl/slbool"
 	"cogentcore.org/lab/gosl/slrand"

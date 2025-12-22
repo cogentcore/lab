@@ -78,9 +78,19 @@ func (st *State) TranslateDir(pf string) error {
 		var buf bytes.Buffer
 		doFile(fn, &buf)
 	}
+
+	st.GenGPU(true) // generate an initial gosl.go in imports, so Go doesn't get confused
+
+	pkgs, err = packages.Load(&packages.Config{Mode: packages.NeedName | packages.NeedFiles | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesSizes | packages.NeedTypesInfo}, pf)
+	pkg = pkgs[0]
+	files = pkg.GoFiles
+
 	for _, gofp := range files {
 		_, gofn := filepath.Split(gofp)
 		if _, ok := st.GoVarsFiles[gofn]; ok {
+			continue
+		}
+		if gofn == "gosl.go" {
 			continue
 		}
 		var buf bytes.Buffer
@@ -144,6 +154,9 @@ func (st *State) TranslateDir(pf string) error {
 				if _, ok := st.GoVarsFiles[gofn]; ok {
 					continue
 				}
+				if gofn == "gosl.go" {
+					continue
+				}
 				lines, hasR, hasT = doKernelFile(gofp, lines)
 				if hasR {
 					hasSlrand = true
@@ -160,6 +173,9 @@ func (st *State) TranslateDir(pf string) error {
 				st.CopyPackageFile("sltype.wgsl", "cogentcore.org/lab/gosl/sltype")
 			}
 			for _, im := range st.SLImportFiles {
+				if im.Name == "gosl.go" {
+					continue
+				}
 				lines = append(lines, []byte(""))
 				lines = append(lines, []byte(fmt.Sprintf("//////// import: %q", im.Name)))
 				lines = append(lines, im.Lines...)

@@ -391,6 +391,8 @@ fn StepIntegrateBodies(i: u32) { //gosl:kernel
 	var invMass = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyInvMass))];
 	var inertia = BodyInertia(bi);
 	var invInertia = BodyInvInertia(bi);
+	var grav = vec3<f32>(params.Gravity.x,params.Gravity.y,
+	params.Gravity.z);
 	var com = BodyCom(bi);
 	var r0 = DynamicPos(di, params.Cur);
 	var q0 = DynamicQuat(di, params.Cur);
@@ -399,7 +401,7 @@ fn StepIntegrateBodies(i: u32) { //gosl:kernel
 	var f0 = DynamicForce(di, params.Next);
 	var t0 = DynamicTorque(di, params.Next);
 	var pcom = MulQuatVector(q0, com)+(r0);
-	var v1 = v0+(f0*(invMass)+(vec3<f32>(params.Gravity.x,params.Gravity.y,params.Gravity.z)*(OneIfNonzero(invMass)))*(params.Dt));
+	var v1 = v0+(f0*(invMass)+(grav*(OneIfNonzero(invMass)))*(params.Dt));
 	var p1 = pcom+(v1*(params.Dt));
 	var wb = MulQuatVectorInverse(q0, w0);
 	var tb = MulQuatVectorInverse(q0, t0)-(Cross3(wb, inertia*(wb))); // coriolis forces

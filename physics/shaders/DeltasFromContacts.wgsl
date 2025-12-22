@@ -143,8 +143,8 @@ fn DeltasFromContacts(i: u32) { //gosl:kernel
 	}
 	var cmax = ContactsN[0];
 	var bi = DynamicBody(di);
-	var td = DynamicDelta(di, params.Next);
-	var ta = DynamicAngDelta(di, params.Next);
+	var td = vec3<f32>(0, 0, 0);
+	var ta = vec3<f32>(0, 0, 0);
 	var tw = f32(0);
 	for (var ci=0; ci<cmax; ci++) {
 		var wt = Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(ci), u32(ContactWeight))];
@@ -168,8 +168,10 @@ fn DeltasFromContacts(i: u32) { //gosl:kernel
 			ta = ta+(a);
 		}
 	}
-	SetDynamicDelta(di, params.Next, td);
-	SetDynamicAngDelta(di, params.Next, ta);
+	var v0 = DynamicDelta(di, params.Next);
+	var w0 = DynamicAngDelta(di, params.Next);
+	SetDynamicDelta(di, params.Next, td+(v0));
+	SetDynamicAngDelta(di, params.Next, ta+(w0));
 	Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(di), u32(params.Next), u32(DynContactWeight))] = tw;
 }
 

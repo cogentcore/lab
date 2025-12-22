@@ -394,9 +394,9 @@ struct GeomData {
 //////// import: "shapegeom.go"
 fn ClosestPointPlane(width: f32,length: f32, pt: vec3<f32>) -> vec3<f32> {
 	var cp = pt;
+	cp.y = f32(0);
 	if (width == 0.0) {
-		cp.y = f32(0);
-	return cp;
+		return cp;
 	}
 	cp.x = clamp(pt.x, -width, width);
 	cp.z = clamp(pt.z, -length, length);

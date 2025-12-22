@@ -40,11 +40,11 @@ type PhysParams struct {
 	// AngularDamping is damping of angular motion.
 	AngularDamping float32 `default:"0"`
 
-	// Contact weighting: todo: requires atomic add
+	// Contact weighting: balances contact forces?
 	ContactWeighting slbool.Bool `default:"true"`
 
-	// Restitution
-	Restitution slbool.Bool `default:"false"`
+	// Restitution takes into account bounciness of objects.
+	Restitution slbool.Bool `default:"true"`
 
 	// MaxGeomIter is number of iterations to perform in shape-based
 	// geometry collision computations
@@ -101,7 +101,7 @@ func (pr *PhysParams) Defaults() {
 	pr.AngularDamping = 0
 	pr.MaxGeomIter = 10
 	pr.ContactWeighting.SetBool(true)
-	pr.Restitution.SetBool(false)
+	pr.Restitution.SetBool(true)
 	pr.ContactMargin = 0.1
 }
 

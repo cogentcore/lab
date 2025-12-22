@@ -132,6 +132,7 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 	invMass := Bodies.Value(int(bi), int(BodyInvMass))
 	inertia := BodyInertia(bi)
 	invInertia := BodyInvInertia(bi)
+	grav := params.Gravity.V()
 
 	com := BodyCom(bi)
 
@@ -150,7 +151,7 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 	pcom := slmath.MulQuatVector(q0, com).Add(r0)
 
 	// linear part
-	v1 := v0.Add(f0.MulScalar(invMass).Add(params.Gravity.V().MulScalar(OneIfNonzero(invMass))).MulScalar(params.Dt))
+	v1 := v0.Add(f0.MulScalar(invMass).Add(grav.MulScalar(OneIfNonzero(invMass))).MulScalar(params.Dt))
 	p1 := pcom.Add(v1.MulScalar(params.Dt))
 
 	// angular part (compute in body frame)
@@ -201,9 +202,11 @@ func StepBodyDeltas(i uint32) { //gosl:kernel
 	w0 := DynamicAngDelta(di, params.Next)
 
 	weight := float32(1.0)
-	cWt := Dynamics.Value(int(di), int(params.Next), int(DynContactWeight))
-	if cWt > 0 {
-		weight = 1.0 / cWt
+	if params.ContactWeighting.IsTrue() {
+		cWt := Dynamics.Value(int(di), int(params.Next), int(DynContactWeight))
+		if cWt > 0 {
+			weight = 1.0 / cWt
+		}
 	}
 
 	dp := v0.MulScalar(invMass * weight)
@@ -245,6 +248,10 @@ func StepBodyDeltas(i uint32) { //gosl:kernel
 	SetDynamicQuat(di, params.Next, q1)
 	SetDynamicDelta(di, params.Next, v1)
 	SetDynamicAngDelta(di, params.Next, w1)
+}
+
+func VelocityAtPoint(lin, ang, r math32.Vector3) math32.Vector3 {
+	return lin.Add(slmath.Cross3(ang, r))
 }
 
 //gosl:end

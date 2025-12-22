@@ -159,10 +159,16 @@ const  DynAngDeltaX: DynamicVars = 29;
 const  DynAngDeltaY: DynamicVars = 30;
 const  DynAngDeltaZ: DynamicVars = 31;
 const  DynContactWeight: DynamicVars = 32;
+fn DynamicDelta(idx: i32,cni: i32) -> vec3<f32> {
+	return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaZ))]);
+}
 fn SetDynamicDelta(idx: i32,cni: i32, delta: vec3<f32>) {
 	Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaX))] = delta.x;
 	Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaY))] = delta.y;
 	Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaZ))] = delta.z;
+}
+fn DynamicAngDelta(idx: i32,cni: i32) -> vec3<f32> {
+	return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaZ))]);
 }
 fn SetDynamicAngDelta(idx: i32,cni: i32, angDelta: vec3<f32>) {
 	Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaX))] = angDelta.x;
@@ -354,8 +360,10 @@ fn DeltasFromJoints(i: u32) { //gosl:kernel
 		var a = JointCAngDelta(ji);
 		ta = ta+(a);
 	}
-	SetDynamicDelta(di, params.Next, td);
-	SetDynamicAngDelta(di, params.Next, ta);
+	var v0 = DynamicDelta(di, params.Next);
+	var w0 = DynamicAngDelta(di, params.Next);
+	SetDynamicDelta(di, params.Next, td+(v0));
+	SetDynamicAngDelta(di, params.Next, ta+(w0));
 }
 
 //////// import: "step_joint.go"

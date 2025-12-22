@@ -460,19 +460,19 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 	diA := GetBodyDynamic(biA)
 	diB := GetBodyDynamic(biB)
 
-	r0A := BodyDynamicPos(biA, params.Next)
-	q0A := BodyDynamicQuat(biA, params.Next)
+	r1A := BodyDynamicPos(biA, params.Next)
+	q1A := BodyDynamicQuat(biA, params.Next)
 
-	r0B := BodyDynamicPos(biB, params.Next)
-	q0B := BodyDynamicQuat(biB, params.Next)
+	r1B := BodyDynamicPos(biB, params.Next)
+	q1B := BodyDynamicQuat(biB, params.Next)
 
 	ctA := ContactAPoint(ci)
 	offA := ContactAOff(ci)
 	ctB := ContactBPoint(ci)
 	offB := ContactBOff(ci)
 
-	ctAw := slmath.MulSpatialPoint(r0A, q0A, ctA)
-	ctBw := slmath.MulSpatialPoint(r0B, q0B, ctB)
+	ctAw := slmath.MulSpatialPoint(r1A, q1A, ctA)
+	ctBw := slmath.MulSpatialPoint(r1B, q1B, ctB)
 	thickA := Contacts.Value(int(ci), int(ContactAThick))
 	thickB := Contacts.Value(int(ci), int(ContactBThick))
 	thick := thickA + thickB
@@ -497,27 +497,28 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 	mInvB := Bodies.Value(int(biB), int(BodyInvMass))
 	iInvB := BodyInvInertia(biB)
 
-	var w0A, w0B math32.Vector3
+	var w1A, w1B math32.Vector3
 	if diA >= 0 {
-		w0A = DynamicAngDelta(diA, params.Next)
+		w1A = DynamicAngDelta(diA, params.Next)
 	}
 	if diB >= 0 {
-		w0B = DynamicAngDelta(diB, params.Next)
+		w1B = DynamicAngDelta(diB, params.Next)
 	}
 
 	// use average contact material properties
 	mu := 0.5 * (Bodies.Value(int(biA), int(BodyFriction)) + Bodies.Value(int(biB), int(BodyFriction)))
 	frTors := 0.5 * (Bodies.Value(int(biA), int(BodyFrictionTortion)) + Bodies.Value(int(biB), int(BodyFrictionTortion)))
 	frRoll := 0.5 * (Bodies.Value(int(biA), int(BodyFrictionRolling)) + Bodies.Value(int(biB), int(BodyFrictionRolling)))
+	bounce := 0.5 * (Bodies.Value(int(biA), int(BodyBounce)) + Bodies.Value(int(biB), int(BodyBounce)))
 
 	// moment arms
-	dA := ctAw.Sub(slmath.MulSpatialPoint(r0A, q0A, comA))
-	dB := ctBw.Sub(slmath.MulSpatialPoint(r0B, q0B, comB))
+	dA := ctAw.Sub(slmath.MulSpatialPoint(r1A, q1A, comA))
+	dB := ctBw.Sub(slmath.MulSpatialPoint(r1B, q1B, comB))
 
 	angA := slmath.Negate3(slmath.Cross3(dA, norm))
 	angB := slmath.Cross3(dB, norm)
 
-	lambdaN := ContactConstraint(d, q0A, q0B, mInvA, mInvB, iInvA, iInvB, nnorm, norm, angA, angB, params.ContactRelax, params.Dt)
+	lambdaN := ContactConstraint(d, q1A, q1B, mInvA, mInvB, iInvA, iInvB, nnorm, norm, angA, angB, params.ContactRelax, params.Dt)
 
 	linDeltaA := slmath.Negate3(norm).MulScalar(lambdaN)
 	linDeltaB := norm.MulScalar(lambdaN)
@@ -530,8 +531,8 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 		// we include any rotational effects due to thickness from feature
 		// need to use the current rotation to account for friction due to
 		// angular effects (e.g.: slipping contact)
-		ctAw = ctAw.Add(slmath.MulQuatVector(q0A, offA))
-		ctBw = ctBw.Add(slmath.MulQuatVector(q0B, offB))
+		ctAw = ctAw.Add(slmath.MulQuatVector(q1A, offA))
+		ctBw = ctBw.Add(slmath.MulQuatVector(q1B, offB))
 
 		// update delta
 		delta := ctBw.Sub(ctAw)
@@ -545,7 +546,7 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 		err := slmath.Length3(frDelta)
 
 		if err > 0.0 {
-			lambdaFr := ContactConstraint(err, q0A, q0B, mInvA, mInvB, iInvA, iInvB, slmath.Negate3(perp), perp, angA, angB, params.ContactRelax, params.Dt)
+			lambdaFr := ContactConstraint(err, q1A, q1B, mInvA, mInvB, iInvA, iInvB, slmath.Negate3(perp), perp, angA, angB, params.ContactRelax, params.Dt)
 
 			// limit friction based on incremental normal force,
 			// good approximation to limiting on total force
@@ -558,14 +559,14 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 		}
 	}
 
-	deltaW := w0B.Sub(w0A)
+	deltaW := w1B.Sub(w1A)
 
 	if frTors > 0.0 {
 		err := slmath.Dot3(deltaW, norm) * params.Dt
 
 		if math32.Abs(err) > 0.0 {
 			lin := math32.Vec3(0, 0, 0)
-			lambdaTors := ContactConstraint(err, q0A, q0B, mInvA, mInvB, iInvA, iInvB, lin, lin, nnorm, norm, params.ContactRelax, params.Dt)
+			lambdaTors := ContactConstraint(err, q1A, q1B, mInvA, mInvB, iInvA, iInvB, lin, lin, nnorm, norm, params.ContactRelax, params.Dt)
 
 			lambdaTors = math32.Clamp(lambdaTors, -lambdaN*frTors, lambdaN*frTors)
 			angDeltaA = angDeltaA.Sub(norm.MulScalar(lambdaTors))
@@ -579,11 +580,59 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 		if err > 0.0 {
 			lin := math32.Vec3(0, 0, 0)
 			rollN := slmath.Normal3(deltaW)
-			lambdaRoll := ContactConstraint(err, q0A, q0B, mInvA, mInvB, iInvA, iInvB, lin, lin, slmath.Negate3(rollN), rollN, params.ContactRelax, params.Dt)
+			lambdaRoll := ContactConstraint(err, q1A, q1B, mInvA, mInvB, iInvA, iInvB, lin, lin, slmath.Negate3(rollN), rollN, params.ContactRelax, params.Dt)
 			lambdaRoll = max(lambdaRoll, -lambdaN*frRoll)
 
 			angDeltaA = angDeltaA.Sub(rollN.MulScalar(lambdaRoll))
 			angDeltaB = angDeltaB.Add(rollN.MulScalar(lambdaRoll))
+		}
+	}
+
+	// restitution (bounce)
+	if params.Restitution.IsTrue() && bounce > 0 && (mInvA > 0 || mInvB > 0) {
+		var vA, vB, vAnew, vBnew, dAnew, dBnew math32.Vector3
+		var mInvAr, mInvBr float32
+		var q0A, q0B math32.Quat
+		grav := params.Gravity.V().MulScalar(params.Dt)
+		if diA >= 0 {
+			q0A = DynamicQuat(diA, params.Cur)
+			w0A := DynamicAngDelta(diA, params.Cur)
+			v0A := DynamicDelta(diA, params.Cur)
+			v1A := DynamicDelta(diA, params.Next)
+
+			vA = VelocityAtPoint(v0A, w0A, dA).Add(grav)
+			vAnew = VelocityAtPoint(v1A, w1A, dA)
+			dAnew = slmath.MulQuatVectorInverse(q0A, slmath.Cross3(dA, nnorm)) // norm is not - here..
+			mInvAr = mInvA + slmath.Dot3(dAnew, iInvA.MulVector3(dAnew))
+		}
+		if diB >= 0 {
+			q0B = DynamicQuat(diB, params.Cur)
+			w0B := DynamicAngDelta(diB, params.Cur)
+			v0B := DynamicDelta(diB, params.Cur)
+			v1B := DynamicDelta(diB, params.Next)
+
+			vB = VelocityAtPoint(v0B, w0B, dB).Add(grav)
+			vBnew = VelocityAtPoint(v1B, w1B, dB)
+			dBnew = slmath.MulQuatVectorInverse(q0B, slmath.Cross3(dB, nnorm)) // norm is not - here..
+			mInvBr = mInvB + slmath.Dot3(dBnew, iInvB.MulVector3(dBnew))
+		}
+		mInv := mInvAr + mInvBr
+		relVel0 := slmath.Dot3(nnorm, vA.Sub(vB))
+		relVel1 := slmath.Dot3(nnorm, vAnew.Sub(vBnew))
+		if relVel0 < 0 {
+			dv := -(relVel1 - relVel0*bounce) / mInv
+			if diA >= 0 {
+				dvA := nnorm.MulScalar(mInvA * dv)
+				dwA := slmath.MulQuatVector(q0A, iInvA.MulVector3(dAnew).MulScalar(dv))
+				linDeltaA = linDeltaA.Add(dvA)
+				angDeltaA = angDeltaA.Add(dwA)
+			}
+			if diB >= 0 {
+				dvB := nnorm.MulScalar(mInvB * dv)
+				dwB := slmath.MulQuatVector(q0B, iInvB.MulVector3(dBnew).MulScalar(dv))
+				linDeltaB = linDeltaB.Add(dvB)
+				angDeltaB = angDeltaB.Add(dwB)
+			}
 		}
 	}
 

@@ -1601,14 +1601,16 @@ func (p *printer) selectorPath(x *ast.SelectorExpr) (recvPath, recvType string, 
 	}
 	recvPath = baseRecv.Name
 	var idt types.Type
-	if gvar := p.GoToSL.GetTempVar(baseRecv.Name); gvar != nil {
+	gvar := p.GoToSL.GetTempVar(baseRecv.Name)
+	if gvar != nil {
 		idt = p.getTypeNameType(gvar.Var.SLType())
 	} else {
 		idt = p.getIdType(baseRecv)
 	}
-	if idt == nil {
-		err = fmt.Errorf("gosl methodPath ERROR: cannot find type for name: %q", baseRecv.Name)
-		p.userError(err)
+	if idt == nil || typeIsInvalid(idt) {
+		err = fmt.Errorf("gosl methodPath ERROR: cannot find type for name: %q, gvar: %v", baseRecv.Name, gvar)
+		panic(err)
+		// p.userError(err)
 		return
 	}
 	bt, err = p.getStructType(idt)
@@ -1681,25 +1683,30 @@ func getLocalTypeName(typ types.Type) string {
 	return nm
 }
 
+func typeIsInvalid(typ types.Type) bool {
+	if b, ok := typ.(*types.Basic); ok {
+		if b.Kind() == types.Invalid {
+			return true
+		}
+	}
+	return false
+}
+
 func (p *printer) getStructType(typ types.Type) (*types.Struct, error) {
-	typ = typ.Underlying()
-	if st, ok := typ.(*types.Struct); ok {
-		return st, nil
+	utyp := typ.Underlying()
+	switch x := utyp.(type) {
+	case *types.Struct:
+		return x, nil
+	case *types.Pointer:
+		return p.getStructType(x.Elem())
+	case *types.Slice:
+		return p.getStructType(x.Elem())
+	case *types.Basic:
+		fmt.Println("basic kind:", x.String())
 	}
-	if ptr, ok := typ.(*types.Pointer); ok {
-		typ = ptr.Elem().Underlying()
-		if st, ok := typ.(*types.Struct); ok {
-			return st, nil
-		}
-	}
-	if sl, ok := typ.(*types.Slice); ok {
-		typ = sl.Elem().Underlying()
-		if st, ok := typ.(*types.Struct); ok {
-			return st, nil
-		}
-	}
-	err := fmt.Errorf("gosl ERROR: type is not a struct and it should be: %q %+t", typ.String(), typ)
-	p.userError(err)
+	err := fmt.Errorf("gosl ERROR: type is not a struct and it should be: %q %+T %+T", typ.String(), typ, utyp)
+	panic(err)
+	// p.userError(err)
 	return nil, err
 }
 

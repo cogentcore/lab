@@ -566,16 +566,16 @@ return Dot3(diff, *norm);
 fn ColCapsuleCapsule(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
 	var hhA = (*gdA).Size.y;
 	var hhB = (*gdB).Size.y;
-	var e0 = vec3<f32>(0.0, 0.0, hhA*f32(cpi%2));
-	var e1 = vec3<f32>(0.0, 0.0, -hhA*f32((cpi+1)%2));
+	var e0 = vec3<f32>(0, 0, hhA*f32(cpi%2));
+	var e1 = vec3<f32>(0, 0, -hhA*f32((cpi+1)%2));
 	var edge0w = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, e0);
 	var edge1w = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, e1);
 	var edge0b = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge0w);
 	var edge1b = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge1w);
 	var u = ClosestEdgeCapsule((*gdB).Size.x, (*gdB).Size.y, edge0b, edge1b, maxIter);
 	var pAw = edge0w*(1 - u)+(edge1w*(u));
-	var p0Bw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0.0, 0.0, hhB));
-	var p1Bw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0.0, 0.0, -hhB));
+	var p0Bw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0, hhB, 0));
+	var p1Bw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0, -hhB, 0));
 	var pBw = ClosestPointLineSegment(p0Bw, p1Bw, pAw);
 	var diff = pAw-(pBw);
 	*norm = Normal3(diff);
@@ -604,8 +604,8 @@ return Dot3(diff, *norm);
 }
 fn ColBoxCapsule(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
 	var hhB = (*gdB).Size.y;
-	var e0 = vec3<f32>(0.0, 0.0, -hhB*f32(cpi%2));
-	var e1 = vec3<f32>(0.0, 0.0, hhB*f32((cpi+1)%2));
+	var e0 = vec3<f32>(0, -hhB*f32(cpi%2), 0);
+	var e1 = vec3<f32>(0, hhB*f32((cpi+1)%2), 0);
 	var edge0w = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, e0);
 	var edge1w = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, e1);
 	var edge0a = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge0w);
@@ -634,11 +634,11 @@ fn ColBoxPlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<func
 		var pBody = ClosestPointPlane(width, length, queryB);
 		pBw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, pBody);
 		diff = pAw-(pBw);
-		*norm = MulQuatVector((*gdB).WbQ, vec3<f32>(0.0, 0.0, 1.0));
-		if (width > 0.0 && length > 0.0) {
+		*norm = MulQuatVector((*gdB).WbQ, vec3<f32>(0, 1, 0));
+		if (width > 0 && length > 0) {
 			if (abs(queryB.x) > width || abs(queryB.z) > length) {
 				return f32( // invalid
-				1.0e6);
+				1e6);
 			}
 		}
 	} else {
@@ -657,7 +657,7 @@ fn ColBoxPlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<func
 		var queryB = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, pAw);
 		if (abs(queryB.x) > width || abs(queryB.z) > length) {
 			return f32( // invalid
-			1.0e6);
+			1e6);
 		}
 		diff = pAw-(pBw);
 		var comA = (*gdA).WbR;
@@ -665,7 +665,7 @@ fn ColBoxPlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<func
 		if (abs(queryB.x) > width || abs(queryB.z) > length) {
 			*norm = Normal3(comA-(pBw));
 		} else {
-			*norm = MulQuatVector((*gdB).WbQ, vec3<f32>(0.0, 0.0, 1.0));
+			*norm = MulQuatVector((*gdB).WbQ, vec3<f32>(0, 0, 1));
 		}
 	}
 	*pA = pAw;
@@ -686,8 +686,8 @@ return Dot3(diff, *norm);
 fn ColSphereCapsule(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
 	var pAw = (*gdA).WbR;
 	var hhB = (*gdB).Size.y;
-	var AB = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0.0, 0.0, hhB));
-	var BB = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0.0, 0.0, -hhB));
+	var AB = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0, hhB, 0));
+	var BB = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0, -hhB, 0));
 	var pBw = ClosestPointLineSegment(AB, BB, pAw);
 	var diff = pAw-(pBw);
 	*norm = Normal3(diff);
@@ -700,16 +700,16 @@ fn ColSpherePlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<f
 	var pBody = ClosestPointPlane((*gdB).Size.x, (*gdB).Size.z, MulSpatialPoint((*gdB).BwR, (*gdB).BwQ, pAw));
 	var pBw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, pBody);
 	var diff = pAw-(pBw);
-	*norm = MulQuatVector((*gdB).WbQ, vec3<f32>(0.0, 0.0, 1.0));
+	*norm = MulQuatVector((*gdB).WbQ, vec3<f32>(0, 1, 0));
 	*pA = pAw;
 	*pB = pBw;
 return Dot3(diff, *norm);
 }
 fn ColCylinderPlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
-	var plNorm = MulQuatVector((*gdB).WbQ, vec3<f32>(0.0, 1.0, 0.0));
-	var plPos = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0.0, 0.0, 0.0));
-	var cylCtr = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, vec3<f32>(0.0, 0.0, 0.0));
-	var cylAx = Normal3(MulQuatVector((*gdA).WbQ, vec3<f32>(0.0, 0.0, 1.0)));
+	var plNorm = MulQuatVector((*gdB).WbQ, vec3<f32>(0, 1, 0));
+	var plPos = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0, 0, 0));
+	var cylCtr = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, vec3<f32>(0, 0, 0));
+	var cylAx = Normal3(MulQuatVector((*gdA).WbQ, vec3<f32>(0, 1, 0)));
 	var cylRad = (*gdA).Size.x;
 	var cylHh = (*gdA).Size.y;
 	var dist: f32;
@@ -790,9 +790,9 @@ return min(max(dx, dy), 0.0) + Length2(vec2<f32>(max(dx, 0.0), max(dy, 0.0)));
 }
 fn ClosestPointPlane(width: f32,length: f32, pt: vec3<f32>) -> vec3<f32> {
 	var cp = pt;
+	cp.y = f32(0);
 	if (width == 0.0) {
-		cp.y = f32(0);
-	return cp;
+		return cp;
 	}
 	cp.x = clamp(pt.x, -width, width);
 	cp.z = clamp(pt.z, -length, length);

@@ -399,9 +399,11 @@ fn StepBodyDeltas(i: u32) { //gosl:kernel
 	var v0 = DynamicDelta(di, params.Next);
 	var w0 = DynamicAngDelta(di, params.Next);
 	var weight = f32(1.0);
-	var cWt = Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(di), u32(params.Next), u32(DynContactWeight))];
-	if (cWt > 0) {
-		weight = 1.0 / cWt;
+	if (params.ContactWeighting == 1) {
+		var cWt = Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(di), u32(params.Next), u32(DynContactWeight))];
+		if (cWt > 0) {
+			weight = 1.0 / cWt;
+		}
 	}
 	var dp = v0*(invMass * weight);
 	var dq = w0*(weight);

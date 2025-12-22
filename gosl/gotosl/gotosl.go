@@ -298,7 +298,7 @@ func (st *State) Run() error {
 	st.ExtractImports() // get .go from imports
 	st.TranslateDir("./" + st.ImportsDir)
 
-	st.GenGPU()
+	st.GenGPU(false)
 
 	return nil
 }
