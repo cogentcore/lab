@@ -52,14 +52,31 @@ func main() {
 	split.SetSplits(0.2, 0.8)
 
 	rot := math32.NewQuat(0, 0, 0, 1)
-	wr.NewBody(wl, "floor", physics.Plane, "#D0D0D040", math32.Vec3(0, 0, 0),
+	wr.NewBody(wl, "floor", physics.Plane, "#D0D0D080", math32.Vec3(0, 0, 0),
 		math32.Vec3(0, 0, 0), rot)
 
-	nballs := 10000
-	size := float32(0.1)
-	bounce := float32(0.5)
-	box := 2 * size * math32.Sqrt(float32(nballs))
+	width := float32(50)
+	depth := float32(50)
 	height := float32(20)
+	thick := float32(.1)
+	hw := width / 2
+	hd := depth / 2
+	hh := height / 2
+	ht := thick / 2
+	wr.NewBody(wl, "back-wall", physics.Box, "#0000FFA0", math32.Vec3(hw, hh, ht),
+		math32.Vec3(0, hh, -hd), rot)
+	wr.NewBody(wl, "left-wall", physics.Box, "#FF0000A0", math32.Vec3(ht, hh, hd),
+		math32.Vec3(-hw, hh, 0), rot)
+	wr.NewBody(wl, "right-wall", physics.Box, "#00FF00A0", math32.Vec3(ht, hh, hd),
+		math32.Vec3(hw, hh, 0), rot)
+	wr.NewBody(wl, "front-wall", physics.Box, "#FFFF00A0", math32.Vec3(hw, hh, ht),
+		math32.Vec3(0, hh, hd), rot)
+
+	nballs := 1000
+	size := float32(0.2)
+	bounce := float32(0.5)
+	box := width * .9
+	// height := float32(20)
 	for i := range nballs {
 		_ = i
 		ht := rand.Float32() * height
@@ -70,16 +87,17 @@ func main() {
 			math32.Vec3(x, size+ht, z), rot)
 		// todo: helper methods on view to set this stuff:
 		physics.Bodies.Set(bounce, int(b1.Index), int(physics.BodyBounce))
-		physics.SetBodyGroup(b1.Index, int32(i)) // no self collisions
+		// physics.SetBodyGroup(b1.Index, int32(i)) // no self collisions
 	}
 	wr.Init(wl)
 
 	params := physics.GetParams(0)
-	params.Dt = 0.001
+	params.Dt = 0.0001 // leaks balls > 0.0005
+	subSteps := 100    // major speedup by inner-stepping
 	// params.Gravity.Y = 0
-	params.ContactRelax = 0.1
-	params.Restitution.SetBool(false)
-	fmt.Println(params.ContactRelax)
+	params.ContactRelax = 0.1         // 0.1 seems most physical -- 0.2 getting a bit more ke?
+	params.Restitution.SetBool(false) // not working!
+	params.ContactMargin = 0.1        // 0.1 better than .01 -- leaks a few
 
 	wl.Config()
 	wr.Update()
@@ -88,12 +106,12 @@ func main() {
 	sc.Camera.LookAt(math32.Vec3(0, 5, 0), math32.Vec3(0, 1, 0))
 	sc.SaveCamera("3")
 
-	sc.Camera.Pose.Pos = math32.Vec3(0, 20, 30)
-	sc.Camera.LookAt(math32.Vec3(0, 5, 0), math32.Vec3(0, 1, 0))
-	sc.SaveCamera("2")
-
 	sc.Camera.Pose.Pos = math32.Vec3(-1.33, 2.24, 3.55)
 	sc.Camera.LookAt(math32.Vec3(0, .5, 0), math32.Vec3(0, 1, 0))
+	sc.SaveCamera("2")
+
+	sc.Camera.Pose.Pos = math32.Vec3(0, 80, 75)
+	sc.Camera.LookAt(math32.Vec3(0, 5, 0), math32.Vec3(0, 1, 0))
 	sc.SaveCamera("1")
 	sc.SaveCamera("default")
 
@@ -112,6 +130,9 @@ func main() {
 					go func() {
 						isRunning = true
 						for range n {
+							for range subSteps {
+								wl.StepGet() // don't get anything
+							}
 							wl.Step()
 							wr.Update()
 							if se.IsVisible() {

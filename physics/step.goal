@@ -46,7 +46,15 @@ func OneIfNonzero(f float32) float32 {
 
 //gosl:end
 
+// Step runs one physics step and gets the dynamics vars back
+// from the GPU.
 func (wl *World) Step() {
+	wl.StepGet(DynamicsVar)
+}
+
+// StepGet runs one physics step and gets the given vars back
+// from the GPU.
+func (wl *World) StepGet(vars ...GPUVars) {
 	params := GetParams(0)
 	if params.Cur == 0 {
 		params.Cur = 1
@@ -64,7 +72,7 @@ func (wl *World) Step() {
 		wl.StepSolveJoints()
 		wl.StepBodyContacts()
 	}
-	RunDone(DynamicsVar)
+	RunDone(vars...)
 }
 
 func (wl *World) StepCollision() {
@@ -73,7 +81,8 @@ func (wl *World) StepCollision() {
 	RunCollisionBroad(int(params.BodyCollidePairsN))
 	// note: time getting BroadContactsN back down and using that vs. running full
 	RunCollisionNarrow(int(params.ContactsMax))
-	RunDone(ContactsNVar) // we do multiple iterations so useful to have this
+	// note: too slow to get this back, so just using ContactsMax always.
+	// RunDone(ContactsNVar) // we do multiple iterations so useful to have this
 	// fmt.Println("contacts:", ContactsN.Value(0), "max:", params.ContactsMax)
 }
 
@@ -96,9 +105,14 @@ func (wl *World) StepSolveJoints() {
 
 func (wl *World) StepBodyContacts() {
 	params := GetParams(0)
-	cmax := int(ContactsN.Values[0])
-	if cmax > 0 {
-		RunStepBodyContacts(cmax)
+	if !wl.GPU {
+		cmax := int(ContactsN.Values[0])
+		if cmax > 0 {
+			RunStepBodyContacts(cmax)
+			RunDeltasFromContacts(int(params.DynamicsN))
+		}
+	} else {
+		RunStepBodyContacts(int(params.ContactsMax)) // just do max and let the routines bail
 		RunDeltasFromContacts(int(params.DynamicsN))
 	}
 }

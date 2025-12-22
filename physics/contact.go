@@ -478,9 +478,10 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 	thick := thickA + thickB
 	nnorm := ContactNorm(ci)
 	norm := slmath.Negate3(nnorm)
+	// margin := params.ContactMargin
 
 	d := slmath.Dot3(norm, ctBw.Sub(ctAw)) - thick
-	if d >= 0.0 { // now separated
+	if d >= 0.0 { // todo: should this be margin or not?
 		Contacts.Set(0.0, int(ci), int(ContactWeight))
 		z := math32.Vec3(0, 0, 0)
 		SetContactADelta(ci, z)

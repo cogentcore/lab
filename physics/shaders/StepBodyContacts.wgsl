@@ -187,8 +187,9 @@ let params = Params[0];; var ci = i32(i);
 ; var thick = thickA + thickB;
 ; var nnorm = ContactNorm(ci);
 ; var norm = Negate3(nnorm);
-; var d = Dot3(norm, ctBw-(ctAw)) - thick;
-; if (d >= 0.0) { // now separated
+;
+var d = Dot3(norm, ctBw-(ctAw)) - thick;
+; if (d >= 0.0) { // todo: should this be margin or not?
 	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(ci), u32(ContactWeight))] = 0.0;
 	var z = vec3<f32>(0, 0, 0);
 	SetContactADelta(ci, z);
