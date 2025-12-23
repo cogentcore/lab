@@ -10,3 +10,5 @@ The [world](world) visualization sub-package manages a `View` element that links
 
 * Muscles: https://mujoco.readthedocs.io/en/stable/modeling.html#muscles
 
+* fix basic issues in restitution: needs a more thorough approach. Basically need to integrate during entire time of penetration and then compute escape velocity based on the saved incoming velocity just prior to impact.
+
