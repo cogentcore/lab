@@ -235,4 +235,26 @@ func SetBodyInvInertia(idx int32, invInertia math32.Matrix3) {
 	}
 }
 
+// SetBodyBounce specifies the COR or coefficient of restitution (0..1),
+// which determines how elastic the collision is,
+// i.e., final velocity / initial velocity.
+func SetBodyBounce(idx int32, val float32) {
+	Bodies.Set(val, int(idx), int(BodyBounce))
+}
+
+// SetBodyFriction is the standard coefficient for linear friction (mu).
+func SetBodyFriction(idx int32, val float32) {
+	Bodies.Set(val, int(idx), int(BodyFriction))
+}
+
+// SetBodyFrictionTortion is resistance to spinning at the contact point.
+func SetBodyFrictionTortion(idx int32, val float32) {
+	Bodies.Set(val, int(idx), int(BodyFrictionTortion))
+}
+
+// SetBodyFrictionRolling is resistance to rolling motion at contact.
+func SetBodyFrictionRolling(idx int32, val float32) {
+	Bodies.Set(val, int(idx), int(BodyFrictionRolling))
+}
+
 //gosl:end

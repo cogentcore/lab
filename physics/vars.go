@@ -17,7 +17,6 @@ import "cogentcore.org/lab/tensor"
 var (
 	// Params are global parameters.
 	//gosl:group Params
-	//gosl:read-only
 	Params []PhysParams
 
 	// Bodies are the rigid body elements (dynamic and static),

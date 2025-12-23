@@ -153,7 +153,8 @@ func (vw *View) BoxInit(sld *xyz.Solid) {
 func (vw *View) PlaneInit(sld *xyz.Solid) {
 	mnm := "physics.Plane"
 	if ms, _ := sld.Scene.MeshByName(mnm); ms == nil {
-		xyz.NewPlane(sld.Scene, mnm, 1, 1)
+		pl := xyz.NewPlane(sld.Scene, mnm, 1, 1)
+		pl.Segs.Set(4, 4)
 	}
 	sld.SetMeshName(mnm)
 	if vw.Size.X == 0 {
@@ -215,4 +216,26 @@ func (vw *View) SphereInit(sld *xyz.Solid) {
 	sld.Updater(func() {
 		vw.UpdatePose(sld)
 	})
+}
+
+// SetBodyBounce specifies the COR or coefficient of restitution (0..1),
+// which determines how elastic the collision is,
+// i.e., final velocity / initial velocity.
+func (vw *View) SetBodyBounce(val float32) {
+	physics.Bodies.Set(val, int(vw.Index), int(physics.BodyBounce))
+}
+
+// SetBodyFriction is the standard coefficient for linear friction (mu).
+func (vw *View) SetBodyFriction(val float32) {
+	physics.Bodies.Set(val, int(vw.Index), int(physics.BodyFriction))
+}
+
+// SetBodyFrictionTortion is resistance to spinning at the contact point.
+func (vw *View) SetBodyFrictionTortion(val float32) {
+	physics.Bodies.Set(val, int(vw.Index), int(physics.BodyFrictionTortion))
+}
+
+// SetBodyFrictionRolling is resistance to rolling motion at contact.
+func (vw *View) SetBodyFrictionRolling(val float32) {
+	physics.Bodies.Set(val, int(vw.Index), int(physics.BodyFrictionRolling))
 }

@@ -81,11 +81,17 @@ func NewWorld() *World {
 	return wl
 }
 
-// Init makes initial vars.
+// Init makes initial vars. Called in NewWorld.
+// Must call Config once configured.
 func (wl *World) Init() {
 	wl.GPU = true
 	wl.Params = make([]PhysParams, 1)
 	wl.Params[0].Defaults()
+	wl.Reset()
+}
+
+// Reset resets all data to empty: starting over.
+func (wl *World) Reset() {
 	wl.Bodies = tensor.NewFloat32(0, int(BodyVarsN))
 	wl.Joints = tensor.NewFloat32(0, int(JointVarsN))
 	wl.JointDoFs = tensor.NewFloat32(0, int(JointDoFVarsN))

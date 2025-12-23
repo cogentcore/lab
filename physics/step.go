@@ -19,6 +19,23 @@ func OneIfNonzero(f float32) float32 {
 	return 0.0
 }
 
+// StepInit performs initialization at start of Step.
+func StepInit(i uint32) { //gosl:kernel read-write:Params
+	if i > 0 {
+		return
+	}
+	params := GetParams(0)
+	BroadContactsN.Values[0] = 0
+	ContactsN.Values[0] = 0
+	if params.Cur == 0 {
+		params.Cur = 1
+		params.Next = 0
+	} else {
+		params.Cur = 0
+		params.Next = 1
+	}
+}
+
 // step does the following:
 // if self.compute_body_velocity_from_position_delta or self.enable_restitution:
 // 	// save initial state:
@@ -48,24 +65,27 @@ func OneIfNonzero(f float32) float32 {
 
 //gosl:end
 
-// Step runs one physics step and gets the dynamics vars back
-// from the GPU.
+// Step runs one physics step, sending Params and JointControls
+// to the GPU, and getting the Dynamics state vars back.
+// Each step has SubSteps integration sub-steps.
 func (wl *World) Step() {
-	wl.StepGet(DynamicsVar)
+	params := GetParams(0)
+	ToGPU(ParamsVar, JointControlsVar)
+	if params.SubSteps > 1 {
+		for range params.SubSteps - 1 {
+			wl.StepGet()
+		}
+	}
+	wl.StepGet(ParamsVar, DynamicsVar)
+	// wl.StepGet(ParamsVar, DynamicsVar, ContactsNVar)
+	// fmt.Println("contacts:", ContactsN.Value(0), "max:", params.ContactsMax)
 }
 
 // StepGet runs one physics step and gets the given vars back
 // from the GPU.
 func (wl *World) StepGet(vars ...GPUVars) {
 	params := GetParams(0)
-	if params.Cur == 0 {
-		params.Cur = 1
-		params.Next = 0
-	} else {
-		params.Cur = 0
-		params.Next = 1
-	}
-	ToGPU(ParamsVar, JointControlsVar)
+	RunStepInit(1)
 	wl.StepCollision()
 	wl.StepJointForces()
 	wl.StepIntegrateBodies()
@@ -79,7 +99,6 @@ func (wl *World) StepGet(vars ...GPUVars) {
 
 func (wl *World) StepCollision() {
 	params := GetParams(0)
-	RunCollisionInit(1) // could also just copy up
 	RunCollisionBroad(int(params.BodyCollidePairsN))
 	// note: time getting BroadContactsN back down and using that vs. running full
 	RunCollisionNarrow(int(params.ContactsMax))

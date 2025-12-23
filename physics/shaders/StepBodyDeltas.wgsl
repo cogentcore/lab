@@ -5,7 +5,7 @@
 @group(0) @binding(0)
 var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
-var<storage, read> Params: array<PhysParams>;
+var<storage, read_write> Params: array<PhysParams>;
 // // Bodies are the rigid body elements (dynamic and static), // specifying the constant, non-dynamic properties, // which is initial state for dynamics. // [body][BodyVarsN] 
 @group(1) @binding(0)
 var<storage, read_write> Bodies: array<f32>;
@@ -277,17 +277,18 @@ const  JointDamp: JointDoFVars = 6;
 struct PhysParams {
 	Iterations: i32,
 	Dt: f32,
-	SoftRelax: f32,
+	SubSteps: i32,
+	ContactMargin: f32,
+	ContactRelax: f32,
+	ContactWeighting: i32,
+	Restitution: i32,
 	JointLinearRelax: f32,
 	JointAngularRelax: f32,
 	JointLinearComply: f32,
 	JointAngularComply: f32,
-	ContactRelax: f32,
 	AngularDamping: f32,
-	ContactWeighting: i32,
-	Restitution: i32,
+	SoftRelax: f32,
 	MaxGeomIter: i32,
-	ContactMargin: f32,
 	ContactsMax: i32,
 	Cur: i32,
 	Next: i32,
@@ -298,7 +299,6 @@ struct PhysParams {
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
 	pad: i32,
-	pad1: i32,
 	Gravity: vec4<f32>,
 }
 
@@ -382,7 +382,7 @@ fn Cross3(v: vec3<f32>,o: vec3<f32>) -> vec3<f32> {
 
 //////// import: "step_body.go"
 fn StepBodyDeltas(i: u32) { //gosl:kernel
-	let params = Params[0];
+	var params = Params[0];
 	var di = i32(i);
 	if (di >= params.DynamicsN) {
 		return;
@@ -429,6 +429,7 @@ fn StepBodyDeltas(i: u32) { //gosl:kernel
 	SetDynamicQuat(di, params.Next, q1);
 	SetDynamicDelta(di, params.Next, v1);
 	SetDynamicAngDelta(di, params.Next, w1);
+	Params[0] = params;
 }
 
 //////// import: "step_joint.go"

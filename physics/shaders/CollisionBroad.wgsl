@@ -5,7 +5,7 @@
 @group(0) @binding(0)
 var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
-var<storage, read> Params: array<PhysParams>;
+var<storage, read_write> Params: array<PhysParams>;
 // // Bodies are the rigid body elements (dynamic and static), // specifying the constant, non-dynamic properties, // which is initial state for dynamics. // [body][BodyVarsN] 
 @group(1) @binding(0)
 var<storage, read_write> Bodies: array<f32>;
@@ -162,7 +162,7 @@ fn SetBroadContactPointIdx(idx: i32,ptIdx: i32) {
 	BroadContacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactPointIdx))] = bitcast<f32>(u32(ptIdx));
 }
 fn CollisionBroad(i: u32) { //gosl:kernel
-	let params = Params[0];
+	var params = Params[0];
 	var ci = i32(i);
 	if (ci >= params.BodyCollidePairsN) {
 		return;
@@ -205,6 +205,7 @@ fn CollisionBroad(i: u32) { //gosl:kernel
 		return;
 	}
 	AddBroadContacts(biA, biB, nci, ncA, ncB);
+	Params[0] = params;
 }
 fn AddBroadContacts(biA: i32,biB: i32,nci: i32,ncA: i32,ncB: i32) {
 	for (var i=0; i<ncA; i++) {
@@ -352,17 +353,18 @@ const  JointDamp: JointDoFVars = 6;
 struct PhysParams {
 	Iterations: i32,
 	Dt: f32,
-	SoftRelax: f32,
+	SubSteps: i32,
+	ContactMargin: f32,
+	ContactRelax: f32,
+	ContactWeighting: i32,
+	Restitution: i32,
 	JointLinearRelax: f32,
 	JointAngularRelax: f32,
 	JointLinearComply: f32,
 	JointAngularComply: f32,
-	ContactRelax: f32,
 	AngularDamping: f32,
-	ContactWeighting: i32,
-	Restitution: i32,
+	SoftRelax: f32,
 	MaxGeomIter: i32,
-	ContactMargin: f32,
 	ContactsMax: i32,
 	Cur: i32,
 	Next: i32,
@@ -373,7 +375,6 @@ struct PhysParams {
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
 	pad: i32,
-	pad1: i32,
 	Gravity: vec4<f32>,
 }
 

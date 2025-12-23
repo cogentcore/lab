@@ -7,7 +7,7 @@
 package physics
 
 import (
-	"fmt"
+	// "fmt"
 	"math"
 	"sync/atomic"
 
@@ -246,15 +246,6 @@ func GroupsCollide(ga, gb int32) bool {
 		return ga != gb
 	}
 	return false
-}
-
-// CollisionInit performs initialization at start of collision (i=1)
-func CollisionInit(i uint32) { //gosl:kernel
-	if i > 0 {
-		return
-	}
-	BroadContactsN.Values[0] = 0
-	ContactsN.Values[0] = 0
 }
 
 // newton: geometry/kernels.py: broadphase_collision_pairs
@@ -786,7 +777,7 @@ func (wl *World) ConfigBodyCollidePairs() {
 	pt.SetShapeSizes(np, 2)
 	wl.BodyCollidePairs = pt
 	BodyCollidePairs = pt
-	fmt.Println("body pairs over alloc", nalc-np, "total:", np)
+	// fmt.Println("body pairs over alloc", nalc - np, "total:", np)
 }
 
 // newton: geometry/kernels.py: count_contact_points
@@ -818,7 +809,7 @@ func (wl *World) SetMaxContacts() {
 	// todo: this is a massive over-estimate, b/c there is no way everyone could be
 	// colliding at once. Except.. if it is a very small model.
 	if params.BodyCollidePairsN > 1000 {
-		n = n / 2 // todo: could do more of this as N gets larger
+		n = int32(math32.Sqrt(float32(n)))
 	}
 	params.ContactsMax = n
 	wl.BroadContacts.SetShapeSizes(int(n), int(BroadContactVarsN))

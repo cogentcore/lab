@@ -83,7 +83,6 @@ func GPUInit() {
 			vr = sgp.Add("TensorStrides", gpu.Uint32, 1, gpu.ComputeShader)
 			vr.ReadOnly = true
 			vr = sgp.AddStruct("Params", int(unsafe.Sizeof(PhysParams{})), 1, gpu.ComputeShader)
-			vr.ReadOnly = true
 			sgp.SetNValues(1)
 		}
 		{
@@ -124,10 +123,6 @@ func GPUInit() {
 		pl.AddVarUsed(2, "BroadContactsN")
 		pl.AddVarUsed(2, "Dynamics")
 		pl.AddVarUsed(0, "Params")
-		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/CollisionInit.wgsl", sy)
-		pl.AddVarUsed(0, "TensorStrides")
-		pl.AddVarUsed(2, "BroadContactsN")
-		pl.AddVarUsed(2, "ContactsN")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/CollisionNarrow.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(1, "Bodies")
@@ -175,6 +170,11 @@ func GPUInit() {
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(1, "Bodies")
 		pl.AddVarUsed(2, "Dynamics")
+		pl.AddVarUsed(0, "Params")
+		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepInit.wgsl", sy)
+		pl.AddVarUsed(0, "TensorStrides")
+		pl.AddVarUsed(2, "BroadContactsN")
+		pl.AddVarUsed(2, "ContactsN")
 		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepIntegrateBodies.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
@@ -256,48 +256,6 @@ func RunOneCollisionBroad(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunCollisionBroadCPU(n)
-	}
-}
-// RunCollisionInit runs the CollisionInit kernel with given number of elements,
-// on either the CPU or GPU depending on the UseGPU variable.
-// Can call multiple Run* kernels in a row, which are then all launched
-// in the same command submission on the GPU, which is by far the most efficient.
-// MUST call RunDone (with optional vars to sync) after all Run calls.
-// Alternatively, a single-shot RunOneCollisionInit call does Run and Done for a
-// single run-and-sync case.
-func RunCollisionInit(n int) {
-	if UseGPU {
-		RunCollisionInitGPU(n)
-	} else {
-		RunCollisionInitCPU(n)
-	}
-}
-
-// RunCollisionInitGPU runs the CollisionInit kernel on the GPU. See [RunCollisionInit] for more info.
-func RunCollisionInitGPU(n int) {
-	sy := GPUSystem
-	pl := sy.ComputePipelines["CollisionInit"]
-	ce, _ := sy.BeginComputePass()
-	pl.Dispatch1D(ce, n, 64)
-}
-
-// RunCollisionInitCPU runs the CollisionInit kernel on the CPU.
-func RunCollisionInitCPU(n int) {
-	gpu.VectorizeFunc(0, n, CollisionInit)
-}
-
-// RunOneCollisionInit runs the CollisionInit kernel with given number of elements,
-// on either the CPU or GPU depending on the UseGPU variable.
-// This version then calls RunDone with the given variables to sync
-// after the Run, for a single-shot Run-and-Done call. If multiple kernels
-// can be run in sequence, it is much more efficient to do multiple Run*
-// calls followed by a RunDone call.
-func RunOneCollisionInit(n int, syncVars ...GPUVars) {
-	if UseGPU {
-		RunCollisionInitGPU(n)
-		RunDone(syncVars...)
-	} else {
-		RunCollisionInitCPU(n)
 	}
 }
 // RunCollisionNarrow runs the CollisionNarrow kernel with given number of elements,
@@ -634,6 +592,48 @@ func RunOneStepBodyDeltas(n int, syncVars ...GPUVars) {
 		RunDone(syncVars...)
 	} else {
 		RunStepBodyDeltasCPU(n)
+	}
+}
+// RunStepInit runs the StepInit kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// Can call multiple Run* kernels in a row, which are then all launched
+// in the same command submission on the GPU, which is by far the most efficient.
+// MUST call RunDone (with optional vars to sync) after all Run calls.
+// Alternatively, a single-shot RunOneStepInit call does Run and Done for a
+// single run-and-sync case.
+func RunStepInit(n int) {
+	if UseGPU {
+		RunStepInitGPU(n)
+	} else {
+		RunStepInitCPU(n)
+	}
+}
+
+// RunStepInitGPU runs the StepInit kernel on the GPU. See [RunStepInit] for more info.
+func RunStepInitGPU(n int) {
+	sy := GPUSystem
+	pl := sy.ComputePipelines["StepInit"]
+	ce, _ := sy.BeginComputePass()
+	pl.Dispatch1D(ce, n, 64)
+}
+
+// RunStepInitCPU runs the StepInit kernel on the CPU.
+func RunStepInitCPU(n int) {
+	gpu.VectorizeFunc(0, n, StepInit)
+}
+
+// RunOneStepInit runs the StepInit kernel with given number of elements,
+// on either the CPU or GPU depending on the UseGPU variable.
+// This version then calls RunDone with the given variables to sync
+// after the Run, for a single-shot Run-and-Done call. If multiple kernels
+// can be run in sequence, it is much more efficient to do multiple Run*
+// calls followed by a RunDone call.
+func RunOneStepInit(n int, syncVars ...GPUVars) {
+	if UseGPU {
+		RunStepInitGPU(n)
+		RunDone(syncVars...)
+	} else {
+		RunStepInitCPU(n)
 	}
 }
 // RunStepIntegrateBodies runs the StepIntegrateBodies kernel with given number of elements,

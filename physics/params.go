@@ -13,14 +13,34 @@ import (
 
 // PhysParams are the physics parameters
 type PhysParams struct {
-	// Iterations is the number of iterations to perform.
-	Iterations int32 `default:"2"`
+	// Iterations is the number of integration iterations to perform
+	// within each solver step. Muller et al (2020) report that 1 is best.
+	Iterations int32 `default:"1"`
 
 	// Dt is the integration stepsize.
-	Dt float32 `default:"0.01"`
+	// For highly kinetic situations (e.g., rapidly moving bouncing balls)
+	// 0.0001 is needed to ensure contact registration. Use SubSteps to
+	// accomplish a target effective read-out step size.
+	Dt float32 `default:"0.0001"`
 
-	// SoftRelax is soft-body relaxation constant.
-	SoftRelax float32 `default:"0.9"`
+	// SubSteps is the number of integration steps to take per Step()
+	// function call. These sub steps are taken without any sync to/from
+	// the GPU and are therefore much faster.
+	SubSteps int32 `default:"10" min:"1"`
+
+	// Contact margin is the extra distance for broadphase collision
+	// around rigid bodies.
+	ContactMargin float32 `defautl:"0.1"`
+
+	// ContactRelax is rigid contact relaxation constant.
+	// Higher values cause errros
+	ContactRelax float32 `default:"0.1"`
+
+	// Contact weighting: balances contact forces?
+	ContactWeighting slbool.Bool `default:"true"`
+
+	// Restitution takes into account bounciness of objects.
+	Restitution slbool.Bool `default:"true"`
 
 	// JointLinearRelax is joint linear relaxation constant.
 	JointLinearRelax float32 `default:"0.7"`
@@ -34,28 +54,18 @@ type PhysParams struct {
 	// JointAngularComply is joint angular compliance constant.
 	JointAngularComply float32 `default:"0"`
 
-	// ContactRelax is rigid contact relaxation constant.
-	ContactRelax float32 `default:"0.8"`
-
 	// AngularDamping is damping of angular motion.
 	AngularDamping float32 `default:"0"`
 
-	// Contact weighting: balances contact forces?
-	ContactWeighting slbool.Bool `default:"true"`
-
-	// Restitution takes into account bounciness of objects.
-	Restitution slbool.Bool `default:"true"`
+	// SoftRelax is soft-body relaxation constant.
+	SoftRelax float32 `default:"0.9"`
 
 	// MaxGeomIter is number of iterations to perform in shape-based
 	// geometry collision computations
 	MaxGeomIter int32 `default:"10"`
 
-	// Contact margin is the extra distance for broadphase collision
-	// around rigid bodies.
-	ContactMargin float32
-
 	// Maximum number of contacts to process at any given point.
-	ContactsMax int32
+	ContactsMax int32 `edit:"-"`
 
 	// Index for the current state (0 or 1, alternates with Next).
 	Cur int32 `edit:"-"`
@@ -82,27 +92,31 @@ type PhysParams struct {
 	// to examine.
 	BodyCollidePairsN int32 `edit:"-"`
 
-	pad, pad1 int32
+	pad int32
 
 	// Gravity is the gravity acceleration function
 	Gravity slvec.Vector3
 }
 
 func (pr *PhysParams) Defaults() {
-	pr.Iterations = 2
-	pr.Dt = 0.01
+	pr.Iterations = 1
+	pr.Dt = 0.0001
+	pr.SubSteps = 10
 	pr.Gravity.Set(0, -9.81, 0)
-	pr.SoftRelax = 0.9
+
+	pr.ContactMargin = 0.1
+	pr.ContactRelax = 0.1
+	pr.ContactWeighting.SetBool(true)
+	pr.Restitution.SetBool(false)
+
 	pr.JointLinearRelax = 0.7
 	pr.JointAngularRelax = 0.4
 	pr.JointLinearComply = 0
 	pr.JointAngularComply = 0
-	pr.ContactRelax = 0.8
+
 	pr.AngularDamping = 0
+	pr.SoftRelax = 0.9
 	pr.MaxGeomIter = 10
-	pr.ContactWeighting.SetBool(true)
-	pr.Restitution.SetBool(true)
-	pr.ContactMargin = 0.1
 }
 
 //gosl:end

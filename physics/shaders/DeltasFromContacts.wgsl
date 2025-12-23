@@ -5,7 +5,7 @@
 @group(0) @binding(0)
 var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
-var<storage, read> Params: array<PhysParams>;
+var<storage, read_write> Params: array<PhysParams>;
 // // Bodies are the rigid body elements (dynamic and static), // specifying the constant, non-dynamic properties, // which is initial state for dynamics. // [body][BodyVarsN] 
 // // Dynamics are the dynamic rigid body elements: these actually move. // Two alternating states are used: Params.Cur and Params.Next. // [dyn body][cur/next][DynamicVarsN] 
 @group(2) @binding(0)
@@ -136,7 +136,7 @@ fn ContactBAngDelta(idx: i32) -> vec3<f32> {
 	return vec3<f32>(Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBAngDeltaX))], Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBAngDeltaY))], Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBAngDeltaZ))]);
 }
 fn DeltasFromContacts(i: u32) { //gosl:kernel
-	let params = Params[0];
+	var params = Params[0];
 	var di = i32(i);
 	if (di >= params.DynamicsN) {
 		return;
@@ -173,6 +173,7 @@ fn DeltasFromContacts(i: u32) { //gosl:kernel
 	SetDynamicDelta(di, params.Next, td+(v0));
 	SetDynamicAngDelta(di, params.Next, ta+(w0));
 	Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(di), u32(params.Next), u32(DynContactWeight))] = tw;
+	Params[0] = params;
 }
 
 //////// import: "control.go"
@@ -319,17 +320,18 @@ const  JointDamp: JointDoFVars = 6;
 struct PhysParams {
 	Iterations: i32,
 	Dt: f32,
-	SoftRelax: f32,
+	SubSteps: i32,
+	ContactMargin: f32,
+	ContactRelax: f32,
+	ContactWeighting: i32,
+	Restitution: i32,
 	JointLinearRelax: f32,
 	JointAngularRelax: f32,
 	JointLinearComply: f32,
 	JointAngularComply: f32,
-	ContactRelax: f32,
 	AngularDamping: f32,
-	ContactWeighting: i32,
-	Restitution: i32,
+	SoftRelax: f32,
 	MaxGeomIter: i32,
-	ContactMargin: f32,
 	ContactsMax: i32,
 	Cur: i32,
 	Next: i32,
@@ -340,7 +342,6 @@ struct PhysParams {
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
 	pad: i32,
-	pad1: i32,
 	Gravity: vec4<f32>,
 }
 

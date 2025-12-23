@@ -5,7 +5,7 @@
 @group(0) @binding(0)
 var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
-var<storage, read> Params: array<PhysParams>;
+var<storage, read_write> Params: array<PhysParams>;
 // // Bodies are the rigid body elements (dynamic and static), // specifying the constant, non-dynamic properties, // which is initial state for dynamics. // [body][BodyVarsN] 
 @group(1) @binding(0)
 var<storage, read_write> Bodies: array<f32>;
@@ -164,7 +164,7 @@ fn SetContactAAngDelta(idx: i32, pos: vec3<f32>) { Contacts[Index2D(TensorStride
 fn SetContactBDelta(idx: i32, pos: vec3<f32>) { Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBDeltaX))] = pos.x;; Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBDeltaY))] = pos.y;; Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBDeltaZ))] = pos.z; }
 fn SetContactBAngDelta(idx: i32, pos: vec3<f32>) { Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBAngDeltaX))] = pos.x;; Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBAngDeltaY))] = pos.y;; Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBAngDeltaZ))] = pos.z; }
 fn StepBodyContacts(i: u32) { //gosl:kernel
-let params = Params[0];; var ci = i32(i);
+var params = Params[0];; var ci = i32(i);
 ; var cmax = ContactsN[0];
 ; if (ci >= cmax) {
 	return;
@@ -468,17 +468,18 @@ const  JointDamp: JointDoFVars = 6;
 struct PhysParams {
 	Iterations: i32,
 	Dt: f32,
-	SoftRelax: f32,
+	SubSteps: i32,
+	ContactMargin: f32,
+	ContactRelax: f32,
+	ContactWeighting: i32,
+	Restitution: i32,
 	JointLinearRelax: f32,
 	JointAngularRelax: f32,
 	JointLinearComply: f32,
 	JointAngularComply: f32,
-	ContactRelax: f32,
 	AngularDamping: f32,
-	ContactWeighting: i32,
-	Restitution: i32,
+	SoftRelax: f32,
 	MaxGeomIter: i32,
-	ContactMargin: f32,
 	ContactsMax: i32,
 	Cur: i32,
 	Next: i32,
@@ -489,7 +490,6 @@ struct PhysParams {
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
 	pad: i32,
-	pad1: i32,
 	Gravity: vec4<f32>,
 }
 

@@ -58,6 +58,14 @@ func (wr *World) Init(wl *physics.World) {
 	})
 }
 
+// Reset resets any existing views, starting fresh for a new configuration.
+func (wr *World) Reset() {
+	wr.Views = nil
+	if wr.Scene != nil {
+		wr.Scene.Update()
+	}
+}
+
 // Update updates the xyz scene from current physics node state.
 // (use physics.World.SetAsCurrent()).
 func (wr *World) Update() {
