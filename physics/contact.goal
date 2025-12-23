@@ -809,6 +809,7 @@ func (wl *World) SetMaxContacts() {
 	// colliding at once. Except.. if it is a very small model.
 	if params.BodyCollidePairsN > 1000 {
 		n = int32(math32.Sqrt(float32(n)))
+		n = max(n, params.DynamicsN)
 	}
 	params.ContactsMax = n
 	wl.BroadContacts.SetShapeSizes(int(n), int(BroadContactVarsN))
