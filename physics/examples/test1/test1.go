@@ -20,6 +20,7 @@ import (
 	"cogentcore.org/core/tree"
 	"cogentcore.org/core/xyz"
 	"cogentcore.org/core/xyz/xyzcore"
+	_ "cogentcore.org/lab/gosl/slbool/slboolcore" // include to get gui views
 	"cogentcore.org/lab/physics"
 	"cogentcore.org/lab/physics/world"
 )
@@ -50,7 +51,7 @@ func main() {
 	params := physics.GetParams(0)
 	params.Dt = 0.0001
 	params.SubSteps = 1
-	params.Gravity.Y = 0
+	// params.Gravity.Y = 0
 	params.ContactRelax = 0.1
 	params.Restitution.SetBool(false)
 	fv.SetStruct(params)
@@ -67,17 +68,14 @@ func main() {
 	depth := height * .15
 	_ = width
 	b1 := wr.NewDynamic(wl, "body", physics.Box, "purple", 1.0, math32.Vec3(height, height, depth),
-		math32.Vec3(0, height+2, 0), rot)
+		math32.Vec3(0, height*2, 0), rot)
 	_ = b1
 
 	// bj := wl.NewJointRevolute(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height, 0), math32.Vec3(0, 1, 0))
-	bj := wl.NewJointPrismatic(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height, 0), math32.Vec3(1, 0, 0))
-	physics.SetJointControlForce(bj, 0, .1)
-	// physics.SetJointTargetPos(bj, 0, 1)
-	// physics.SetJointDoF(bj, 0, physics.JointDamp, 0.01)
-	// physics.SetJointDoF(bj, 0, physics.JointStiff, 1) // this makes a big difference
-	// bj := wl.NewJointFree(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height, 0))
-	// _ = bj
+	// bj := wl.NewJointPrismatic(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height, 0), math32.Vec3(1, 0, 0))
+	// // physics.SetJointControlForce(bj, 0, .1)
+	// physics.SetJointTargetPos(bj, 0, 0, 1000)
+	// physics.SetJointTargetVel(bj, 0, 0, 1)
 
 	wr.Init(wl)
 

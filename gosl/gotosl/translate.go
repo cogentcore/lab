@@ -91,6 +91,9 @@ func (st *State) TranslateDir(pf string) error {
 			continue
 		}
 		if gofn == "gosl.go" {
+			if !st.Config.Keep {
+				os.Remove(gofp)
+			}
 			continue
 		}
 		var buf bytes.Buffer
