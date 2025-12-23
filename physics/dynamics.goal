@@ -60,16 +60,16 @@ const (
 	DynTorqueY
 	DynTorqueZ
 
-	// Linear deltas.
+	// Linear deltas. These accumulate over time via StepBodyDeltas.
 	DynDeltaX
 	DynDeltaY
 	DynDeltaZ
 
-	// Angular deltas.
+	// Angular deltas. These accumulate over time via StepBodyDeltas.
 	DynAngDeltaX
 	DynAngDeltaY
 	DynAngDeltaZ
-
+	
 	// integrated weight of all contacts
 	DynContactWeight
 )
@@ -166,6 +166,8 @@ func SetDynamicAngAcc(idx, cni int32, angAcc math32.Vector3) {
 	Dynamics[idx, cni, DynAngAccY] = angAcc.Y
 	Dynamics[idx, cni, DynAngAccZ] = angAcc.Z
 }
+
+//////// Accumulating deltas
 
 func DynamicDelta(idx, cni int32) math32.Vector3 {
 	return math32.Vec3(Dynamics[idx, cni, DynDeltaX], Dynamics[idx, cni, DynDeltaY], Dynamics[idx, cni, DynDeltaZ])

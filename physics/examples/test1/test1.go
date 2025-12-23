@@ -46,27 +46,33 @@ func main() {
 	wr := world.NewWorld(sc)
 
 	wl := physics.NewWorld()
-	wl.GPU = true
-	fv.SetStruct(wl)
+	wl.GPU = false
+	params := physics.GetParams(0)
+	params.Dt = 0.0001
+	params.SubSteps = 1
+	params.Gravity.Y = 0
+	params.ContactRelax = 0.1
+	params.Restitution.SetBool(false)
+	fv.SetStruct(params)
 
 	split.SetSplits(0.2, 0.8)
 
 	rot := math32.NewQuat(0, 0, 0, 1)
 	// thick := float32(0.1)
-	wr.NewBody(wl, "floor", physics.Plane, "grey", math32.Vec3(10, 0, 10),
+	wr.NewBody(wl, "floor", physics.Plane, "#D0D0D080", math32.Vec3(10, 0, 10),
 		math32.Vec3(0, 0, 0), rot)
 
 	height := float32(.5)
 	width := height * .4
 	depth := height * .15
 	_ = width
-	b1 := wr.NewDynamic(wl, "body", physics.Sphere, "purple", 1.0, math32.Vec3(height, height, depth),
+	b1 := wr.NewDynamic(wl, "body", physics.Box, "purple", 1.0, math32.Vec3(height, height, depth),
 		math32.Vec3(0, height+2, 0), rot)
 	_ = b1
 
 	// bj := wl.NewJointRevolute(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height, 0), math32.Vec3(0, 1, 0))
-	// bj := wl.NewJointPrismatic(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height, 0), math32.Vec3(1, 0, 0))
-	// physics.SetJointControlForce(bj, 0, 5)
+	bj := wl.NewJointPrismatic(-1, b1.DynamicIndex, math32.Vec3(0, 0, 0), math32.Vec3(0, -height, 0), math32.Vec3(1, 0, 0))
+	physics.SetJointControlForce(bj, 0, .1)
 	// physics.SetJointTargetPos(bj, 0, 1)
 	// physics.SetJointDoF(bj, 0, physics.JointDamp, 0.01)
 	// physics.SetJointDoF(bj, 0, physics.JointStiff, 1) // this makes a big difference
@@ -75,27 +81,18 @@ func main() {
 
 	wr.Init(wl)
 
-	params := physics.GetParams(0)
-	params.Dt = 0.01
-	// params.Gravity.Y = 0
-	params.ContactRelax = 0.1
-	params.Restitution.SetBool(false)
-	fmt.Println(params.ContactRelax)
-
-	wl.Config()
-
 	wr.Update()
 
 	sc.Camera.Pose.Pos = math32.Vec3(0, 40, 3.5)
 	sc.Camera.LookAt(math32.Vec3(0, 5, 0), math32.Vec3(0, 1, 0))
 	sc.SaveCamera("3")
 
-	sc.Camera.Pose.Pos = math32.Vec3(0, 20, 30)
-	sc.Camera.LookAt(math32.Vec3(0, 5, 0), math32.Vec3(0, 1, 0))
-	sc.SaveCamera("2")
-
 	sc.Camera.Pose.Pos = math32.Vec3(-1.33, 2.24, 3.55)
 	sc.Camera.LookAt(math32.Vec3(0, .5, 0), math32.Vec3(0, 1, 0))
+	sc.SaveCamera("2")
+
+	sc.Camera.Pose.Pos = math32.Vec3(0, 20, 30)
+	sc.Camera.LookAt(math32.Vec3(0, 5, 0), math32.Vec3(0, 1, 0))
 	sc.SaveCamera("1")
 	sc.SaveCamera("default")
 

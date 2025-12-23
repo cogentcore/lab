@@ -121,7 +121,7 @@ func (wl *World) StepIntegrateBodies() {
 func (wl *World) StepSolveJoints() {
 	params := GetParams(0)
 	RunStepSolveJoints(int(params.JointsN))
-	RunDeltasFromJoints(int(params.DynamicsN))
+	RunStepBodyJointDeltas(int(params.DynamicsN))
 }
 
 func (wl *World) StepBodyContacts() {
@@ -130,10 +130,10 @@ func (wl *World) StepBodyContacts() {
 		cmax := int(ContactsN.Values[0])
 		if cmax > 0 {
 			RunStepBodyContacts(cmax)
-			RunDeltasFromContacts(int(params.DynamicsN))
+			RunStepBodyContactDeltas(int(params.DynamicsN))
 		}
 	} else {
 		RunStepBodyContacts(int(params.ContactsMax)) // just do max and let the routines bail
-		RunDeltasFromContacts(int(params.DynamicsN))
+		RunStepBodyContactDeltas(int(params.DynamicsN))
 	}
 }

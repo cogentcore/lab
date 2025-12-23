@@ -312,8 +312,10 @@ fn CollisionNarrow(i: u32) { //gosl:kernel
 //////// import: "control.go"
 alias JointControlVars = i32; //enums:enum
 const  JointControlForce: JointControlVars = 0;
-const  JointTargetPos: JointControlVars    = 1;
-const  JointTargetVel: JointControlVars = 2;
+const  JointTargetStiff: JointControlVars = 1;
+const  JointTargetPos: JointControlVars = 2;
+const  JointTargetDamp: JointControlVars = 3;
+const  JointTargetVel: JointControlVars = 4;
 
 //////// import: "dynamics.go"
 alias DynamicVars = i32; //enums:enum
@@ -360,12 +362,12 @@ fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> {
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 43;
 const ContactVarsN: ContactVars = 33;
-const JointControlVarsN: JointControlVars = 3;
+const JointControlVarsN: JointControlVars = 5;
 const DynamicVarsN: DynamicVars = 33;
 const GPUVarsN: GPUVars = 12;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
-const JointDoFVarsN: JointDoFVars = 7;
+const JointDoFVarsN: JointDoFVars = 5;
 const ShapesN: Shapes = 6;
 
 //////// import: "joint.go"
@@ -435,8 +437,6 @@ const  JointAxisY: JointDoFVars = 1;
 const  JointAxisZ: JointDoFVars = 2;
 const  JointLimitLower: JointDoFVars = 3;
 const  JointLimitUpper: JointDoFVars = 4;
-const  JointStiff: JointDoFVars = 5;
-const  JointDamp: JointDoFVars = 6;
 
 //////// import: "params.go"
 struct PhysParams {
@@ -444,14 +444,14 @@ struct PhysParams {
 	Dt: f32,
 	SubSteps: i32,
 	ContactMargin: f32,
-	ContactRelax: f32,
-	ContactWeighting: i32,
-	Restitution: i32,
-	JointLinearRelax: f32,
-	JointAngularRelax: f32,
-	JointLinearComply: f32,
-	JointAngularComply: f32,
-	AngularDamping: f32,
+	ContactRelax: f32, // 0.8 def
+	ContactWeighting: i32, // true
+	Restitution: i32, // false
+	JointLinearRelax: f32, // 0.7 def
+	JointAngularRelax: f32, // 0.4 def
+	JointLinearComply: f32, // 0 def
+	JointAngularComply: f32, // 0 def
+	AngularDamping: f32, // 0 def
 	SoftRelax: f32,
 	MaxGeomIter: i32,
 	ContactsMax: i32,

@@ -98,20 +98,20 @@ func (i *ContactVars) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "ContactVars")
 }
 
-var _JointControlVarsValues = []JointControlVars{0, 1, 2}
+var _JointControlVarsValues = []JointControlVars{0, 1, 2, 3, 4}
 
 // JointControlVarsN is the highest valid value for type JointControlVars, plus one.
 //
 //gosl:start
-const JointControlVarsN JointControlVars = 3
+const JointControlVarsN JointControlVars = 5
 
 //gosl:end
 
-var _JointControlVarsValueMap = map[string]JointControlVars{`JointControlForce`: 0, `JointTargetPos`: 1, `JointTargetVel`: 2}
+var _JointControlVarsValueMap = map[string]JointControlVars{`JointControlForce`: 0, `JointTargetStiff`: 1, `JointTargetPos`: 2, `JointTargetDamp`: 3, `JointTargetVel`: 4}
 
-var _JointControlVarsDescMap = map[JointControlVars]string{0: `Joint force and torque inputs`, 1: ``, 2: ``}
+var _JointControlVarsDescMap = map[JointControlVars]string{0: `Joint force and torque inputs`, 1: `Joint target position settings: the stiffness parameter determines how strongly the target position target is enforced: 0 = not at all; larger = stronger (e.g., 1000 or higher). Set to 0 to allow the joint to be fully flexible.`, 2: ``, 3: `Joint target velocity settings: the damping parameter determines how strongly the target velocity target is enforced: 0 = not at all; larger = stronger (e.g., 1 is reasonable). Set to 0 to allow the joint to be fully flexible.`, 4: ``}
 
-var _JointControlVarsMap = map[JointControlVars]string{0: `JointControlForce`, 1: `JointTargetPos`, 2: `JointTargetVel`}
+var _JointControlVarsMap = map[JointControlVars]string{0: `JointControlForce`, 1: `JointTargetStiff`, 2: `JointTargetPos`, 3: `JointTargetDamp`, 4: `JointTargetVel`}
 
 // String returns the string representation of this JointControlVars value.
 func (i JointControlVars) String() string { return enums.String(i, _JointControlVarsMap) }
@@ -156,7 +156,7 @@ const DynamicVarsN DynamicVars = 33
 
 var _DynamicVarsValueMap = map[string]DynamicVars{`DynBody`: 0, `DynPosX`: 1, `DynPosY`: 2, `DynPosZ`: 3, `DynQuatX`: 4, `DynQuatY`: 5, `DynQuatZ`: 6, `DynQuatW`: 7, `DynVelX`: 8, `DynVelY`: 9, `DynVelZ`: 10, `DynAngVelX`: 11, `DynAngVelY`: 12, `DynAngVelZ`: 13, `DynAccX`: 14, `DynAccY`: 15, `DynAccZ`: 16, `DynAngAccX`: 17, `DynAngAccY`: 18, `DynAngAccZ`: 19, `DynForceX`: 20, `DynForceY`: 21, `DynForceZ`: 22, `DynTorqueX`: 23, `DynTorqueY`: 24, `DynTorqueZ`: 25, `DynDeltaX`: 26, `DynDeltaY`: 27, `DynDeltaZ`: 28, `DynAngDeltaX`: 29, `DynAngDeltaY`: 30, `DynAngDeltaZ`: 31, `DynContactWeight`: 32}
 
-var _DynamicVarsDescMap = map[DynamicVars]string{0: `Index of body in list of bodies.`, 1: `3D position of structural center.`, 2: ``, 3: ``, 4: `Quaternion rotation.`, 5: ``, 6: ``, 7: ``, 8: `Linear velocity.`, 9: ``, 10: ``, 11: `Angular velocity.`, 12: ``, 13: ``, 14: `Linear acceleration.`, 15: ``, 16: ``, 17: `Angular acceleration due to applied torques.`, 18: ``, 19: ``, 20: `Linear force driving linear acceleration (from joints, etc).`, 21: ``, 22: ``, 23: `Torque driving angular acceleration (from joints, etc).`, 24: ``, 25: ``, 26: `Linear deltas.`, 27: ``, 28: ``, 29: `Angular deltas.`, 30: ``, 31: ``, 32: `integrated weight of all contacts`}
+var _DynamicVarsDescMap = map[DynamicVars]string{0: `Index of body in list of bodies.`, 1: `3D position of structural center.`, 2: ``, 3: ``, 4: `Quaternion rotation.`, 5: ``, 6: ``, 7: ``, 8: `Linear velocity.`, 9: ``, 10: ``, 11: `Angular velocity.`, 12: ``, 13: ``, 14: `Linear acceleration.`, 15: ``, 16: ``, 17: `Angular acceleration due to applied torques.`, 18: ``, 19: ``, 20: `Linear force driving linear acceleration (from joints, etc).`, 21: ``, 22: ``, 23: `Torque driving angular acceleration (from joints, etc).`, 24: ``, 25: ``, 26: `Linear deltas. These accumulate over time via StepBodyDeltas.`, 27: ``, 28: ``, 29: `Angular deltas. These accumulate over time via StepBodyDeltas.`, 30: ``, 31: ``, 32: `integrated weight of all contacts`}
 
 var _DynamicVarsMap = map[DynamicVars]string{0: `DynBody`, 1: `DynPosX`, 2: `DynPosY`, 3: `DynPosZ`, 4: `DynQuatX`, 5: `DynQuatY`, 6: `DynQuatZ`, 7: `DynQuatW`, 8: `DynVelX`, 9: `DynVelY`, 10: `DynVelZ`, 11: `DynAngVelX`, 12: `DynAngVelY`, 13: `DynAngVelZ`, 14: `DynAccX`, 15: `DynAccY`, 16: `DynAccZ`, 17: `DynAngAccX`, 18: `DynAngAccY`, 19: `DynAngAccZ`, 20: `DynForceX`, 21: `DynForceY`, 22: `DynForceZ`, 23: `DynTorqueX`, 24: `DynTorqueY`, 25: `DynTorqueZ`, 26: `DynDeltaX`, 27: `DynDeltaY`, 28: `DynDeltaZ`, 29: `DynAngDeltaX`, 30: `DynAngDeltaY`, 31: `DynAngDeltaZ`, 32: `DynContactWeight`}
 
@@ -331,20 +331,20 @@ func (i *JointVars) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "JointVars")
 }
 
-var _JointDoFVarsValues = []JointDoFVars{0, 1, 2, 3, 4, 5, 6}
+var _JointDoFVarsValues = []JointDoFVars{0, 1, 2, 3, 4}
 
 // JointDoFVarsN is the highest valid value for type JointDoFVars, plus one.
 //
 //gosl:start
-const JointDoFVarsN JointDoFVars = 7
+const JointDoFVarsN JointDoFVars = 5
 
 //gosl:end
 
-var _JointDoFVarsValueMap = map[string]JointDoFVars{`JointAxisX`: 0, `JointAxisY`: 1, `JointAxisZ`: 2, `JointLimitLower`: 3, `JointLimitUpper`: 4, `JointStiff`: 5, `JointDamp`: 6}
+var _JointDoFVarsValueMap = map[string]JointDoFVars{`JointAxisX`: 0, `JointAxisY`: 1, `JointAxisZ`: 2, `JointLimitLower`: 3, `JointLimitUpper`: 4}
 
-var _JointDoFVarsDescMap = map[JointDoFVars]string{0: `axis of articulation for the DoF`, 1: ``, 2: ``, 3: `joint limits`, 4: ``, 5: `joint stiffness target (ke)`, 6: `joint damping target (kd)`}
+var _JointDoFVarsDescMap = map[JointDoFVars]string{0: `axis of articulation for the DoF`, 1: ``, 2: ``, 3: `joint limits`, 4: ``}
 
-var _JointDoFVarsMap = map[JointDoFVars]string{0: `JointAxisX`, 1: `JointAxisY`, 2: `JointAxisZ`, 3: `JointLimitLower`, 4: `JointLimitUpper`, 5: `JointStiff`, 6: `JointDamp`}
+var _JointDoFVarsMap = map[JointDoFVars]string{0: `JointAxisX`, 1: `JointAxisY`, 2: `JointAxisZ`, 3: `JointLimitLower`, 4: `JointLimitUpper`}
 
 // String returns the string representation of this JointDoFVars value.
 func (i JointDoFVars) String() string { return enums.String(i, _JointDoFVarsMap) }

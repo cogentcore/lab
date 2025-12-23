@@ -84,40 +84,6 @@ func ForcesFromJoints(i uint32) { //gosl:kernel
 	SetDynamicTorque(di, params.Next, tt)
 }
 
-// DeltasFromJoints gathers deltas, angDeltas from joints per dynamic
-func DeltasFromJoints(i uint32) { //gosl:kernel
-	params := GetParams(0)
-	di := int32(i)
-	if di >= params.DynamicsN {
-		return
-	}
-	np := BodyJoints.Value(int(di), int(0), int(0))
-	nc := BodyJoints.Value(int(di), int(1), int(0))
-
-	td := math32.Vec3(0, 0, 0)
-	ta := math32.Vec3(0, 0, 0)
-	for i := int32(1); i <= np; i++ {
-		ji := BodyJoints.Value(int(di), int(0), int(i))
-		d := JointPDelta(ji)
-		td = td.Add(d)
-		a := JointPAngDelta(ji)
-		ta = ta.Add(a)
-	}
-	for i := int32(1); i <= nc; i++ {
-		ji := BodyJoints.Value(int(di), int(1), int(i))
-		d := JointCDelta(ji)
-		td = td.Add(d)
-		a := JointCAngDelta(ji)
-		ta = ta.Add(a)
-	}
-	v0 := DynamicDelta(di, params.Next)
-	w0 := DynamicAngDelta(di, params.Next)
-	// fmt.Println(params.Next, "joint v:", v0, td)
-
-	SetDynamicDelta(di, params.Next, td.Add(v0))
-	SetDynamicAngDelta(di, params.Next, ta.Add(w0))
-}
-
 // newton: solvers/solver.py: integrate_rigid_body
 
 // StepIntegrateBodies applies forces to update pos and deltas
@@ -175,21 +141,50 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 	SetDynamicAngDelta(di, params.Next, w1)
 }
 
-// newton: solvers/xpbd/kernels.py: apply_body_deltas
-
-// StepBodyDeltas updates Next position with deltas.
-func StepBodyDeltas(i uint32) { //gosl:kernel
+// StepBodyJointDeltas gathers raw deltas, angDeltas from joints per dynamic
+// and computes updated deltas integrated via StepBodyDeltas.
+func StepBodyJointDeltas(i uint32) { //gosl:kernel
 	params := GetParams(0)
 	di := int32(i)
 	if di >= params.DynamicsN {
 		return
 	}
 	bi := DynamicBody(di)
-
 	invMass := Bodies.Value(int(bi), int(BodyInvMass))
 	if invMass == 0 {
 		return // no updates
 	}
+
+	np := BodyJoints.Value(int(di), int(0), int(0))
+	nc := BodyJoints.Value(int(di), int(1), int(0))
+
+	linDel := math32.Vec3(0, 0, 0)
+	angDel := math32.Vec3(0, 0, 0)
+	for i := int32(1); i <= np; i++ {
+		ji := BodyJoints.Value(int(di), int(0), int(i))
+		d := JointPDelta(ji)
+		linDel = linDel.Add(d)
+		a := JointPAngDelta(ji)
+		angDel = angDel.Add(a)
+	}
+	for i := int32(1); i <= nc; i++ {
+		ji := BodyJoints.Value(int(di), int(1), int(i))
+		d := JointCDelta(ji)
+		linDel = linDel.Add(d)
+		a := JointCAngDelta(ji)
+		angDel = angDel.Add(a)
+	}
+	StepBodyDeltas(di, bi, false, 0, linDel, angDel)
+}
+
+// newton: solvers/xpbd/kernels.py: apply_body_deltas
+
+// StepBodyDeltas updates Next position with deltas from joints
+// or contacts (if contacts true).
+func StepBodyDeltas(di, bi int32, contacts bool, cWt float32, linDel, angDel math32.Vector3) {
+	params := GetParams(0)
+
+	invMass := Bodies.Value(int(bi), int(BodyInvMass))
 	inertia := BodyInertia(bi)
 	invInertia := BodyInvInertia(bi)
 
@@ -202,15 +197,15 @@ func StepBodyDeltas(i uint32) { //gosl:kernel
 	w0 := DynamicAngDelta(di, params.Next)
 
 	weight := float32(1.0)
-	if params.ContactWeighting.IsTrue() {
-		cWt := Dynamics.Value(int(di), int(params.Next), int(DynContactWeight))
+	if contacts && params.ContactWeighting.IsTrue() {
 		if cWt > 0 {
 			weight = 1.0 / cWt
 		}
 	}
 
-	dp := v0.MulScalar(invMass * weight)
-	dq := w0.MulScalar(weight)
+	// weighted
+	dp := linDel.MulScalar(invMass * weight)
+	dq := angDel.MulScalar(weight)
 
 	wb := slmath.MulQuatVectorInverse(q0, w0)
 	dwb := invInertia.MulVector3(slmath.MulQuatVectorInverse(q0, dq))

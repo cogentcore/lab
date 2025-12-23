@@ -34,28 +34,28 @@ type PhysParams struct {
 
 	// ContactRelax is rigid contact relaxation constant.
 	// Higher values cause errros
-	ContactRelax float32 `default:"0.1"`
+	ContactRelax float32 `default:"0.8"` // 0.8 def
 
 	// Contact weighting: balances contact forces?
-	ContactWeighting slbool.Bool `default:"true"`
+	ContactWeighting slbool.Bool `default:"true"` // true
 
 	// Restitution takes into account bounciness of objects.
-	Restitution slbool.Bool `default:"true"`
+	Restitution slbool.Bool `default:"true"` // false
 
 	// JointLinearRelax is joint linear relaxation constant.
-	JointLinearRelax float32 `default:"0.7"`
+	JointLinearRelax float32 `default:"0.7"` // 0.7 def
 
 	// JointAngularRelax is joint angular relaxation constant.
-	JointAngularRelax float32 `default:"0.4"`
+	JointAngularRelax float32 `default:"0.4"` // 0.4 def
 
 	// JointLinearComply is joint linear compliance constant.
-	JointLinearComply float32 `default:"0"`
+	JointLinearComply float32 `default:"0"` // 0 def
 
 	// JointAngularComply is joint angular compliance constant.
-	JointAngularComply float32 `default:"0"`
+	JointAngularComply float32 `default:"0"` // 0 def
 
 	// AngularDamping is damping of angular motion.
-	AngularDamping float32 `default:"0"`
+	AngularDamping float32 `default:"0"` // 0 def
 
 	// SoftRelax is soft-body relaxation constant.
 	SoftRelax float32 `default:"0.9"`
@@ -105,7 +105,7 @@ func (pr *PhysParams) Defaults() {
 	pr.Gravity.Set(0, -9.81, 0)
 
 	pr.ContactMargin = 0.1
-	pr.ContactRelax = 0.1
+	pr.ContactRelax = 0.8
 	pr.ContactWeighting.SetBool(true)
 	pr.Restitution.SetBool(false)
 

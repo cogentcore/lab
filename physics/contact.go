@@ -638,23 +638,27 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 	SetContactBAngDelta(ci, angDeltaB)
 }
 
-// DeltasFromContacts gathers deltas, angDeltas from contacts per dynamic.
-func DeltasFromContacts(i uint32) { //gosl:kernel
+// StepBodyContactDeltas gathers raw deltas, angDeltas from contacts per dynamic
+// and computes updated deltas integrated via StepBodyDeltas.
+func StepBodyContactDeltas(i uint32) { //gosl:kernel
 	params := GetParams(0)
 	di := int32(i)
 	if di >= params.DynamicsN {
 		return
 	}
+	bi := DynamicBody(di)
+	invMass := Bodies.Value(int(bi), int(BodyInvMass))
+	if invMass == 0 {
+		return // no updates
+	}
 	cmax := ContactsN.Values[0]
 
-	bi := DynamicBody(di)
-
-	td := math32.Vec3(0, 0, 0)
-	ta := math32.Vec3(0, 0, 0)
+	linDel := math32.Vec3(0, 0, 0)
+	angDel := math32.Vec3(0, 0, 0)
 	tw := float32(0)
 	for ci := range cmax {
 		wt := Contacts.Value(int(ci), int(ContactWeight))
-		if wt == 0 {
+		if wt == 0 { // 0 = no actual; else 1
 			continue
 		}
 		biA := GetContactA(ci)
@@ -662,25 +666,20 @@ func DeltasFromContacts(i uint32) { //gosl:kernel
 		if biA == bi {
 			tw += wt
 			d := ContactADelta(ci)
-			td = td.Add(d)
+			linDel = linDel.Add(d)
 			a := ContactAAngDelta(ci)
-			ta = ta.Add(a)
+			angDel = angDel.Add(a)
 		}
 		if biB == bi {
 			tw += wt
 			d := ContactBDelta(ci)
-			td = td.Add(d)
+			linDel = linDel.Add(d)
 			a := ContactBAngDelta(ci)
-			ta = ta.Add(a)
+			angDel = angDel.Add(a)
 		}
 	}
-	v0 := DynamicDelta(di, params.Next)
-	w0 := DynamicAngDelta(di, params.Next)
-	// fmt.Println(params.Next, "contact:", v0, td)
-
-	SetDynamicDelta(di, params.Next, td.Add(v0))
-	SetDynamicAngDelta(di, params.Next, ta.Add(w0))
 	Dynamics.Set(tw, int(di), int(params.Next), int(DynContactWeight))
+	StepBodyDeltas(di, bi, true, tw, linDel, angDel)
 }
 
 func ContactConstraint(err float32, q0A, q0B math32.Quat, mInvA, mInvB float32, iInvA, iInvB math32.Matrix3, linA, linB, angA, angB math32.Vector3, relaxation, dt float32) float32 {
@@ -752,7 +751,7 @@ func (wl *World) ConfigBodyCollidePairs() {
 			}
 			dib := GetBodyDynamic(b)
 			// now check joints (ConfigJoints must have been called first)
-			if wl.IsChildDynamic(dia, dib) {
+			if wl.IsChildDynamic(dia, dib) || wl.IsChildDynamic(dib, dia) {
 				continue
 			}
 			if np >= nalc {
@@ -774,6 +773,9 @@ func (wl *World) ConfigBodyCollidePairs() {
 		}
 	}
 	params.BodyCollidePairsN = int32(np)
+	if np == 0 {
+		np = 1
+	}
 	pt.SetShapeSizes(np, 2)
 	wl.BodyCollidePairs = pt
 	BodyCollidePairs = pt
@@ -810,8 +812,8 @@ func (wl *World) SetMaxContacts() {
 	// colliding at once. Except.. if it is a very small model.
 	if params.BodyCollidePairsN > 1000 {
 		n = int32(math32.Sqrt(float32(n)))
-		n = max(n, params.DynamicsN)
 	}
+	n = max(n, params.DynamicsN)
 	params.ContactsMax = n
 	wl.BroadContacts.SetShapeSizes(int(n), int(BroadContactVarsN))
 	wl.Contacts.SetShapeSizes(int(n), int(ContactVarsN))

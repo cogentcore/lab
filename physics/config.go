@@ -54,7 +54,7 @@ func (wl *World) ConfigJoints() {
 	if maxi == 0 {
 		maxi = 1
 	}
-	wl.BodyJoints.SetShapeSizes(int(nd), 2, maxi)
+	wl.BodyJoints.SetShapeSizes(int(nd), 2, maxi+1)
 	for di := range nd {
 		np := int32(len(bjp[di]))
 		wl.BodyJoints.Set(np, int(di), int(0), int(0))

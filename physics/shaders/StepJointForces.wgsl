@@ -128,8 +128,10 @@ const BroadContactVarsN = ContactAPointX;
 //////// import: "control.go"
 alias JointControlVars = i32; //enums:enum
 const  JointControlForce: JointControlVars = 0;
-const  JointTargetPos: JointControlVars    = 1;
-const  JointTargetVel: JointControlVars = 2;
+const  JointTargetStiff: JointControlVars = 1;
+const  JointTargetPos: JointControlVars = 2;
+const  JointTargetDamp: JointControlVars = 3;
+const  JointTargetVel: JointControlVars = 4;
 fn JointControl(idx: i32,dof: i32, vr: JointControlVars) -> f32 {
 	return JointControls[Index2D(TensorStrides[100], TensorStrides[101], u32(JointDoFIndex(idx, dof)), u32(vr))];
 }
@@ -176,12 +178,12 @@ fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> { return vec4<f32>(Dynamics[Index
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 43;
 const ContactVarsN: ContactVars = 33;
-const JointControlVarsN: JointControlVars = 3;
+const JointControlVarsN: JointControlVars = 5;
 const DynamicVarsN: DynamicVars = 33;
 const GPUVarsN: GPUVars = 12;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
-const JointDoFVarsN: JointDoFVars = 7;
+const JointDoFVarsN: JointDoFVars = 5;
 const ShapesN: Shapes = 6;
 
 //////// import: "joint.go"
@@ -299,8 +301,6 @@ const  JointAxisY: JointDoFVars = 1;
 const  JointAxisZ: JointDoFVars = 2;
 const  JointLimitLower: JointDoFVars = 3;
 const  JointLimitUpper: JointDoFVars = 4;
-const  JointStiff: JointDoFVars = 5;
-const  JointDamp: JointDoFVars = 6;
 fn JointAxisDoF(didx: i32) -> vec3<f32> {
 	return vec3<f32>(JointDoFs[Index2D(TensorStrides[20], TensorStrides[21], u32(didx), u32(JointAxisX))], JointDoFs[Index2D(TensorStrides[20], TensorStrides[21], u32(didx), u32(JointAxisY))], JointDoFs[Index2D(TensorStrides[20], TensorStrides[21], u32(didx), u32(JointAxisZ))]);
 }
@@ -314,14 +314,14 @@ struct PhysParams {
 	Dt: f32,
 	SubSteps: i32,
 	ContactMargin: f32,
-	ContactRelax: f32,
-	ContactWeighting: i32,
-	Restitution: i32,
-	JointLinearRelax: f32,
-	JointAngularRelax: f32,
-	JointLinearComply: f32,
-	JointAngularComply: f32,
-	AngularDamping: f32,
+	ContactRelax: f32, // 0.8 def
+	ContactWeighting: i32, // true
+	Restitution: i32, // false
+	JointLinearRelax: f32, // 0.7 def
+	JointAngularRelax: f32, // 0.4 def
+	JointLinearComply: f32, // 0 def
+	JointAngularComply: f32, // 0 def
+	AngularDamping: f32, // 0 def
 	SoftRelax: f32,
 	MaxGeomIter: i32,
 	ContactsMax: i32,
@@ -390,6 +390,9 @@ return dp+(xP);
 //////// import: "slmath-vector2.go"
 
 //////// import: "slmath-vector3.go"
+fn Negate3(v: vec3<f32>) -> vec3<f32> {
+	return vec3<f32>(-v.x, -v.y, -v.z);
+}
 fn Cross3(v: vec3<f32>,o: vec3<f32>) -> vec3<f32> {
 	return vec3<f32>(v.y*o.z-v.z*o.y, v.z*o.x-v.x*o.z, v.x*o.y-v.y*o.x);
 }
@@ -405,6 +408,11 @@ fn StepJointForces(i: u32) { //gosl:kernel
 	if (ji >= params.JointsN) {
 		return;
 	}
+	var zv = vec3<f32>(0, 0, 0);
+	SetJointPForce(ji, zv);
+	SetJointCForce(ji, zv);
+	SetJointPTorque(ji, zv);
+	SetJointCTorque(ji, zv);
 	var jt = GetJointType(ji);
 	if (!GetJointEnabled(ji)) {
 		return;
@@ -466,9 +474,9 @@ fn StepJointForces(i: u32) { //gosl:kernel
 		}
 	}
 	}
-	SetJointPForce(ji, f);
+	SetJointPForce(ji, Negate3(f));
 	SetJointCForce(ji, f);
-	SetJointPTorque(ji, t+(Cross3(dP, f)));
+	SetJointPTorque(ji, Negate3(t+(Cross3(dP, f))));
 	SetJointCTorque(ji, t+(Cross3(dC, f)));
 	Params[0] = params;
 }

@@ -15,7 +15,19 @@ type JointControlVars int32 //enums:enum
 const (
 	// Joint force and torque inputs
 	JointControlForce JointControlVars = iota
+
+	// Joint target position settings: the stiffness parameter determines
+	// how strongly the target position target is enforced:
+	// 0 = not at all; larger = stronger (e.g., 1000 or higher).
+	// Set to 0 to allow the joint to be fully flexible.
+	JointTargetStiff
 	JointTargetPos
+
+	// Joint target velocity settings: the damping parameter determines
+	// how strongly the target velocity target is enforced:
+	// 0 = not at all; larger = stronger (e.g., 1 is reasonable).
+	// Set to 0 to allow the joint to be fully flexible.
+	JointTargetDamp
 	JointTargetVel
 )
 
@@ -34,14 +46,22 @@ func SetJointControlForce(idx, dof int32, value float32) {
 	SetJointControl(idx, dof, JointControlForce, value)
 }
 
-// SetJointTargetPos sets the target position for given joint, dof to given value.
-func SetJointTargetPos(idx, dof int32, value float32) {
-	SetJointControl(idx, dof, JointTargetPos, value)
+// SetJointTargetPos sets the target position and stiffness
+// for given joint, DoF to given values. Stiffness determines
+// how strongly the joint constraint is enforced
+// (0 = not at all; 1 = as strongly as possible).
+func SetJointTargetPos(idx, dof int32, pos, stiff float32) {
+	SetJointControl(idx, dof, JointTargetPos, pos)
+	SetJointControl(idx, dof, JointTargetStiff, stiff)
 }
 
-// SetJointTargetVel sets the target velocity for given joint, dof to given value.
-func SetJointTargetVel(idx, dof int32, value float32) {
-	SetJointControl(idx, dof, JointTargetVel, value)
+// SetJointTargetVel sets the target velocity and damping
+// for given joint, DoF to given values. Damping determines
+// how strongly the joint constraint is enforced
+// (0 = not at all; 1 = as strongly as possible).
+func SetJointTargetVel(idx, dof int32, vel, damp float32) {
+	SetJointControl(idx, dof, JointTargetVel, vel)
+	SetJointControl(idx, dof, JointTargetDamp, damp)
 }
 
 //gosl:end

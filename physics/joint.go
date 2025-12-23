@@ -337,12 +337,6 @@ const (
 	// joint limits
 	JointLimitLower
 	JointLimitUpper
-
-	// joint stiffness target (ke)
-	JointStiff
-
-	// joint damping target (kd)
-	JointDamp
 )
 
 func JointAxisDoF(didx int32) math32.Vector3 {
@@ -382,8 +376,17 @@ func (wl *World) JointDefaults(idx int32) {
 func (wl *World) JointDoFDefaults(didx int32) {
 	JointDoFs.Set(-JointLimitUnlimited, int(didx), int(JointLimitLower))
 	JointDoFs.Set(JointLimitUnlimited, int(didx), int(JointLimitUpper))
-	JointDoFs.Set(1.0e4, int(didx), int(JointStiff))
-	JointDoFs.Set(1.0e1, int(didx), int(JointDamp))
+	JointControls.Set(1, int(didx), int(JointTargetDamp))
+}
+
+// NewJointFixed adds a new Fixed joint
+// between parent and child dynamic object indexes.
+// Use -1 for parent to add a world-anchored joint.
+// ppos, cpos are the relative positions from the parent, child.
+// Sets relative rotation matricies to identity by default.
+func (wl *World) NewJointFixed(parent, child int32, ppos, cpos math32.Vector3) int32 {
+	idx := wl.newJoint(Fixed, parent, child, ppos, cpos)
+	return idx
 }
 
 // NewJointPrismatic adds a new Prismatic (slider) joint

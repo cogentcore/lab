@@ -34,6 +34,12 @@ func StepJointForces(i uint32) { //gosl:kernel
 	if ji >= params.JointsN {
 		return
 	}
+	zv := math32.Vec3(0, 0, 0)
+	SetJointPForce(ji, zv)
+	SetJointCForce(ji, zv)
+	SetJointPTorque(ji, zv)
+	SetJointCTorque(ji, zv)
+
 	jt := GetJointType(ji)
 	if !GetJointEnabled(ji) {
 		return
@@ -102,21 +108,28 @@ func StepJointForces(i uint32) { //gosl:kernel
 		}
 	}
 	// These are unique to joint: aggregate into dynamics Next in [ForcesFromJoints]
-	SetJointPForce(ji, f)
+	SetJointPForce(ji, slmath.Negate3(f))
 	SetJointCForce(ji, f)
-	SetJointPTorque(ji, t.Add(slmath.Cross3(dP, f)))
+	SetJointPTorque(ji, slmath.Negate3(t.Add(slmath.Cross3(dP, f))))
 	SetJointCTorque(ji, t.Add(slmath.Cross3(dC, f)))
 }
 
 // newton: solvers/xpbd/kernels.py: solve_body_joints
 
-// StepSolveJoints fixes joints after updating bodies.
+// StepSolveJoints applies target positions to joints.
 func StepSolveJoints(i uint32) { //gosl:kernel
 	params := GetParams(0)
 	ji := int32(i)
 	if ji >= params.JointsN {
 		return
 	}
+
+	zv := math32.Vec3(0, 0, 0)
+	SetJointPDelta(ji, zv)
+	SetJointCDelta(ji, zv)
+	SetJointPAngDelta(ji, zv)
+	SetJointCAngDelta(ji, zv)
+
 	jt := GetJointType(ji)
 	if jt == Free || !GetJointEnabled(ji) {
 		return
@@ -214,8 +227,8 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 			derr := slmath.Dot3(linearP, vP) + slmath.Dot3(linearC, vC) + slmath.Dot3(angularP, wP) + slmath.Dot3(angularC, wC)
 			lambdaIn := float32(0.0)
 			compliance := params.JointLinearComply
-			ke := JointDoF(ji, 0, JointStiff)
-			kd := JointDoF(ji, 0, JointDamp)
+			ke := JointControl(ji, 0, JointTargetStiff)
+			kd := JointControl(ji, 0, JointTargetDamp)
 			if ke > 0.0 {
 				compliance = 1.0 / ke
 			}
@@ -226,7 +239,8 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 			linDeltaC = linDeltaC.Add(linearC.MulScalar(dLambda * params.JointLinearRelax))
 			angDeltaC = angDeltaC.Add(angularC.MulScalar(dLambda * params.JointAngularRelax))
 		}
-	} else if jLinearN > 0 { // compute joint target, stiffness, damping
+	} else { // compute joint target, stiffness, damping
+		// all joints impose linear constraints!
 		var axisLimitsD, axisLimitsA math32.Vector3
 		var axisTargetPosKeD, axisTargetPosKeA math32.Vector3
 		var axisTargetVelKdD, axisTargetVelKdA math32.Vector3
@@ -234,8 +248,8 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 		for dof := range jLinearN {
 			axis := JointAxis(ji, dof)
 			JointAxisLimitsUpdate(dof, axis, JointDoF(ji, dof, JointLimitLower), JointDoF(ji, dof, JointLimitUpper), &axisLimitsD, &axisLimitsA)
-			ke := JointDoF(ji, dof, JointStiff)
-			kd := JointDoF(ji, dof, JointDamp)
+			ke := JointControl(ji, dof, JointTargetStiff)
+			kd := JointControl(ji, dof, JointTargetDamp)
 			targetPos := JointControl(ji, dof, JointTargetPos)
 			targetVel := JointControl(ji, dof, JointTargetVel)
 			if ke > 0.0 { // has position control
@@ -310,7 +324,7 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 			}
 		}
 	}
-	if jAngularN > 0 { // angular
+	if jt == Fixed || jt == Prismatic || jt == Revolute || jt == D6 {
 		qP := xwPQ
 		qC := xwCQ
 		// make quats lie in same hemisphere
@@ -374,8 +388,8 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 			di := dof + jLinearN
 			axis := JointAxis(ji, di)
 			JointAxisLimitsUpdate(dof, axis, JointDoF(ji, di, JointLimitLower), JointDoF(ji, di, JointLimitUpper), &axisLimitsD, &axisLimitsA)
-			ke := JointDoF(ji, di, JointStiff)
-			kd := JointDoF(ji, di, JointDamp)
+			ke := JointControl(ji, di, JointTargetStiff)
+			kd := JointControl(ji, di, JointTargetDamp)
 			targetPos := JointControl(ji, di, JointTargetPos)
 			targetVel := JointControl(ji, di, JointTargetVel)
 			if ke > 0.0 { // has position control
@@ -448,8 +462,8 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 
 	// These are unique to joint: aggregate into dynamics Next in separate step.
 	SetJointPDelta(ji, linDeltaP)
-	SetJointPAngDelta(ji, angDeltaP)
 	SetJointCDelta(ji, linDeltaC)
+	SetJointPAngDelta(ji, angDeltaP)
 	SetJointCAngDelta(ji, angDeltaC)
 }
 

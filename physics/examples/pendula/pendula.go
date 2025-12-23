@@ -8,7 +8,6 @@ package main
 
 import (
 	"fmt"
-	"math/rand/v2"
 
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/core"
@@ -25,53 +24,49 @@ import (
 	"cogentcore.org/lab/physics/world"
 )
 
-// Balls has sim params
-type Balls struct {
+// Pendula has sim params
+type Pendula struct {
 
 	// Number of balls: if collide, then run out of memory above 1000 or so
-	NBalls int
+	NPendula int
 
-	// Collide is whether the balls collide with each other
-	Collide bool
+	ForceOn  int
+	ForceOff int
+	Force    float32
 
-	// Size of each ball (m)
-	Size float32
+	HSize math32.Vector3
 
 	// Mass of each ball (kg)
 	Mass float32
 
-	// size of the box (m)
-	Width  float32
-	Depth  float32
-	Height float32
-	Thick  float32
+	// do the elements collide with each other?
+	Collide bool
 
-	Bounce          float32
-	Friction        float32
-	FrictionTortion float32
-	FrictionRolling float32
+	// Stiff is the strength of positional constraints
+	// when imposing them.
+	Stiff float32
+
+	// Damp is the strength of velocity constraints
+	// when imposing them.
+	Damp float32
 }
 
-func (b *Balls) Defaults() {
-	b.NBalls = 1000
-	b.Collide = true
-	b.Size = 0.2
+func (b *Pendula) Defaults() {
+	b.NPendula = 2
+	b.HSize.Set(0.05, .2, 0.05)
 	b.Mass = 0.1
 
-	b.Width = 50
-	b.Depth = 50
-	b.Height = 20
-	b.Thick = .1
+	b.ForceOn = 100
+	b.ForceOff = 102
+	b.Force = 0
 
-	b.Bounce = 0.5
-	b.Friction = 0
-	b.FrictionTortion = 0
-	b.FrictionRolling = 0
+	b.Damp = 0.5
+	b.Stiff = 1e4
 }
 
 func main() {
 	// gpu.Debug = true
-	b := core.NewBody("test1").SetTitle("Physics Balls")
+	b := core.NewBody("test1").SetTitle("Physics Pendula")
 	split := core.NewSplits(b)
 	fpanel := core.NewFrame(split)
 	fpanel.Styler(func(s *styles.Style) {
@@ -98,8 +93,8 @@ func main() {
 
 	wr := world.NewWorld(sc)
 
-	bs := &Balls{}
-	bs.Defaults()
+	ps := &Pendula{}
+	ps.Defaults()
 
 	wl := physics.NewWorld()
 	wl.GPU = true
@@ -108,49 +103,48 @@ func main() {
 	params.Dt = 0.0001    // leaks balls > 0.0005
 	params.SubSteps = 100 // major speedup by inner-stepping
 	// params.Gravity.Y = 0
-	params.ContactRelax = 0.1         // 0.1 seems most physical -- 0.2 getting a bit more ke?
 	params.Restitution.SetBool(false) // not working!
 	params.ContactMargin = 0.1        // 0.1 better than .01 -- leaks a few
 
-	bpf.SetStruct(bs)
+	bpf.SetStruct(ps)
 	wpf.SetStruct(params)
+
+	var topJoint int32
 
 	config := func() {
 		wr.Reset()
 		wl.Reset()
 		rot := math32.NewQuat(0, 0, 0, 1)
-		wr.NewBody(wl, "floor", physics.Plane, "#D0D0D080", math32.Vec3(0, 0, 0),
-			math32.Vec3(0, 0, 0), rot)
+		_ = rot
+		rleft := math32.NewQuatAxisAngle(math32.Vec3(0, 0, 1), -math32.Pi/2)
+		_ = rleft
+		stY := 2*ps.HSize.Y*float32(ps.NPendula+1) + 1
+		clr := colors.Names[0]
+		pb := wr.NewDynamic(wl, "top", physics.Box, clr, ps.Mass, ps.HSize,
+			math32.Vec3(-ps.HSize.Y, stY, 0), rleft)
+		if !ps.Collide {
+			physics.SetBodyGroup(pb.Index, int32(1))
+		}
 
-		hw := bs.Width / 2
-		hd := bs.Depth / 2
-		hh := bs.Height / 2
-		ht := bs.Thick / 2
-		wr.NewBody(wl, "back-wall", physics.Box, "#0000FFA0", math32.Vec3(hw, hh, ht),
-			math32.Vec3(0, hh, -hd), rot)
-		wr.NewBody(wl, "left-wall", physics.Box, "#FF0000A0", math32.Vec3(ht, hh, hd),
-			math32.Vec3(-hw, hh, 0), rot)
-		wr.NewBody(wl, "right-wall", physics.Box, "#00FF00A0", math32.Vec3(ht, hh, hd),
-			math32.Vec3(hw, hh, 0), rot)
-		wr.NewBody(wl, "front-wall", physics.Box, "#FFFF00A0", math32.Vec3(hw, hh, ht),
-			math32.Vec3(0, hh, hd), rot)
+		ji := wl.NewJointRevolute(-1, pb.DynamicIndex, math32.Vec3(0, stY, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
+		// physics.SetJointTargetPos(ji, 0, math32.Pi/2, 1) // let it swing!
+		physics.SetJointTargetPos(ji, 0, 0, 0) // let it swing!
+		physics.SetJointTargetVel(ji, 0, 0, 0) // let it swing!
 
-		box := bs.Width * .9
-		size := bs.Size
-		for i := range bs.NBalls {
-			ht := rand.Float32() * bs.Height
-			x := rand.Float32()*box - 0.5*box
-			z := rand.Float32()*box - 0.5*box
+		topJoint = ji
+
+		for i := 1; i < ps.NPendula; i++ {
 			clr := colors.Names[i%len(colors.Names)]
-			bl := wr.NewDynamic(wl, "ball", physics.Sphere, clr, bs.Mass, math32.Vec3(size, size, size),
-				math32.Vec3(x, size+ht, z), rot)
-			if !bs.Collide {
-				physics.SetBodyGroup(bl.Index, int32(i+1)) // only collide within same group
+			x := -float32(i)*ps.HSize.Y*2 - ps.HSize.Y
+			cb := wr.NewDynamic(wl, "child", physics.Box, clr, ps.Mass, ps.HSize,
+				math32.Vec3(x, stY, 0), rleft)
+			if !ps.Collide {
+				physics.SetBodyGroup(cb.Index, int32(1+i))
 			}
-			bl.SetBodyBounce(bs.Bounce)
-			bl.SetBodyFriction(bs.Friction)
-			bl.SetBodyFrictionTortion(bs.FrictionTortion)
-			bl.SetBodyFrictionRolling(bs.FrictionRolling)
+			ji = wl.NewJointRevolute(pb.DynamicIndex, cb.DynamicIndex, math32.Vec3(0, -ps.HSize.Y, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
+			physics.SetJointTargetPos(ji, 0, 0, 0) // let it swing!
+			physics.SetJointTargetVel(ji, 0, 0, 0) // let it swing!
+			pb = cb
 		}
 		wr.Init(wl)
 		wr.Update()
@@ -176,8 +170,8 @@ func main() {
 	sc.Camera.LookAt(math32.Vec3(0, .5, 0), math32.Vec3(0, 1, 0))
 	sc.SaveCamera("2")
 
-	sc.Camera.Pose.Pos = math32.Vec3(0, 80, 75)
-	sc.Camera.LookAt(math32.Vec3(0, 5, 0), math32.Vec3(0, 1, 0))
+	sc.Camera.Pose.Pos = math32.Vec3(0, 6, 4.5)
+	sc.Camera.LookAt(math32.Vec3(0, 3, 0), math32.Vec3(0, 1, 0))
 	sc.SaveCamera("1")
 	sc.SaveCamera("default")
 
@@ -191,6 +185,7 @@ func main() {
 				SetTooltip(fmt.Sprintf("Step state %d times", n)).
 				OnClick(func(e events.Event) {
 					if isRunning {
+						fmt.Println("still running...")
 						return
 					}
 					go func() {
@@ -198,6 +193,12 @@ func main() {
 						for range n {
 							wl.Step()
 							cycle++
+							if cycle >= ps.ForceOn && cycle < ps.ForceOff {
+								fmt.Println(cycle, "\tforce on:", ps.Force)
+								physics.SetJointControlForce(topJoint, 0, ps.Force)
+							} else {
+								physics.SetJointControlForce(topJoint, 0, 0)
+							}
 							wr.Update()
 							if se.IsVisible() {
 								se.AsyncLock()
@@ -226,8 +227,11 @@ func main() {
 					SetTooltip("Reset physics state back to starting.").
 					OnClick(func(e events.Event) {
 						if isRunning {
+							fmt.Println("still running...")
 							return
 						}
+						stop = false
+						cycle = 0
 						wl.InitState()
 						wr.Update()
 						updateView()
@@ -254,8 +258,11 @@ func main() {
 					SetTooltip("Rebuild the environment, when you change parameters").
 					OnClick(func(e events.Event) {
 						if isRunning {
+							fmt.Println("still running...")
 							return
 						}
+						stop = false
+						cycle = 0
 						config()
 						updateView()
 					})

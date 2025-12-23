@@ -62,12 +62,12 @@ const (
 	DynTorqueY
 	DynTorqueZ
 
-	// Linear deltas.
+	// Linear deltas. These accumulate over time via StepBodyDeltas.
 	DynDeltaX
 	DynDeltaY
 	DynDeltaZ
 
-	// Angular deltas.
+	// Angular deltas. These accumulate over time via StepBodyDeltas.
 	DynAngDeltaX
 	DynAngDeltaY
 	DynAngDeltaZ
@@ -168,6 +168,8 @@ func SetDynamicAngAcc(idx, cni int32, angAcc math32.Vector3) {
 	Dynamics.Set(angAcc.Y, int(idx), int(cni), int(DynAngAccY))
 	Dynamics.Set(angAcc.Z, int(idx), int(cni), int(DynAngAccZ))
 }
+
+//////// Accumulating deltas
 
 func DynamicDelta(idx, cni int32) math32.Vector3 {
 	return math32.Vec3(Dynamics.Value(int(idx), int(cni), int(DynDeltaX)), Dynamics.Value(int(idx), int(cni), int(DynDeltaY)), Dynamics.Value(int(idx), int(cni), int(DynDeltaZ)))

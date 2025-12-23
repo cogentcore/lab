@@ -133,8 +133,10 @@ const BroadContactVarsN = ContactAPointX;
 //////// import: "control.go"
 alias JointControlVars = i32; //enums:enum
 const  JointControlForce: JointControlVars = 0;
-const  JointTargetPos: JointControlVars    = 1;
-const  JointTargetVel: JointControlVars = 2;
+const  JointTargetStiff: JointControlVars = 1;
+const  JointTargetPos: JointControlVars = 2;
+const  JointTargetDamp: JointControlVars = 3;
+const  JointTargetVel: JointControlVars = 4;
 fn JointControl(idx: i32,dof: i32, vr: JointControlVars) -> f32 {
 	return JointControls[Index2D(TensorStrides[100], TensorStrides[101], u32(JointDoFIndex(idx, dof)), u32(vr))];
 }
@@ -187,12 +189,12 @@ fn DynamicAngDelta(idx: i32,cni: i32) -> vec3<f32> {
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 43;
 const ContactVarsN: ContactVars = 33;
-const JointControlVarsN: JointControlVars = 3;
+const JointControlVarsN: JointControlVars = 5;
 const DynamicVarsN: DynamicVars = 33;
 const GPUVarsN: GPUVars = 12;
 const JointTypesN: JointTypes = 7;
 const JointVarsN: JointVars = 50;
-const JointDoFVarsN: JointDoFVars = 7;
+const JointDoFVarsN: JointDoFVars = 5;
 const ShapesN: Shapes = 6;
 
 //////// import: "joint.go"
@@ -316,8 +318,6 @@ const  JointAxisY: JointDoFVars = 1;
 const  JointAxisZ: JointDoFVars = 2;
 const  JointLimitLower: JointDoFVars = 3;
 const  JointLimitUpper: JointDoFVars = 4;
-const  JointStiff: JointDoFVars = 5;
-const  JointDamp: JointDoFVars = 6;
 fn JointAxisDoF(didx: i32) -> vec3<f32> {
 	return vec3<f32>(JointDoFs[Index2D(TensorStrides[20], TensorStrides[21], u32(didx), u32(JointAxisX))], JointDoFs[Index2D(TensorStrides[20], TensorStrides[21], u32(didx), u32(JointAxisY))], JointDoFs[Index2D(TensorStrides[20], TensorStrides[21], u32(didx), u32(JointAxisZ))]);
 }
@@ -334,14 +334,14 @@ struct PhysParams {
 	Dt: f32,
 	SubSteps: i32,
 	ContactMargin: f32,
-	ContactRelax: f32,
-	ContactWeighting: i32,
-	Restitution: i32,
-	JointLinearRelax: f32,
-	JointAngularRelax: f32,
-	JointLinearComply: f32,
-	JointAngularComply: f32,
-	AngularDamping: f32,
+	ContactRelax: f32, // 0.8 def
+	ContactWeighting: i32, // true
+	Restitution: i32, // false
+	JointLinearRelax: f32, // 0.7 def
+	JointAngularRelax: f32, // 0.4 def
+	JointLinearComply: f32, // 0 def
+	JointAngularComply: f32, // 0 def
+	AngularDamping: f32, // 0 def
 	SoftRelax: f32,
 	MaxGeomIter: i32,
 	ContactsMax: i32,
@@ -528,6 +528,11 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 	if (ji >= params.JointsN) {
 		return;
 	}
+	var zv = vec3<f32>(0, 0, 0);
+	SetJointPDelta(ji, zv);
+	SetJointCDelta(ji, zv);
+	SetJointPAngDelta(ji, zv);
+	SetJointCAngDelta(ji, zv);
 	var jt = GetJointType(ji);
 	if (jt == Free || !GetJointEnabled(ji)) {
 		return;
@@ -613,8 +618,8 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 			var derr = Dot3(linearP, vP) + Dot3(linearC, vC) + Dot3(angularP, wP) + Dot3(angularC, wC);
 			var lambdaIn = f32(0.0);
 			var compliance = params.JointLinearComply;
-			var ke = JointDoF(ji, i32(i32(0)), JointStiff);
-			var kd = JointDoF(ji, i32(i32(0)), JointDamp);
+			var ke = JointControl(ji, i32(i32(0)), JointTargetStiff);
+			var kd = JointControl(ji, i32(i32(0)), JointTargetDamp);
 			if (ke > 0.0) {
 				compliance = 1.0 / ke;
 			}
@@ -625,7 +630,7 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 			linDeltaC = linDeltaC+(linearC*(dLambda * params.JointLinearRelax));
 			angDeltaC = angDeltaC+(angularC*(dLambda * params.JointAngularRelax));
 		}
-	} else if (jLinearN > 0) { // compute joint target, stiffness, damping
+	} else { // compute joint target, stiffness, damping
 		var axisLimitsD: vec3<f32>;
 		var axisLimitsA: vec3<f32>;
 		var axisTargetPosKeD: vec3<f32>;
@@ -635,8 +640,8 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 		for (var dof=0; dof<jLinearN; dof++) {
 			var axis = JointAxis(ji, dof);
 			JointAxisLimitsUpdate(dof, axis, JointDoF(ji, dof, JointLimitLower), JointDoF(ji, dof, JointLimitUpper), &axisLimitsD, &axisLimitsA);
-			var ke = JointDoF(ji, dof, JointStiff);
-			var kd = JointDoF(ji, dof, JointDamp);
+			var ke = JointControl(ji, dof, JointTargetStiff);
+			var kd = JointControl(ji, dof, JointTargetDamp);
 			var targetPos = JointControl(ji, dof, JointTargetPos);
 			var targetVel = JointControl(ji, dof, JointTargetVel);
 			if (ke > 0.0) { // has position control
@@ -698,7 +703,7 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 			}
 		}
 	}
-	if (jAngularN > 0) { // angular
+	if (jt == Fixed || jt == Prismatic || jt == Revolute || jt == D6) {
 		var qP = xwPQ;
 		var qC = xwCQ;
 		if (QuatDot(qP, qC) < 0) {
@@ -751,8 +756,8 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 			var di = dof + jLinearN;
 			var axis = JointAxis(ji, di);
 			JointAxisLimitsUpdate(dof, axis, JointDoF(ji, di, JointLimitLower), JointDoF(ji, di, JointLimitUpper), &axisLimitsD, &axisLimitsA);
-			var ke = JointDoF(ji, di, JointStiff);
-			var kd = JointDoF(ji, di, JointDamp);
+			var ke = JointControl(ji, di, JointTargetStiff);
+			var kd = JointControl(ji, di, JointTargetDamp);
 			var targetPos = JointControl(ji, di, JointTargetPos);
 			var targetVel = JointControl(ji, di, JointTargetVel);
 			if (ke > 0.0) { // has position control
@@ -808,8 +813,8 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 		}
 	}
 	SetJointPDelta(ji, linDeltaP);
-	SetJointPAngDelta(ji, angDeltaP);
 	SetJointCDelta(ji, linDeltaC);
+	SetJointPAngDelta(ji, angDeltaP);
 	SetJointCAngDelta(ji, angDeltaC);
 	Params[0] = params;
 }
