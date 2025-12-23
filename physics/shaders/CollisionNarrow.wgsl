@@ -666,7 +666,7 @@ fn ColBoxPlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<func
 		if (abs(queryB.x) > width || abs(queryB.z) > length) {
 			*norm = Normal3(comA-(pBw));
 		} else {
-			*norm = MulQuatVector((*gdB).WbQ, vec3<f32>(0, 0, 1));
+			*norm = MulQuatVector((*gdB).WbQ, vec3<f32>(0, 1, 0));
 		}
 	}
 	*pA = pAw;

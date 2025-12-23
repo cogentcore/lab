@@ -293,7 +293,7 @@ if (params.Restitution == 1 && bounce > 0 && (mInvA > 0 || mInvB > 0)) {
 		var v1B = DynamicDelta(diB, params.Next);
 		vB = VelocityAtPoint(v0B, w0B, dB)+(grav);
 		vBnew = VelocityAtPoint(v1B, w1B, dB);
-		dBnew = MulQuatVectorInverse(q0B, Cross3(dB, nnorm)); // norm is not - here..
+		dBnew = MulQuatVectorInverse(q0B, Cross3(dB, norm)); // norm is not - here..
 		mInvBr = mInvB + Dot3(dBnew, iInvB*(dBnew));
 	}
 	var mInv = mInvAr + mInvBr;
@@ -308,7 +308,7 @@ if (params.Restitution == 1 && bounce > 0 && (mInvA > 0 || mInvB > 0)) {
 			angDeltaA = angDeltaA+(dwA);
 		}
 		if (diB >= 0) {
-			var dvB = nnorm*(mInvB * dv);
+			var dvB = norm*(mInvB * dv);
 			var dwB = MulQuatVector(q0B, iInvB*(dBnew)*(dv));
 			linDeltaB = linDeltaB+(dvB);
 			angDeltaB = angDeltaB+(dwB);

@@ -285,7 +285,7 @@ func ColBoxPlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, norm 
 			// the COM is outside the plane
 			*norm = slmath.Normal3(comA.Sub(pBw))
 		} else {
-			*norm = slmath.MulQuatVector(gdB.WbQ, math32.Vec3(0, 0, 1))
+			*norm = slmath.MulQuatVector(gdB.WbQ, math32.Vec3(0, 1, 0))
 		}
 	}
 	*pA = pAw

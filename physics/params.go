@@ -29,8 +29,8 @@ type PhysParams struct {
 	SubSteps int32 `default:"10" min:"1"`
 
 	// Contact margin is the extra distance for broadphase collision
-	// around rigid bodies.
-	ContactMargin float32 `defautl:"0.1"`
+	// around rigid bodies. This can make some joints potentially unstable if > 0
+	ContactMargin float32 `default:"0,0.1"`
 
 	// ContactRelax is rigid contact relaxation constant.
 	// Higher values cause errros
@@ -40,7 +40,7 @@ type PhysParams struct {
 	ContactWeighting slbool.Bool `default:"true"` // true
 
 	// Restitution takes into account bounciness of objects.
-	Restitution slbool.Bool `default:"true"` // false
+	Restitution slbool.Bool `default:"false"` // false
 
 	// JointLinearRelax is joint linear relaxation constant.
 	JointLinearRelax float32 `default:"0.7"` // 0.7 def
@@ -104,7 +104,7 @@ func (pr *PhysParams) Defaults() {
 	pr.SubSteps = 10
 	pr.Gravity.Set(0, -9.81, 0)
 
-	pr.ContactMargin = 0.1
+	pr.ContactMargin = 0
 	pr.ContactRelax = 0.8
 	pr.ContactWeighting.SetBool(true)
 	pr.Restitution.SetBool(false)

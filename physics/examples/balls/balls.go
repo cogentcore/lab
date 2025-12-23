@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Cogent Core. All rights reserved.
+// Copyright (c) 2025, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -108,9 +108,9 @@ func main() {
 	params.Dt = 0.0001    // leaks balls > 0.0005
 	params.SubSteps = 100 // major speedup by inner-stepping
 	// params.Gravity.Y = 0
-	params.ContactRelax = 0.1         // 0.1 seems most physical -- 0.2 getting a bit more ke?
+	params.ContactRelax = 0.2         // 0.1 seems most physical -- 0.2 getting a bit more ke?
 	params.Restitution.SetBool(false) // not working!
-	params.ContactMargin = 0.1        // 0.1 better than .01 -- leaks a few
+	params.ContactMargin = 0          // 0.1 better than .01 -- leaks a few
 
 	bpf.SetStruct(bs)
 	wpf.SetStruct(params)

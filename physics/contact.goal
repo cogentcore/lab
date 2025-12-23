@@ -606,7 +606,7 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 			
 			vB = VelocityAtPoint(v0B, w0B, dB).Add(grav)
 			vBnew = VelocityAtPoint(v1B, w1B, dB)
-			dBnew = slmath.MulQuatVectorInverse(q0B, slmath.Cross3(dB, nnorm)) // norm is not - here..
+			dBnew = slmath.MulQuatVectorInverse(q0B, slmath.Cross3(dB, norm)) // norm is not - here..
 			mInvBr = mInvB + slmath.Dot3(dBnew, iInvB.MulVector3(dBnew))
 		}
 		mInv := mInvAr + mInvBr
@@ -614,6 +614,7 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 		relVel1 := slmath.Dot3(nnorm, vAnew.Sub(vBnew))
 		if relVel0 < 0 {
 			dv := -(relVel1 - relVel0 * bounce) / mInv
+			// fmt.Println(dv, relVel1, relVel0, bounce, mInv)
 			if diA >= 0 {
 				dvA := nnorm.MulScalar(mInvA * dv)
 				dwA := slmath.MulQuatVector(q0A, iInvA.MulVector3(dAnew).MulScalar(dv))
@@ -621,7 +622,7 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 				angDeltaA = angDeltaA.Add(dwA)
 			}
 			if diB >= 0 {
-				dvB := nnorm.MulScalar(mInvB * dv)
+				dvB := norm.MulScalar(mInvB * dv)
 				dwB := slmath.MulQuatVector(q0B, iInvB.MulVector3(dBnew).MulScalar(dv))
 				linDeltaB = linDeltaB.Add(dvB)
 				angDeltaB = angDeltaB.Add(dwB)
