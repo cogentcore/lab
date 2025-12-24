@@ -21,7 +21,7 @@ import (
 	"cogentcore.org/core/xyz/xyzcore"
 	_ "cogentcore.org/lab/gosl/slbool/slboolcore" // include to get gui views
 	"cogentcore.org/lab/physics"
-	"cogentcore.org/lab/physics/world"
+	"cogentcore.org/lab/physics/phyxyz"
 )
 
 // Test has sim params
@@ -79,7 +79,7 @@ func main() {
 	dir := xyz.NewDirectional(sc, "dir", 1, xyz.DirectSun)
 	dir.Pos.Set(0, 2, 1)
 
-	wr := world.NewWorld(sc)
+	wr := phyxyz.NewWorld(sc)
 
 	bs := &Test{}
 	bs.Defaults()

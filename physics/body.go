@@ -134,6 +134,9 @@ func GetBodyDynamic(idx int32) int32 {
 	return int32(math.Float32bits(Bodies.Value(int(idx), int(BodyDynamic))))
 }
 
+// SetBodyWorld partitions bodies into different worlds for
+// collision detection: Global bodies = -1 can collide with
+// everything; otherwise only items within the same world collide.
 func SetBodyWorld(idx, w int32) {
 	Bodies.Set(math.Float32frombits(uint32(w)), int(idx), int(BodyWorld))
 }
@@ -142,6 +145,18 @@ func GetBodyWorld(idx int32) int32 {
 	return int32(math.Float32bits(Bodies.Value(int(idx), int(BodyWorld))))
 }
 
+// SetBodyGroup partitions bodies within worlds into different groups
+// for collision detection. 0 does not collide with anything.
+// Negative numbers are global within a world, except they don't
+// collide amongst themselves (all non-dynamic bodies should go
+// in -1 because they don't collide amongst each-other, but do
+// potentially collide with dynamics).
+// Positive numbers only collide amongst themselves, and with
+// negative groups, but not other positive groups. This is for
+// more special-purpose dynamics: in general use 1 for all dynamic
+// bodies. There is an automatic constraint that the two objects
+// within a single joint do not collide with each other, so this
+// does not need to be handled here.
 func SetBodyGroup(idx, w int32) {
 	Bodies.Set(math.Float32frombits(uint32(w)), int(idx), int(BodyGroup))
 }

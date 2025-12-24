@@ -24,7 +24,7 @@ import (
 	"cogentcore.org/core/xyz"
 	"cogentcore.org/core/xyz/xyzcore"
 	"cogentcore.org/lab/physics"
-	"cogentcore.org/lab/physics/world"
+	"cogentcore.org/lab/physics/phyxyz"
 )
 
 var NoGUI bool
@@ -75,7 +75,7 @@ type Env struct { //types:add
 	DepthVals []float32
 
 	// offscreen render camera settings
-	Camera world.Camera
+	Camera phyxyz.Camera
 
 	// color map to use for rendering depth map
 	DepthMap core.ColorMapName
@@ -83,17 +83,17 @@ type Env struct { //types:add
 	// The [physics World].
 	Physics *physics.World
 
-	// Visualization of the physics world.
-	World *world.World
+	// Visualization of the physics phyxyz.
+	World *phyxyz.World
 
 	// 3D visualization of the Scene
 	SceneEditor *xyzcore.SceneEditor
 
 	// emer object
-	Emer *world.View `display:"-"`
+	Emer *phyxyz.View `display:"-"`
 
 	// Right eye of emer
-	EyeR *world.View `display:"-"`
+	EyeR *phyxyz.View `display:"-"`
 
 	// snapshot image
 	EyeRImg *core.Image `display:"-"`
@@ -123,7 +123,7 @@ func (ev *Env) MakeWorld(sc *xyz.Scene) {
 	dir := xyz.NewDirectional(sc, "dir", 1, xyz.DirectSun)
 	dir.Pos.Set(0, 2, 1) // default: 0,1,1 = above and behind us (we are at 0,0,X)
 
-	ev.World = world.NewWorld(sc)
+	ev.World = phyxyz.NewWorld(sc)
 	ev.MakeRoom("room1", ev.Width, ev.Depth, ev.Height, ev.Thick)
 	ev.MakeEmer("emer", ev.EmerHt)
 	ev.World.Init(ev.Physics)
@@ -164,7 +164,7 @@ func (ev *Env) ViewDepth(depth []float32) {
 	cmap := colormap.AvailableMaps[string(ev.DepthMap)]
 	img := image.NewRGBA(image.Rectangle{Max: ev.Camera.Size})
 	ev.DepthImage.SetImage(img)
-	world.DepthImage(img, depth, cmap, &ev.Camera)
+	phyxyz.DepthImage(img, depth, cmap, &ev.Camera)
 	ev.DepthImage.NeedsRender()
 }
 
@@ -331,7 +331,7 @@ func (ev *Env) ConfigGUI() *core.Body {
 	ev.MakeWorld(sc)
 
 	// local toolbar for manipulating emer
-	// etb.Maker(world.MakeStateToolbar(&ev.Emer.Rel, func() {
+	// etb.Maker(phyxyz.MakeStateToolbar(&ev.Emer.Rel, func() {
 	// 	ev.World.Update()
 	// 	ev.SceneEditor.NeedsRender()
 	// }))
@@ -433,7 +433,7 @@ func (ev *Env) NoGUIRun() {
 	if err != nil {
 		panic(err)
 	}
-	sc := world.NoDisplayScene(gp, dev)
+	sc := phyxyz.NoDisplayScene(gp, dev)
 	ev.MakeWorld(sc)
 
 	img := ev.RenderEyeImg()

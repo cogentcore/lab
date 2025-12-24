@@ -14,7 +14,7 @@ import (
 	"cogentcore.org/core/math32"
 	_ "cogentcore.org/lab/gosl/slbool/slboolcore" // include to get gui views
 	"cogentcore.org/lab/physics"
-	"cogentcore.org/lab/physics/world"
+	"cogentcore.org/lab/physics/phyxyz"
 )
 
 // Balls has sim params
@@ -63,7 +63,7 @@ func (b *Balls) Defaults() {
 
 func main() {
 	b := core.NewBody("test1").SetTitle("Physics Balls")
-	ed := world.NewEditor(b)
+	ed := phyxyz.NewEditor(b)
 
 	bs := &Balls{}
 	bs.Defaults()

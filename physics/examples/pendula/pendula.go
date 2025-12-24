@@ -14,7 +14,7 @@ import (
 	"cogentcore.org/core/math32"
 	_ "cogentcore.org/lab/gosl/slbool/slboolcore" // include to get gui views
 	"cogentcore.org/lab/physics"
-	"cogentcore.org/lab/physics/world"
+	"cogentcore.org/lab/physics/phyxyz"
 )
 
 // Pendula has sim params
@@ -73,7 +73,8 @@ func (b *Pendula) Defaults() {
 
 func main() {
 	b := core.NewBody("test1").SetTitle("Physics Pendula")
-	ed := world.NewEditor(b)
+	ed := phyxyz.NewEditor(b)
+	ed.CameraPos = math32.Vec3(0, 3, 3)
 
 	ps := &Pendula{}
 	ps.Defaults()
@@ -92,7 +93,7 @@ func main() {
 			rleft = rot
 		}
 
-		stY := 2*ps.HSize.Y*float32(ps.NPendula+1) + 1
+		stY := 4 * ps.HSize.Y
 		clr := colors.Names[0]
 		x := -ps.HSize.Y
 		y := stY
@@ -100,31 +101,30 @@ func main() {
 			x = 0
 			y -= ps.HSize.Y
 		}
-		pb := wr.NewDynamic(ph, "top", physics.Box, clr, ps.Mass, ps.HSize, math32.Vec3(x, y, 0), rleft)
+		pb := wr.NewDynamic(ph, "top", physics.Capsule, clr, ps.Mass, ps.HSize, math32.Vec3(x, y, 0), rleft)
 		if !ps.Collide {
-			physics.SetBodyGroup(pb.Index, int32(1))
+			pb.SetBodyGroup(1)
 		}
 
 		targ := math32.DegToRad(float32(ps.TargetDegFromVert))
 
-		ji := ph.NewJointRevolute(-1, pb.DynamicIndex, math32.Vec3(0, stY, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
+		ji := pb.NewJointRevolute(ph, nil, math32.Vec3(0, stY, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
 		physics.SetJointTargetPos(ji, 0, targ, ps.Stiff)
 		physics.SetJointTargetVel(ji, 0, 0, ps.Damp)
 
 		for i := 1; i < ps.NPendula; i++ {
-			clr := colors.Names[i%len(colors.Names)]
+			clr := colors.Names[12+i%len(colors.Names)]
 			x := -float32(i)*ps.HSize.Y*2 - ps.HSize.Y
 			y := stY
 			if ps.StartVert {
 				y = stY + x
 				x = 0
 			}
-			cb := wr.NewDynamic(ph, "child", physics.Box, clr, ps.Mass, ps.HSize,
-				math32.Vec3(x, y, 0), rleft)
+			cb := wr.NewDynamic(ph, "child", physics.Capsule, clr, ps.Mass, ps.HSize, math32.Vec3(x, y, 0), rleft)
 			if !ps.Collide {
-				physics.SetBodyGroup(cb.Index, int32(1+i))
+				cb.SetBodyGroup(1 + i)
 			}
-			ji = ph.NewJointRevolute(pb.DynamicIndex, cb.DynamicIndex, math32.Vec3(0, -ps.HSize.Y, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
+			ji = cb.NewJointRevolute(ph, pb, math32.Vec3(0, -ps.HSize.Y, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
 			physics.SetJointTargetPos(ji, 0, targ, ps.Stiff)
 			physics.SetJointTargetVel(ji, 0, 0, ps.Damp)
 			pb = cb

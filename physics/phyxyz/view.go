@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package world
+package phyxyz
 
 import (
 	"strconv"
@@ -53,8 +53,8 @@ type View struct {
 // NewBody adds a new body with given parameters.
 // Returns the View which can then be further customized.
 // Use this for Static elements; NewDynamic for dynamic elements.
-func (wr *World) NewBody(wl *physics.World, name string, shape physics.Shapes, clr string, size, pos math32.Vector3, rot math32.Quat) *View {
-	idx := wl.NewBody(shape, size, pos, rot)
+func (wr *World) NewBody(ph *physics.World, name string, shape physics.Shapes, clr string, size, pos math32.Vector3, rot math32.Quat) *View {
+	idx := ph.NewBody(shape, size, pos, rot)
 	vw := &View{Name: name, Index: idx, DynamicIndex: -1, Shape: shape, Color: clr, Size: size, Pos: pos, Quat: rot}
 	wr.Views = append(wr.Views, vw)
 	return vw
@@ -62,8 +62,8 @@ func (wr *World) NewBody(wl *physics.World, name string, shape physics.Shapes, c
 
 // NewDynamic adds a new dynamic body with given parameters.
 // Returns the View which can then be further customized.
-func (wr *World) NewDynamic(wl *physics.World, name string, shape physics.Shapes, clr string, mass float32, size, pos math32.Vector3, rot math32.Quat) *View {
-	idx, dyIdx := wl.NewDynamic(shape, mass, size, pos, rot)
+func (wr *World) NewDynamic(ph *physics.World, name string, shape physics.Shapes, clr string, mass float32, size, pos math32.Vector3, rot math32.Quat) *View {
+	idx, dyIdx := ph.NewDynamic(shape, mass, size, pos, rot)
 	vw := &View{Name: name, Index: idx, DynamicIndex: dyIdx, Shape: shape, Color: clr, Size: size, Pos: pos, Quat: rot}
 	wr.Views = append(wr.Views, vw)
 	return vw
@@ -218,6 +218,29 @@ func (vw *View) SphereInit(sld *xyz.Solid) {
 	})
 }
 
+// SetBodyWorld partitions bodies into different worlds for
+// collision detection: Global bodies = -1 can collide with
+// everything; otherwise only items within the same world collide.
+func (vw *View) SetBodyWorld(world int) {
+	physics.SetBodyWorld(vw.Index, int32(world))
+}
+
+// SetBodyGroup partitions bodies within worlds into different groups
+// for collision detection. 0 does not collide with anything.
+// Negative numbers are global within a world, except they don't
+// collide amongst themselves (all non-dynamic bodies should go
+// in -1 because they don't collide amongst each-other, but do
+// potentially collide with dynamics).
+// Positive numbers only collide amongst themselves, and with
+// negative groups, but not other positive groups. This is for
+// more special-purpose dynamics: in general use 1 for all dynamic
+// bodies. There is an automatic constraint that the two objects
+// within a single joint do not collide with each other, so this
+// does not need to be handled here.
+func (vw *View) SetBodyGroup(group int) {
+	physics.SetBodyGroup(vw.Index, int32(group))
+}
+
 // SetBodyBounce specifies the COR or coefficient of restitution (0..1),
 // which determines how elastic the collision is,
 // i.e., final velocity / initial velocity.
@@ -238,4 +261,96 @@ func (vw *View) SetBodyFrictionTortion(val float32) {
 // SetBodyFrictionRolling is resistance to rolling motion at contact.
 func (vw *View) SetBodyFrictionRolling(val float32) {
 	physics.Bodies.Set(val, int(vw.Index), int(physics.BodyFrictionRolling))
+}
+
+// NewJointFixed adds a new Fixed joint as a child of given parent.
+// Use nil for parent to add a world-anchored joint.
+// ppos, cpos are the relative positions from the parent, child.
+// These are for the non-rotated body (i.e., body rotation is applied
+// to these positions as well).
+// Sets relative rotation matricies to identity by default.
+func (vw *View) NewJointFixed(ph *physics.World, parent *View, ppos, cpos math32.Vector3) int32 {
+	pidx := int32(-1)
+	if parent != nil {
+		pidx = parent.DynamicIndex
+	}
+	return ph.NewJointFixed(pidx, vw.DynamicIndex, ppos, cpos)
+}
+
+// NewJointPrismatic adds a new Prismatic (slider) joint as a child
+// of given parent. Use nil for parent to add a world-anchored joint.
+// ppos, cpos are the relative positions from the parent, child.
+// These are for the non-rotated body (i.e., body rotation is applied
+// to these positions as well).
+// Sets relative rotation matricies to identity by default.
+// axis is the axis of articulation for the joint.
+// Use [SetJointDoF] to set the remaining DoF parameters.
+func (vw *View) NewJointPrismatic(ph *physics.World, parent *View, ppos, cpos, axis math32.Vector3) int32 {
+	pidx := int32(-1)
+	if parent != nil {
+		pidx = parent.DynamicIndex
+	}
+	return ph.NewJointPrismatic(pidx, vw.DynamicIndex, ppos, cpos, axis)
+}
+
+// NewJointRevolute adds a new Revolute (hinge, axel) joint as a child
+// of given parent. Use nil for parent to add a world-anchored joint.
+// ppos, cpos are the relative positions from the parent, child.
+// These are for the non-rotated body (i.e., body rotation is applied
+// to these positions as well).
+// Sets relative rotation matricies to identity by default.
+// axis is the axis of articulation for the joint.
+// Use [SetJointDoF] to set the remaining DoF parameters.
+func (vw *View) NewJointRevolute(ph *physics.World, parent *View, ppos, cpos, axis math32.Vector3) int32 {
+	pidx := int32(-1)
+	if parent != nil {
+		pidx = parent.DynamicIndex
+	}
+	return ph.NewJointRevolute(pidx, vw.DynamicIndex, ppos, cpos, axis)
+}
+
+// NewJointBall adds a new Ball joint (3 angular DoF) as a child
+// of given parent. Use nil for parent to add a world-anchored joint.
+// ppos, cpos are the relative positions from the parent, child.
+// These are for the non-rotated body (i.e., body rotation is applied
+// to these positions as well).
+// Sets relative rotation matricies to identity by default.
+// Use [SetJointDoF] to set the remaining DoF parameters.
+func (vw *View) NewJointBall(ph *physics.World, parent *View, ppos, cpos math32.Vector3) int32 {
+	pidx := int32(-1)
+	if parent != nil {
+		pidx = parent.DynamicIndex
+	}
+	return ph.NewJointBall(pidx, vw.DynamicIndex, ppos, cpos)
+}
+
+// NewJointDistance adds a new Distance joint (6 DoF),
+// with distance constrained only on the first linear X axis,
+// as a child of given parent. Use nil for parent to add a world-anchored joint.
+// ppos, cpos are the relative positions from the parent, child.
+// These are for the non-rotated body (i.e., body rotation is applied
+// to these positions as well).
+// Sets relative rotation matricies to identity by default.
+// Use [SetJointDoF] to set the remaining DoF parameters.
+func (vw *View) NewJointDistance(ph *physics.World, parent *View, ppos, cpos math32.Vector3, minDist, maxDist float32) int32 {
+	pidx := int32(-1)
+	if parent != nil {
+		pidx = parent.DynamicIndex
+	}
+	return ph.NewJointDistance(pidx, vw.DynamicIndex, ppos, cpos, minDist, maxDist)
+}
+
+// NewJointFree adds a new Free joint as a child
+// of given parent. Use nil for parent to add a world-anchored joint.
+// ppos, cpos are the relative positions from the parent, child.
+// These are for the non-rotated body (i.e., body rotation is applied
+// to these positions as well).
+// Sets relative rotation matricies to identity by default.
+// Use [SetJointDoF] to set the remaining DoF parameters.
+func (vw *View) NewJointFree(ph *physics.World, parent *View, ppos, cpos math32.Vector3) int32 {
+	pidx := int32(-1)
+	if parent != nil {
+		pidx = parent.DynamicIndex
+	}
+	return ph.NewJointFree(pidx, vw.DynamicIndex, ppos, cpos)
 }

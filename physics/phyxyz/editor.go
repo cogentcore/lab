@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package world
+package phyxyz
 
 import (
 	"fmt"
@@ -43,6 +43,11 @@ type Editor struct { //types:add
 	// based on the current timestep (in milliseconds, converted from physics time).
 	ControlFunc func(timeStep int)
 
+	// CameraPos provides the default initial camera position, looking at the origin.
+	// Set this to larger numbers to zoom out, and smaller numbers to zoom in.
+	// Defaults to math32.Vec3(0, 25, 20).
+	CameraPos math32.Vector3
+
 	// IsRunning is true if currently running sim.
 	isRunning bool
 
@@ -75,23 +80,11 @@ func (pe *Editor) CopyFieldsFrom(frm tree.Node) {
 
 func (pe *Editor) Init() {
 	pe.Frame.Init()
+	pe.CameraPos = math32.Vec3(0, 25, 20)
 
 	pe.Styler(func(s *styles.Style) {
 		s.Grow.Set(1, 1)
 		s.Direction = styles.Column
-	})
-
-	// pe.Updater(func() {
-	// 	pe.World.Update()
-	// })
-
-	pe.OnShow(func(e events.Event) {
-		if pe.UserParams != nil {
-			pe.userParamsForm.SetStruct(pe.UserParams)
-		}
-		params := &pe.Physics.Params[0]
-		pe.paramsForm.SetStruct(params)
-		pe.Update()
 	})
 
 	tree.AddChildAt(pe, "tb", func(w *core.Toolbar) {
@@ -112,6 +105,11 @@ func (pe *Editor) Init() {
 			})
 			tree.AddChildAt(w, "params", func(w *core.Form) {
 				pe.paramsForm = w
+				if pe.UserParams != nil {
+					pe.userParamsForm.SetStruct(pe.UserParams)
+				}
+				params := &pe.Physics.Params[0]
+				pe.paramsForm.SetStruct(params)
 			})
 		})
 
@@ -137,8 +135,8 @@ func (pe *Editor) Init() {
 			sc.Camera.LookAt(math32.Vec3(0, .5, 0), math32.Vec3(0, 1, 0))
 			sc.SaveCamera("2")
 
-			sc.Camera.Pose.Pos = math32.Vec3(0, 25, 20)
-			sc.Camera.LookAt(math32.Vec3(0, 3, 0), math32.Vec3(0, 1, 0))
+			sc.Camera.Pose.Pos = pe.CameraPos
+			sc.Camera.LookAt(math32.Vec3(0, 0, 0), math32.Vec3(0, 1, 0))
 			sc.SaveCamera("1")
 			sc.SaveCamera("default")
 

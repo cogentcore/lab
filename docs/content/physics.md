@@ -2,13 +2,93 @@
 bibfile = "ccnlab.json"
 +++
 
-**Physics** is a 3D physics simulator for creating virtual environments, including simulated robots and animals, which can run on the GPU or CPU using [[GoSL]]. See [[doc:physics]] for the API docs. The [xyz](https://cogentcore.org/core/xyz) 3D visualization framework can be used to view the physics using the [[doc:physics/world]] package, including grabbing first-person views from the perspective of a body element within the virtual world. It is actively used for simulating motor learning in [axon](https://github.com/emergent/axon).
+**Physics** is a 3D physics simulator for creating virtual environments, including simulated robots and animals, which can run on the GPU or CPU using [[GoSL]]. See [[doc:physics]] for the API docs. The [xyz](https://cogentcore.org/core/xyz) 3D visualization framework can be used to view the physics using the [[doc:physics/phyxyz]] package, including grabbing first-person views from the perspective of a body element within the virtual world. It is actively used for simulating motor learning in [axon](https://github.com/emergent/axon).
 
-It is based on the design and algorithms from the [newton-physics](https://newton-physics.github.io/newton/guide/overview.html) framework developed by Disney Research, Google DeepMind, and NVIDIA, and implemented in the [NVIDIA Warp](https://nvidia.github.io/warp/basics.html) framework, which is conceptually similar to GoSL.
+Physics is based on the design and algorithms from the [newton-physics](https://newton-physics.github.io/newton/guide/overview.html) framework developed by Disney Research, Google DeepMind, and NVIDIA, and implemented in the [NVIDIA Warp](https://nvidia.github.io/warp/basics.html) framework, which is conceptually similar to GoSL.
 
 The XPBD (eXtended Position-Based Dynamics) solver is exclusively implemented ([[@MacklinMullerChentanez16]] and [[@MullerMacklinChentanezEtAl20]]), which has impressive capabilities as shown in this [YouTube video](https://www.youtube.com/watch?v=CPq87E1vD8k). The key idea is to avoid working in the world of higher-order derivatives (accelerations) and use robust position-based updates, as discussed in [[#Physics solver algorithms]].
 
 Consistent with [xyz](https://cogentcore.org/core/xyz) and [gpu](https://cogentcore.org/core/gpu), the default coordinate system has `Y` as the up axis, and `Z` is the depth axis, consistent with the [USD](https://openusd.org/release/index.html) standard. Newton-physics uses `Z` up by default, which is the robotics standard.
+
+## Examples
+
+### Multi-link pendulum
+
+The following example shows a complete simulation of a multi-link pendulum: 
+
+{id="sim_pendula" title="N Pendula" collapsed="false"}
+```Goal
+ed := phyxyz.NewEditor(b)
+ed.CameraPos = math32.Vec3(0, 3, 3)
+ed.Styler(func(s *styles.Style) {
+    s.Min.Y.Em(40)
+})
+
+params := struct{NPendula int}{}
+
+params.NPendula = 2
+ed.SetUserParams(&params)
+
+ed.SetConfigFunc(func() {
+	ph := ed.Physics
+	wr := ed.World
+    hsz := math32.Vec3(0.05, .2, 0.05)
+    mass := float32(0.1)
+    stY := 4*hsz.Y
+	x := -hsz.Y
+
+    rleft := math32.NewQuatAxisAngle(math32.Vec3(0, 0, 1), -math32.Pi/2)
+    pb := wr.NewDynamic(ph, "top", physics.Capsule, "blue", mass, hsz, math32.Vec3(x, stY, 0), rleft)
+	pb.SetBodyGroup(1) // no collide across groups
+	ji := pb.NewJointRevolute(ph, nil, math32.Vec3(0, stY, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
+	physics.SetJointTargetPos(ji, 0, 0, 0)
+	physics.SetJointTargetVel(ji, 0, 0, 0)
+
+	for i := 1; i < params.NPendula; i++ {
+		clr := colors.Names[i%len(colors.Names)]
+		x = -float32(i)*hsz.Y*2 - hsz.Y
+		cb := wr.NewDynamic(ph, "child", physics.Capsule, clr, mass, hsz, math32.Vec3(x, stY, 0), rleft)
+		cb.SetBodyGroup(1+i)
+		ji = cb.NewJointRevolute(ph, pb, math32.Vec3(0, -hsz.Y, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
+		physics.SetJointTargetPos(ji, 0, 0, 0)
+		physics.SetJointTargetVel(ji, 0, 0, 0)
+		pb = cb
+    }
+})
+```
+
+The [[doc:physics/phyxyz/Editor]] widget provides the [[doc:physics/World]] and [[doc:physics/phyxyz/World]] elements, and the `ConfigFunc` function that configures the physics elements. Stepping through these elements in order:
+
+```go
+    rleft := math32.NewQuatAxisAngle(math32.Vec3(0, 0, 1), -math32.Pi/2)
+    pb := wr.NewDynamic(ph, "top", physics.Box, "blue", mass, hsz, math32.Vec3(x, stY, 0), rleft)
+```
+
+The `math32.Quat` quaternion provides all the rotational math used in `xyz` and `physics`, and the `rleft` instance represents a -90 degree rotation about the Z (depth axis), which is what causes the pendulum to start in a horizontal orientation.
+
+The `NewDynamic` method adds a new dynamic body element with a default visualization (this is an `phyxyz` wrapper around the same method in the physics space). Dynamic elements are updated by the physics engine, while `NewBody` would create a static rigid body element that doesn't move (unless you specifically change its position). The return value is a [[doc:physics/phyxyz/View]] which provides the visualization of a physics body. It uses the `Index` of the body to get updated values. The same visualization can be used for any physics sim with the same order of bodies.
+
+```go
+	pb.SetBodyGroup(1) // no collide across groups
+```
+
+The `Group` property of a body can be set to fine-tune collision logic. Positive-numbered groups only collide with each other and any negative-numbered groups, while negative-numbered groups only collide with positive numbered and not within the group. 0 means it doesn't collide with anything. With the crazy dynamics that emerge with multiple arms, it is good to let them all pass through each other.
+
+```go
+	ji := pb.NewJointRevolute(ph, nil, math32.Vec3(0, stY, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
+	physics.SetJointTargetPos(ji, 0, 0, 0)
+	physics.SetJointTargetVel(ji, 0, 0, 0)
+```
+
+This creates a new joint where the `pb` body is the child and `nil` means the "world" is the parent (i.e., it is just anchored in a fixed world location). We specify the parent and child relative positions for this joint, which is relative to each such body (in the case of a world joint, it is in world coordinates). Note that these are the _unrotated_ positions, so we are specifying the _vertical_ (Y) axis offset here for the child (`pb`) body. This means that the joint is positioned at the top of the body, because all sizes are specified as _half_ sizes (like a radius instead of a diameter).
+
+The next two lines specify the target position and velocity of this joint, along with a _stiffness_ (position) and _damping_ (velocity) parameter, which indicate how _strongly_ to enforce these constraints. The values of 0 here indicate that they are not enforced at all, because we want the links to swing freely. You can try using positive values there and see what happens!
+
+The remaining code just does this same kind of thing for the further links, and should be relatively clear.
+
+### Joint control
+
+
 
 ## GoSL infrastructure
 
@@ -56,7 +136,7 @@ Use `NewJoint*` with _dynamic_ body indexes to create joints (e.g., `NewJointPri
 
 ## World viewer
 
-Typically, bodies are created using the enhanced functions in the [[doc:physics/world]] package, which provides a [[doc:physics/world.View]] wrapper for physics bodies. This wrapper has a default `Color` setting to provide simple color coding of bodies, and supports `NewView` and `InitView` functions that allow arbitrary visualization dynamics to be associated with each body (textures, meshes, dynamic updating etc).
+Typically, bodies are created using the enhanced functions in the [[doc:physics/phyxyz]] package, which provides a [[doc:physics/phyxyz.View]] wrapper for physics bodies. This wrapper has a default `Color` setting to provide simple color coding of bodies, and supports `NewView` and `InitView` functions that allow arbitrary visualization dynamics to be associated with each body (textures, meshes, dynamic updating etc).
 
 ## Physics solver algorithms
 

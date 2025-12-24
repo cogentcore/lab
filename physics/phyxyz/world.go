@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// package world implements visualization of [physics] using [xyz]
+// package phyxyz implements visualization of [physics] using [xyz]
 // 3D graphics.
-package world
+package phyxyz
 
 //go:generate core generate -add-types
 
@@ -46,8 +46,8 @@ func NewWorld(sc *xyz.Scene) *World {
 // and calls Config on [physics.World].
 // Call this _once_ after making all the new Views and Bodies.
 // (will return if already called).
-func (wr *World) Init(wl *physics.World) {
-	wl.Config()
+func (wr *World) Init(ph *physics.World) {
+	ph.Config()
 	if len(wr.Root.Makers.Normal) > 0 {
 		return
 	}

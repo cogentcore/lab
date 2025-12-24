@@ -158,6 +158,22 @@ func (sh Shapes) Inertia(sz math32.Vector3, mass float32) math32.Matrix3 {
 		// v := 4.0 / 3.0 * math32.Pi * r * r * r
 		ia := 2.0 / 5.0 * mass * r * r
 		inertia = math32.Mat3(ia, 0.0, 0.0, 0.0, ia, 0.0, 0.0, 0.0, ia)
+	case Capsule:
+		r := sz.X
+		h := sz.Y * 2
+		vs := (4.0 / 3.0) * math32.Pi * r * r * r
+		vc := math32.Pi * r * r * h
+		ms := mass * (vs / (vs + vc))
+		mc := mass * (vc / (vs + vc))
+		ia := mc*(0.25*r*r+(1.0/12.0)*h*h) + ms*(0.4*r*r+0.375*r*h+0.25*h*h)
+		ib := (mc*0.5 + ms*0.4) * r * r
+		inertia = math32.Mat3(ia, 0.0, 0.0, 0.0, ib, 0.0, 0.0, 0.0, ia)
+	case Cylinder:
+		r := sz.X
+		h := sz.Y * 2
+		ia := (1.0 / 12) * mass * (3*r*r + h*h)
+		ib := (1.0 / 2.0) * mass * r * r
+		inertia = math32.Mat3(ia, 0.0, 0.0, 0.0, ib, 0.0, 0.0, 0.0, ia)
 	case Box:
 		w := 2 * sz.X
 		h := 2 * sz.Y
@@ -166,64 +182,11 @@ func (sh Shapes) Inertia(sz math32.Vector3, mass float32) math32.Matrix3 {
 		ib := 1.0 / 12.0 * mass * (w*w + d*d)
 		ic := 1.0 / 12.0 * mass * (w*w + h*h)
 		inertia = math32.Mat3(ia, 0.0, 0.0, 0.0, ib, 0.0, 0.0, 0.0, ic)
-		// todo: others:
 	}
 	return inertia
 }
 
 /*
-def compute_capsule_inertia(density: float, r: float, h: float) -> tuple[float, wp.vec3, wp.mat33]:
-    """Helper to compute mass and inertia of a solid capsule extending along the z-axis
-
-    Args:
-        density: The capsule density
-        r: The capsule radius
-        h: The capsule height (full height of the interior cylinder)
-
-    Returns:
-
-        A tuple of (mass, inertia) with inertia specified around the origin
-    """
-
-    ms = density * (4.0 / 3.0) * wp.pi * r * r * r
-    mc = density * wp.pi * r * r * h
-
-    # total mass
-    m = ms + mc
-
-    # adapted from ODE
-    Ia = mc * (0.25 * r * r + (1.0 / 12.0) * h * h) + ms * (0.4 * r * r + 0.375 * r * h + 0.25 * h * h)
-    Ib = (mc * 0.5 + ms * 0.4) * r * r
-
-    # For Z-axis orientation: I_xx = I_yy = Ia, I_zz = Ib
-    I = wp.mat33([[Ia, 0.0, 0.0], [0.0, Ia, 0.0], [0.0, 0.0, Ib]])
-
-    return (m, wp.vec3(), I)
-
-
-def compute_cylinder_inertia(density: float, r: float, h: float) -> tuple[float, wp.vec3, wp.mat33]:
-    """Helper to compute mass and inertia of a solid cylinder extending along the z-axis
-
-    Args:
-        density: The cylinder density
-        r: The cylinder radius
-        h: The cylinder height (extent along the z-axis)
-
-    Returns:
-
-        A tuple of (mass, inertia) with inertia specified around the origin
-    """
-
-    m = density * wp.pi * r * r * h
-
-    Ia = 1 / 12 * m * (3 * r * r + h * h)
-    Ib = 1 / 2 * m * r * r
-
-    # For Z-axis orientation: I_xx = I_yy = Ia, I_zz = Ib
-    I = wp.mat33([[Ia, 0.0, 0.0], [0.0, Ia, 0.0], [0.0, 0.0, Ib]])
-
-    return (m, wp.vec3(), I)
-
 
 def compute_cone_inertia(density: float, r: float, h: float) -> tuple[float, wp.vec3, wp.mat33]:
     """Helper to compute mass and inertia of a solid cone extending along the z-axis
@@ -285,28 +248,4 @@ def compute_ellipsoid_inertia(density: float, a: float, b: float, c: float) -> t
 
     return (m, wp.vec3(), I)
 
-*/
-
-/*
-def compute_box_inertia(density: float, w: float, h: float, d: float) -> tuple[float, wp.vec3, wp.mat33]:
-    """Helper to compute mass and inertia of a solid box
-
-    Args:
-        density: The box density
-        w: The box width along the x-axis
-        h: The box height along the y-axis
-        d: The box depth along the z-axis
-
-    Returns:
-
-        A tuple of (mass, inertia) with inertia specified around the origin
-    """
-
-    v = w * h * d
-    m = density * v
-    I = compute_box_inertia_from_mass(m, w, h, d)
-
-    return (m, wp.vec3(), I)
-
-}
 */
