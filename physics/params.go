@@ -5,6 +5,7 @@
 package physics
 
 import (
+	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/gosl/slbool"
 	"cogentcore.org/lab/gosl/slvec"
 )
@@ -117,6 +118,20 @@ func (pr *PhysParams) Defaults() {
 	pr.AngularDamping = 0
 	pr.SoftRelax = 0.9
 	pr.MaxGeomIter = 10
+}
+
+// StepsToMsec returns the given number of individual Step calls
+// converted into milliseconds, suitable for driving controls.
+func (pr *PhysParams) StepsToMsec(steps int) int {
+	msper := 1000 * pr.Dt * float32(pr.SubSteps)
+	return int(math32.Round(float32(steps) * msper))
+}
+
+// StepsToMsec returns the given number of individual Step calls
+// converted into milliseconds, suitable for driving controls,
+// Using the currently-set Params.
+func StepsToMsec(steps int) int {
+	return GetParams(0).StepsToMsec(steps)
 }
 
 //gosl:end

@@ -1,0 +1,262 @@
+// Copyright (c) 2025, Cogent Core. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package world
+
+import (
+	"fmt"
+
+	"cogentcore.org/core/colors"
+	"cogentcore.org/core/core"
+	"cogentcore.org/core/events"
+	"cogentcore.org/core/icons"
+	"cogentcore.org/core/math32"
+	"cogentcore.org/core/styles"
+	"cogentcore.org/core/styles/abilities"
+	"cogentcore.org/core/tree"
+	"cogentcore.org/core/xyz"
+	"cogentcore.org/core/xyz/xyzcore"
+	_ "cogentcore.org/lab/gosl/slbool/slboolcore" // include to get gui views
+	"cogentcore.org/lab/physics"
+)
+
+// Editor provides a basic viewer and parameter controller widget
+// for exploring physics models.
+type Editor struct { //types:add
+	core.Frame
+
+	// Physics has the physics simulation.
+	Physics *physics.World
+
+	// World has the 3D GUI visualization.
+	World *World
+
+	// UserParams is a struct with parameters for configuring the physics sim.
+	// These are displayed in the editor.
+	UserParams any
+
+	// ConfigFunc is the function that configures the world.
+	ConfigFunc func()
+
+	// ControlFunc is the function that sets control parameters,
+	// based on the current timestep (in milliseconds, converted from physics time).
+	ControlFunc func(timeStep int)
+
+	// IsRunning is true if currently running sim.
+	isRunning bool
+
+	// Stop triggers topping of running.
+	stop bool
+
+	// TimeStep is current time step in physics update cycles.
+	TimeStep int
+
+	// Scene is the xyz GUI visualization widget.
+	scene *xyzcore.SceneEditor
+
+	// Toolbar is the top toolbar.
+	toolbar *core.Toolbar
+
+	// Splits is the container for elements.
+	splits *core.Splits
+
+	// UserParamsForm has the user's config parameters.
+	userParamsForm *core.Form
+
+	// ParamsForm has the Physics parameters.
+	paramsForm *core.Form
+}
+
+func (pe *Editor) CopyFieldsFrom(frm tree.Node) {
+	fr := frm.(*Editor)
+	pe.Frame.CopyFieldsFrom(&fr.Frame)
+}
+
+func (pe *Editor) Init() {
+	pe.Frame.Init()
+
+	pe.Styler(func(s *styles.Style) {
+		s.Grow.Set(1, 1)
+		s.Direction = styles.Column
+	})
+
+	// pe.Updater(func() {
+	// 	pe.World.Update()
+	// })
+
+	pe.OnShow(func(e events.Event) {
+		if pe.UserParams != nil {
+			pe.userParamsForm.SetStruct(pe.UserParams)
+		}
+		params := &pe.Physics.Params[0]
+		pe.paramsForm.SetStruct(params)
+		pe.Update()
+	})
+
+	tree.AddChildAt(pe, "tb", func(w *core.Toolbar) {
+		pe.toolbar = w
+		w.Maker(pe.MakeToolbar)
+	})
+
+	tree.AddChildAt(pe, "splits", func(w *core.Splits) {
+		pe.splits = w
+		pe.splits.SetSplits(0.2, 0.8)
+		tree.AddChildAt(w, "forms", func(w *core.Frame) {
+			w.Styler(func(s *styles.Style) {
+				s.Direction = styles.Column
+				s.Grow.Set(1, 1)
+			})
+			tree.AddChildAt(w, "users", func(w *core.Form) {
+				pe.userParamsForm = w
+			})
+			tree.AddChildAt(w, "params", func(w *core.Form) {
+				pe.paramsForm = w
+			})
+		})
+
+		tree.AddChildAt(w, "scene", func(w *xyzcore.SceneEditor) {
+			pe.scene = w
+			w.UpdateWidget()
+			sc := pe.scene.SceneXYZ()
+
+			sc.Background = colors.Scheme.Select.Container
+			xyz.NewAmbient(sc, "ambient", 0.3, xyz.DirectSun)
+
+			dir := xyz.NewDirectional(sc, "dir", 1, xyz.DirectSun)
+			dir.Pos.Set(0, 2, 1)
+
+			pe.World = NewWorld(sc)
+			pe.Physics = physics.NewWorld()
+
+			sc.Camera.Pose.Pos = math32.Vec3(0, 40, 3.5)
+			sc.Camera.LookAt(math32.Vec3(0, 5, 0), math32.Vec3(0, 1, 0))
+			sc.SaveCamera("3")
+
+			sc.Camera.Pose.Pos = math32.Vec3(-1.33, 2.24, 3.55)
+			sc.Camera.LookAt(math32.Vec3(0, .5, 0), math32.Vec3(0, 1, 0))
+			sc.SaveCamera("2")
+
+			sc.Camera.Pose.Pos = math32.Vec3(0, 25, 20)
+			sc.Camera.LookAt(math32.Vec3(0, 3, 0), math32.Vec3(0, 1, 0))
+			sc.SaveCamera("1")
+			sc.SaveCamera("default")
+
+			pe.ConfigWorld()
+		})
+	})
+}
+
+// ConfigWorld configures the physics world.
+func (pe *Editor) ConfigWorld() {
+	if pe.isRunning {
+		core.MessageSnackbar(pe, "Simulation is still running...")
+		return
+	}
+	pe.World.Reset()
+	pe.Physics.Reset()
+	if pe.ConfigFunc != nil {
+		pe.ConfigFunc()
+	}
+	pe.World.Init(pe.Physics)
+	pe.World.Update()
+	pe.stop = false
+	pe.TimeStep = 0
+}
+
+// Restart restarts the simulation, returning true if successful (i.e., not running).
+func (pe *Editor) Restart() bool {
+	if pe.isRunning {
+		core.MessageSnackbar(pe, "Simulation is still running...")
+		return false
+	}
+	pe.stop = false
+	pe.TimeStep = 0
+	pe.World.Init(pe.Physics)
+	pe.World.Update()
+	pe.Update()
+	return true
+}
+
+func (pe *Editor) MakeToolbar(p *tree.Plan) {
+	stepNButton := func(n int) {
+		nm := fmt.Sprintf("Step %d", n)
+		tree.AddAt(p, nm, func(w *core.Button) {
+			w.FirstStyler(func(s *styles.Style) { s.SetEnabled(!pe.isRunning) })
+			w.SetText(nm).SetIcon(icons.PlayArrow).
+				SetTooltip(fmt.Sprintf("Step state %d times", n)).
+				OnClick(func(e events.Event) {
+					if pe.isRunning {
+						fmt.Println("still running...")
+						return
+					}
+					go func() {
+						pe.isRunning = true
+						pe.toolbar.AsyncLock()
+						pe.toolbar.UpdateRender()
+						pe.toolbar.AsyncUnlock()
+						for range n {
+							if pe.ControlFunc != nil {
+								pe.ControlFunc(physics.StepsToMsec(pe.TimeStep))
+							}
+							pe.Physics.Step()
+							pe.TimeStep++
+							pe.World.Update()
+							pe.Scene.AsyncLock()
+							pe.Scene.NeedsRender()
+							pe.Scene.AsyncUnlock()
+							if pe.stop {
+								pe.stop = false
+								break
+							}
+						}
+						pe.isRunning = false
+						pe.AsyncLock()
+						pe.Update()
+						pe.AsyncUnlock()
+					}()
+				})
+			w.Styler(func(s *styles.Style) {
+				s.SetAbilities(true, abilities.RepeatClickable)
+			})
+		})
+	}
+
+	tree.Add(p, func(w *core.Button) {
+		w.SetText("Restart").SetIcon(icons.Reset).
+			SetTooltip("Reset physics state back to starting.").
+			OnClick(func(e events.Event) {
+				pe.Restart()
+			})
+		w.FirstStyler(func(s *styles.Style) { s.SetEnabled(!pe.isRunning) })
+	})
+	tree.Add(p, func(w *core.Button) {
+		w.SetText("Stop").SetIcon(icons.Stop).
+			SetTooltip("Stop running").
+			OnClick(func(e events.Event) {
+				pe.stop = true
+			})
+		w.FirstStyler(func(s *styles.Style) { s.SetEnabled(pe.isRunning) })
+	})
+	tree.Add(p, func(w *core.Separator) {})
+
+	stepNButton(1)
+	stepNButton(10)
+	stepNButton(100)
+	stepNButton(1000)
+	stepNButton(10000)
+
+	tree.Add(p, func(w *core.Separator) {})
+
+	tree.Add(p, func(w *core.Button) {
+		w.SetText("Rebuild").SetIcon(icons.Reset).
+			SetTooltip("Rebuild the environment, when you change parameters").
+			OnClick(func(e events.Event) {
+				if !pe.Restart() {
+					return
+				}
+				pe.ConfigWorld()
+			})
+		w.FirstStyler(func(s *styles.Style) { s.SetEnabled(!pe.isRunning) })
+	})
+}

@@ -11,14 +11,7 @@ import (
 
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/core"
-	"cogentcore.org/core/events"
-	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/styles"
-	"cogentcore.org/core/styles/abilities"
-	"cogentcore.org/core/tree"
-	"cogentcore.org/core/xyz"
-	"cogentcore.org/core/xyz/xyzcore"
 	_ "cogentcore.org/lab/gosl/slbool/slboolcore" // include to get gui views
 	"cogentcore.org/lab/physics"
 	"cogentcore.org/lab/physics/world"
@@ -27,27 +20,41 @@ import (
 // Pendula has sim params
 type Pendula struct {
 
-	// Number of balls: if collide, then run out of memory above 1000 or so
+	// Number of bar elements to add to the pendulum. More interesting the more you add!
 	NPendula int
 
-	ForceOn  int
-	ForceOff int
-	Force    float32
+	// StartVert starts the pendulum in the vertical orientation
+	// (else horizontal, so it has somewhere to go). Need to add force if vertical.
+	StartVert bool
 
+	// TargetDegFromVert is the target number of degrees off of vertical
+	// for each joint. Critical for this to not be 0 for StartVert.
+	TargetDegFromVert int
+
+	// Timestep in msec to add a force
+	ForceOn int
+
+	// Timestep in msec to stop adding force
+	ForceOff int
+
+	// Force to add
+	Force float32
+
+	// half-size of the pendulum elements.
 	HSize math32.Vector3
 
-	// Mass of each ball (kg)
+	// Mass of each bar (kg)
 	Mass float32
 
-	// do the elements collide with each other?
+	// do the elements collide with each other?  this is currently bad!
 	Collide bool
 
-	// Stiff is the strength of positional constraints
-	// when imposing them.
+	// Stiff is the strength of the positional constraint to keep
+	// each bar in a vertical position.
 	Stiff float32
 
-	// Damp is the strength of velocity constraints
-	// when imposing them.
+	// Damp is the strength of the velocity constraint to keep each
+	// bar not moving.
 	Damp float32
 }
 
@@ -60,214 +67,79 @@ func (b *Pendula) Defaults() {
 	b.ForceOff = 102
 	b.Force = 0
 
-	b.Damp = 0.5
-	b.Stiff = 1e4
+	b.Damp = 0
+	b.Stiff = 0
 }
 
 func main() {
-	// gpu.Debug = true
 	b := core.NewBody("test1").SetTitle("Physics Pendula")
-	split := core.NewSplits(b)
-	fpanel := core.NewFrame(split)
-	fpanel.Styler(func(s *styles.Style) {
-		s.Direction = styles.Column
-		s.Grow.Set(1, 1)
-	})
-
-	bpf := core.NewForm(fpanel)
-	wpf := core.NewForm(fpanel)
-
-	tbvw := core.NewTabs(split)
-	scfr, _ := tbvw.NewTab("3D View")
-	split.SetSplits(0.2, 0.8)
-
-	se := xyzcore.NewSceneEditor(scfr)
-	se.UpdateWidget()
-	sc := se.SceneXYZ()
-
-	sc.Background = colors.Scheme.Select.Container
-	xyz.NewAmbient(sc, "ambient", 0.3, xyz.DirectSun)
-
-	dir := xyz.NewDirectional(sc, "dir", 1, xyz.DirectSun)
-	dir.Pos.Set(0, 2, 1)
-
-	wr := world.NewWorld(sc)
+	ed := world.NewEditor(b)
 
 	ps := &Pendula{}
 	ps.Defaults()
 
-	wl := physics.NewWorld()
-	wl.GPU = true
+	ed.SetUserParams(ps)
 
-	params := physics.GetParams(0)
-	params.Dt = 0.0001    // leaks balls > 0.0005
-	params.SubSteps = 100 // major speedup by inner-stepping
-	// params.Gravity.Y = 0
-	params.Restitution.SetBool(false) // not working!
-	params.ContactMargin = 0.1        // 0.1 better than .01 -- leaks a few
+	var botJoint int32
 
-	bpf.SetStruct(ps)
-	wpf.SetStruct(params)
-
-	var topJoint int32
-
-	config := func() {
-		wr.Reset()
-		wl.Reset()
+	ed.SetConfigFunc(func() {
+		ph := ed.Physics
+		wr := ed.World
 		rot := math32.NewQuat(0, 0, 0, 1)
-		_ = rot
 		rleft := math32.NewQuatAxisAngle(math32.Vec3(0, 0, 1), -math32.Pi/2)
-		_ = rleft
+
+		if ps.StartVert {
+			rleft = rot
+		}
+
 		stY := 2*ps.HSize.Y*float32(ps.NPendula+1) + 1
 		clr := colors.Names[0]
-		pb := wr.NewDynamic(wl, "top", physics.Box, clr, ps.Mass, ps.HSize,
-			math32.Vec3(-ps.HSize.Y, stY, 0), rleft)
+		x := -ps.HSize.Y
+		y := stY
+		if ps.StartVert {
+			x = 0
+			y -= ps.HSize.Y
+		}
+		pb := wr.NewDynamic(ph, "top", physics.Box, clr, ps.Mass, ps.HSize, math32.Vec3(x, y, 0), rleft)
 		if !ps.Collide {
 			physics.SetBodyGroup(pb.Index, int32(1))
 		}
 
-		ji := wl.NewJointRevolute(-1, pb.DynamicIndex, math32.Vec3(0, stY, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
-		// physics.SetJointTargetPos(ji, 0, math32.Pi/2, 1) // let it swing!
-		physics.SetJointTargetPos(ji, 0, 0, 0) // let it swing!
-		physics.SetJointTargetVel(ji, 0, 0, 0) // let it swing!
+		targ := math32.DegToRad(float32(ps.TargetDegFromVert))
 
-		topJoint = ji
+		ji := ph.NewJointRevolute(-1, pb.DynamicIndex, math32.Vec3(0, stY, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
+		physics.SetJointTargetPos(ji, 0, targ, ps.Stiff)
+		physics.SetJointTargetVel(ji, 0, 0, ps.Damp)
 
 		for i := 1; i < ps.NPendula; i++ {
 			clr := colors.Names[i%len(colors.Names)]
 			x := -float32(i)*ps.HSize.Y*2 - ps.HSize.Y
-			cb := wr.NewDynamic(wl, "child", physics.Box, clr, ps.Mass, ps.HSize,
-				math32.Vec3(x, stY, 0), rleft)
+			y := stY
+			if ps.StartVert {
+				y = stY + x
+				x = 0
+			}
+			cb := wr.NewDynamic(ph, "child", physics.Box, clr, ps.Mass, ps.HSize,
+				math32.Vec3(x, y, 0), rleft)
 			if !ps.Collide {
 				physics.SetBodyGroup(cb.Index, int32(1+i))
 			}
-			ji = wl.NewJointRevolute(pb.DynamicIndex, cb.DynamicIndex, math32.Vec3(0, -ps.HSize.Y, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
-			physics.SetJointTargetPos(ji, 0, 0, 0) // let it swing!
-			physics.SetJointTargetVel(ji, 0, 0, 0) // let it swing!
+			ji = ph.NewJointRevolute(pb.DynamicIndex, cb.DynamicIndex, math32.Vec3(0, -ps.HSize.Y, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
+			physics.SetJointTargetPos(ji, 0, targ, ps.Stiff)
+			physics.SetJointTargetVel(ji, 0, 0, ps.Damp)
 			pb = cb
+			botJoint = ji
 		}
-		wr.Init(wl)
-		wr.Update()
-	}
-
-	config()
-
-	cycle := 0
-
-	updateView := func() {
-		bpf.Update()
-		wpf.Update()
-		if se.IsVisible() {
-			se.NeedsRender()
-		}
-	}
-
-	sc.Camera.Pose.Pos = math32.Vec3(0, 40, 3.5)
-	sc.Camera.LookAt(math32.Vec3(0, 5, 0), math32.Vec3(0, 1, 0))
-	sc.SaveCamera("3")
-
-	sc.Camera.Pose.Pos = math32.Vec3(-1.33, 2.24, 3.55)
-	sc.Camera.LookAt(math32.Vec3(0, .5, 0), math32.Vec3(0, 1, 0))
-	sc.SaveCamera("2")
-
-	sc.Camera.Pose.Pos = math32.Vec3(0, 6, 4.5)
-	sc.Camera.LookAt(math32.Vec3(0, 3, 0), math32.Vec3(0, 1, 0))
-	sc.SaveCamera("1")
-	sc.SaveCamera("default")
-
-	isRunning := false
-	stop := false
-
-	stepNButton := func(p *tree.Plan, n int) {
-		nm := fmt.Sprintf("Step %d", n)
-		tree.AddAt(p, nm, func(w *core.Button) {
-			w.SetText(nm).SetIcon(icons.PlayArrow).
-				SetTooltip(fmt.Sprintf("Step state %d times", n)).
-				OnClick(func(e events.Event) {
-					if isRunning {
-						fmt.Println("still running...")
-						return
-					}
-					go func() {
-						isRunning = true
-						for range n {
-							wl.Step()
-							cycle++
-							if cycle >= ps.ForceOn && cycle < ps.ForceOff {
-								fmt.Println(cycle, "\tforce on:", ps.Force)
-								physics.SetJointControlForce(topJoint, 0, ps.Force)
-							} else {
-								physics.SetJointControlForce(topJoint, 0, 0)
-							}
-							wr.Update()
-							if se.IsVisible() {
-								se.AsyncLock()
-								se.NeedsRender()
-								se.AsyncUnlock()
-								// time.Sleep(1 * time.Nanosecond)
-							}
-							if stop {
-								stop = false
-								break
-							}
-						}
-						isRunning = false
-					}()
-				})
-			w.Styler(func(s *styles.Style) {
-				s.SetAbilities(true, abilities.RepeatClickable)
-			})
-		})
-	}
-
-	b.AddTopBar(func(bar *core.Frame) {
-		core.NewToolbar(bar).Maker(func(p *tree.Plan) {
-			tree.Add(p, func(w *core.Button) {
-				w.SetText("Init").SetIcon(icons.Reset).
-					SetTooltip("Reset physics state back to starting.").
-					OnClick(func(e events.Event) {
-						if isRunning {
-							fmt.Println("still running...")
-							return
-						}
-						stop = false
-						cycle = 0
-						wl.InitState()
-						wr.Update()
-						updateView()
-					})
-			})
-			tree.Add(p, func(w *core.Button) {
-				w.SetText("Stop").SetIcon(icons.Stop).
-					SetTooltip("Stop running").
-					OnClick(func(e events.Event) {
-						stop = true
-					})
-			})
-			tree.Add(p, func(w *core.Separator) {})
-
-			stepNButton(p, 1)
-			stepNButton(p, 10)
-			stepNButton(p, 100)
-			stepNButton(p, 1000)
-			stepNButton(p, 10000)
-			tree.Add(p, func(w *core.Separator) {})
-
-			tree.Add(p, func(w *core.Button) {
-				w.SetText("Rebuild").SetIcon(icons.Reset).
-					SetTooltip("Rebuild the environment, when you change parameters").
-					OnClick(func(e events.Event) {
-						if isRunning {
-							fmt.Println("still running...")
-							return
-						}
-						stop = false
-						cycle = 0
-						config()
-						updateView()
-					})
-			})
-		})
 	})
+
+	ed.SetControlFunc(func(timeStep int) {
+		if timeStep >= ps.ForceOn && timeStep < ps.ForceOff {
+			fmt.Println(timeStep, "\tforce on:", ps.Force)
+			physics.SetJointControlForce(botJoint, 0, ps.Force)
+		} else {
+			physics.SetJointControlForce(botJoint, 0, 0)
+		}
+	})
+
 	b.RunMainWindow()
 }
