@@ -29,6 +29,7 @@ const (
 	// BodyWorld partitions bodies into different worlds for
 	// collision detection: Global bodies = -1 can collide with
 	// everything; otherwise only items within the same world collide.
+	// NewBody uses [World.CurrentWorld] to initialize.
 	BodyWorld
 
 	// BodyGroup partitions bodies within worlds into different groups
@@ -44,6 +45,14 @@ const (
 	// within a single joint do not collide with each other, so this
 	// does not need to be handled here.
 	BodyGroup
+
+	// BodyObject identifies bodies that all belong to the same overall
+	// physical object (e.g., a robot or simulated animal). It has no
+	// implications for collision or physics simulation. Instead,
+	// it is used for external manipulation on entire objects at a time,
+	// e.g. via PositionObject.  When using world replicas, the object
+	// indexes are copied, so objects are indexed by world and object id.
+	BodyObject
 
 	// BodyHSize is the size of the object (values depend on shape type).
 	BodyHSizeX
@@ -163,6 +172,17 @@ func SetBodyGroup(idx, w int32) {
 
 func GetBodyGroup(idx int32) int32 {
 	return int32(math.Float32bits(Bodies.Value(int(idx), int(BodyGroup))))
+}
+
+// SetBodyObject sets the [BodyObject] index for given body.
+// Object indexes are used for external manipulation of multiple
+// bodies in a coherent manner.
+func SetBodyObject(idx, w int32) {
+	Bodies.Set(math.Float32frombits(uint32(w)), int(idx), int(BodyObject))
+}
+
+func GetBodyObject(idx int32) int32 {
+	return int32(math.Float32bits(Bodies.Value(int(idx), int(BodyObject))))
 }
 
 func BodyHSize(idx int32) math32.Vector3 {

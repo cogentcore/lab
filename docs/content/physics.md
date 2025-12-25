@@ -98,13 +98,17 @@ As discussed in [[GoSL]], to run equivalent code on the GPU and the CPU (i.e., s
 
 The basic element is a _body_, which is a rigid physical entity with a specific shape, mass, position and orientation. Call [[doc:physics.World]] `NewBody` to create a new one. There are (currently) only standard geometric [[#shapes]] available (arbitrary triangular meshes and soft bodies could be supported as needed in the future, based on existing newton-physics code).
 
-By itself, a body is static. To make a body that is subject to forces and can be connected to other bodies via [[#joints]], use `NewDynamic`, which creates and additional set of data to implement the dynamic equations of the physics solver. The initial position and orientation of the body can be restored via the `InitState` method.
+By itself, a body is static. To make a body that is subject to forces and can be connected to other bodies via [[#joints]], use `NewDynamic`, which creates an additional set of data to implement the dynamic equations of the physics solver. The initial position and orientation of a dynamic body can be restored via the `InitState` method.
 
 To optimize the collision detection computation, it is important to organize bodies into `World` and `Group` elements:
-* World: Use different world indexes for separate collections of bodies that only interact amongst themselves, and global bodies that have a -1 index. By default everything goes in world = 0.
-* Group: typically just use -1 for all static bodies (non-dynamic), which can interact with any dynamic body, but not with any other static body. And use 1 for all dynamic bodies, which can interact with each-other and static bodies.
 
-There is a special constraint where the parent and child on a same joint do not collide, as this often happens and would lead to weird behavior.
+* World: Use different world indexes for separate collections of bodies that only interact amongst themselves, and global bodies that have a -1 index. By default everything goes in world = 0. See [[#parallel worlds]] for more info.
+
+* Group: by default this is set to -1 for all static bodies (non-dynamic), which can interact with any dynamic body, but not with any other static body, and to 1 for all dynamic bodies, which can interact with each other and static bodies. To make dynamic bodies that don't interact, assign them increasing group numbers.
+
+There is also a special constraint where the parent and child on a same joint do not collide, as this often happens and would lead to weird behavior.
+
+There is also an `Object` index for each body, that is used for external manipulation and control purposes, but does not affect collision or physics.
 
 ## Shapes
 
@@ -134,9 +138,27 @@ The supported [[doc:physics.JointTypes]] include the following (DoF = degrees-of
 
 Use `NewJoint*` with _dynamic_ body indexes to create joints (e.g., `NewJointPrismatic` etc). Each joint can be positioned with a relative offset and orientation relative to the _parent_ and _child_ elements. The parent index can be set to -1 to anchor a child body in an arbitrary and fixed position within the overall world.
 
-## World viewer
+## Phyxyz viewer
 
 Typically, bodies are created using the enhanced functions in the [[doc:physics/phyxyz]] package, which provides a [[doc:physics/phyxyz.View]] wrapper for physics bodies. This wrapper has a default `Color` setting to provide simple color coding of bodies, and supports `NewView` and `InitView` functions that allow arbitrary visualization dynamics to be associated with each body (textures, meshes, dynamic updating etc).
+
+## Parallel worlds
+
+The compute efficiency of the GPU goes up with the more elements that are processed in parallel, amortizing the memory transfer overhead and leveraging the parallel cores. Furthermore, in AI applications for example, models can be trained in parallel on different instances of the same environment, with each instance having its own random initial starting point and trajectory over time. All of these instances can be simulated in one `physics.World` by using the `World` index on the bodies, with the shared static environment living in World -1, and the elements of each instance (e.g., a simulated robot) living in its own separate world.
+
+The `NewBody` and `NewDynamic` methods automatically use the `World.CurrentWorld` index by default, or you can directly use `SetBodyWorld` to assign a specific world index.
+
+The `ReplicateWorld` method creates N replicas of an existing world, including all associated joints. This can only be called once, as it records the start and N-per-world of each such replicated world, which allows the `phyxyz` viewer to efficiently view a specific world. Thus, under this scenario, you create world 0 and then replicate it, then modify the initial positions and orientations accordingly, using `PositionObject`, as described next. The object numbers are also replicated so uniquely indexing a specific object instance requires specifying the world and object indexes.
+
+The phyxyz viewer can display a specific world, or all worlds.
+
+## Manipulating objects
+
+TODO.
+
+## Sensors
+
+TODO.
 
 ## Physics solver algorithms
 

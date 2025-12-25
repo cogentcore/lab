@@ -21,6 +21,26 @@ type World struct {
 	// Params are global parameters.
 	Params []PhysParams
 
+	// CurrentWorld is the [BodyWorld] value to use when creating new bodies.
+	// Set to -1 to create global elements that interact with everything,
+	// while 0 and positive numbers only interact amongst themselves.
+	CurrentWorld int
+
+	// WorldReplicasStart is the starting body index for replicated world bodies,
+	// which is needed for viewers to efficiently select a specific world to view.
+	// This is the start of the World=0 first instance.
+	WorldReplicasStart int32
+
+	// WorldReplicasN is the number of body elements within each set of
+	// replicated world bodies, which is needed for viewers to efficiently select
+	// a specific world to view.
+	WorldReplicasN int32
+
+	// CurrentObject is the [BodyObject] value to use when creating new bodies.
+	// Generally just increment when starting a new object. When using world replicas,
+	// the object indexes are copied, so objects are indexed by world and object id.
+	CurrentObject int
+
 	// Bodies are the rigid body elements (dynamic and static),
 	// specifying the constant, non-dynamic properties,
 	// which is initial state for dynamics.
@@ -76,68 +96,70 @@ type World struct {
 }
 
 func NewWorld() *World {
-	wl := &World{}
-	wl.Init()
-	return wl
+	ph := &World{}
+	ph.Init()
+	return ph
 }
 
 // Init makes initial vars. Called in NewWorld.
 // Must call Config once configured.
-func (wl *World) Init() {
-	wl.GPU = true
-	wl.Params = make([]PhysParams, 1)
-	wl.Params[0].Defaults()
-	wl.Reset()
+func (ph *World) Init() {
+	ph.GPU = true
+	ph.Params = make([]PhysParams, 1)
+	ph.Params[0].Defaults()
+	ph.Reset()
 }
 
 // Reset resets all data to empty: starting over.
-func (wl *World) Reset() {
-	wl.Bodies = tensor.NewFloat32(0, int(BodyVarsN))
-	wl.Joints = tensor.NewFloat32(0, int(JointVarsN))
-	wl.JointDoFs = tensor.NewFloat32(0, int(JointDoFVarsN))
-	wl.BodyJoints = tensor.NewInt32(0, 2, 2)
-	wl.BodyCollidePairs = tensor.NewInt32(0, 2)
-	wl.Dynamics = tensor.NewFloat32(0, 2, int(DynamicVarsN))
-	wl.BroadContactsN = tensor.NewInt32(1)
-	wl.BroadContacts = tensor.NewFloat32(0, int(ContactVarsN))
-	wl.ContactsN = tensor.NewInt32(1)
-	wl.Contacts = tensor.NewFloat32(0, int(ContactVarsN))
-	wl.JointControls = tensor.NewFloat32(0, int(JointControlVarsN))
-	wl.SetAsCurrentVars()
+func (ph *World) Reset() {
+	ph.Bodies = tensor.NewFloat32(0, int(BodyVarsN))
+	ph.Joints = tensor.NewFloat32(0, int(JointVarsN))
+	ph.JointDoFs = tensor.NewFloat32(0, int(JointDoFVarsN))
+	ph.BodyJoints = tensor.NewInt32(0, 2, 2)
+	ph.BodyCollidePairs = tensor.NewInt32(0, 2)
+	ph.Dynamics = tensor.NewFloat32(0, 2, int(DynamicVarsN))
+	ph.BroadContactsN = tensor.NewInt32(1)
+	ph.BroadContacts = tensor.NewFloat32(0, int(ContactVarsN))
+	ph.ContactsN = tensor.NewInt32(1)
+	ph.Contacts = tensor.NewFloat32(0, int(ContactVarsN))
+	ph.JointControls = tensor.NewFloat32(0, int(JointControlVarsN))
+	ph.SetAsCurrentVars()
 }
 
 // NewBody adds a new body with given parameters. Returns the index.
 // Use this for Static elements; NewDynamic for dynamic elements.
-func (wl *World) NewBody(shape Shapes, size, pos math32.Vector3, rot math32.Quat) int32 {
-	sizes := wl.Bodies.ShapeSizes()
+func (ph *World) NewBody(shape Shapes, size, pos math32.Vector3, rot math32.Quat) int32 {
+	sizes := ph.Bodies.ShapeSizes()
 	idx := int32(sizes[0])
-	wl.Bodies.SetShapeSizes(int(idx+1), int(BodyVarsN))
-	wl.Params[0].BodiesN = idx + 1
+	ph.Bodies.SetShapeSizes(int(idx+1), int(BodyVarsN))
+	ph.Params[0].BodiesN = idx + 1
 	SetBodyShape(idx, shape)
 	SetBodyDynamic(idx, -1)
 	SetBodyHSize(idx, size)
 	SetBodyPos(idx, pos)
 	SetBodyQuat(idx, rot)
-	SetBodyGroup(idx, -1)           // assume static
-	wl.SetMass(idx, shape, size, 0) // assume static
+	SetBodyGroup(idx, -1) // assume static
+	SetBodyWorld(idx, int32(ph.CurrentWorld))
+	SetBodyObject(idx, int32(ph.CurrentObject))
+	ph.SetMass(idx, shape, size, 0) // assume static
 	return idx
 }
 
 // NewDynamic adds a new dynamic body with given parameters. Returns the index.
 // Shape cannot be [Plane].
-func (wl *World) NewDynamic(shape Shapes, mass float32, size, pos math32.Vector3, rot math32.Quat) (bodyIdx, dynIdx int32) {
+func (ph *World) NewDynamic(shape Shapes, mass float32, size, pos math32.Vector3, rot math32.Quat) (bodyIdx, dynIdx int32) {
 	if shape == Plane {
 		panic("physics.NewDynamic: shape cannot be Plane")
 	}
-	bodyIdx = wl.NewBody(shape, size, pos, rot)
-	sizes := wl.Dynamics.ShapeSizes()
+	bodyIdx = ph.NewBody(shape, size, pos, rot)
+	sizes := ph.Dynamics.ShapeSizes()
 	dynIdx = int32(sizes[0])
-	wl.Dynamics.SetShapeSizes(int(dynIdx+1), 2, int(DynamicVarsN))
-	wl.Params[0].DynamicsN = dynIdx + 1
+	ph.Dynamics.SetShapeSizes(int(dynIdx+1), 2, int(DynamicVarsN))
+	ph.Params[0].DynamicsN = dynIdx + 1
 	SetDynamicBody(dynIdx, bodyIdx)
 	SetBodyDynamic(bodyIdx, dynIdx)
 	SetBodyGroup(bodyIdx, 1) // dynamic
-	wl.SetMass(bodyIdx, shape, size, mass)
+	ph.SetMass(bodyIdx, shape, size, mass)
 	return
 }
 
@@ -145,42 +167,42 @@ func (wl *World) NewDynamic(shape Shapes, mass float32, size, pos math32.Vector3
 // processed in the code (on the GPU). If this was not the setter of
 // the current variables, then the parameter variables are copied up
 // to the GPU.
-func (wl *World) SetAsCurrent() {
-	isCur := (Bodies == wl.Bodies)
-	wl.SetAsCurrentVars()
+func (ph *World) SetAsCurrent() {
+	isCur := (Bodies == ph.Bodies)
+	ph.SetAsCurrentVars()
 	if GPUInitialized && !isCur {
-		wl.ToGPUInfra()
+		ph.ToGPUInfra()
 	}
 }
 
 // SetAsCurrentVars sets these as the current global values that are
 // processed in the code (on the GPU).
-func (wl *World) SetAsCurrentVars() {
-	Params = wl.Params
-	Bodies = wl.Bodies
-	Joints = wl.Joints
-	JointDoFs = wl.JointDoFs
-	BodyJoints = wl.BodyJoints
-	BodyCollidePairs = wl.BodyCollidePairs
-	Dynamics = wl.Dynamics
-	BroadContactsN = wl.BroadContactsN
-	BroadContacts = wl.BroadContacts
-	ContactsN = wl.ContactsN
-	Contacts = wl.Contacts
-	JointControls = wl.JointControls
+func (ph *World) SetAsCurrentVars() {
+	Params = ph.Params
+	Bodies = ph.Bodies
+	Joints = ph.Joints
+	JointDoFs = ph.JointDoFs
+	BodyJoints = ph.BodyJoints
+	BodyCollidePairs = ph.BodyCollidePairs
+	Dynamics = ph.Dynamics
+	BroadContactsN = ph.BroadContactsN
+	BroadContacts = ph.BroadContacts
+	ContactsN = ph.ContactsN
+	Contacts = ph.Contacts
+	JointControls = ph.JointControls
 }
 
 // GPUInit initializes the GPU and transfers Infra.
 // Should have already called SetAsCurrent (needed for CPU and GPU).
-func (wl *World) GPUInit() {
+func (ph *World) GPUInit() {
 	GPUInit()
-	UseGPU = wl.GPU
-	wl.ToGPUInfra()
+	UseGPU = ph.GPU
+	ph.ToGPUInfra()
 }
 
 // ToGPUInfra copies all the infrastructure for these filters up to
 // the GPU. This is done in GPUInit, and if current switched.
-func (wl *World) ToGPUInfra() {
+func (ph *World) ToGPUInfra() {
 	ToGPUTensorStrides()
 	ToGPU(ParamsVar, BodiesVar, JointsVar, JointDoFsVar, BodyJointsVar, BodyCollidePairsVar, DynamicsVar, BroadContactsNVar, BroadContactsVar, ContactsNVar, ContactsVar, JointControlsVar)
 }
