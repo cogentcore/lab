@@ -63,22 +63,26 @@ const (
 	JointChild
 
 	// relative position of joint, in parent frame.
+	// This is prior to parent body rotation.
 	JointPPosX
 	JointPPosY
 	JointPPosZ
 
 	// relative orientation of joint, in parent frame.
+	// This is prior to parent body rotation.
 	JointPQuatX
 	JointPQuatY
 	JointPQuatZ
 	JointPQuatW
 
 	// relative position of joint, in child frame.
+	// This is prior to child body rotation.
 	JointCPosX
 	JointCPosY
 	JointCPosZ
 
 	// relative orientation of joint, in child frame.
+	// This is prior to parent body rotation.
 	JointCQuatX
 	JointCQuatY
 	JointCQuatZ
@@ -367,13 +371,13 @@ func SetJointDoF(idx, dof int32, vr JointDoFVars, value float32) {
 
 //gosl:end
 
-func (wl *World) JointDefaults(idx int32) {
+func (ml *Model) JointDefaults(idx int32) {
 	rot := math32.NewQuat(0, 0, 0, 1)
 	SetJointPQuat(idx, rot)
 	SetJointCQuat(idx, rot)
 }
 
-func (wl *World) JointDoFDefaults(didx int32) {
+func (ml *Model) JointDoFDefaults(didx int32) {
 	JointDoFs.Set(-JointLimitUnlimited, int(didx), int(JointLimitLower))
 	JointDoFs.Set(JointLimitUnlimited, int(didx), int(JointLimitUpper))
 	JointControls.Set(1, int(didx), int(JointTargetDamp))
@@ -384,8 +388,8 @@ func (wl *World) JointDoFDefaults(didx int32) {
 // Use -1 for parent to add a world-anchored joint.
 // ppos, cpos are the relative positions from the parent, child.
 // Sets relative rotation matricies to identity by default.
-func (wl *World) NewJointFixed(parent, child int32, ppos, cpos math32.Vector3) int32 {
-	idx := wl.newJoint(Fixed, parent, child, ppos, cpos)
+func (ml *Model) NewJointFixed(parent, child int32, ppos, cpos math32.Vector3) int32 {
+	idx := ml.newJoint(Fixed, parent, child, ppos, cpos)
 	return idx
 }
 
@@ -396,10 +400,10 @@ func (wl *World) NewJointFixed(parent, child int32, ppos, cpos math32.Vector3) i
 // Sets relative rotation matricies to identity by default.
 // axis is the axis of articulation for the joint.
 // Use [SetJointDoF] to set the remaining DoF parameters.
-func (wl *World) NewJointPrismatic(parent, child int32, ppos, cpos, axis math32.Vector3) int32 {
-	idx := wl.newJoint(Prismatic, parent, child, ppos, cpos)
+func (ml *Model) NewJointPrismatic(parent, child int32, ppos, cpos, axis math32.Vector3) int32 {
+	idx := ml.newJoint(Prismatic, parent, child, ppos, cpos)
 	SetJointLinearDoFN(idx, 1)
-	wl.newJointDoF(idx, 0, axis)
+	ml.newJointDoF(idx, 0, axis)
 	return idx
 }
 
@@ -410,10 +414,10 @@ func (wl *World) NewJointPrismatic(parent, child int32, ppos, cpos, axis math32.
 // Sets relative rotation matricies to identity by default.
 // axis is the axis of articulation for the joint.
 // Use [SetJointDoF] to set the remaining DoF parameters.
-func (wl *World) NewJointRevolute(parent, child int32, ppos, cpos, axis math32.Vector3) int32 {
-	idx := wl.newJoint(Revolute, parent, child, ppos, cpos)
+func (ml *Model) NewJointRevolute(parent, child int32, ppos, cpos, axis math32.Vector3) int32 {
+	idx := ml.newJoint(Revolute, parent, child, ppos, cpos)
 	SetJointAngularDoFN(idx, 1)
-	wl.newJointDoF(idx, 0, axis)
+	ml.newJointDoF(idx, 0, axis)
 	return idx
 }
 
@@ -423,13 +427,13 @@ func (wl *World) NewJointRevolute(parent, child int32, ppos, cpos, axis math32.V
 // ppos, cpos are the relative positions from the parent, child.
 // Sets relative rotation matricies to identity by default.
 // Use [SetJointDoF] to set the remaining DoF parameters.
-func (wl *World) NewJointBall(parent, child int32, ppos, cpos math32.Vector3) int32 {
-	idx := wl.newJoint(Ball, parent, child, ppos, cpos)
+func (ml *Model) NewJointBall(parent, child int32, ppos, cpos math32.Vector3) int32 {
+	idx := ml.newJoint(Ball, parent, child, ppos, cpos)
 	SetJointAngularDoFN(idx, 3)
 	for d := range math32.W {
 		axis := math32.Vector3{}
 		axis.SetDim(d, 1)
-		wl.newJointDoF(idx, int32(d), axis)
+		ml.newJointDoF(idx, int32(d), axis)
 	}
 	return idx
 }
@@ -441,19 +445,19 @@ func (wl *World) NewJointBall(parent, child int32, ppos, cpos math32.Vector3) in
 // ppos, cpos are the relative positions from the parent, child.
 // Sets relative rotation matricies to identity by default.
 // Use [SetJointDoF] to set the remaining DoF parameters.
-func (wl *World) NewJointDistance(parent, child int32, ppos, cpos math32.Vector3, minDist, maxDist float32) int32 {
-	idx := wl.newJoint(Distance, parent, child, ppos, cpos)
+func (ml *Model) NewJointDistance(parent, child int32, ppos, cpos math32.Vector3, minDist, maxDist float32) int32 {
+	idx := ml.newJoint(Distance, parent, child, ppos, cpos)
 	SetJointLinearDoFN(idx, 3)
 	SetJointAngularDoFN(idx, 3)
 	for d := range math32.W {
 		axis := math32.Vector3{}
 		axis.SetDim(d, 1)
-		wl.newJointDoF(idx, int32(d), axis)
+		ml.newJointDoF(idx, int32(d), axis)
 	}
 	for d := range math32.W {
 		axis := math32.Vector3{}
 		axis.SetDim(d, 1)
-		wl.newJointDoF(idx, int32(d), axis)
+		ml.newJointDoF(idx, int32(d), axis)
 	}
 	// only on the X linear axis
 	SetJointDoF(idx, 0, JointLimitLower, minDist)
@@ -468,19 +472,19 @@ func (wl *World) NewJointDistance(parent, child int32, ppos, cpos math32.Vector3
 // ppos, cpos are the relative positions from the parent, child.
 // Sets relative rotation matricies to identity by default.
 // Use [SetJointDoF] to set the remaining DoF parameters.
-func (wl *World) NewJointFree(parent, child int32, ppos, cpos math32.Vector3) int32 {
-	idx := wl.newJoint(Distance, parent, child, ppos, cpos)
+func (ml *Model) NewJointFree(parent, child int32, ppos, cpos math32.Vector3) int32 {
+	idx := ml.newJoint(Distance, parent, child, ppos, cpos)
 	SetJointLinearDoFN(idx, 0)
 	SetJointAngularDoFN(idx, 0)
 	for d := range math32.W {
 		axis := math32.Vector3{}
 		axis.SetDim(d, 1)
-		wl.newJointDoF(idx, int32(d), axis)
+		ml.newJointDoF(idx, int32(d), axis)
 	}
 	for d := range math32.W {
 		axis := math32.Vector3{}
 		axis.SetDim(d, 1)
-		wl.newJointDoF(idx, int32(d), axis)
+		ml.newJointDoF(idx, int32(d), axis)
 	}
 	return idx
 }
@@ -490,12 +494,12 @@ func (wl *World) NewJointFree(parent, child int32, ppos, cpos math32.Vector3) in
 // Use -1 for parent to add a world-anchored joint.
 // ppos, cpos are the relative positions from the parent, child.
 // Sets relative rotation matricies to identity by default.
-func (wl *World) newJoint(joint JointTypes, parent, child int32, ppos, cpos math32.Vector3) int32 {
-	sizes := wl.Joints.ShapeSizes()
+func (ml *Model) newJoint(joint JointTypes, parent, child int32, ppos, cpos math32.Vector3) int32 {
+	sizes := ml.Joints.ShapeSizes()
 	idx := int32(sizes[0])
-	wl.Params[0].JointsN = idx + 1
-	wl.Joints.SetShapeSizes(int(idx+1), int(JointVarsN))
-	wl.JointDefaults(idx)
+	ml.Params[0].JointsN = idx + 1
+	ml.Joints.SetShapeSizes(int(idx+1), int(JointVarsN))
+	ml.JointDefaults(idx)
 	SetJointType(idx, joint)
 	SetJointEnabled(idx, true)
 	SetJointParent(idx, parent)
@@ -507,13 +511,13 @@ func (wl *World) newJoint(joint JointTypes, parent, child int32, ppos, cpos math
 
 // newJointDoF adds new JointDoFs and JointControls entries
 // initialized to detfaults. Returns index.
-func (wl *World) newJointDoF(jidx, dof int32, axis math32.Vector3) int32 {
-	sizes := wl.JointDoFs.ShapeSizes()
+func (ml *Model) newJointDoF(jidx, dof int32, axis math32.Vector3) int32 {
+	sizes := ml.JointDoFs.ShapeSizes()
 	didx := int32(sizes[0])
-	wl.JointDoFs.SetShapeSizes(int(didx+1), int(JointDoFVarsN))
-	wl.JointControls.SetShapeSizes(int(didx+1), int(JointControlVarsN))
-	wl.Params[0].JointDoFsN = didx + 1
-	wl.JointDoFDefaults(didx)
+	ml.JointDoFs.SetShapeSizes(int(didx+1), int(JointDoFVarsN))
+	ml.JointControls.SetShapeSizes(int(didx+1), int(JointControlVarsN))
+	ml.Params[0].JointDoFsN = didx + 1
+	ml.JointDoFDefaults(didx)
 	SetJointDoFIndex(jidx, dof, didx)
 	SetJointAxis(jidx, dof, axis)
 	return didx

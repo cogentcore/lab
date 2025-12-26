@@ -30,26 +30,26 @@ params.NPendula = 2
 ed.SetUserParams(&params)
 
 ed.SetConfigFunc(func() {
-	ph := ed.Physics
-	wr := ed.World
+	ml := ed.Model
+	sc := ed.Scene
     hsz := math32.Vec3(0.05, .2, 0.05)
     mass := float32(0.1)
     stY := 4*hsz.Y
 	x := -hsz.Y
 
     rleft := math32.NewQuatAxisAngle(math32.Vec3(0, 0, 1), -math32.Pi/2)
-    pb := wr.NewDynamic(ph, "top", physics.Capsule, "blue", mass, hsz, math32.Vec3(x, stY, 0), rleft)
+    pb := sc.NewDynamic(ml, "top", physics.Capsule, "blue", mass, hsz, math32.Vec3(x, stY, 0), rleft)
 	pb.SetBodyGroup(1) // no collide across groups
-	ji := pb.NewJointRevolute(ph, nil, math32.Vec3(0, stY, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
+	ji := pb.NewJointRevolute(ml, nil, math32.Vec3(0, stY, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
 	physics.SetJointTargetPos(ji, 0, 0, 0)
 	physics.SetJointTargetVel(ji, 0, 0, 0)
 
 	for i := 1; i < params.NPendula; i++ {
 		clr := colors.Names[i%len(colors.Names)]
 		x = -float32(i)*hsz.Y*2 - hsz.Y
-		cb := wr.NewDynamic(ph, "child", physics.Capsule, clr, mass, hsz, math32.Vec3(x, stY, 0), rleft)
+		cb := sc.NewDynamic(ml, "child", physics.Capsule, clr, mass, hsz, math32.Vec3(x, stY, 0), rleft)
 		cb.SetBodyGroup(1+i)
-		ji = cb.NewJointRevolute(ph, pb, math32.Vec3(0, -hsz.Y, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
+		ji = cb.NewJointRevolute(ml, pb, math32.Vec3(0, -hsz.Y, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
 		physics.SetJointTargetPos(ji, 0, 0, 0)
 		physics.SetJointTargetVel(ji, 0, 0, 0)
 		pb = cb
@@ -57,11 +57,11 @@ ed.SetConfigFunc(func() {
 })
 ```
 
-The [[doc:physics/phyxyz/Editor]] widget provides the [[doc:physics/World]] and [[doc:physics/phyxyz/World]] elements, and the `ConfigFunc` function that configures the physics elements. Stepping through these elements in order:
+The [[doc:physics/phyxyz/Editor]] widget provides the [[doc:physics/Model]] and [[doc:physics/phyxyz/Scene]] elements, and the `ConfigFunc` function that configures the physics elements. Stepping through these elements in order:
 
 ```go
     rleft := math32.NewQuatAxisAngle(math32.Vec3(0, 0, 1), -math32.Pi/2)
-    pb := wr.NewDynamic(ph, "top", physics.Box, "blue", mass, hsz, math32.Vec3(x, stY, 0), rleft)
+    pb := sc.NewDynamic(ml, "top", physics.Box, "blue", mass, hsz, math32.Vec3(x, stY, 0), rleft)
 ```
 
 The `math32.Quat` quaternion provides all the rotational math used in `xyz` and `physics`, and the `rleft` instance represents a -90 degree rotation about the Z (depth axis), which is what causes the pendulum to start in a horizontal orientation.
@@ -75,7 +75,7 @@ The `NewDynamic` method adds a new dynamic body element with a default visualiza
 The `Group` property of a body can be set to fine-tune collision logic. Positive-numbered groups only collide with each other and any negative-numbered groups, while negative-numbered groups only collide with positive numbered and not within the group. 0 means it doesn't collide with anything. With the crazy dynamics that emerge with multiple arms, it is good to let them all pass through each other.
 
 ```go
-	ji := pb.NewJointRevolute(ph, nil, math32.Vec3(0, stY, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
+	ji := pb.NewJointRevolute(ml, nil, math32.Vec3(0, stY, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
 	physics.SetJointTargetPos(ji, 0, 0, 0)
 	physics.SetJointTargetVel(ji, 0, 0, 0)
 ```
@@ -96,7 +96,7 @@ As discussed in [[GoSL]], to run equivalent code on the GPU and the CPU (i.e., s
 
 ## Bodies and Dynamics
 
-The basic element is a _body_, which is a rigid physical entity with a specific shape, mass, position and orientation. Call [[doc:physics.World]] `NewBody` to create a new one. There are (currently) only standard geometric [[#shapes]] available (arbitrary triangular meshes and soft bodies could be supported as needed in the future, based on existing newton-physics code).
+The basic element is a _body_, which is a rigid physical entity with a specific shape, mass, position and orientation. Call [[doc:physics.Model]] `NewBody` to create a new one. There are (currently) only standard geometric [[#shapes]] available (arbitrary triangular meshes and soft bodies could be supported as needed in the future, based on existing newton-physics code).
 
 By itself, a body is static. To make a body that is subject to forces and can be connected to other bodies via [[#joints]], use `NewDynamic`, which creates an additional set of data to implement the dynamic equations of the physics solver. The initial position and orientation of a dynamic body can be restored via the `InitState` method.
 
@@ -144,9 +144,11 @@ Typically, bodies are created using the enhanced functions in the [[doc:physics/
 
 ## Parallel worlds
 
-The compute efficiency of the GPU goes up with the more elements that are processed in parallel, amortizing the memory transfer overhead and leveraging the parallel cores. Furthermore, in AI applications for example, models can be trained in parallel on different instances of the same environment, with each instance having its own random initial starting point and trajectory over time. All of these instances can be simulated in one `physics.World` by using the `World` index on the bodies, with the shared static environment living in World -1, and the elements of each instance (e.g., a simulated robot) living in its own separate world.
+TODO: switch over to builder here.
 
-The `NewBody` and `NewDynamic` methods automatically use the `World.CurrentWorld` index by default, or you can directly use `SetBodyWorld` to assign a specific world index.
+The compute efficiency of the GPU goes up with the more elements that are processed in parallel, amortizing the memory transfer overhead and leveraging the parallel cores. Furthermore, in AI applications for example, models can be trained in parallel on different instances of the same environment, with each instance having its own random initial starting point and trajectory over time. All of these instances can be simulated in one `physics.Model` by using the `World` index on the bodies, with the shared static environment living in World -1, and the elements of each instance (e.g., a simulated robot) living in its own separate world.
+
+The `NewBody` and `NewDynamic` methods automatically use the `Model.CurrentWorld` index by default, or you can directly use `SetBodyWorld` to assign a specific world index.
 
 The `ReplicateWorld` method creates N replicas of an existing world, including all associated joints. This can only be called once, as it records the start and N-per-world of each such replicated world, which allows the `phyxyz` viewer to efficiently view a specific world. Thus, under this scenario, you create world 0 and then replicate it, then modify the initial positions and orientations accordingly, using `PositionObject`, as described next. The object numbers are also replicated so uniquely indexing a specific object instance requires specifying the world and object indexes.
 

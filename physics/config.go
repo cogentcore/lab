@@ -14,20 +14,20 @@ import (
 
 // Config does final configuration prior to running
 // after everything has been added. Does SetAsCurrent, GPUInit.
-func (wl *World) Config() {
-	wl.ConfigJoints()
-	wl.ConfigBodyCollidePairs()
-	wl.SetMaxContacts()
-	wl.SetAsCurrent()
-	wl.ConfigBodies()
-	wl.GPUInit()
-	wl.InitState()
+func (ml *Model) Config() {
+	ml.ConfigJoints()
+	ml.ConfigBodyCollidePairs()
+	ml.SetMaxContacts()
+	ml.SetAsCurrent()
+	ml.ConfigBodies()
+	ml.GPUInit()
+	ml.InitState()
 }
 
 // ConfigJoints does all of the initialization associated with joints.
-func (wl *World) ConfigJoints() {
+func (ml *Model) ConfigJoints() {
 	// accumulate parent and child joints per dynamic
-	params := &wl.Params[0]
+	params := &ml.Params[0]
 	nj := params.JointsN
 	nd := params.DynamicsN
 
@@ -54,43 +54,43 @@ func (wl *World) ConfigJoints() {
 	if maxi == 0 {
 		maxi = 1
 	}
-	wl.BodyJoints.SetShapeSizes(int(nd), 2, maxi+1)
+	ml.BodyJoints.SetShapeSizes(int(nd), 2, maxi+1)
 	for di := range nd {
 		np := int32(len(bjp[di]))
-		wl.BodyJoints.Set(np, int(di), int(0), int(0))
+		ml.BodyJoints.Set(np, int(di), int(0), int(0))
 		for i, ji := range bjp[di] {
-			wl.BodyJoints.Set(ji, int(di), int(0), int(1+i))
+			ml.BodyJoints.Set(ji, int(di), int(0), int(1+i))
 		}
 		nc := int32(len(bjc[di]))
-		wl.BodyJoints.Set(nc, int(di), int(1), int(0))
+		ml.BodyJoints.Set(nc, int(di), int(1), int(0))
 		for i, ji := range bjc[di] {
-			wl.BodyJoints.Set(ji, int(di), int(1), int(1+i))
+			ml.BodyJoints.Set(ji, int(di), int(1), int(1+i))
 		}
 	}
 	if nj == 0 {
-		wl.Joints = tensor.NewFloat32(1, int(JointVarsN))
-		wl.JointDoFs = tensor.NewFloat32(1, int(JointDoFVarsN))
-		wl.JointControls = tensor.NewFloat32(1, int(JointControlVarsN))
+		ml.Joints = tensor.NewFloat32(1, int(JointVarsN))
+		ml.JointDoFs = tensor.NewFloat32(1, int(JointDoFVarsN))
+		ml.JointControls = tensor.NewFloat32(1, int(JointControlVarsN))
 	}
 }
 
 // ConfigBodies updates computed body values from current values.
 // Call if body params (mass, size) change.
-func (wl *World) ConfigBodies() {
-	params := &wl.Params[0]
+func (ml *Model) ConfigBodies() {
+	params := &ml.Params[0]
 	nb := params.BodiesN
 	for bi := range nb {
 		shape := GetBodyShape(bi)
 		size := BodyHSize(bi)
 		mass := Bodies.Value(int(bi), int(BodyMass))
-		wl.SetMass(bi, shape, size, mass)
+		ml.SetMass(bi, shape, size, mass)
 	}
 }
 
 // InitState initializes the simulation state.
-func (wl *World) InitState() {
+func (ml *Model) InitState() {
 	params := GetParams(0)
-	wl.ToGPUInfra()
+	ml.ToGPUInfra()
 	RunInitDynamics(int(params.DynamicsN))
 	RunDone(DynamicsVar)
 }

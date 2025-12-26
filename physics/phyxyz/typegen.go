@@ -3,6 +3,7 @@
 package phyxyz
 
 import (
+	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/core/types"
 	"cogentcore.org/lab/physics"
@@ -10,20 +11,20 @@ import (
 
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/phyxyz.Camera", IDName: "camera", Doc: "Camera defines the properties of a camera needed for rendering from a node.", Fields: []types.Field{{Name: "Size", Doc: "size of image to record"}, {Name: "FOV", Doc: "field of view in degrees"}, {Name: "Near", Doc: "near plane z coordinate"}, {Name: "Far", Doc: "far plane z coordinate"}, {Name: "MaxD", Doc: "maximum distance for depth maps. Anything above is 1.\nThis is independent of Near / Far rendering (though must be < Far)\nand is for normalized depth maps."}, {Name: "LogD", Doc: "use the natural log of 1 + depth for normalized depth values in display etc."}, {Name: "MSample", Doc: "number of multi-samples to use for antialising -- 4 is best and default."}, {Name: "UpDir", Doc: "up direction for camera. Defaults to positive Y axis,\nand is reset by call to LookAt method."}}})
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/phyxyz.Editor", IDName: "editor", Doc: "Editor provides a basic viewer and parameter controller widget\nfor exploring physics models.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}, Embeds: []types.Field{{Name: "Frame"}}, Fields: []types.Field{{Name: "Physics", Doc: "Physics has the physics simulation."}, {Name: "World", Doc: "World has the 3D GUI visualization."}, {Name: "UserParams", Doc: "UserParams is a struct with parameters for configuring the physics sim.\nThese are displayed in the editor."}, {Name: "ConfigFunc", Doc: "ConfigFunc is the function that configures the world."}, {Name: "ControlFunc", Doc: "ControlFunc is the function that sets control parameters,\nbased on the current timestep (in milliseconds, converted from physics time)."}, {Name: "isRunning", Doc: "IsRunning is true if currently running sim."}, {Name: "stop", Doc: "Stop triggers topping of running."}, {Name: "TimeStep", Doc: "TimeStep is current time step in physics update cycles."}, {Name: "scene", Doc: "Scene is the xyz GUI visualization widget."}, {Name: "toolbar", Doc: "Toolbar is the top toolbar."}, {Name: "splits", Doc: "Splits is the container for elements."}, {Name: "userParamsForm", Doc: "UserParamsForm has the user's config parameters."}, {Name: "paramsForm", Doc: "ParamsForm has the Physics parameters."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/phyxyz.Editor", IDName: "editor", Doc: "Editor provides a basic viewer and parameter controller widget\nfor exploring physics models.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}, Embeds: []types.Field{{Name: "Frame"}}, Fields: []types.Field{{Name: "Model", Doc: "Model has the physics simulation."}, {Name: "Scene", Doc: "Scene has the 3D GUI visualization."}, {Name: "UserParams", Doc: "UserParams is a struct with parameters for configuring the physics sim.\nThese are displayed in the editor."}, {Name: "ConfigFunc", Doc: "ConfigFunc is the function that configures the [physics.Model]."}, {Name: "ControlFunc", Doc: "ControlFunc is the function that sets control parameters,\nbased on the current timestep (in milliseconds, converted from physics time)."}, {Name: "CameraPos", Doc: "CameraPos provides the default initial camera position, looking at the origin.\nSet this to larger numbers to zoom out, and smaller numbers to zoom in.\nDefaults to math32.Vec3(0, 25, 20)."}, {Name: "isRunning", Doc: "IsRunning is true if currently running sim."}, {Name: "stop", Doc: "Stop triggers topping of running."}, {Name: "TimeStep", Doc: "TimeStep is current time step in physics update cycles."}, {Name: "editor", Doc: "editor is the xyz GUI visualization widget."}, {Name: "toolbar", Doc: "Toolbar is the top toolbar."}, {Name: "splits", Doc: "Splits is the container for elements."}, {Name: "userParamsForm", Doc: "UserParamsForm has the user's config parameters."}, {Name: "paramsForm", Doc: "ParamsForm has the Physics parameters."}}})
 
 // NewEditor returns a new [Editor] with the given optional parent:
 // Editor provides a basic viewer and parameter controller widget
 // for exploring physics models.
 func NewEditor(parent ...tree.Node) *Editor { return tree.New[Editor](parent...) }
 
-// SetPhysics sets the [Editor.Physics]:
-// Physics has the physics simulation.
-func (t *Editor) SetPhysics(v *physics.World) *Editor { t.Physics = v; return t }
+// SetModel sets the [Editor.Model]:
+// Model has the physics simulation.
+func (t *Editor) SetModel(v *physics.Model) *Editor { t.Model = v; return t }
 
-// SetWorld sets the [Editor.World]:
-// World has the 3D GUI visualization.
-func (t *Editor) SetWorld(v *World) *Editor { t.World = v; return t }
+// SetScene sets the [Editor.Scene]:
+// Scene has the 3D GUI visualization.
+func (t *Editor) SetScene(v *Scene) *Editor { t.Scene = v; return t }
 
 // SetUserParams sets the [Editor.UserParams]:
 // UserParams is a struct with parameters for configuring the physics sim.
@@ -31,7 +32,7 @@ func (t *Editor) SetWorld(v *World) *Editor { t.World = v; return t }
 func (t *Editor) SetUserParams(v any) *Editor { t.UserParams = v; return t }
 
 // SetConfigFunc sets the [Editor.ConfigFunc]:
-// ConfigFunc is the function that configures the world.
+// ConfigFunc is the function that configures the [physics.Model].
 func (t *Editor) SetConfigFunc(v func()) *Editor { t.ConfigFunc = v; return t }
 
 // SetControlFunc sets the [Editor.ControlFunc]:
@@ -39,10 +40,16 @@ func (t *Editor) SetConfigFunc(v func()) *Editor { t.ConfigFunc = v; return t }
 // based on the current timestep (in milliseconds, converted from physics time).
 func (t *Editor) SetControlFunc(v func(timeStep int)) *Editor { t.ControlFunc = v; return t }
 
+// SetCameraPos sets the [Editor.CameraPos]:
+// CameraPos provides the default initial camera position, looking at the origin.
+// Set this to larger numbers to zoom out, and smaller numbers to zoom in.
+// Defaults to math32.Vec3(0, 25, 20).
+func (t *Editor) SetCameraPos(v math32.Vector3) *Editor { t.CameraPos = v; return t }
+
 // SetTimeStep sets the [Editor.TimeStep]:
 // TimeStep is current time step in physics update cycles.
 func (t *Editor) SetTimeStep(v int) *Editor { t.TimeStep = v; return t }
 
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/phyxyz.View", IDName: "view", Doc: "View has visualization functions for physics elements.", Fields: []types.Field{{Name: "Name", Doc: "Name is a name for element (index always appended)."}, {Name: "Shape", Doc: "Shape is the physical shape of the element."}, {Name: "Color", Doc: "Color is the color of the element."}, {Name: "Size", Doc: "Size is the size (per shape)."}, {Name: "Pos", Doc: "Pos is the position."}, {Name: "Quat", Doc: "Quat is the rotation as a quaternion."}, {Name: "NewView", Doc: "NewView is a function that returns a new [xyz.Node]\nto represent this element. If nil, uses appropriate defaults."}, {Name: "InitView", Doc: "InitView is a function that initializes a new [xyz.Node]\nthat represents this element. If nil, uses appropriate defaults."}, {Name: "Index", Doc: "Index is the index of the element in a list."}, {Name: "DynamicIndex", Doc: "DynamicIndex is the index of a dynamic element (-1 if not dynamic)."}}})
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/phyxyz.World", IDName: "world", Doc: "World displays a [physics.World] using a [xyz.Scene].\nOne World can be used for multiple different [physics.World]s which\nis more efficient when running multiple in parallel.\nInitial construction of the physics and visualization happens here.", Fields: []types.Field{{Name: "Scene", Doc: "Scene is the [xyz.Scene] object for visualizing."}, {Name: "Root", Doc: "Root is the root Group node in the Scene under which the world is rendered."}, {Name: "Views", Doc: "Views are the view elements for each body in [physics.World]."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/phyxyz.Scene", IDName: "scene", Doc: "Scene displays a [physics.Model] using a [xyz.Scene].\nOne Scene can be used for multiple different [physics.Model]s which\nis more efficient when running multiple in parallel.\nInitial construction of the physics and visualization happens here.", Fields: []types.Field{{Name: "Scene", Doc: "Scene is the [xyz.Scene] object for visualizing."}, {Name: "Root", Doc: "Root is the root Group node in the Scene under which the world is rendered."}, {Name: "Views", Doc: "Views are the view elements for each body in [physics.Model]."}}})

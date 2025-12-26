@@ -163,7 +163,7 @@ const  DynContactWeight: DynamicVars = 32;
 fn DynamicBody(idx: i32) -> i32 { return i32(bitcast<u32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(0), u32(DynBody))])); }
 
 //////// import: "enumgen.go"
-const BodyVarsN: BodyVars = 43;
+const BodyVarsN: BodyVars = 44;
 const ContactVarsN: ContactVars = 33;
 const JointControlVarsN: JointControlVars = 5;
 const DynamicVarsN: DynamicVars = 33;

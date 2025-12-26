@@ -53,7 +53,7 @@ type View struct {
 // NewBody adds a new body with given parameters.
 // Returns the View which can then be further customized.
 // Use this for Static elements; NewDynamic for dynamic elements.
-func (wr *World) NewBody(ph *physics.World, name string, shape physics.Shapes, clr string, size, pos math32.Vector3, rot math32.Quat) *View {
+func (wr *Scene) NewBody(ph *physics.Model, name string, shape physics.Shapes, clr string, size, pos math32.Vector3, rot math32.Quat) *View {
 	idx := ph.NewBody(shape, size, pos, rot)
 	vw := &View{Name: name, Index: idx, DynamicIndex: -1, Shape: shape, Color: clr, Size: size, Pos: pos, Quat: rot}
 	wr.Views = append(wr.Views, vw)
@@ -62,7 +62,7 @@ func (wr *World) NewBody(ph *physics.World, name string, shape physics.Shapes, c
 
 // NewDynamic adds a new dynamic body with given parameters.
 // Returns the View which can then be further customized.
-func (wr *World) NewDynamic(ph *physics.World, name string, shape physics.Shapes, clr string, mass float32, size, pos math32.Vector3, rot math32.Quat) *View {
+func (wr *Scene) NewDynamic(ph *physics.Model, name string, shape physics.Shapes, clr string, mass float32, size, pos math32.Vector3, rot math32.Quat) *View {
 	idx, dyIdx := ph.NewDynamic(shape, mass, size, pos, rot)
 	vw := &View{Name: name, Index: idx, DynamicIndex: dyIdx, Shape: shape, Color: clr, Size: size, Pos: pos, Quat: rot}
 	wr.Views = append(wr.Views, vw)
@@ -269,7 +269,7 @@ func (vw *View) SetBodyFrictionRolling(val float32) {
 // These are for the non-rotated body (i.e., body rotation is applied
 // to these positions as well).
 // Sets relative rotation matricies to identity by default.
-func (vw *View) NewJointFixed(ph *physics.World, parent *View, ppos, cpos math32.Vector3) int32 {
+func (vw *View) NewJointFixed(ph *physics.Model, parent *View, ppos, cpos math32.Vector3) int32 {
 	pidx := int32(-1)
 	if parent != nil {
 		pidx = parent.DynamicIndex
@@ -285,7 +285,7 @@ func (vw *View) NewJointFixed(ph *physics.World, parent *View, ppos, cpos math32
 // Sets relative rotation matricies to identity by default.
 // axis is the axis of articulation for the joint.
 // Use [SetJointDoF] to set the remaining DoF parameters.
-func (vw *View) NewJointPrismatic(ph *physics.World, parent *View, ppos, cpos, axis math32.Vector3) int32 {
+func (vw *View) NewJointPrismatic(ph *physics.Model, parent *View, ppos, cpos, axis math32.Vector3) int32 {
 	pidx := int32(-1)
 	if parent != nil {
 		pidx = parent.DynamicIndex
@@ -301,7 +301,7 @@ func (vw *View) NewJointPrismatic(ph *physics.World, parent *View, ppos, cpos, a
 // Sets relative rotation matricies to identity by default.
 // axis is the axis of articulation for the joint.
 // Use [SetJointDoF] to set the remaining DoF parameters.
-func (vw *View) NewJointRevolute(ph *physics.World, parent *View, ppos, cpos, axis math32.Vector3) int32 {
+func (vw *View) NewJointRevolute(ph *physics.Model, parent *View, ppos, cpos, axis math32.Vector3) int32 {
 	pidx := int32(-1)
 	if parent != nil {
 		pidx = parent.DynamicIndex
@@ -316,7 +316,7 @@ func (vw *View) NewJointRevolute(ph *physics.World, parent *View, ppos, cpos, ax
 // to these positions as well).
 // Sets relative rotation matricies to identity by default.
 // Use [SetJointDoF] to set the remaining DoF parameters.
-func (vw *View) NewJointBall(ph *physics.World, parent *View, ppos, cpos math32.Vector3) int32 {
+func (vw *View) NewJointBall(ph *physics.Model, parent *View, ppos, cpos math32.Vector3) int32 {
 	pidx := int32(-1)
 	if parent != nil {
 		pidx = parent.DynamicIndex
@@ -332,7 +332,7 @@ func (vw *View) NewJointBall(ph *physics.World, parent *View, ppos, cpos math32.
 // to these positions as well).
 // Sets relative rotation matricies to identity by default.
 // Use [SetJointDoF] to set the remaining DoF parameters.
-func (vw *View) NewJointDistance(ph *physics.World, parent *View, ppos, cpos math32.Vector3, minDist, maxDist float32) int32 {
+func (vw *View) NewJointDistance(ph *physics.Model, parent *View, ppos, cpos math32.Vector3, minDist, maxDist float32) int32 {
 	pidx := int32(-1)
 	if parent != nil {
 		pidx = parent.DynamicIndex
@@ -347,7 +347,7 @@ func (vw *View) NewJointDistance(ph *physics.World, parent *View, ppos, cpos mat
 // to these positions as well).
 // Sets relative rotation matricies to identity by default.
 // Use [SetJointDoF] to set the remaining DoF parameters.
-func (vw *View) NewJointFree(ph *physics.World, parent *View, ppos, cpos math32.Vector3) int32 {
+func (vw *View) NewJointFree(ph *physics.Model, parent *View, ppos, cpos math32.Vector3) int32 {
 	pidx := int32(-1)
 	if parent != nil {
 		pidx = parent.DynamicIndex

@@ -39,9 +39,9 @@ const (
 	// in -1 because they don't collide amongst each-other, but do
 	// potentially collide with dynamics).
 	// Positive numbers only collide amongst themselves, and with
-	// negative groups, but not other positive groups. This is for
-	// more special-purpose dynamics: in general use 1 for all dynamic
-	// bodies. There is an automatic constraint that the two objects
+	// negative groups, but not other positive groups. To avoid
+	// unwanted collisions, put bodies into separate groups.
+	// There is an automatic constraint that the two objects
 	// within a single joint do not collide with each other, so this
 	// does not need to be handled here.
 	BodyGroup
@@ -54,7 +54,9 @@ const (
 	// indexes are copied, so objects are indexed by world and object id.
 	BodyObject
 
-	// BodyHSize is the size of the object (values depend on shape type).
+	// BodyHSize is the half-size (e.g., radius) of the body.
+	// Values depend on shape type: X is generally radius,
+	// Y is half-height.
 	BodyHSizeX
 	BodyHSizeY
 	BodyHSizeZ
@@ -161,9 +163,9 @@ func GetBodyWorld(idx int32) int32 {
 // in -1 because they don't collide amongst each-other, but do
 // potentially collide with dynamics).
 // Positive numbers only collide amongst themselves, and with
-// negative groups, but not other positive groups. This is for
-// more special-purpose dynamics: in general use 1 for all dynamic
-// bodies. There is an automatic constraint that the two objects
+// negative groups, but not other positive groups. To avoid
+// unwanted collisions, put bodies into separate groups.
+// There is an automatic constraint that the two objects
 // within a single joint do not collide with each other, so this
 // does not need to be handled here.
 func SetBodyGroup(idx, w int32) {

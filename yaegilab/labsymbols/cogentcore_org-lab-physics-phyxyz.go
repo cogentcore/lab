@@ -10,17 +10,16 @@ import (
 func init() {
 	Symbols["cogentcore.org/lab/physics/phyxyz/phyxyz"] = map[string]reflect.Value{
 		// function, constant and variable definitions
-		"DepthImage":       reflect.ValueOf(phyxyz.DepthImage),
-		"DepthNorm":        reflect.ValueOf(phyxyz.DepthNorm),
-		"MakeStateToolbar": reflect.ValueOf(phyxyz.MakeStateToolbar),
-		"NewEditor":        reflect.ValueOf(phyxyz.NewEditor),
-		"NewWorld":         reflect.ValueOf(phyxyz.NewWorld),
-		"NoDisplayScene":   reflect.ValueOf(phyxyz.NoDisplayScene),
+		"DepthImage":     reflect.ValueOf(phyxyz.DepthImage),
+		"DepthNorm":      reflect.ValueOf(phyxyz.DepthNorm),
+		"NewEditor":      reflect.ValueOf(phyxyz.NewEditor),
+		"NewScene":       reflect.ValueOf(phyxyz.NewScene),
+		"NoDisplayScene": reflect.ValueOf(phyxyz.NoDisplayScene),
 
 		// type definitions
 		"Camera": reflect.ValueOf((*phyxyz.Camera)(nil)),
 		"Editor": reflect.ValueOf((*phyxyz.Editor)(nil)),
+		"Scene":  reflect.ValueOf((*phyxyz.Scene)(nil)),
 		"View":   reflect.ValueOf((*phyxyz.View)(nil)),
-		"World":  reflect.ValueOf((*phyxyz.World)(nil)),
 	}
 }

@@ -66,36 +66,36 @@ func StepInit(i uint32) { //gosl:kernel read-write:Params
 // Step runs one physics step, sending Params and JointControls
 // to the GPU, and getting the Dynamics state vars back.
 // Each step has SubSteps integration sub-steps.
-func (wl *World) Step() {
+func (ml *Model) Step() {
 	params := GetParams(0)
 	ToGPU(ParamsVar, JointControlsVar)
 	if params.SubSteps > 1 {
 		for range params.SubSteps - 1 {
-			wl.StepGet()
+			ml.StepGet()
 		}
 	}
-	wl.StepGet(ParamsVar, DynamicsVar)
+	ml.StepGet(ParamsVar, DynamicsVar)
 	// wl.StepGet(ParamsVar, DynamicsVar, ContactsNVar)
 	// fmt.Println("contacts:", ContactsN.Value(0), "max:", params.ContactsMax)
 }
 
 // StepGet runs one physics step and gets the given vars back
 // from the GPU.
-func (wl *World) StepGet(vars ...GPUVars) {
+func (ml *Model) StepGet(vars ...GPUVars) {
 	params := GetParams(0)
 	RunStepInit(1)
-	wl.StepCollision()
-	wl.StepJointForces()
-	wl.StepIntegrateBodies()
+	ml.StepCollision()
+	ml.StepJointForces()
+	ml.StepIntegrateBodies()
 
 	for range params.Iterations {
-		wl.StepSolveJoints()
-		wl.StepBodyContacts()
+		ml.StepSolveJoints()
+		ml.StepBodyContacts()
 	}
 	RunDone(vars...)
 }
 
-func (wl *World) StepCollision() {
+func (ml *Model) StepCollision() {
 	params := GetParams(0)
 	RunCollisionBroad(int(params.BodyCollidePairsN))
 	// note: time getting BroadContactsN back down and using that vs. running full
@@ -105,26 +105,26 @@ func (wl *World) StepCollision() {
 	// fmt.Println("contacts:", ContactsN.Value(0), "max:", params.ContactsMax)
 }
 
-func (wl *World) StepJointForces() {
+func (ml *Model) StepJointForces() {
 	params := GetParams(0)
 	RunStepJointForces(int(params.JointsN))
 	RunForcesFromJoints(int(params.DynamicsN))
 }
 
-func (wl *World) StepIntegrateBodies() {
+func (ml *Model) StepIntegrateBodies() {
 	params := GetParams(0)
 	RunStepIntegrateBodies(int(params.DynamicsN))
 }
 
-func (wl *World) StepSolveJoints() {
+func (ml *Model) StepSolveJoints() {
 	params := GetParams(0)
 	RunStepSolveJoints(int(params.JointsN))
 	RunStepBodyJointDeltas(int(params.DynamicsN))
 }
 
-func (wl *World) StepBodyContacts() {
+func (ml *Model) StepBodyContacts() {
 	params := GetParams(0)
-	if !wl.GPU {
+	if !ml.GPU {
 		cmax := int(ContactsN.Values[0])
 		if cmax > 0 {
 			RunStepBodyContacts(cmax)

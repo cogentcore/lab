@@ -273,7 +273,7 @@ fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> {
 }
 
 //////// import: "enumgen.go"
-const BodyVarsN: BodyVars = 43;
+const BodyVarsN: BodyVars = 44;
 const ContactVarsN: ContactVars = 33;
 const JointControlVarsN: JointControlVars = 5;
 const DynamicVarsN: DynamicVars = 33;

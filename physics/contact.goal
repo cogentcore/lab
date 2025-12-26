@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Cogent Core. All rights reserved.
+// Copyright (c) 2025, Cogent Core. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -706,7 +706,7 @@ func ContactConstraint(err float32, q0A, q0B math32.Quat, mInvA, mInvB float32, 
 
 // IsChildDynamic returns true if dic is a direct child
 // on any joint where dip is the parent.
-func (wl *World) IsChildDynamic(dip, dic int32) bool {
+func (wl *Model) IsChildDynamic(dip, dic int32) bool {
 	if dip < 0 || dic < 0 {
 		return false
 	}
@@ -727,7 +727,7 @@ func (wl *World) IsChildDynamic(dip, dic int32) bool {
 // based on world and group settings and not being direct parent
 // child relationship within a joint. Result has A with lower shape type,
 // so that shapes are in a canonical order.
-func (wl *World) ConfigBodyCollidePairs() {
+func (wl *Model) ConfigBodyCollidePairs() {
 	params := &wl.Params[0]
 	nb := params.BodiesN
 	nalc := int(nb) * 10
@@ -786,7 +786,7 @@ func (wl *World) ConfigBodyCollidePairs() {
 
 // SetMaxContacts computes [Params.MaxContacts] based on current list of 
 // [BodyCollidePairs].
-func (wl *World) SetMaxContacts() {
+func (wl *Model) SetMaxContacts() {
 	params := &wl.Params[0]
 
 	n := int32(0)

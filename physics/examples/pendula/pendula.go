@@ -84,8 +84,8 @@ func main() {
 	var botJoint int32
 
 	ed.SetConfigFunc(func() {
-		ph := ed.Physics
-		wr := ed.World
+		ml := ed.Model
+		sc := ed.Scene
 		rot := math32.NewQuat(0, 0, 0, 1)
 		rleft := math32.NewQuatAxisAngle(math32.Vec3(0, 0, 1), -math32.Pi/2)
 
@@ -101,14 +101,14 @@ func main() {
 			x = 0
 			y -= ps.HSize.Y
 		}
-		pb := wr.NewDynamic(ph, "top", physics.Capsule, clr, ps.Mass, ps.HSize, math32.Vec3(x, y, 0), rleft)
+		pb := sc.NewDynamic(ml, "top", physics.Capsule, clr, ps.Mass, ps.HSize, math32.Vec3(x, y, 0), rleft)
 		if !ps.Collide {
 			pb.SetBodyGroup(1)
 		}
 
 		targ := math32.DegToRad(float32(ps.TargetDegFromVert))
 
-		ji := pb.NewJointRevolute(ph, nil, math32.Vec3(0, stY, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
+		ji := pb.NewJointRevolute(ml, nil, math32.Vec3(0, stY, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
 		physics.SetJointTargetPos(ji, 0, targ, ps.Stiff)
 		physics.SetJointTargetVel(ji, 0, 0, ps.Damp)
 
@@ -120,11 +120,11 @@ func main() {
 				y = stY + x
 				x = 0
 			}
-			cb := wr.NewDynamic(ph, "child", physics.Capsule, clr, ps.Mass, ps.HSize, math32.Vec3(x, y, 0), rleft)
+			cb := sc.NewDynamic(ml, "child", physics.Capsule, clr, ps.Mass, ps.HSize, math32.Vec3(x, y, 0), rleft)
 			if !ps.Collide {
 				cb.SetBodyGroup(1 + i)
 			}
-			ji = cb.NewJointRevolute(ph, pb, math32.Vec3(0, -ps.HSize.Y, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
+			ji = cb.NewJointRevolute(ml, pb, math32.Vec3(0, -ps.HSize.Y, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
 			physics.SetJointTargetPos(ji, 0, targ, ps.Stiff)
 			physics.SetJointTargetVel(ji, 0, 0, ps.Damp)
 			pb = cb

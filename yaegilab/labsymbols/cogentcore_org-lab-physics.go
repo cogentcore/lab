@@ -13,7 +13,6 @@ func init() {
 	Symbols["cogentcore.org/lab/physics/physics"] = map[string]reflect.Value{
 		// function, constant and variable definitions
 		"AddBroadContacts":            reflect.ValueOf(physics.AddBroadContacts),
-		"AngMotionMax":                reflect.ValueOf(constant.MakeFromLiteral("0.78539816339744830961566084581987572104929234984377645524373614869749573092390898867610892833397416837141584743218870486667557894677841571570962890997663229058521681784366119671858541551046073436737060546875", token.FLOAT, 0)),
 		"AngularCorrection":           reflect.ValueOf(physics.AngularCorrection),
 		"Ball":                        reflect.ValueOf(physics.Ball),
 		"Bodies":                      reflect.ValueOf(&physics.Bodies).Elem(),
@@ -60,6 +59,7 @@ func init() {
 		"BodyJoints":                  reflect.ValueOf(&physics.BodyJoints).Elem(),
 		"BodyJointsVar":               reflect.ValueOf(physics.BodyJointsVar),
 		"BodyMass":                    reflect.ValueOf(physics.BodyMass),
+		"BodyObject":                  reflect.ValueOf(physics.BodyObject),
 		"BodyPos":                     reflect.ValueOf(physics.BodyPos),
 		"BodyPosX":                    reflect.ValueOf(physics.BodyPosX),
 		"BodyPosY":                    reflect.ValueOf(physics.BodyPosY),
@@ -223,6 +223,7 @@ func init() {
 		"GPUVarsValues":               reflect.ValueOf(physics.GPUVarsValues),
 		"GetBodyDynamic":              reflect.ValueOf(physics.GetBodyDynamic),
 		"GetBodyGroup":                reflect.ValueOf(physics.GetBodyGroup),
+		"GetBodyObject":               reflect.ValueOf(physics.GetBodyObject),
 		"GetBodyShape":                reflect.ValueOf(physics.GetBodyShape),
 		"GetBodyWorld":                reflect.ValueOf(physics.GetBodyWorld),
 		"GetBroadContactA":            reflect.ValueOf(physics.GetBroadContactA),
@@ -336,7 +337,7 @@ func init() {
 		"Joints":                      reflect.ValueOf(&physics.Joints).Elem(),
 		"JointsVar":                   reflect.ValueOf(physics.JointsVar),
 		"NewGeomData":                 reflect.ValueOf(physics.NewGeomData),
-		"NewWorld":                    reflect.ValueOf(physics.NewWorld),
+		"NewModel":                    reflect.ValueOf(physics.NewModel),
 		"OneIfNonzero":                reflect.ValueOf(physics.OneIfNonzero),
 		"Params":                      reflect.ValueOf(&physics.Params).Elem(),
 		"ParamsVar":                   reflect.ValueOf(physics.ParamsVar),
@@ -407,6 +408,7 @@ func init() {
 		"SetBodyHSize":                reflect.ValueOf(physics.SetBodyHSize),
 		"SetBodyInertia":              reflect.ValueOf(physics.SetBodyInertia),
 		"SetBodyInvInertia":           reflect.ValueOf(physics.SetBodyInvInertia),
+		"SetBodyObject":               reflect.ValueOf(physics.SetBodyObject),
 		"SetBodyPos":                  reflect.ValueOf(physics.SetBodyPos),
 		"SetBodyQuat":                 reflect.ValueOf(physics.SetBodyQuat),
 		"SetBodyShape":                reflect.ValueOf(physics.SetBodyShape),
@@ -486,7 +488,6 @@ func init() {
 		"WorldsCollide":               reflect.ValueOf(physics.WorldsCollide),
 
 		// type definitions
-		"BBox":             reflect.ValueOf((*physics.BBox)(nil)),
 		"BodyVars":         reflect.ValueOf((*physics.BodyVars)(nil)),
 		"ContactVars":      reflect.ValueOf((*physics.ContactVars)(nil)),
 		"DynamicVars":      reflect.ValueOf((*physics.DynamicVars)(nil)),
@@ -496,9 +497,8 @@ func init() {
 		"JointDoFVars":     reflect.ValueOf((*physics.JointDoFVars)(nil)),
 		"JointTypes":       reflect.ValueOf((*physics.JointTypes)(nil)),
 		"JointVars":        reflect.ValueOf((*physics.JointVars)(nil)),
+		"Model":            reflect.ValueOf((*physics.Model)(nil)),
 		"PhysParams":       reflect.ValueOf((*physics.PhysParams)(nil)),
 		"Shapes":           reflect.ValueOf((*physics.Shapes)(nil)),
-		"State":            reflect.ValueOf((*physics.State)(nil)),
-		"World":            reflect.ValueOf((*physics.World)(nil)),
 	}
 }

@@ -71,23 +71,23 @@ func main() {
 	ed.SetUserParams(bs)
 
 	ed.SetConfigFunc(func() {
-		ph := ed.Physics
-		wr := ed.World
+		ml := ed.Model
+		sc := ed.Scene
 		rot := math32.NewQuat(0, 0, 0, 1)
-		wr.NewBody(ph, "floor", physics.Plane, "#D0D0D080", math32.Vec3(0, 0, 0),
+		sc.NewBody(ml, "floor", physics.Plane, "#D0D0D080", math32.Vec3(0, 0, 0),
 			math32.Vec3(0, 0, 0), rot)
 
 		hw := bs.Width / 2
 		hd := bs.Depth / 2
 		hh := bs.Height / 2
 		ht := bs.Thick / 2
-		wr.NewBody(ph, "back-wall", physics.Box, "#0000FFA0", math32.Vec3(hw, hh, ht),
+		sc.NewBody(ml, "back-wall", physics.Box, "#0000FFA0", math32.Vec3(hw, hh, ht),
 			math32.Vec3(0, hh, -hd), rot)
-		wr.NewBody(ph, "left-wall", physics.Box, "#FF0000A0", math32.Vec3(ht, hh, hd),
+		sc.NewBody(ml, "left-wall", physics.Box, "#FF0000A0", math32.Vec3(ht, hh, hd),
 			math32.Vec3(-hw, hh, 0), rot)
-		wr.NewBody(ph, "right-wall", physics.Box, "#00FF00A0", math32.Vec3(ht, hh, hd),
+		sc.NewBody(ml, "right-wall", physics.Box, "#00FF00A0", math32.Vec3(ht, hh, hd),
 			math32.Vec3(hw, hh, 0), rot)
-		wr.NewBody(ph, "front-wall", physics.Box, "#FFFF00A0", math32.Vec3(hw, hh, ht),
+		sc.NewBody(ml, "front-wall", physics.Box, "#FFFF00A0", math32.Vec3(hw, hh, ht),
 			math32.Vec3(0, hh, hd), rot)
 
 		box := bs.Width * .9
@@ -97,7 +97,7 @@ func main() {
 			x := rand.Float32()*box - 0.5*box
 			z := rand.Float32()*box - 0.5*box
 			clr := colors.Names[i%len(colors.Names)]
-			bl := wr.NewDynamic(ph, "ball", physics.Sphere, clr, bs.Mass, math32.Vec3(size, size, size),
+			bl := sc.NewDynamic(ml, "ball", physics.Sphere, clr, bs.Mass, math32.Vec3(size, size, size),
 				math32.Vec3(x, size+ht, z), rot)
 			if !bs.Collide {
 				physics.SetBodyGroup(bl.Index, int32(i+1)) // only collide within same group

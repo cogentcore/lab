@@ -186,7 +186,7 @@ fn DynamicAngDelta(idx: i32,cni: i32) -> vec3<f32> { return vec3<f32>(Dynamics[I
 fn SetDynamicAngDelta(idx: i32,cni: i32, angDelta: vec3<f32>) { Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaX))] = angDelta.x;; Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaY))] = angDelta.y;; Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaZ))] = angDelta.z; }
 
 //////// import: "enumgen.go"
-const BodyVarsN: BodyVars = 43;
+const BodyVarsN: BodyVars = 44;
 const ContactVarsN: ContactVars = 33;
 const JointControlVarsN: JointControlVars = 5;
 const DynamicVarsN: DynamicVars = 33;

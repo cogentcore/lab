@@ -26,17 +26,17 @@ import (
 type Editor struct { //types:add
 	core.Frame
 
-	// Physics has the physics simulation.
-	Physics *physics.World
+	// Model has the physics simulation.
+	Model *physics.Model
 
-	// World has the 3D GUI visualization.
-	World *World
+	// Scene has the 3D GUI visualization.
+	Scene *Scene
 
 	// UserParams is a struct with parameters for configuring the physics sim.
 	// These are displayed in the editor.
 	UserParams any
 
-	// ConfigFunc is the function that configures the world.
+	// ConfigFunc is the function that configures the [physics.Model].
 	ConfigFunc func()
 
 	// ControlFunc is the function that sets control parameters,
@@ -57,8 +57,8 @@ type Editor struct { //types:add
 	// TimeStep is current time step in physics update cycles.
 	TimeStep int
 
-	// Scene is the xyz GUI visualization widget.
-	scene *xyzcore.SceneEditor
+	// editor is the xyz GUI visualization widget.
+	editor *xyzcore.SceneEditor
 
 	// Toolbar is the top toolbar.
 	toolbar *core.Toolbar
@@ -108,15 +108,15 @@ func (pe *Editor) Init() {
 				if pe.UserParams != nil {
 					pe.userParamsForm.SetStruct(pe.UserParams)
 				}
-				params := &pe.Physics.Params[0]
+				params := &pe.Model.Params[0]
 				pe.paramsForm.SetStruct(params)
 			})
 		})
 
 		tree.AddChildAt(w, "scene", func(w *xyzcore.SceneEditor) {
-			pe.scene = w
+			pe.editor = w
 			w.UpdateWidget()
-			sc := pe.scene.SceneXYZ()
+			sc := pe.editor.SceneXYZ()
 
 			sc.Background = colors.Scheme.Select.Container
 			xyz.NewAmbient(sc, "ambient", 0.3, xyz.DirectSun)
@@ -124,8 +124,8 @@ func (pe *Editor) Init() {
 			dir := xyz.NewDirectional(sc, "dir", 1, xyz.DirectSun)
 			dir.Pos.Set(0, 2, 1)
 
-			pe.World = NewWorld(sc)
-			pe.Physics = physics.NewWorld()
+			pe.Scene = NewScene(sc)
+			pe.Model = physics.NewModel()
 
 			sc.Camera.Pose.Pos = math32.Vec3(0, 40, 3.5)
 			sc.Camera.LookAt(math32.Vec3(0, 5, 0), math32.Vec3(0, 1, 0))
@@ -140,24 +140,24 @@ func (pe *Editor) Init() {
 			sc.SaveCamera("1")
 			sc.SaveCamera("default")
 
-			pe.ConfigWorld()
+			pe.ConfigModel()
 		})
 	})
 }
 
-// ConfigWorld configures the physics world.
-func (pe *Editor) ConfigWorld() {
+// ConfigModel configures the physics world.
+func (pe *Editor) ConfigModel() {
 	if pe.isRunning {
 		core.MessageSnackbar(pe, "Simulation is still running...")
 		return
 	}
-	pe.World.Reset()
-	pe.Physics.Reset()
+	pe.Scene.Reset()
+	pe.Model.Reset()
 	if pe.ConfigFunc != nil {
 		pe.ConfigFunc()
 	}
-	pe.World.Init(pe.Physics)
-	pe.World.Update()
+	pe.Scene.Init(pe.Model)
+	pe.Scene.Update()
 	pe.stop = false
 	pe.TimeStep = 0
 }
@@ -170,8 +170,8 @@ func (pe *Editor) Restart() bool {
 	}
 	pe.stop = false
 	pe.TimeStep = 0
-	pe.World.Init(pe.Physics)
-	pe.World.Update()
+	pe.Scene.Init(pe.Model)
+	pe.Scene.Update()
 	pe.Update()
 	return true
 }
@@ -197,12 +197,12 @@ func (pe *Editor) MakeToolbar(p *tree.Plan) {
 							if pe.ControlFunc != nil {
 								pe.ControlFunc(physics.StepsToMsec(pe.TimeStep))
 							}
-							pe.Physics.Step()
+							pe.Model.Step()
 							pe.TimeStep++
-							pe.World.Update()
-							pe.Scene.AsyncLock()
-							pe.Scene.NeedsRender()
-							pe.Scene.AsyncUnlock()
+							pe.Scene.Update()
+							pe.editor.AsyncLock()
+							pe.editor.NeedsRender()
+							pe.editor.AsyncUnlock()
 							if pe.stop {
 								pe.stop = false
 								break
@@ -253,7 +253,7 @@ func (pe *Editor) MakeToolbar(p *tree.Plan) {
 				if !pe.Restart() {
 					return
 				}
-				pe.ConfigWorld()
+				pe.ConfigModel()
 			})
 		w.FirstStyler(func(s *styles.Style) { s.SetEnabled(!pe.isRunning) })
 	})
