@@ -4,7 +4,9 @@ The `physics` engine is a 3D physics simulator for creating virtual environments
 
 See [physics docs](https://cogentcore.org/lab/physics) for the main docs.
 
-The [phyxyz](phyxyz) ("physics") visualization sub-package manages a `View` element that links to physics bodies and generates an [xyz](https://cogentcore.org/core/xyz) 3D scenegraph based on the physics bodies, and updates this visualization efficiently as the physics is updated. There is an `Editor` widget that makes it easy to explore physics sims.
+The [phyxyz](phyxyz) ("physics") visualization sub-package manages a `Skin` element that links to physics bodies and generates an [xyz](https://cogentcore.org/core/xyz) 3D scenegraph based on the physics bodies, and updates this visualization efficiently as the physics is updated. There is an `Editor` widget that makes it easy to explore physics Models.
+
+The [builder](builder) package provides a structured, hierarchical description of a  `physics.Model` that supports replicating worlds for parallel world execution, and easier manipulation of objects as collections of bodies (e.g., an entire object can be moved and re-oriented in one call).
 
 ## TODO
 

@@ -20,6 +20,6 @@ func init() {
 		"Camera": reflect.ValueOf((*phyxyz.Camera)(nil)),
 		"Editor": reflect.ValueOf((*phyxyz.Editor)(nil)),
 		"Scene":  reflect.ValueOf((*phyxyz.Scene)(nil)),
-		"View":   reflect.ValueOf((*phyxyz.View)(nil)),
+		"Skin":   reflect.ValueOf((*phyxyz.Skin)(nil)),
 	}
 }
