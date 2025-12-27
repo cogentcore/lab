@@ -12,6 +12,10 @@ import (
 
 // Body is a rigid body.
 type Body struct {
+	// ObjectIndex is the index of body within parent [Object],
+	// which is used for id in [Builder] context.
+	ObjectIndex int
+
 	// Shape of the body.
 	Shape physics.Shapes
 
@@ -44,6 +48,12 @@ type Body struct {
 	// Mass of the object. Only relevant for Dynamic bodies.
 	Mass float32
 
+	// Pose has the position and rotation.
+	Pose Pose
+
+	// Com is the center-of-mass offset from the Pose.Pos.
+	Com math32.Vector3
+
 	// Bounce specifies the COR or coefficient of restitution (0..1),
 	// which determines how elastic the collision is,
 	// i.e., final velocity / initial velocity.
@@ -58,20 +68,84 @@ type Body struct {
 	// FrictionRolling is resistance to rolling motion at contact.
 	FrictionRolling float32
 
-	// Pose has the position and rotation.
-	Pose Pose
+	// Optional [phyxyz.Skin] for visualizing the body.
+	Skin *phyxyz.Skin
 
-	// Com is the center-of-mass offset from the Pose.Pos.
-	Com math32.Vector3
-
-	// View is the view element for this Body (optional).
-	View *phyxyz.View
-
-	// Index is the index of this body in the physics.World,
+	// BodyIndex is the index of this body in the [physics.Model] Bodies list,
 	// once built.
-	Index int32
+	BodyIndex int32
 
-	// DynamicIndex is the index of this dynamic body in
-	// the physics.World, once built.
+	// DynamicIndex is the index of this dynamic body in the
+	// [physics.Model] Dynamics list, once built.
 	DynamicIndex int32
+}
+
+// NewBody adds a new body with given parameters.
+// Returns the [Body] which can then be further customized.
+// Use this for Static elements; NewDynamic for dynamic elements.
+func (ob *Object) NewBody(shape physics.Shapes, hsize, pos math32.Vector3, rot math32.Quat) *Body {
+	idx := len(ob.Bodies)
+	bd := Body{ObjectIndex: idx, Shape: shape, HSize: hsize}
+	bd.Pose.Pos = pos
+	bd.Pose.Quat = rot
+	ob.Bodies = append(ob.Bodies, bd)
+	return &(ob.Bodies[idx])
+}
+
+// NewDynamic adds a new dynamic body with given parameters.
+// Returns the [Body] which can then be further customized.
+func (ob *Object) NewDynamic(shape physics.Shapes, mass float32, hsize, pos math32.Vector3, rot math32.Quat) *Body {
+	bd := ob.NewBody(shape, hsize, pos, rot)
+	bd.Dynamic = true
+	bd.Mass = mass
+	return bd
+}
+
+// NewBodySkin adds a new body with given parameters, including name and
+// color parameters used for intializing a [phyxyz.Skin] in given [phyxyz.Scene].
+// Returns the [Body] which can then be further customized.
+// Use this for Static elements; NewDynamicSkin for dynamic elements.
+func (ob *Object) NewBodySkin(sc *phyxyz.Scene, name string, shape physics.Shapes, clr string, hsize, pos math32.Vector3, rot math32.Quat) *Body {
+	bd := ob.NewBody(shape, hsize, pos, rot)
+	sk := sc.NewSkin(shape, name, clr, hsize, pos, rot)
+	bd.Skin = sk
+	return bd
+}
+
+// NewDynamicSkin adds a new dynamic body with given parameters,
+// including name and color parameters used for intializing a [phyxyz.Skin]
+// in given [phyxyz.Scene].
+// Returns the [Body] which can then be further customized.
+func (ob *Object) NewDynamicSkin(sc *phyxyz.Scene, name string, shape physics.Shapes, clr string, mass float32, hsize, pos math32.Vector3, rot math32.Quat) *Body {
+	bd := ob.NewBodySkin(sc, name, shape, clr, hsize, pos, rot)
+	bd.Dynamic = true
+	bd.Mass = mass
+	return bd
+}
+
+/////// Physics functions
+
+func (bd *Body) NewPhysicsBody(ml *physics.Model, world int) {
+	var bi, di int32
+	if bd.Dynamic {
+		bi, di = ml.NewDynamic(bd.Shape, bd.Mass, bd.HSize, bd.Pose.Pos, bd.Pose.Quat)
+		bd.BodyIndex = bi
+		bd.DynamicIndex = di
+	} else {
+		bi = ml.NewBody(bd.Shape, bd.HSize, bd.Pose.Pos, bd.Pose.Quat)
+		bd.DynamicIndex = -1
+		bd.BodyIndex = bi
+	}
+	physics.SetBodyWorld(bi, int32(world))
+	physics.SetBodyGroup(bi, int32(bd.Group))
+	if bd.Skin != nil {
+		bd.Skin.BodyIndex = bi
+		bd.Skin.DynamicIndex = di
+	}
+	physics.SetBodyThick(bi, bd.Thick)
+	physics.SetBodyCom(bi, bd.Com)
+	physics.SetBodyBounce(bi, bd.Bounce)
+	physics.SetBodyFriction(bi, bd.Friction)
+	physics.SetBodyFrictionTortion(bi, bd.FrictionTortion)
+	physics.SetBodyFrictionRolling(bi, bd.FrictionRolling)
 }

@@ -11,6 +11,7 @@ package phyxyz
 import (
 	"image"
 
+	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/core/xyz"
 	"cogentcore.org/lab/physics"
@@ -27,8 +28,8 @@ type Scene struct {
 	// Root is the root Group node in the Scene under which the world is rendered.
 	Root *xyz.Group
 
-	// Views are the view elements for each body in [physics.Model].
-	Views []*View
+	// Skins are the view elements for each body in [physics.Model].
+	Skins []*Skin
 }
 
 // NewScene returns a new Scene for visualizing a [physics.Model].
@@ -40,25 +41,25 @@ func NewScene(sc *xyz.Scene) *Scene {
 	return xysc
 }
 
-// Init configures the visual world based on Views,
+// Init configures the visual world based on Skins,
 // and calls Config on [physics.Model].
-// Call this _once_ after making all the new Views and Bodies.
+// Call this _once_ after making all the new Skins and Bodies.
 // (will return if already called).
-func (sc *Scene) Init(ph *physics.Model) {
-	ph.Config()
+func (sc *Scene) Init(ml *physics.Model) {
+	ml.Config()
 	if len(sc.Root.Makers.Normal) > 0 {
 		return
 	}
 	sc.Root.Maker(func(p *tree.Plan) {
-		for _, vw := range sc.Views {
-			vw.Add(p)
+		for _, sk := range sc.Skins {
+			sk.Add(p)
 		}
 	})
 }
 
 // Reset resets any existing views, starting fresh for a new configuration.
 func (sc *Scene) Reset() {
-	sc.Views = nil
+	sc.Skins = nil
 	if sc.Scene != nil {
 		sc.Scene.Update()
 	}
@@ -76,15 +77,15 @@ func (sc *Scene) Update() {
 // UpdateFromPhysics updates the Scene from currently active
 // physics state (use physics.Model.SetAsCurrent()).
 func (sc *Scene) UpdateFromPhysics() {
-	for _, vw := range sc.Views {
-		vw.UpdateFromPhysics()
+	for _, sk := range sc.Skins {
+		sk.UpdateFromPhysics()
 	}
 }
 
-// RenderFromView does an offscreen render using given [View]
+// RenderFromNode does an offscreen render using given [Skin]
 // for the camera position and orientation, returning the render image.
 // Current scene camera is saved and restored.
-func (sc *Scene) RenderFromNode(vw *View, cam *Camera) image.Image {
+func (sc *Scene) RenderFromNode(sk *Skin, cam *Camera) image.Image {
 	xysc := sc.Scene
 	camnm := "physics-view-rendernode-save"
 	xysc.SaveCamera(camnm)
@@ -96,8 +97,8 @@ func (sc *Scene) RenderFromNode(vw *View, cam *Camera) image.Image {
 	xysc.Camera.FOV = cam.FOV
 	xysc.Camera.Near = cam.Near
 	xysc.Camera.Far = cam.Far
-	xysc.Camera.Pose.Pos = vw.Pos
-	xysc.Camera.Pose.Quat = vw.Quat
+	xysc.Camera.Pose.Pos = sk.Pos
+	xysc.Camera.Pose.Quat = sk.Quat
 	xysc.Camera.Pose.Scale.Set(1, 1, 1)
 
 	xysc.UseAltFrame(cam.Size)
@@ -108,3 +109,9 @@ func (sc *Scene) RenderFromNode(vw *View, cam *Camera) image.Image {
 // func (vw *Scene) DepthImage() ([]float32, error) {
 // 	return vw.Scene.DepthImage()
 // }
+
+func (sc *Scene) NewSkin(shape physics.Shapes, name, clr string, hsize math32.Vector3, pos math32.Vector3, rot math32.Quat) *Skin {
+	sk := &Skin{Name: name, Shape: shape, Color: clr, HSize: hsize, DynamicIndex: -1, Pos: pos, Quat: rot}
+	sc.Skins = append(sc.Skins, sk)
+	return sk
+}

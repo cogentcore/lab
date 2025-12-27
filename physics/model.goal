@@ -34,11 +34,6 @@ type Model struct {
 	// a specific world to view.
 	ReplicasN int32
 
-	// CurrentObject is the [BodyObject] value to use when creating new bodies.
-	// Generally just increment when starting a new object. When using world replicas,
-	// the object indexes are copied, so objects are indexed by world and object id.
-	CurrentObject int
-
 	// Bodies are the rigid body elements (dynamic and static),
 	// specifying the constant, non-dynamic properties,
 	// which is initial state for dynamics.
@@ -126,30 +121,29 @@ func (ml *Model) Reset() {
 
 // NewBody adds a new body with given parameters. Returns the index.
 // Use this for Static elements; NewDynamic for dynamic elements.
-func (ml *Model) NewBody(shape Shapes, size, pos math32.Vector3, rot math32.Quat) int32 {
+func (ml *Model) NewBody(shape Shapes, hsize, pos math32.Vector3, rot math32.Quat) int32 {
 	sizes := ml.Bodies.ShapeSizes()
 	idx := int32(sizes[0])
 	ml.Bodies.SetShapeSizes(int(idx+1), int(BodyVarsN))
 	ml.Params[0].BodiesN = idx + 1
 	SetBodyShape(idx, shape)
 	SetBodyDynamic(idx, -1)
-	SetBodyHSize(idx, size)
+	SetBodyHSize(idx, hsize)
 	SetBodyPos(idx, pos)
 	SetBodyQuat(idx, rot)
 	SetBodyGroup(idx, -1) // assume static
 	SetBodyWorld(idx, int32(ml.CurrentWorld))
-	SetBodyObject(idx, int32(ml.CurrentObject))
-	ml.SetMass(idx, shape, size, 0) // assume static
+	ml.SetMass(idx, shape, hsize, 0) // assume static
 	return idx
 }
 
 // NewDynamic adds a new dynamic body with given parameters. Returns the index.
 // Shape cannot be [Plane].
-func (ml *Model) NewDynamic(shape Shapes, mass float32, size, pos math32.Vector3, rot math32.Quat) (bodyIdx, dynIdx int32) {
+func (ml *Model) NewDynamic(shape Shapes, mass float32, hsize, pos math32.Vector3, rot math32.Quat) (bodyIdx, dynIdx int32) {
 	if shape == Plane {
 		panic("physics.NewDynamic: shape cannot be Plane")
 	}
-	bodyIdx = ml.NewBody(shape, size, pos, rot)
+	bodyIdx = ml.NewBody(shape, hsize, pos, rot)
 	sizes := ml.Dynamics.ShapeSizes()
 	dynIdx = int32(sizes[0])
 	ml.Dynamics.SetShapeSizes(int(dynIdx+1), 2, int(DynamicVarsN))
@@ -157,7 +151,7 @@ func (ml *Model) NewDynamic(shape Shapes, mass float32, size, pos math32.Vector3
 	SetDynamicBody(dynIdx, bodyIdx)
 	SetBodyDynamic(bodyIdx, dynIdx)
 	SetBodyGroup(bodyIdx, 1) // dynamic
-	ml.SetMass(bodyIdx, shape, size, mass)
+	ml.SetMass(bodyIdx, shape, hsize, mass)
 	return
 }
 

@@ -6,6 +6,7 @@ import (
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/core/types"
+	"cogentcore.org/core/xyz"
 	"cogentcore.org/lab/physics"
 )
 
@@ -50,6 +51,50 @@ func (t *Editor) SetCameraPos(v math32.Vector3) *Editor { t.CameraPos = v; retur
 // TimeStep is current time step in physics update cycles.
 func (t *Editor) SetTimeStep(v int) *Editor { t.TimeStep = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/phyxyz.View", IDName: "view", Doc: "View has visualization functions for physics elements.", Fields: []types.Field{{Name: "Name", Doc: "Name is a name for element (index always appended)."}, {Name: "Shape", Doc: "Shape is the physical shape of the element."}, {Name: "Color", Doc: "Color is the color of the element."}, {Name: "Size", Doc: "Size is the size (per shape)."}, {Name: "Pos", Doc: "Pos is the position."}, {Name: "Quat", Doc: "Quat is the rotation as a quaternion."}, {Name: "NewView", Doc: "NewView is a function that returns a new [xyz.Node]\nto represent this element. If nil, uses appropriate defaults."}, {Name: "InitView", Doc: "InitView is a function that initializes a new [xyz.Node]\nthat represents this element. If nil, uses appropriate defaults."}, {Name: "Index", Doc: "Index is the index of the element in a list."}, {Name: "DynamicIndex", Doc: "DynamicIndex is the index of a dynamic element (-1 if not dynamic)."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/phyxyz.Scene", IDName: "scene", Doc: "Scene displays a [physics.Model] using a [xyz.Scene].\nOne Scene can be used for multiple different [physics.Model]s which\nis more efficient when running multiple in parallel.\nInitial construction of the physics and visualization happens here.", Fields: []types.Field{{Name: "Scene", Doc: "Scene is the [xyz.Scene] object for visualizing."}, {Name: "Root", Doc: "Root is the root Group node in the Scene under which the world is rendered."}, {Name: "Skins", Doc: "Skins are the view elements for each body in [physics.Model]."}}})
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/phyxyz.Scene", IDName: "scene", Doc: "Scene displays a [physics.Model] using a [xyz.Scene].\nOne Scene can be used for multiple different [physics.Model]s which\nis more efficient when running multiple in parallel.\nInitial construction of the physics and visualization happens here.", Fields: []types.Field{{Name: "Scene", Doc: "Scene is the [xyz.Scene] object for visualizing."}, {Name: "Root", Doc: "Root is the root Group node in the Scene under which the world is rendered."}, {Name: "Views", Doc: "Views are the view elements for each body in [physics.Model]."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/phyxyz.Skin", IDName: "skin", Doc: "Skin has visualization functions for physics elements.", Directives: []types.Directive{{Tool: "types", Directive: "add", Args: []string{"-setters"}}}, Fields: []types.Field{{Name: "Name", Doc: "Name is a name for element (index always appended, so it is unique)."}, {Name: "Shape", Doc: "Shape is the physical shape of the element."}, {Name: "Color", Doc: "Color is the color of the element."}, {Name: "HSize", Doc: "HSize is the half-size (e.g., radius) of the body.\nValues depend on shape type: X is generally radius,\nY is half-height."}, {Name: "Pos", Doc: "Pos is the position."}, {Name: "Quat", Doc: "Quat is the rotation as a quaternion."}, {Name: "NewSkin", Doc: "NewSkin is a function that returns a new [xyz.Node]\nto represent this element. If nil, uses appropriate defaults."}, {Name: "InitSkin", Doc: "InitSkin is a function that initializes a new [xyz.Node]\nthat represents this element. If nil, uses appropriate defaults."}, {Name: "BodyIndex", Doc: "BodyIndex is the index of the body in [physics.Bodies]"}, {Name: "DynamicIndex", Doc: "DynamicIndex is the index in [physics.Dynamics] (-1 if not dynamic)."}}})
+
+// SetName sets the [Skin.Name]:
+// Name is a name for element (index always appended, so it is unique).
+func (t *Skin) SetName(v string) *Skin { t.Name = v; return t }
+
+// SetShape sets the [Skin.Shape]:
+// Shape is the physical shape of the element.
+func (t *Skin) SetShape(v physics.Shapes) *Skin { t.Shape = v; return t }
+
+// SetColor sets the [Skin.Color]:
+// Color is the color of the element.
+func (t *Skin) SetColor(v string) *Skin { t.Color = v; return t }
+
+// SetHSize sets the [Skin.HSize]:
+// HSize is the half-size (e.g., radius) of the body.
+// Values depend on shape type: X is generally radius,
+// Y is half-height.
+func (t *Skin) SetHSize(v math32.Vector3) *Skin { t.HSize = v; return t }
+
+// SetPos sets the [Skin.Pos]:
+// Pos is the position.
+func (t *Skin) SetPos(v math32.Vector3) *Skin { t.Pos = v; return t }
+
+// SetQuat sets the [Skin.Quat]:
+// Quat is the rotation as a quaternion.
+func (t *Skin) SetQuat(v math32.Quat) *Skin { t.Quat = v; return t }
+
+// SetNewSkin sets the [Skin.NewSkin]:
+// NewSkin is a function that returns a new [xyz.Node]
+// to represent this element. If nil, uses appropriate defaults.
+func (t *Skin) SetNewSkin(v func() tree.Node) *Skin { t.NewSkin = v; return t }
+
+// SetInitSkin sets the [Skin.InitSkin]:
+// InitSkin is a function that initializes a new [xyz.Node]
+// that represents this element. If nil, uses appropriate defaults.
+func (t *Skin) SetInitSkin(v func(sld *xyz.Solid)) *Skin { t.InitSkin = v; return t }
+
+// SetBodyIndex sets the [Skin.BodyIndex]:
+// BodyIndex is the index of the body in [physics.Bodies]
+func (t *Skin) SetBodyIndex(v int32) *Skin { t.BodyIndex = v; return t }
+
+// SetDynamicIndex sets the [Skin.DynamicIndex]:
+// DynamicIndex is the index in [physics.Dynamics] (-1 if not dynamic).
+func (t *Skin) SetDynamicIndex(v int32) *Skin { t.DynamicIndex = v; return t }

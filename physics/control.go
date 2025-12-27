@@ -16,19 +16,23 @@ const (
 	// Joint force and torque inputs
 	JointControlForce JointControlVars = iota
 
-	// Joint target position settings: the stiffness parameter determines
-	// how strongly the target position target is enforced:
-	// 0 = not at all; larger = stronger (e.g., 1000 or higher).
-	// Set to 0 to allow the joint to be fully flexible.
-	JointTargetStiff
+	// JointTargetPos is the position target value, where 0 is the initial
+	// position. For angular joints, this is in radians.
 	JointTargetPos
 
-	// Joint target velocity settings: the damping parameter determines
-	// how strongly the target velocity target is enforced:
+	// JointTargetStiff determines how strongly the target position
+	// is enforced: 0 = not at all; larger = stronger (e.g., 1000 or higher).
+	// Set to 0 to allow the joint to be fully flexible.
+	JointTargetStiff
+
+	// JointTargetVel is the velocity target value. For example, 0
+	// effectively damps joint movement in proportion to Damp parameter.
+	JointTargetVel
+
+	// JointTargetDamp determines how strongly the target velocity is enforced:
 	// 0 = not at all; larger = stronger (e.g., 1 is reasonable).
 	// Set to 0 to allow the joint to be fully flexible.
 	JointTargetDamp
-	JointTargetVel
 )
 
 // SetJointControl sets the control for given joint, dof and parameter

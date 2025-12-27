@@ -706,13 +706,13 @@ func ContactConstraint(err float32, q0A, q0B math32.Quat, mInvA, mInvB float32, 
 
 // IsChildDynamic returns true if dic is a direct child
 // on any joint where dip is the parent.
-func (wl *Model) IsChildDynamic(dip, dic int32) bool {
+func (ml *Model) IsChildDynamic(dip, dic int32) bool {
 	if dip < 0 || dic < 0 {
 		return false
 	}
-	npja := wl.BodyJoints[dip, 0, 0]
+	npja := ml.BodyJoints[dip, 0, 0]
 	for j := range npja {
-		ji := wl.BodyJoints[dip, 0, 1+j]
+		ji := ml.BodyJoints[dip, 0, 1+j]
 		jci := JointChildIndex(ji)
 		if jci == dic {
 			return true
@@ -727,8 +727,8 @@ func (wl *Model) IsChildDynamic(dip, dic int32) bool {
 // based on world and group settings and not being direct parent
 // child relationship within a joint. Result has A with lower shape type,
 // so that shapes are in a canonical order.
-func (wl *Model) ConfigBodyCollidePairs() {
-	params := &wl.Params[0]
+func (ml *Model) ConfigBodyCollidePairs() {
+	params := &ml.Params[0]
 	nb := params.BodiesN
 	nalc := int(nb) * 10
 	pt := tensor.NewInt32(nalc, 2)
@@ -751,7 +751,7 @@ func (wl *Model) ConfigBodyCollidePairs() {
 			}
 			dib := GetBodyDynamic(b)
 			// now check joints (ConfigJoints must have been called first)
-			if wl.IsChildDynamic(dia, dib) || wl.IsChildDynamic(dib, dia) {
+			if ml.IsChildDynamic(dia, dib) || ml.IsChildDynamic(dib, dia) {
 				continue
 			}
 			if np >= nalc {
@@ -777,7 +777,7 @@ func (wl *Model) ConfigBodyCollidePairs() {
 		np = 1
 	}
 	pt.SetShapeSizes(np, 2)
-	wl.BodyCollidePairs = pt
+	ml.BodyCollidePairs = pt
 	BodyCollidePairs = pt
 	// fmt.Println("body pairs over alloc", nalc - np, "total:", np)
 }
@@ -786,8 +786,8 @@ func (wl *Model) ConfigBodyCollidePairs() {
 
 // SetMaxContacts computes [Params.MaxContacts] based on current list of 
 // [BodyCollidePairs].
-func (wl *Model) SetMaxContacts() {
-	params := &wl.Params[0]
+func (ml *Model) SetMaxContacts() {
+	params := &ml.Params[0]
 
 	n := int32(0)
 	for ci := range params.BodyCollidePairsN {
@@ -815,7 +815,7 @@ func (wl *Model) SetMaxContacts() {
 	}
 	n = max(n, params.DynamicsN)
 	params.ContactsMax = n
-	wl.BroadContacts.SetShapeSizes(int(n), int(BroadContactVarsN))
-	wl.Contacts.SetShapeSizes(int(n), int(ContactVarsN))
+	ml.BroadContacts.SetShapeSizes(int(n), int(BroadContactVarsN))
+	ml.Contacts.SetShapeSizes(int(n), int(ContactVarsN))
 }
 

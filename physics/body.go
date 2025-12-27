@@ -46,14 +46,6 @@ const (
 	// does not need to be handled here.
 	BodyGroup
 
-	// BodyObject identifies bodies that all belong to the same overall
-	// physical object (e.g., a robot or simulated animal). It has no
-	// implications for collision or physics simulation. Instead,
-	// it is used for external manipulation on entire objects at a time,
-	// e.g. via PositionObject.  When using world replicas, the object
-	// indexes are copied, so objects are indexed by world and object id.
-	BodyObject
-
 	// BodyHSize is the half-size (e.g., radius) of the body.
 	// Values depend on shape type: X is generally radius,
 	// Y is half-height.
@@ -176,17 +168,6 @@ func GetBodyGroup(idx int32) int32 {
 	return int32(math.Float32bits(Bodies.Value(int(idx), int(BodyGroup))))
 }
 
-// SetBodyObject sets the [BodyObject] index for given body.
-// Object indexes are used for external manipulation of multiple
-// bodies in a coherent manner.
-func SetBodyObject(idx, w int32) {
-	Bodies.Set(math.Float32frombits(uint32(w)), int(idx), int(BodyObject))
-}
-
-func GetBodyObject(idx int32) int32 {
-	return int32(math.Float32bits(Bodies.Value(int(idx), int(BodyObject))))
-}
-
 func BodyHSize(idx int32) math32.Vector3 {
 	return math32.Vec3(Bodies.Value(int(idx), int(BodyHSizeX)), Bodies.Value(int(idx), int(BodyHSizeY)), Bodies.Value(int(idx), int(BodyHSizeZ)))
 }
@@ -270,6 +251,12 @@ func SetBodyInvInertia(idx int32, invInertia math32.Matrix3) {
 	for i := range 9 {
 		Bodies.Set(invInertia[i], int(idx), int(int(BodyInvInertiaXX)+i))
 	}
+}
+
+// SetBodyThick specifies the thickness of the body, as a hollow shape.
+// if 0, then it is solid.
+func SetBodyThick(idx int32, val float32) {
+	Bodies.Set(val, int(idx), int(BodyThick))
 }
 
 // SetBodyBounce specifies the COR or coefficient of restitution (0..1),

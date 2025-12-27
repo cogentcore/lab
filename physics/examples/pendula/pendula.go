@@ -14,6 +14,7 @@ import (
 	"cogentcore.org/core/math32"
 	_ "cogentcore.org/lab/gosl/slbool/slboolcore" // include to get gui views
 	"cogentcore.org/lab/physics"
+	"cogentcore.org/lab/physics/builder"
 	"cogentcore.org/lab/physics/phyxyz"
 )
 
@@ -81,9 +82,15 @@ func main() {
 
 	ed.SetUserParams(ps)
 
-	var botJoint int32
+	bld := builder.NewBuilder()
+
+	var botJoint *builder.Joint
 
 	ed.SetConfigFunc(func() {
+		bld.Reset()
+		wld := bld.NewWorld()
+		obj := wld.NewObject()
+
 		ml := ed.Model
 		sc := ed.Scene
 		rot := math32.NewQuat(0, 0, 0, 1)
@@ -101,16 +108,16 @@ func main() {
 			x = 0
 			y -= ps.HSize.Y
 		}
-		pb := sc.NewDynamic(ml, "top", physics.Capsule, clr, ps.Mass, ps.HSize, math32.Vec3(x, y, 0), rleft)
+		pb := obj.NewDynamicSkin(sc, "top", physics.Capsule, clr, ps.Mass, ps.HSize, math32.Vec3(x, y, 0), rleft)
 		if !ps.Collide {
-			pb.SetBodyGroup(1)
+			pb.SetGroup(1)
 		}
 
 		targ := math32.DegToRad(float32(ps.TargetDegFromVert))
 
-		ji := pb.NewJointRevolute(ml, nil, math32.Vec3(0, stY, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
-		physics.SetJointTargetPos(ji, 0, targ, ps.Stiff)
-		physics.SetJointTargetVel(ji, 0, 0, ps.Damp)
+		jd := obj.NewJointRevolute(nil, pb, math32.Vec3(0, stY, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
+		jd.DoF(0).SetTargetPos(targ).SetTargetStiff(ps.Stiff).
+			SetTargetVel(0).SetTargetDamp(ps.Damp)
 
 		for i := 1; i < ps.NPendula; i++ {
 			clr := colors.Names[12+i%len(colors.Names)]
@@ -120,24 +127,25 @@ func main() {
 				y = stY + x
 				x = 0
 			}
-			cb := sc.NewDynamic(ml, "child", physics.Capsule, clr, ps.Mass, ps.HSize, math32.Vec3(x, y, 0), rleft)
+			cb := obj.NewDynamicSkin(sc, "child", physics.Capsule, clr, ps.Mass, ps.HSize, math32.Vec3(x, y, 0), rleft)
 			if !ps.Collide {
-				cb.SetBodyGroup(1 + i)
+				cb.SetGroup(1 + i)
 			}
-			ji = cb.NewJointRevolute(ml, pb, math32.Vec3(0, -ps.HSize.Y, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
-			physics.SetJointTargetPos(ji, 0, targ, ps.Stiff)
-			physics.SetJointTargetVel(ji, 0, 0, ps.Damp)
+			jd = obj.NewJointRevolute(pb, cb, math32.Vec3(0, -ps.HSize.Y, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
+			jd.DoF(0).SetTargetPos(targ).SetTargetStiff(ps.Stiff).
+				SetTargetVel(0).SetTargetDamp(ps.Damp)
 			pb = cb
-			botJoint = ji
+			botJoint = jd
 		}
+		bld.Build(ml, sc)
 	})
 
 	ed.SetControlFunc(func(timeStep int) {
 		if timeStep >= ps.ForceOn && timeStep < ps.ForceOff {
 			fmt.Println(timeStep, "\tforce on:", ps.Force)
-			physics.SetJointControlForce(botJoint, 0, ps.Force)
+			physics.SetJointControlForce(botJoint.JointIndex, 0, ps.Force)
 		} else {
-			physics.SetJointControlForce(botJoint, 0, 0)
+			physics.SetJointControlForce(botJoint.JointIndex, 0, 0)
 		}
 	})
 

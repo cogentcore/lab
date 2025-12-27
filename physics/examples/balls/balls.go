@@ -100,7 +100,7 @@ func main() {
 			bl := sc.NewDynamic(ml, "ball", physics.Sphere, clr, bs.Mass, math32.Vec3(size, size, size),
 				math32.Vec3(x, size+ht, z), rot)
 			if !bs.Collide {
-				physics.SetBodyGroup(bl.Index, int32(i+1)) // only collide within same group
+				physics.SetBodyGroup(bl.BodyIndex, int32(i+1)) // only collide within same group
 			}
 			bl.SetBodyBounce(bs.Bounce)
 			bl.SetBodyFriction(bs.Friction)

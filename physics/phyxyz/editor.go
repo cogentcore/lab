@@ -145,7 +145,7 @@ func (pe *Editor) Init() {
 	})
 }
 
-// ConfigModel configures the physics world.
+// ConfigModel configures the physics model.
 func (pe *Editor) ConfigModel() {
 	if pe.isRunning {
 		core.MessageSnackbar(pe, "Simulation is still running...")
