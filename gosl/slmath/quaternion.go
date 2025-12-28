@@ -59,7 +59,7 @@ func MulQuats(a, b math32.Quat) math32.Quat {
 	return q
 }
 
-// MulQRTransforms computes the equivalent of matrix multiplication for
+// MulSpatialTransforms computes the equivalent of matrix multiplication for
 // two quat-point spatial transforms: o = a * b
 func MulSpatialTransforms(aP math32.Vector3, aQ math32.Quat, bP math32.Vector3, bQ math32.Quat, oP *math32.Vector3, oQ *math32.Quat) {
 	// rotate b by a and add a

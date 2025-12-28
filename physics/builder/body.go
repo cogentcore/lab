@@ -107,9 +107,15 @@ func (ob *Object) NewDynamic(shape physics.Shapes, mass float32, hsize, pos math
 // Use this for Static elements; NewDynamicSkin for dynamic elements.
 func (ob *Object) NewBodySkin(sc *phyxyz.Scene, name string, shape physics.Shapes, clr string, hsize, pos math32.Vector3, rot math32.Quat) *Body {
 	bd := ob.NewBody(shape, hsize, pos, rot)
-	sk := sc.NewSkin(shape, name, clr, hsize, pos, rot)
-	bd.Skin = sk
+	bd.NewSkin(sc, name, clr)
 	return bd
+}
+
+// NewSkin adds a new skin for body with given name and color parameters.
+func (bd *Body) NewSkin(sc *phyxyz.Scene, name string, clr string) *phyxyz.Skin {
+	sk := sc.NewSkin(bd.Shape, name, clr, bd.HSize, bd.Pose.Pos, bd.Pose.Quat)
+	bd.Skin = sk
+	return sk
 }
 
 // NewDynamicSkin adds a new dynamic body with given parameters,
@@ -129,15 +135,15 @@ func (bd *Body) NewPhysicsBody(ml *physics.Model, world int) {
 	var bi, di int32
 	if bd.Dynamic {
 		bi, di = ml.NewDynamic(bd.Shape, bd.Mass, bd.HSize, bd.Pose.Pos, bd.Pose.Quat)
-		bd.BodyIndex = bi
-		bd.DynamicIndex = di
 	} else {
 		bi = ml.NewBody(bd.Shape, bd.HSize, bd.Pose.Pos, bd.Pose.Quat)
-		bd.DynamicIndex = -1
-		bd.BodyIndex = bi
+		di = -1
 	}
+	bd.BodyIndex = bi
+	bd.DynamicIndex = di
 	physics.SetBodyWorld(bi, int32(world))
 	physics.SetBodyGroup(bi, int32(bd.Group))
+	// fmt.Println("\t\t", bi, di, bd.Pose.Pos, bd.Pose.Quat)
 	if bd.Skin != nil {
 		bd.Skin.BodyIndex = bi
 		bd.Skin.DynamicIndex = di

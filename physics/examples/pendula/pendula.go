@@ -101,14 +101,13 @@ func main() {
 		}
 
 		stY := 4 * ps.HSize.Y
-		clr := colors.Names[0]
 		x := -ps.HSize.Y
 		y := stY
 		if ps.StartVert {
 			x = 0
 			y -= ps.HSize.Y
 		}
-		pb := obj.NewDynamicSkin(sc, "top", physics.Capsule, clr, ps.Mass, ps.HSize, math32.Vec3(x, y, 0), rleft)
+		pb := obj.NewDynamicSkin(sc, "top", physics.Capsule, "blue", ps.Mass, ps.HSize, math32.Vec3(x, y, 0), rleft)
 		if !ps.Collide {
 			pb.SetGroup(1)
 		}
@@ -137,6 +136,8 @@ func main() {
 			pb = cb
 			botJoint = jd
 		}
+		bld.ReplicateWorld(sc, 0, 2, 2, math32.Vec3(0, 0, 2), math32.Vec3(2, 0, 0))
+
 		bld.Build(ml, sc)
 	})
 

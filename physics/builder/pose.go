@@ -9,6 +9,7 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
+	"cogentcore.org/lab/gosl/slmath"
 )
 
 // Pose represents the 3D position and rotation.
@@ -34,6 +35,11 @@ func (ps *Pose) Defaults() {
 func (ps *Pose) FromRel(rel, par *Pose) {
 	ps.Quat = rel.Quat.Mul(par.Quat)
 	ps.Pos = par.Quat.MulVector(rel.Pos).Add(par.Pos)
+}
+
+// Transform applies positional and rotational transform to pose.
+func (ps *Pose) Transform(pos math32.Vector3, rot math32.Quat) {
+	slmath.MulSpatialTransforms(pos, rot, ps.Pos, ps.Quat, &ps.Pos, &ps.Quat)
 }
 
 //////// Moving

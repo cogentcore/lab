@@ -7,6 +7,7 @@ package builder
 //go:generate core generate -add-types -setters
 
 import (
+	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/physics"
 	"cogentcore.org/lab/physics/phyxyz"
 )
@@ -46,7 +47,7 @@ func (bl *Builder) NewWorld() *World {
 	wn := 0
 	idx := len(bl.Worlds)
 	if idx > 0 {
-		wn = bl.Worlds[idx-1].World
+		wn = bl.Worlds[idx-1].World + 1
 	}
 	bl.Worlds = append(bl.Worlds, World{World: wn})
 	return &bl.Worlds[idx]
@@ -57,8 +58,10 @@ func (bl *Builder) NewWorld() *World {
 func (bl *Builder) Build(ml *physics.Model, sc *phyxyz.Scene) {
 	for wi := range bl.Worlds {
 		wl := bl.World(wi)
+		// fmt.Println("\n######## World:", wl.World)
 		for oi := range wl.Objects {
 			ob := wl.Object(oi)
+			// fmt.Println("\n\t#### Object")
 			for bbi := range ob.Bodies {
 				bd := ob.Body(bbi)
 				bd.NewPhysicsBody(ml, wl.World)
@@ -66,6 +69,35 @@ func (bl *Builder) Build(ml *physics.Model, sc *phyxyz.Scene) {
 			for bji := range ob.Joints {
 				jd := ob.Joint(bji)
 				jd.NewPhysicsJoint(ml, ob)
+			}
+		}
+	}
+}
+
+// ReplicateWorld makes copies of given world to form an X,Y grid of
+// worlds with given offsets added between world objects. Note that
+// worldIdx is the index in Worlds, not the world number.
+// Because different worlds do not interact, offsets are not necessary
+// and can potentially affect numerical accuracy. Offsets can also be
+// established purely in phyxyz.Scene viewing.
+// If the given [phyxyz.Scene] is non-nil, then new skins will be made
+// for the replicated bodies (else not).
+func (bl *Builder) ReplicateWorld(sc *phyxyz.Scene, worldIdx, nY, nX int, Yoff, Xoff math32.Vector3) {
+	rot := math32.NewQuat(0, 0, 0, 1)
+	src := bl.World(worldIdx)
+	for y := range nY {
+		for x := range nX {
+			if x == 0 && y == 0 {
+				continue
+			}
+			nw := bl.NewWorld()
+			wi := nw.World
+			nw.Copy(src)
+			nw.World = wi
+			off := Yoff.MulScalar(float32(y)).Add(Xoff.MulScalar(float32(x)))
+			nw.Transform(off, rot)
+			if sc != nil {
+				nw.CopySkins(sc, src)
 			}
 		}
 	}

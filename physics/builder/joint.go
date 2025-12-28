@@ -13,6 +13,7 @@ import (
 // Joint describes a joint between two bodies.
 type Joint struct {
 	// Parent is index within an Object for parent body.
+	// -1 for world-anchored parent.
 	Parent int
 
 	// Parent is index within an Object for parent body.
@@ -212,5 +213,17 @@ func (jd *Joint) NewPhysicsJoint(ml *physics.Model, ob *Object) int32 {
 		physics.SetJointTargetVel(ji, di, d.TargetVel, d.TargetDamp)
 	}
 	jd.JointIndex = ji
+	// fmt.Println("\t\tjoint:", pdi, cdi, jd.Type)
+	// if pdi < 0 {
+	// 	fmt.Println("\t\t\t", jd.PPose.Pos)
+	// }
 	return ji
+}
+
+// Transform applies positional and rotational transform to world anchors.
+func (jd *Joint) Transform(pos math32.Vector3, rot math32.Quat) {
+	if jd.Parent >= 0 {
+		return
+	}
+	jd.PPose.Transform(pos, rot)
 }
