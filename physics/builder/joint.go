@@ -227,3 +227,13 @@ func (jd *Joint) Transform(pos math32.Vector3, rot math32.Quat) {
 	}
 	jd.PPose.Transform(pos, rot)
 }
+
+// PoseToPhysics sets the current body poses to the physics current state.
+// For Dynamic bodies, sets dynamic state. Also updates world-anchored joints.
+func (jd *Joint) PoseToPhysics() {
+	if jd.Parent >= 0 {
+		return
+	}
+	physics.SetJointPPos(jd.JointIndex, jd.PPose.Pos)
+	physics.SetJointPQuat(jd.JointIndex, jd.PPose.Quat)
+}

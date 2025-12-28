@@ -9,6 +9,9 @@ import "cogentcore.org/lab/tensor"
 // note: add -keep to inspect intermediate .go code
 //go:generate gosl -exclude=Update,Defaults,ShouldDisplay -max-buffer-size=2147483616
 
+// CurModel is the currently active [Model].
+var CurModel *Model
+
 //gosl:start
 
 // vars are all the global vars for axon GPU / CPU computation.
@@ -87,5 +90,4 @@ var (
 	JointControls *tensor.Float32
 )
 
-// CurModel is the currently active [Model].
-var CurModel *Model
+//gosl:end

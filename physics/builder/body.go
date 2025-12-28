@@ -155,3 +155,16 @@ func (bd *Body) NewPhysicsBody(ml *physics.Model, world int) {
 	physics.SetBodyFrictionTortion(bi, bd.FrictionTortion)
 	physics.SetBodyFrictionRolling(bi, bd.FrictionRolling)
 }
+
+// PoseToPhysics sets the current body poses to the physics current state.
+// For Dynamic bodies, sets dynamic state. Also updates world-anchored joints.
+func (bd *Body) PoseToPhysics() {
+	if bd.DynamicIndex >= 0 {
+		params := physics.GetParams(0)
+		physics.SetDynamicPos(bd.DynamicIndex, params.Cur, bd.Pose.Pos)
+		physics.SetDynamicQuat(bd.DynamicIndex, params.Cur, bd.Pose.Quat)
+	} else {
+		physics.SetBodyPos(bd.DynamicIndex, bd.Pose.Pos)
+		physics.SetBodyQuat(bd.DynamicIndex, bd.Pose.Quat)
+	}
+}

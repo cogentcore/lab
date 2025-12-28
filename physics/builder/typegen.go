@@ -95,16 +95,27 @@ func (t *Body) SetBodyIndex(v int32) *Body { t.BodyIndex = v; return t }
 // [physics.Model] Dynamics list, once built.
 func (t *Body) SetDynamicIndex(v int32) *Body { t.DynamicIndex = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Builder", IDName: "builder", Doc: "Builder is the global container of [physics.Model] elements,\norganized into worlds that are independently updated.", Fields: []types.Field{{Name: "Worlds", Doc: "Worlds are the independent world elements."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Builder", IDName: "builder", Doc: "Builder is the global container of [physics.Model] elements,\norganized into worlds that are independently updated.", Fields: []types.Field{{Name: "Worlds", Doc: "Worlds are the independent world elements."}, {Name: "ReplicasStart", Doc: "ReplicasStart is the starting Worlds index for replicated world bodies.\nSet by ReplicateWorld, and used to set corresponding value in Model."}, {Name: "ReplicasN", Doc: "ReplicasN is the total number of replicated Worlds (including source).\nSet by ReplicateWorld, and used to set corresponding value in Model."}}})
 
 // SetWorlds sets the [Builder.Worlds]:
 // Worlds are the independent world elements.
 func (t *Builder) SetWorlds(v ...World) *Builder { t.Worlds = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Joint", IDName: "joint", Doc: "Joint describes a joint between two bodies.", Fields: []types.Field{{Name: "Parent", Doc: "Parent is index within an Object for parent body."}, {Name: "Child", Doc: "Parent is index within an Object for parent body."}, {Name: "Type", Doc: "Type is the type of the joint."}, {Name: "PPose", Doc: "PPose is the parent position and orientation of the joint\nin the parent's body-centered coordinates."}, {Name: "CPose", Doc: "CPose is the child position and orientation of the joint\nin the parent's body-centered coordinates."}, {Name: "LinearDoFN", Doc: "LinearDoFN is the number of linear degrees of freedom (3 max)."}, {Name: "AngularDoFN", Doc: "AngularDoFN is the number of linear degrees of freedom (3 max)."}, {Name: "DoFs", Doc: "DoFs are the degrees-of-freedom for this joint."}, {Name: "JointIndex", Doc: "JointIndex is the index of this joint in [physics.Joints] when built."}}})
+// SetReplicasStart sets the [Builder.ReplicasStart]:
+// ReplicasStart is the starting Worlds index for replicated world bodies.
+// Set by ReplicateWorld, and used to set corresponding value in Model.
+func (t *Builder) SetReplicasStart(v int) *Builder { t.ReplicasStart = v; return t }
+
+// SetReplicasN sets the [Builder.ReplicasN]:
+// ReplicasN is the total number of replicated Worlds (including source).
+// Set by ReplicateWorld, and used to set corresponding value in Model.
+func (t *Builder) SetReplicasN(v int) *Builder { t.ReplicasN = v; return t }
+
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Joint", IDName: "joint", Doc: "Joint describes a joint between two bodies.", Fields: []types.Field{{Name: "Parent", Doc: "Parent is index within an Object for parent body.\n-1 for world-anchored parent."}, {Name: "Child", Doc: "Parent is index within an Object for parent body."}, {Name: "Type", Doc: "Type is the type of the joint."}, {Name: "PPose", Doc: "PPose is the parent position and orientation of the joint\nin the parent's body-centered coordinates."}, {Name: "CPose", Doc: "CPose is the child position and orientation of the joint\nin the parent's body-centered coordinates."}, {Name: "LinearDoFN", Doc: "LinearDoFN is the number of linear degrees of freedom (3 max)."}, {Name: "AngularDoFN", Doc: "AngularDoFN is the number of linear degrees of freedom (3 max)."}, {Name: "DoFs", Doc: "DoFs are the degrees-of-freedom for this joint."}, {Name: "JointIndex", Doc: "JointIndex is the index of this joint in [physics.Joints] when built."}}})
 
 // SetParent sets the [Joint.Parent]:
 // Parent is index within an Object for parent body.
+// -1 for world-anchored parent.
 func (t *Joint) SetParent(v int) *Joint { t.Parent = v; return t }
 
 // SetChild sets the [Joint.Child]:

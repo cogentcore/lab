@@ -109,7 +109,7 @@ const JointControlVarsN JointControlVars = 5
 
 var _JointControlVarsValueMap = map[string]JointControlVars{`JointControlForce`: 0, `JointTargetPos`: 1, `JointTargetStiff`: 2, `JointTargetVel`: 3, `JointTargetDamp`: 4}
 
-var _JointControlVarsDescMap = map[JointControlVars]string{0: `Joint force and torque inputs`, 1: `Joint target position settings: the stiffness parameter determines how strongly the target position target is enforced: 0 = not at all; larger = stronger (e.g., 1000 or higher). Set to 0 to allow the joint to be fully flexible.`, 2: ``, 3: `Joint target velocity settings: the damping parameter determines how strongly the target velocity target is enforced: 0 = not at all; larger = stronger (e.g., 1 is reasonable). Set to 0 to allow the joint to be fully flexible.`, 4: ``}
+var _JointControlVarsDescMap = map[JointControlVars]string{0: `Joint force and torque inputs`, 1: `JointTargetPos is the position target value, where 0 is the initial position. For angular joints, this is in radians.`, 2: `JointTargetStiff determines how strongly the target position is enforced: 0 = not at all; larger = stronger (e.g., 1000 or higher). Set to 0 to allow the joint to be fully flexible.`, 3: `JointTargetVel is the velocity target value. For example, 0 effectively damps joint movement in proportion to Damp parameter.`, 4: `JointTargetDamp determines how strongly the target velocity is enforced: 0 = not at all; larger = stronger (e.g., 1 is reasonable). Set to 0 to allow the joint to be fully flexible.`}
 
 var _JointControlVarsMap = map[JointControlVars]string{0: `JointControlForce`, 1: `JointTargetPos`, 2: `JointTargetStiff`, 3: `JointTargetVel`, 4: `JointTargetDamp`}
 

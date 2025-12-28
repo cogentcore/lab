@@ -158,6 +158,7 @@ func init() {
 		"ContactsN":                   reflect.ValueOf(&physics.ContactsN).Elem(),
 		"ContactsNVar":                reflect.ValueOf(physics.ContactsNVar),
 		"ContactsVar":                 reflect.ValueOf(physics.ContactsVar),
+		"CurModel":                    reflect.ValueOf(&physics.CurModel).Elem(),
 		"Cylinder":                    reflect.ValueOf(physics.Cylinder),
 		"CylinderSDF":                 reflect.ValueOf(physics.CylinderSDF),
 		"D6":                          reflect.ValueOf(physics.D6),

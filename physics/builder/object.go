@@ -54,14 +54,24 @@ func (ob *Object) CopySkins(sc *phyxyz.Scene, so *Object) {
 	}
 }
 
-// Transform applies positional and rotational transforms to all bodies.
+// Transform applies positional and rotational transforms to all bodies,
+// and world-anchored joints.
 func (ob *Object) Transform(pos math32.Vector3, rot math32.Quat) {
 	for i := range ob.Bodies {
-		bd := ob.Body(i)
-		bd.Pose.Transform(pos, rot)
+		ob.Body(i).Pose.Transform(pos, rot)
 	}
 	for i := range ob.Joints {
-		jd := ob.Joint(i)
-		jd.Transform(pos, rot) // only for world-anchored joints
+		ob.Joint(i).Transform(pos, rot) // only for world-anchored joints
+	}
+}
+
+// PoseToPhysics sets the current body poses to the physics current state.
+// For Dynamic bodies, sets dynamic state. Also updates world-anchored joints.
+func (ob *Object) PoseToPhysics() {
+	for i := range ob.Bodies {
+		ob.Body(i).PoseToPhysics()
+	}
+	for i := range ob.Joints {
+		ob.Joint(i).PoseToPhysics()
 	}
 }
