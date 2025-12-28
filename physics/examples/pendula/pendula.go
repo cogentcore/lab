@@ -136,7 +136,7 @@ func main() {
 			pb = cb
 			botJoint = jd
 		}
-		bld.ReplicateWorld(sc, 0, 2, 2, math32.Vec3(0, 0, 2), math32.Vec3(2, 0, 0))
+		bld.ReplicateWorld(nil, 0, 2, 2, math32.Vec3(0, 0, -1), math32.Vec3(1, 0, 0))
 
 		bld.Build(ml, sc)
 	})

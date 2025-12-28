@@ -163,6 +163,7 @@ func (ml *Model) NewDynamic(shape Shapes, mass float32, hsize, pos math32.Vector
 // to the GPU.
 func (ml *Model) SetAsCurrent() {
 	isCur := (Bodies == ml.Bodies)
+	CurModel = ml
 	ml.SetAsCurrentVars()
 	if GPUInitialized && !isCur {
 		ml.ToGPUInfra()
@@ -199,4 +200,28 @@ func (ml *Model) GPUInit() {
 func (ml *Model) ToGPUInfra() {
 	ToGPUTensorStrides()
 	ToGPU(ParamsVar, BodiesVar, JointsVar, JointDoFsVar, BodyJointsVar, BodyCollidePairsVar, DynamicsVar, BroadContactsNVar, BroadContactsVar, ContactsNVar, ContactsVar, JointControlsVar)
+}
+
+// ReplicaWorldsN returns the number of replicated worlds. 0 if none.
+func (ml *Model) ReplicaWorldsN() int32 {
+	if ml.ReplicasN == 0 {
+		return 0
+	}
+	nbody := int32(ml.Bodies.DimSize(0))
+	return (nbody - ml.ReplicasStart) / ml.ReplicasN
+}
+
+// ReplicasIndexes returns the body and dynamics (if dynamic) indexes
+// for given replica world and source body index, if ReplicasN is > 0.
+// Otherwise, returns bi and corresponding dynamic index.
+func (ml *Model) ReplicasIndexes(bi, replica int32) (bodyIdx, dynIdx int32) {
+	if ml.ReplicasN == 0 {
+		return bi, GetBodyDynamic(bi)
+	}
+	if bi < ml.ReplicasStart || bi >= ml.ReplicasStart+ml.ReplicasN {
+		return bi, GetBodyDynamic(bi)
+	}
+	bodyIdx = (bi - ml.ReplicasStart) + ml.ReplicasStart + replica*ml.ReplicasN
+	dynIdx = GetBodyDynamic(bodyIdx)
+	return
 }

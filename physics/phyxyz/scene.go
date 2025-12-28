@@ -30,6 +30,13 @@ type Scene struct {
 
 	// Skins are the view elements for each body in [physics.Model].
 	Skins []*Skin
+
+	// ReplicasView enables viewing of different replicated worlds
+	// using the same skins.
+	ReplicasView bool
+
+	// ReplicasIndex is the replicated world to view.
+	ReplicasIndex int
 }
 
 // NewScene returns a new Scene for visualizing a [physics.Model].
@@ -47,6 +54,11 @@ func NewScene(sc *xyz.Scene) *Scene {
 // (will return if already called).
 func (sc *Scene) Init(ml *physics.Model) {
 	ml.Config()
+	if ml.ReplicasN > 0 {
+		sc.ReplicasView = true
+	} else {
+		sc.ReplicasView = false
+	}
 	if len(sc.Root.Makers.Normal) > 0 {
 		return
 	}
@@ -78,7 +90,7 @@ func (sc *Scene) Update() {
 // physics state (use physics.Model.SetAsCurrent()).
 func (sc *Scene) UpdateFromPhysics() {
 	for _, sk := range sc.Skins {
-		sk.UpdateFromPhysics()
+		sk.UpdateFromPhysics(sc)
 	}
 }
 

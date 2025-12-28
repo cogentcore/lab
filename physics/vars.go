@@ -86,3 +86,6 @@ var (
 	//gosl:dims 2
 	JointControls *tensor.Float32
 )
+
+// CurModel is the currently active [Model].
+var CurModel *Model

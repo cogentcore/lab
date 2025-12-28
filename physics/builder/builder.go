@@ -15,9 +15,16 @@ import (
 // Builder is the global container of [physics.Model] elements,
 // organized into worlds that are independently updated.
 type Builder struct {
-
 	// Worlds are the independent world elements.
 	Worlds []World
+
+	// ReplicasStart is the starting Worlds index for replicated world bodies.
+	// Set by ReplicateWorld, and used to set corresponding value in Model.
+	ReplicasStart int
+
+	// ReplicasN is the total number of replicated Worlds (including source).
+	// Set by ReplicateWorld, and used to set corresponding value in Model.
+	ReplicasN int
 }
 
 func NewBuilder() *Builder {
@@ -56,6 +63,8 @@ func (bl *Builder) NewWorld() *World {
 // Build builds a physics model, with optional [phyxyz.Scene] for
 // visualization (using Skin elements created for bodies).
 func (bl *Builder) Build(ml *physics.Model, sc *phyxyz.Scene) {
+	repSt := int32(0)
+	repN := int32(0)
 	for wi := range bl.Worlds {
 		wl := bl.World(wi)
 		// fmt.Println("\n######## World:", wl.World)
@@ -65,12 +74,22 @@ func (bl *Builder) Build(ml *physics.Model, sc *phyxyz.Scene) {
 			for bbi := range ob.Bodies {
 				bd := ob.Body(bbi)
 				bd.NewPhysicsBody(ml, wl.World)
+				if bl.ReplicasN > 0 && wi == bl.ReplicasStart {
+					repN++
+					if bbi == 0 {
+						repSt = bd.BodyIndex
+					}
+				}
 			}
 			for bji := range ob.Joints {
 				jd := ob.Joint(bji)
 				jd.NewPhysicsJoint(ml, ob)
 			}
 		}
+	}
+	if repN > 0 {
+		ml.ReplicasStart = repSt
+		ml.ReplicasN = repN
 	}
 }
 
@@ -101,4 +120,6 @@ func (bl *Builder) ReplicateWorld(sc *phyxyz.Scene, worldIdx, nY, nX int, Yoff, 
 			}
 		}
 	}
+	bl.ReplicasStart = worldIdx
+	bl.ReplicasN = nY * nX
 }

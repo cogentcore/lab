@@ -48,6 +48,9 @@ type Editor struct { //types:add
 	// Defaults to math32.Vec3(0, 25, 20).
 	CameraPos math32.Vector3
 
+	// Replica is the replica world to view, if replicas are present in model.
+	Replica int
+
 	// IsRunning is true if currently running sim.
 	isRunning bool
 
@@ -256,5 +259,26 @@ func (pe *Editor) MakeToolbar(p *tree.Plan) {
 				pe.ConfigModel()
 			})
 		w.FirstStyler(func(s *styles.Style) { s.SetEnabled(!pe.isRunning) })
+	})
+
+	tree.Add(p, func(w *core.Separator) {})
+
+	tt := "Replica world to view"
+	tree.Add(p, func(w *core.Text) { w.SetText("Replica:").SetTooltip(tt) })
+
+	tree.Add(p, func(w *core.Spinner) {
+		core.Bind(&pe.Replica, w)
+		w.SetMin(0).SetTooltip(tt)
+		w.Styler(func(s *styles.Style) {
+			replN := physics.CurModel.ReplicaWorldsN()
+			pe.Scene.ReplicasView = replN > 0
+			w.SetMax(float32(replN - 1))
+			s.SetEnabled(replN > 0)
+		})
+		w.OnChange(func(e events.Event) {
+			pe.Scene.ReplicasIndex = pe.Replica
+			pe.Scene.Update()
+			pe.NeedsRender()
+		})
 	})
 }

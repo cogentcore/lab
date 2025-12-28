@@ -72,16 +72,19 @@ func (sc *Scene) NewDynamic(ml *physics.Model, name string, shape physics.Shapes
 }
 
 // UpdateFromPhysics updates the Skin from physics state.
-func (sk *Skin) UpdateFromPhysics() {
+func (sk *Skin) UpdateFromPhysics(sc *Scene) {
 	params := physics.GetParams(0)
-	if sk.DynamicIndex >= 0 {
-		ix := int32(sk.DynamicIndex)
-		sk.Pos = physics.DynamicPos(ix, params.Cur)
-		sk.Quat = physics.DynamicQuat(ix, params.Cur)
+	di := int32(sk.DynamicIndex)
+	bi := int32(sk.BodyIndex)
+	if sc.ReplicasView {
+		bi, di = physics.CurModel.ReplicasIndexes(bi, int32(sc.ReplicasIndex))
+	}
+	if di >= 0 {
+		sk.Pos = physics.DynamicPos(di, params.Cur)
+		sk.Quat = physics.DynamicQuat(di, params.Cur)
 	} else {
-		ix := int32(sk.BodyIndex)
-		sk.Pos = physics.BodyPos(ix)
-		sk.Quat = physics.BodyQuat(ix)
+		sk.Pos = physics.BodyPos(bi)
+		sk.Quat = physics.BodyQuat(bi)
 	}
 	// fmt.Println("skin:", sk.BodyIndex, sk.DynamicIndex, sk.Name, sk.Pos, sk.Quat)
 }
