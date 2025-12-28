@@ -97,10 +97,10 @@ func (bl *Builder) Build(ml *physics.Model, sc *phyxyz.Scene) {
 // worlds with given offsets added between world objects. Note that
 // worldIdx is the index in Worlds, not the world number.
 // Because different worlds do not interact, offsets are not necessary
-// and can potentially affect numerical accuracy. Offsets can also be
-// established purely in [phyxyz.Scene] viewing.
+// and can potentially affect numerical accuracy.
 // If the given [phyxyz.Scene] is non-nil, then new skins will be made
-// for the replicated bodies (else not).
+// for the replicated bodies. Otherwise, the [phyxyz.Scene] can view
+// different replicas.
 func (bl *Builder) ReplicateWorld(sc *phyxyz.Scene, worldIdx, nY, nX int, Yoff, Xoff math32.Vector3) {
 	rot := math32.NewQuat(0, 0, 0, 1)
 	src := bl.World(worldIdx)

@@ -94,14 +94,18 @@ func (sc *Scene) UpdateFromPhysics() {
 	}
 }
 
-// RenderFromNode does an offscreen render using given [Skin]
+// RenderFrom does an offscreen render using given [Skin]
 // for the camera position and orientation, returning the render image.
 // Current scene camera is saved and restored.
-func (sc *Scene) RenderFromNode(sk *Skin, cam *Camera) image.Image {
+// If ReplicasView is set, then the given replica will be used for rendering.
+func (sc *Scene) RenderFrom(sk *Skin, cam *Camera, replica int) image.Image {
 	xysc := sc.Scene
-	camnm := "physics-view-rendernode-save"
+	camnm := "scene-renderfrom-save"
 	xysc.SaveCamera(camnm)
+	rep := sc.ReplicasIndex
+	sc.ReplicasIndex = replica
 	defer func() {
+		sc.ReplicasIndex = rep
 		xysc.SetCamera(camnm)
 		xysc.UseMainFrame()
 	}()
