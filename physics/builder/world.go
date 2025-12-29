@@ -50,10 +50,10 @@ func (wl *World) CopySkins(sc *phyxyz.Scene, ow *World) {
 	}
 }
 
-// Transform applies positional and rotational transforms to all objects.
-func (wl *World) Transform(pos math32.Vector3, rot math32.Quat) {
+// Move moves all objects in world by given delta.
+func (wl *World) Move(delta math32.Vector3) {
 	for i := range wl.Objects {
-		wl.Object(i).Transform(pos, rot)
+		wl.Object(i).Move(delta)
 	}
 }
 

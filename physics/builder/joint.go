@@ -220,20 +220,23 @@ func (jd *Joint) NewPhysicsJoint(ml *physics.Model, ob *Object) int32 {
 	return ji
 }
 
-// Transform applies positional and rotational transform to world anchors.
-func (jd *Joint) Transform(pos math32.Vector3, rot math32.Quat) {
-	if jd.Parent >= 0 {
-		return
-	}
-	jd.PPose.Transform(pos, rot)
+// IsGlobal returns true if this joint has a global world anchor parent.
+func (jd *Joint) IsGlobal() bool {
+	return jd.Parent < 0
 }
 
 // PoseToPhysics sets the current body poses to the physics current state.
 // For Dynamic bodies, sets dynamic state. Also updates world-anchored joints.
 func (jd *Joint) PoseToPhysics() {
-	if jd.Parent >= 0 {
+	if !jd.IsGlobal() {
 		return
 	}
 	physics.SetJointPPos(jd.JointIndex, jd.PPose.Pos)
 	physics.SetJointPQuat(jd.JointIndex, jd.PPose.Quat)
+}
+
+// SetTargetPos sets the target position for given DoF for
+// this joint in the physics model.
+func (jd *Joint) SetTargetPos(dof int32, pos, stiff float32) {
+	physics.SetJointTargetPos(jd.JointIndex, dof, pos, stiff)
 }

@@ -9,7 +9,6 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/tree"
-	"cogentcore.org/lab/gosl/slmath"
 )
 
 // Pose represents the 3D position and rotation.
@@ -29,17 +28,10 @@ func (ps *Pose) Defaults() {
 	}
 }
 
-//////// Pose updates
-
-// FromRel sets state from relative values compared to a parent state
-func (ps *Pose) FromRel(rel, par *Pose) {
-	ps.Quat = rel.Quat.Mul(par.Quat)
-	ps.Pos = par.Quat.MulVector(rel.Pos).Add(par.Pos)
-}
-
 // Transform applies positional and rotational transform to pose.
 func (ps *Pose) Transform(pos math32.Vector3, rot math32.Quat) {
-	slmath.MulSpatialTransforms(pos, rot, ps.Pos, ps.Quat, &ps.Pos, &ps.Quat)
+	ps.Pos = rot.MulVector(ps.Pos).Add(pos)
+	ps.Quat = rot.Mul(ps.Quat)
 }
 
 //////// Moving
@@ -69,6 +61,11 @@ func (ps *Pose) MoveOnAxisAbs(x, y, z, dist float32) { //types:add
 }
 
 //////// Rotating
+
+func (ps *Pose) RotateAround(rot math32.Quat, around math32.Vector3) {
+	ps.Pos = rot.MulVector(ps.Pos.Sub(around)).Add(around)
+	ps.Quat = rot.Mul(ps.Quat)
+}
 
 // SetEulerRotation sets the rotation in Euler angles (degrees).
 func (ps *Pose) SetEulerRotation(x, y, z float32) { //types:add

@@ -22,7 +22,8 @@ import (
 )
 
 // Editor provides a basic viewer and parameter controller widget
-// for exploring physics models.
+// for exploring physics models. It creates and manages its own
+// [physics.Model] and [phyxyz.Scene].
 type Editor struct { //types:add
 	core.Frame
 
@@ -160,7 +161,6 @@ func (pe *Editor) ConfigModel() {
 		pe.ConfigFunc()
 	}
 	pe.Scene.Init(pe.Model)
-	pe.Scene.Update()
 	pe.stop = false
 	pe.TimeStep = 0
 }
@@ -174,8 +174,6 @@ func (pe *Editor) Restart() bool {
 	pe.stop = false
 	pe.TimeStep = 0
 	pe.Scene.Init(pe.Model)
-	pe.Scene.Update()
-	pe.Update()
 	return true
 }
 

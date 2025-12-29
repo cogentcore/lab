@@ -161,8 +161,8 @@ func (bd *Body) NewPhysicsBody(ml *physics.Model, world int) {
 func (bd *Body) PoseToPhysics() {
 	if bd.DynamicIndex >= 0 {
 		params := physics.GetParams(0)
-		physics.SetDynamicPos(bd.DynamicIndex, params.Cur, bd.Pose.Pos)
-		physics.SetDynamicQuat(bd.DynamicIndex, params.Cur, bd.Pose.Quat)
+		physics.SetDynamicPos(bd.DynamicIndex, params.Next, bd.Pose.Pos)
+		physics.SetDynamicQuat(bd.DynamicIndex, params.Next, bd.Pose.Quat)
 	} else {
 		physics.SetBodyPos(bd.DynamicIndex, bd.Pose.Pos)
 		physics.SetBodyQuat(bd.DynamicIndex, bd.Pose.Quat)

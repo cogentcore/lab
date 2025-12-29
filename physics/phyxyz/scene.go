@@ -51,7 +51,7 @@ func NewScene(sc *xyz.Scene) *Scene {
 // Init configures the visual world based on Skins,
 // and calls Config on [physics.Model].
 // Call this _once_ after making all the new Skins and Bodies.
-// (will return if already called).
+// (will return if already called). This calls Update().
 func (sc *Scene) Init(ml *physics.Model) {
 	ml.Config()
 	if ml.ReplicasN > 0 {
@@ -60,6 +60,7 @@ func (sc *Scene) Init(ml *physics.Model) {
 		sc.ReplicasView = false
 	}
 	if len(sc.Root.Makers.Normal) > 0 {
+		sc.Update()
 		return
 	}
 	sc.Root.Maker(func(p *tree.Plan) {
@@ -67,6 +68,7 @@ func (sc *Scene) Init(ml *physics.Model) {
 			sk.Add(p)
 		}
 	})
+	sc.Update()
 }
 
 // Reset resets any existing views, starting fresh for a new configuration.

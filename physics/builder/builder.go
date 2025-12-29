@@ -94,16 +94,22 @@ func (bl *Builder) Build(ml *physics.Model, sc *phyxyz.Scene) {
 }
 
 // ReplicateWorld makes copies of given world to form an X,Y grid of
-// worlds with given offsets added between world objects. Note that
-// worldIdx is the index in Worlds, not the world number.
+// worlds with given optional offsets (Y, X) added between world objects.
+// Note that worldIdx is the index in Worlds, not the world number.
 // Because different worlds do not interact, offsets are not necessary
 // and can potentially affect numerical accuracy.
 // If the given [phyxyz.Scene] is non-nil, then new skins will be made
 // for the replicated bodies. Otherwise, the [phyxyz.Scene] can view
 // different replicas.
-func (bl *Builder) ReplicateWorld(sc *phyxyz.Scene, worldIdx, nY, nX int, Yoff, Xoff math32.Vector3) {
-	rot := math32.NewQuat(0, 0, 0, 1)
+func (bl *Builder) ReplicateWorld(sc *phyxyz.Scene, worldIdx, nY, nX int, offs ...math32.Vector3) {
 	src := bl.World(worldIdx)
+	var Yoff, Xoff math32.Vector3
+	if len(offs) > 0 {
+		Yoff = offs[0]
+	}
+	if len(offs) > 1 {
+		Xoff = offs[1]
+	}
 	for y := range nY {
 		for x := range nX {
 			if x == 0 && y == 0 {
@@ -114,7 +120,7 @@ func (bl *Builder) ReplicateWorld(sc *phyxyz.Scene, worldIdx, nY, nX int, Yoff, 
 			nw.Copy(src)
 			nw.World = wi
 			off := Yoff.MulScalar(float32(y)).Add(Xoff.MulScalar(float32(x)))
-			nw.Transform(off, rot)
+			nw.Move(off)
 			if sc != nil {
 				nw.CopySkins(sc, src)
 			}

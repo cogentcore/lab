@@ -54,16 +54,7 @@ func (ob *Object) CopySkins(sc *phyxyz.Scene, so *Object) {
 	}
 }
 
-// Transform applies positional and rotational transforms to all bodies,
-// and world-anchored joints.
-func (ob *Object) Transform(pos math32.Vector3, rot math32.Quat) {
-	for i := range ob.Bodies {
-		ob.Body(i).Pose.Transform(pos, rot)
-	}
-	for i := range ob.Joints {
-		ob.Joint(i).Transform(pos, rot) // only for world-anchored joints
-	}
-}
+//////// Transforms
 
 // PoseToPhysics sets the current body poses to the physics current state.
 // For Dynamic bodies, sets dynamic state. Also updates world-anchored joints.
@@ -74,4 +65,53 @@ func (ob *Object) PoseToPhysics() {
 	for i := range ob.Joints {
 		ob.Joint(i).PoseToPhysics()
 	}
+}
+
+// Move applies positional and rotational transforms to all bodies,
+// and world-anchored joints.
+func (ob *Object) Move(pos math32.Vector3) {
+	for i := range ob.Bodies {
+		ob.Body(i).Pose.Move(pos)
+	}
+	for i := range ob.Joints {
+		jd := ob.Joint(i)
+		if jd.IsGlobal() {
+			jd.PPose.Move(pos)
+		}
+	}
+}
+
+// RotateAround rotates around a given point
+func (ob *Object) RotateAround(rot math32.Quat, around math32.Vector3) {
+	for i := range ob.Bodies {
+		ob.Body(i).Pose.RotateAround(rot, around)
+	}
+	for i := range ob.Joints {
+		jd := ob.Joint(i)
+		if jd.IsGlobal() {
+			jd.PPose.RotateAround(rot, around)
+		}
+	}
+}
+
+// RotateAroundBody rotates around a given body in object.
+func (ob *Object) RotateAroundBody(body int, rot math32.Quat) {
+	bd := ob.Body(body)
+	ob.RotateAround(rot, bd.Pose.Pos)
+}
+
+// MoveOnAxis moves (translates) the specified distance on the
+// specified local axis, relative to the given body in object.
+// The axis is normalized prior to aplying the distance factor.
+func (ob *Object) MoveOnAxisBody(body int, x, y, z, dist float32) {
+	bd := ob.Body(body)
+	delta := bd.Pose.Quat.MulVector(math32.Vec3(x, y, z).Normal()).MulScalar(dist)
+	ob.Move(delta)
+}
+
+// RotateOnAxisBody rotates around the specified local axis the
+// specified angle in degrees, relative to the given body in the object.
+func (ob *Object) RotateOnAxisBody(body int, x, y, z, angle float32) {
+	rot := math32.NewQuatAxisAngle(math32.Vec3(x, y, z), math32.DegToRad(angle))
+	ob.RotateAroundBody(body, rot)
 }
