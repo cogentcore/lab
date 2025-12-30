@@ -530,7 +530,7 @@ func JointAxisLimitsUpdate(dof int32, axis math32.Vector3, lower, upper float32,
 		*axisLimitsA = up
 	} else {
 		*axisLimitsD = slmath.Min3(*axisLimitsD, lo)
-		*axisLimitsA = slmath.Max3(*axisLimitsD, up)
+		*axisLimitsA = slmath.Max3(*axisLimitsA, up)
 	}
 }
 

@@ -67,6 +67,17 @@ func (ob *Object) PoseToPhysics() {
 	}
 }
 
+// PoseFromPhysics gets the current body poses from the physics current state.
+// Also updates world-anchored joints.
+func (ob *Object) PoseFromPhysics() {
+	for i := range ob.Bodies {
+		ob.Body(i).PoseFromPhysics()
+	}
+	for i := range ob.Joints {
+		ob.Joint(i).PoseFromPhysics()
+	}
+}
+
 // Move applies positional and rotational transforms to all bodies,
 // and world-anchored joints.
 func (ob *Object) Move(pos math32.Vector3) {

@@ -54,6 +54,7 @@ func main() {
 
 	ed.SetConfigFunc(func() {
 		ml := ed.Model
+		ml.GPU = false
 		sc := ed.Scene
 		rot := math32.NewQuat(0, 0, 0, 1)
 		// thick := float32(0.1)

@@ -861,6 +861,6 @@ fn JointAxisLimitsUpdate(dof: i32, axis: vec3<f32>, lower: f32,upper: f32, axisL
 		*axisLimitsA = up;
 	} else {
 		*axisLimitsD = Min3(*axisLimitsD, lo);
-		*axisLimitsA = Max3(*axisLimitsD, up);
+		*axisLimitsA = Max3(*axisLimitsA, up);
 	}
 }

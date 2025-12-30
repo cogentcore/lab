@@ -164,7 +164,19 @@ func (bd *Body) PoseToPhysics() {
 		physics.SetDynamicPos(bd.DynamicIndex, params.Next, bd.Pose.Pos)
 		physics.SetDynamicQuat(bd.DynamicIndex, params.Next, bd.Pose.Quat)
 	} else {
-		physics.SetBodyPos(bd.DynamicIndex, bd.Pose.Pos)
-		physics.SetBodyQuat(bd.DynamicIndex, bd.Pose.Quat)
+		physics.SetBodyPos(bd.BodyIndex, bd.Pose.Pos)
+		physics.SetBodyQuat(bd.BodyIndex, bd.Pose.Quat)
+	}
+}
+
+// PoseFromPhysics gets the current body poses from the physics current state.
+func (bd *Body) PoseFromPhysics() {
+	if bd.DynamicIndex >= 0 {
+		params := physics.GetParams(0)
+		bd.Pose.Pos = physics.DynamicPos(bd.DynamicIndex, params.Next)
+		bd.Pose.Quat = physics.DynamicQuat(bd.DynamicIndex, params.Next)
+	} else {
+		bd.Pose.Pos = physics.BodyPos(bd.BodyIndex)
+		bd.Pose.Quat = physics.BodyQuat(bd.BodyIndex)
 	}
 }

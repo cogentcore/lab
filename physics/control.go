@@ -53,19 +53,31 @@ func SetJointControlForce(idx, dof int32, value float32) {
 // SetJointTargetPos sets the target position and stiffness
 // for given joint, DoF to given values. Stiffness determines
 // how strongly the joint constraint is enforced
-// (0 = not at all; 1 = as strongly as possible).
+// (0 = not at all; 1000+ = strongly).
 func SetJointTargetPos(idx, dof int32, pos, stiff float32) {
 	SetJointControl(idx, dof, JointTargetPos, pos)
 	SetJointControl(idx, dof, JointTargetStiff, stiff)
 }
 
+// GetJointTargetPos returns the target position
+// for given joint, DoF.
+func GetJointTargetPos(idx, dof int32) float32 {
+	return JointControl(idx, dof, JointTargetPos)
+}
+
 // SetJointTargetVel sets the target velocity and damping
 // for given joint, DoF to given values. Damping determines
 // how strongly the joint constraint is enforced
-// (0 = not at all; 1 = as strongly as possible).
+// (0 = not at all; 1000+ = strongly).
 func SetJointTargetVel(idx, dof int32, vel, damp float32) {
 	SetJointControl(idx, dof, JointTargetVel, vel)
 	SetJointControl(idx, dof, JointTargetDamp, damp)
+}
+
+// GetJointTargetVel returns the target velocity
+// for given joint, DoF.
+func GetJointTargetVel(idx, dof int32) float32 {
+	return JointControl(idx, dof, JointTargetVel)
 }
 
 //gosl:end

@@ -225,8 +225,8 @@ func (jd *Joint) IsGlobal() bool {
 	return jd.Parent < 0
 }
 
-// PoseToPhysics sets the current body poses to the physics current state.
-// For Dynamic bodies, sets dynamic state. Also updates world-anchored joints.
+// PoseToPhysics sets the current world-anchored joint pose
+// to the physics current state.
 func (jd *Joint) PoseToPhysics() {
 	if !jd.IsGlobal() {
 		return
@@ -235,10 +235,27 @@ func (jd *Joint) PoseToPhysics() {
 	physics.SetJointPQuat(jd.JointIndex, jd.PPose.Quat)
 }
 
+// PoseFromPhysics gets the current world-anchored joint pose
+// from the physics current state.
+func (jd *Joint) PoseFromPhysics() {
+	if !jd.IsGlobal() {
+		return
+	}
+	jd.PPose.Pos = physics.JointPPos(jd.JointIndex)
+	jd.PPose.Quat = physics.JointPQuat(jd.JointIndex)
+}
+
 // SetTargetPos sets the target position for given DoF for
 // this joint in the physics model.
 func (jd *Joint) SetTargetPos(dof int32, pos, stiff float32) {
 	physics.SetJointTargetPos(jd.JointIndex, dof, pos, stiff)
+}
+
+// AddTargetPos adds to the target position for given DoF for
+// this joint in the physics model, setting stiffness.
+func (jd *Joint) AddTargetPos(dof int32, pos, stiff float32) {
+	cpos := physics.GetJointTargetPos(jd.JointIndex, dof)
+	physics.SetJointTargetPos(jd.JointIndex, dof, cpos+pos, stiff)
 }
 
 // SetTargetVel sets the target position for given DoF for

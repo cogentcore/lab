@@ -138,6 +138,7 @@ func (ev *Env) MakeWorld(sc *xyz.Scene) {
 // InitWorld does init on world.
 func (ev *Env) WorldInit() { //types:add
 	ev.Physics.Init()
+	ev.UpdateView()
 }
 
 // ConfigView3D makes the 3D view
@@ -209,6 +210,7 @@ func (ev *Env) ModelStep() {
 
 // StepForward moves Emer forward in current facing direction one step, and takes GrabEyeImg
 func (ev *Env) StepForward() { //types:add
+	ev.Emer.PoseFromPhysics()
 	ev.Emer.MoveOnAxisBody(0, 0, 0, 1, -ev.MoveStep)
 	ev.Emer.PoseToPhysics()
 	ev.ModelStep()
@@ -216,6 +218,7 @@ func (ev *Env) StepForward() { //types:add
 
 // StepBackward moves Emer backward in current facing direction one step, and takes GrabEyeImg
 func (ev *Env) StepBackward() { //types:add
+	ev.Emer.PoseFromPhysics()
 	ev.Emer.MoveOnAxisBody(0, 0, 0, 1, ev.MoveStep)
 	ev.Emer.PoseToPhysics()
 	ev.ModelStep()
@@ -223,6 +226,7 @@ func (ev *Env) StepBackward() { //types:add
 
 // RotBodyLeft rotates emer left and takes GrabEyeImg
 func (ev *Env) RotBodyLeft() { //types:add
+	ev.Emer.PoseFromPhysics()
 	ev.Emer.RotateOnAxisBody(0, 0, 1, 0, ev.RotStep)
 	ev.Emer.PoseToPhysics()
 	ev.ModelStep()
@@ -230,6 +234,7 @@ func (ev *Env) RotBodyLeft() { //types:add
 
 // RotBodyRight rotates emer right and takes GrabEyeImg
 func (ev *Env) RotBodyRight() { //types:add
+	ev.Emer.PoseFromPhysics()
 	ev.Emer.RotateOnAxisBody(0, 0, 1, 0, -ev.RotStep)
 	ev.Emer.PoseToPhysics()
 	ev.ModelStep()
@@ -237,13 +242,15 @@ func (ev *Env) RotBodyRight() { //types:add
 
 // RotHeadLeft rotates emer left and takes GrabEyeImg
 func (ev *Env) RotHeadLeft() { //types:add
-	ev.NeckJoint.SetTargetPos(1, ev.RotStep, 10)
+	ev.Emer.PoseFromPhysics()
+	ev.NeckJoint.AddTargetPos(1, math32.DegToRad(ev.RotStep), 1000)
 	ev.ModelStep()
 }
 
 // RotHeadRight rotates emer right and takes GrabEyeImg
 func (ev *Env) RotHeadRight() { //types:add
-	ev.NeckJoint.SetTargetPos(1, -ev.RotStep, 10)
+	ev.Emer.PoseFromPhysics()
+	ev.NeckJoint.AddTargetPos(1, -math32.DegToRad(ev.RotStep), 1000)
 	ev.ModelStep()
 }
 
