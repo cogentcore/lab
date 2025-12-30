@@ -703,7 +703,7 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 			}
 		}
 	}
-	if (jt == Fixed || jt == Prismatic || jt == Revolute || jt == D6) {
+	if (jt == Fixed || jt == Prismatic || jt == Revolute || jt == Ball || jt == D6) {
 		var qP = xwPQ;
 		var qC = xwCQ;
 		if (QuatDot(qP, qC) < 0) {

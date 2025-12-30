@@ -177,6 +177,37 @@ func (pe *Editor) Restart() bool {
 	return true
 }
 
+// Step steps the world n times, with updates. Must be called as a goroutine.
+func (pe *Editor) Step(n int) {
+	if pe.isRunning {
+		return
+	}
+	pe.isRunning = true
+	pe.Model.SetAsCurrent()
+	pe.toolbar.AsyncLock()
+	pe.toolbar.UpdateRender()
+	pe.toolbar.AsyncUnlock()
+	for range n {
+		if pe.ControlFunc != nil {
+			pe.ControlFunc(physics.StepsToMsec(pe.TimeStep))
+		}
+		pe.Model.Step()
+		pe.TimeStep++
+		pe.Scene.Update()
+		pe.editor.AsyncLock()
+		pe.editor.NeedsRender()
+		pe.editor.AsyncUnlock()
+		if pe.stop {
+			pe.stop = false
+			break
+		}
+	}
+	pe.isRunning = false
+	pe.AsyncLock()
+	pe.Update()
+	pe.AsyncUnlock()
+}
+
 func (pe *Editor) MakeToolbar(p *tree.Plan) {
 	stepNButton := func(n int) {
 		nm := fmt.Sprintf("Step %d", n)
@@ -189,31 +220,7 @@ func (pe *Editor) MakeToolbar(p *tree.Plan) {
 						fmt.Println("still running...")
 						return
 					}
-					go func() {
-						pe.isRunning = true
-						pe.toolbar.AsyncLock()
-						pe.toolbar.UpdateRender()
-						pe.toolbar.AsyncUnlock()
-						for range n {
-							if pe.ControlFunc != nil {
-								pe.ControlFunc(physics.StepsToMsec(pe.TimeStep))
-							}
-							pe.Model.Step()
-							pe.TimeStep++
-							pe.Scene.Update()
-							pe.editor.AsyncLock()
-							pe.editor.NeedsRender()
-							pe.editor.AsyncUnlock()
-							if pe.stop {
-								pe.stop = false
-								break
-							}
-						}
-						pe.isRunning = false
-						pe.AsyncLock()
-						pe.Update()
-						pe.AsyncUnlock()
-					}()
+					go pe.Step(n)
 				})
 			w.Styler(func(s *styles.Style) {
 				s.SetAbilities(true, abilities.RepeatClickable)
@@ -268,8 +275,11 @@ func (pe *Editor) MakeToolbar(p *tree.Plan) {
 		core.Bind(&pe.Replica, w)
 		w.SetMin(0).SetTooltip(tt)
 		w.Styler(func(s *styles.Style) {
-			replN := physics.CurModel.ReplicaWorldsN()
-			pe.Scene.ReplicasView = replN > 0
+			replN := int32(0)
+			if physics.CurModel != nil && pe.Scene != nil {
+				replN = physics.CurModel.ReplicaWorldsN()
+				pe.Scene.ReplicasView = replN > 0
+			}
 			w.SetMax(float32(replN - 1))
 			s.SetEnabled(replN > 0)
 		})

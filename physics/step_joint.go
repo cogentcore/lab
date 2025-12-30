@@ -326,7 +326,7 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 			}
 		}
 	}
-	if jt == Fixed || jt == Prismatic || jt == Revolute || jt == D6 {
+	if jt == Fixed || jt == Prismatic || jt == Revolute || jt == Ball || jt == D6 {
 		qP := xwPQ
 		qC := xwCQ
 		// make quats lie in same hemisphere

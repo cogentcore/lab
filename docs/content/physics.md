@@ -40,7 +40,7 @@ ed.SetConfigFunc(func() {
     rleft := math32.NewQuatAxisAngle(math32.Vec3(0, 0, 1), -math32.Pi/2)
     pb := sc.NewDynamic(ml, "top", physics.Capsule, "blue", mass, hsz, math32.Vec3(x, stY, 0), rleft)
 	pb.SetBodyGroup(1) // no collide across groups
-	ji := pb.NewJointRevolute(ml, nil, math32.Vec3(0, stY, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
+	ji := sc.NewJointRevolute(ml, nil, pb, math32.Vec3(0, stY, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
 	physics.SetJointTargetPos(ji, 0, 0, 0)
 	physics.SetJointTargetVel(ji, 0, 0, 0)
 
@@ -49,7 +49,7 @@ ed.SetConfigFunc(func() {
 		x = -float32(i)*hsz.Y*2 - hsz.Y
 		cb := sc.NewDynamic(ml, "child", physics.Capsule, clr, mass, hsz, math32.Vec3(x, stY, 0), rleft)
 		cb.SetBodyGroup(1+i)
-		ji = cb.NewJointRevolute(ml, pb, math32.Vec3(0, -hsz.Y, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
+		ji = sc.NewJointRevolute(ml, pb, cb, math32.Vec3(0, -hsz.Y, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
 		physics.SetJointTargetPos(ji, 0, 0, 0)
 		physics.SetJointTargetVel(ji, 0, 0, 0)
 		pb = cb
@@ -64,18 +64,18 @@ The [[doc:physics/phyxyz/Editor]] widget provides the [[doc:physics/Model]] and 
     pb := sc.NewDynamic(ml, "top", physics.Box, "blue", mass, hsz, math32.Vec3(x, stY, 0), rleft)
 ```
 
-The `math32.Quat` quaternion provides all the rotational math used in `xyz` and `physics`, and the `rleft` instance represents a -90 degree rotation about the Z (depth axis), which is what causes the pendulum to start in a horizontal orientation.
+The `math32.Quat` quaternion provides all the rotational math used in `xyz` and `physics`, and the `rleft` instance represents a -90 degree rotation about the Z (depth) axis, which is what causes the pendulum to start in a horizontal orientation.
 
-The `NewDynamic` method adds a new dynamic body element with a default visualization (this is an `phyxyz` wrapper around the same method in the physics space). Dynamic elements are updated by the physics engine, while `NewBody` would create a static rigid body element that doesn't move (unless you specifically change its position). The return value is a [[doc:physics/phyxyz/View]] which provides the visualization of a physics body. It uses the `Index` of the body to get updated values. The same visualization can be used for any physics sim with the same order of bodies.
+The `NewDynamic` method adds a new dynamic body element with a default visualization (this is a `phyxyz` wrapper around the same method in the `physics` package). Dynamic elements are updated by the physics engine, while `NewBody` would create a static rigid body element that doesn't move (unless you specifically change its position). The return value is a [[doc:physics/phyxyz/Skin]] which provides the visualization of a physics body. It uses the `BodyIndex` of the body to get updated values.
 
 ```go
 	pb.SetBodyGroup(1) // no collide across groups
 ```
 
-The `Group` property of a body can be set to fine-tune collision logic. Positive-numbered groups only collide with each other and any negative-numbered groups, while negative-numbered groups only collide with positive numbered and not within the group. 0 means it doesn't collide with anything. With the crazy dynamics that emerge with multiple arms, it is good to let them all pass through each other.
+The `Group` property of a body can be set to fine-tune collision logic. Positive-numbered groups only collide with each other and any negative-numbered groups, while negative-numbered groups only collide with positive numbered and not within their own group. 0 means it doesn't collide with anything. With the crazy dynamics that emerge with multiple arms, it is good to let them all pass through each other.
 
 ```go
-	ji := pb.NewJointRevolute(ml, nil, math32.Vec3(0, stY, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
+	ji := sc.NewJointRevolute(ml, nil, pb, math32.Vec3(0, stY, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
 	physics.SetJointTargetPos(ji, 0, 0, 0)
 	physics.SetJointTargetVel(ji, 0, 0, 0)
 ```
@@ -88,7 +88,142 @@ The remaining code just does this same kind of thing for the further links, and 
 
 ### Joint control
 
+{id="sim_prismatic" title="Prismatic Joint" collapsed="true"}
+```Goal
+ed := phyxyz.NewEditor(b)
+ed.CameraPos = math32.Vec3(0, 10, 10)
+ed.Styler(func(s *styles.Style) {
+    s.Min.Y.Em(40)
+})
 
+ed.SetConfigFunc(func() {
+	ml := ed.Model
+	sc := ed.Scene
+    hsz := math32.Vec3(1, 2, 0.5)
+    mass := float32(0.1)
+    
+    obj := sc.NewDynamic(ml, "body", physics.Box, "blue", mass, hsz, math32.Vec3(0, hsz.Y, 0), math32.NewQuat(0,0,0,1))
+	ji := sc.NewJointPrismatic(ml, nil, obj, math32.Vec3(-5, 0, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(1, 0, 0))
+})
+
+// variables to control
+pos := float32(1)
+stiff := float32(10)
+vel := float32(0)
+damp := float32(10)
+
+var posStr, stiffStr, velStr, dampStr string
+
+ed.SetControlFunc(func(timeStep int) {
+	physics.SetJointTargetPos(0, 0, pos, stiff)
+	physics.SetJointTargetVel(0, 0, vel, damp)
+})
+
+func update() {
+    posStr = fmt.Sprintf("Pos: %g", pos)
+    stiffStr = fmt.Sprintf("Stiff: %g", stiff)
+    velStr = fmt.Sprintf("Vel: %g", vel)
+    dampStr = fmt.Sprintf("Damp: %g", damp)
+}
+
+update()
+
+func addSlider(label *string, val *float32, maxVal float32) {
+    tx := core.NewText(b)
+    tx.Styler(func(s *styles.Style) {
+        s.Min.X.Ch(40)  // clean rendering with variable width content
+    })
+	core.Bind(label, tx)
+	sld := core.NewSlider(b).SetMin(0).SetMax(maxVal).SetStep(1).SetEnforceStep(true)
+	sld.SendChangeOnInput()
+	sld.OnChange(func(e events.Event) {
+		update()
+		tx.UpdateRender()
+	})
+	core.Bind(val, sld)
+}
+
+addSlider(&posStr, &pos, 10)
+addSlider(&stiffStr, &stiff, 1000)
+addSlider(&velStr, &vel, 2)
+addSlider(&dampStr, &damp, 1000)
+```
+
+This simulation allows interactive control over the parameters of a `Prismatic` joint, which sets the linear position of a body along a given axis, in this case along the horizontal (`X`) axis.
+
+Click the `Step 10000` button and then start moving the sliders to see the effects interactively. Here's what you should observe:
+
+* `Stiff` (stiffness) determines how quickly the joint responds to the position changes. You can make this variable even stronger in practice (e.g., 10,000).
+
+* `Damp` (damping) opposes `Stiff` in resisting changes, but some amount of damping is essential to prevent oscillations (definitely try Damp = 0). In general a value above 20 or so seems to be necessary for preventing significant oscillations.
+
+{id="sim_ball" title="Ball Joint" collapsed="true"}
+```Goal
+ed := phyxyz.NewEditor(b)
+ed.CameraPos = math32.Vec3(0, 10, 10)
+ed.Styler(func(s *styles.Style) {
+    s.Min.Y.Em(40)
+})
+
+ed.SetConfigFunc(func() {
+	ml := ed.Model
+	sc := ed.Scene
+    hsz := math32.Vec3(0.5, 1.5, 0.2)
+    mass := float32(0.1)
+    
+    obj := sc.NewDynamic(ml, "body", physics.Box, "blue", mass, hsz, math32.Vec3(0, hsz.Y, 0), math32.NewQuat(0,0,0,1))
+	ji := sc.NewJointBall(ml, nil, obj, math32.Vec3(0, 0, 0), math32.Vec3(0, -hsz.Y, 0))
+})
+
+// variables to control
+posX := float32(0)
+posY := float32(0)
+posZ := float32(0)
+stiff := float32(1000)
+damp := float32(20)
+
+var posXstr, posYstr, posZstr, stiffStr, dampStr string
+
+ed.SetControlFunc(func(timeStep int) {
+	physics.SetJointTargetPos(0, 0, posX, stiff)
+	physics.SetJointTargetPos(0, 1, posY, stiff)
+	physics.SetJointTargetPos(0, 2, posZ, stiff)
+	physics.SetJointTargetVel(0, 0, 0, damp)
+	physics.SetJointTargetVel(0, 1, 0, damp)
+	physics.SetJointTargetVel(0, 2, 0, damp)
+})
+
+func update() {
+    posXstr = fmt.Sprintf("Pos X: %g", posX)
+    posYstr = fmt.Sprintf("Pos Y: %g", posY)
+    posZstr = fmt.Sprintf("Pos Z: %g", posZ)
+    stiffStr = fmt.Sprintf("Stiff: %g", stiff)
+    dampStr = fmt.Sprintf("Damp: %g", damp)
+}
+
+update()
+
+func addSlider(label *string, val *float32, minVal, maxVal float32) {
+    tx := core.NewText(b)
+    tx.Styler(func(s *styles.Style) {
+        s.Min.X.Ch(40)  // clean rendering with variable width content
+    })
+	core.Bind(label, tx)
+	sld := core.NewSlider(b).SetMin(minVal).SetMax(maxVal).SetStep(0.1).SetEnforceStep(true)
+	sld.SendChangeOnInput()
+	sld.OnChange(func(e events.Event) {
+		update()
+		tx.UpdateRender()
+	})
+	core.Bind(val, sld)
+}
+
+addSlider(&posXstr, &posX, -3, 3)
+addSlider(&posYstr, &posY, -3, 3)
+addSlider(&posZstr, &posZ, -3, 3)
+addSlider(&stiffStr, &stiff, 0, 1000)
+addSlider(&dampStr, &damp, 0, 1000)
+```
 
 ## GoSL infrastructure
 

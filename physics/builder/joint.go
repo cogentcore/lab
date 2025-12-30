@@ -240,3 +240,9 @@ func (jd *Joint) PoseToPhysics() {
 func (jd *Joint) SetTargetPos(dof int32, pos, stiff float32) {
 	physics.SetJointTargetPos(jd.JointIndex, dof, pos, stiff)
 }
+
+// SetTargetVel sets the target position for given DoF for
+// this joint in the physics model.
+func (jd *Joint) SetTargetVel(dof int32, vel, damp float32) {
+	physics.SetJointTargetVel(jd.JointIndex, dof, vel, damp)
+}
