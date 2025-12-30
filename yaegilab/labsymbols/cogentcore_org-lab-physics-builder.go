@@ -19,6 +19,7 @@ func init() {
 		"DoF":     reflect.ValueOf((*builder.DoF)(nil)),
 		"Joint":   reflect.ValueOf((*builder.Joint)(nil)),
 		"Object":  reflect.ValueOf((*builder.Object)(nil)),
+		"Physics": reflect.ValueOf((*builder.Physics)(nil)),
 		"Pose":    reflect.ValueOf((*builder.Pose)(nil)),
 		"World":   reflect.ValueOf((*builder.World)(nil)),
 	}

@@ -102,7 +102,7 @@ ed.SetConfigFunc(func() {
     hsz := math32.Vec3(1, 2, 0.5)
     mass := float32(0.1)
     
-    obj := sc.NewDynamic(ml, "body", physics.Box, "blue", mass, hsz, math32.Vec3(0, hsz.Y, 0), math32.NewQuat(0,0,0,1))
+    obj := sc.NewDynamic(ml, "body", physics.Box, "blue", mass, hsz, math32.Vec3(0, hsz.Y, 0), math32.NewQuatIdentity())
 	ji := sc.NewJointPrismatic(ml, nil, obj, math32.Vec3(-5, 0, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(1, 0, 0))
 })
 
@@ -171,7 +171,7 @@ ed.SetConfigFunc(func() {
     hsz := math32.Vec3(0.5, 1.5, 0.2)
     mass := float32(0.1)
     
-    obj := sc.NewDynamic(ml, "body", physics.Box, "blue", mass, hsz, math32.Vec3(0, hsz.Y, 0), math32.NewQuat(0,0,0,1))
+    obj := sc.NewDynamic(ml, "body", physics.Box, "blue", mass, hsz, math32.Vec3(0, hsz.Y, 0), math32.NewQuatIdentity())
 	ji := sc.NewJointBall(ml, nil, obj, math32.Vec3(0, 0, 0), math32.Vec3(0, -hsz.Y, 0))
 })
 
