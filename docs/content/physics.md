@@ -179,15 +179,15 @@ ed.SetConfigFunc(func() {
 posX := float32(0)
 posY := float32(0)
 posZ := float32(0)
-stiff := float32(1000)
+stiff := float32(500) // note: higher values can get unstable for large angles
 damp := float32(20)
 
 var posXstr, posYstr, posZstr, stiffStr, dampStr string
 
 ed.SetControlFunc(func(timeStep int) {
-	physics.SetJointTargetPos(0, 0, posX, stiff)
-	physics.SetJointTargetPos(0, 1, posY, stiff)
-	physics.SetJointTargetPos(0, 2, posZ, stiff)
+	physics.SetJointTargetAngle(0, 0, posX, stiff)
+	physics.SetJointTargetAngle(0, 1, posY, stiff)
+	physics.SetJointTargetAngle(0, 2, posZ, stiff)
 	physics.SetJointTargetVel(0, 0, 0, damp)
 	physics.SetJointTargetVel(0, 1, 0, damp)
 	physics.SetJointTargetVel(0, 2, 0, damp)
@@ -209,7 +209,7 @@ func addSlider(label *string, val *float32, minVal, maxVal float32) {
         s.Min.X.Ch(40)  // clean rendering with variable width content
     })
 	core.Bind(label, tx)
-	sld := core.NewSlider(b).SetMin(minVal).SetMax(maxVal).SetStep(0.1).SetEnforceStep(true)
+	sld := core.NewSlider(b).SetMin(minVal).SetMax(maxVal).SetStep(1).SetEnforceStep(true)
 	sld.SendChangeOnInput()
 	sld.OnChange(func(e events.Event) {
 		update()
@@ -218,12 +218,16 @@ func addSlider(label *string, val *float32, minVal, maxVal float32) {
 	core.Bind(val, sld)
 }
 
-addSlider(&posXstr, &posX, -3, 3)
-addSlider(&posYstr, &posY, -3, 3)
-addSlider(&posZstr, &posZ, -3, 3)
+addSlider(&posXstr, &posX, -179, 179)
+addSlider(&posYstr, &posY, -179, 179)
+addSlider(&posZstr, &posZ, -179, 179)
 addSlider(&stiffStr, &stiff, 0, 1000)
 addSlider(&dampStr, &damp, 0, 1000)
 ```
+
+The above `Ball` joint example demonstrates a 3 angular degrees-of-freedom joint, using the `SetJointTargetAngle` function that takes degrees as input, and automatically wraps the values in the -180..180 degree (-PI..PI) range, which is the natural range of position values for angular joints.
+
+You can see that the control can become a bit unstable at extreme angles and angle combinations. Increasing damping and reducing stiffness can help in these situations.
 
 ## GoSL infrastructure
 

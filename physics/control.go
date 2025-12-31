@@ -6,6 +6,8 @@
 
 package physics
 
+import "cogentcore.org/core/math32"
+
 //gosl:start
 
 // JointControlVars are external joint control input variables stored in tensor.Float32.
@@ -53,10 +55,23 @@ func SetJointControlForce(idx, dof int32, value float32) {
 // SetJointTargetPos sets the target position and stiffness
 // for given joint, DoF to given values. Stiffness determines
 // how strongly the joint constraint is enforced
-// (0 = not at all; 1000+ = strongly).
+// (0 = not at all; 1000+ = strongly; angular use lower!).
+// For angular joints, values are in radians, see also
+// [SetJointTargetAngle].
 func SetJointTargetPos(idx, dof int32, pos, stiff float32) {
 	SetJointControl(idx, dof, JointTargetPos, pos)
 	SetJointControl(idx, dof, JointTargetStiff, stiff)
+}
+
+// SetJointTargetAngle sets the target angular position
+// and stiffness for given joint, DoF to given values.
+// Stiffness determines how strongly the joint constraint is enforced
+// (0 = not at all; 100+ = strongly; angular = lower values).
+// Angle is in Degrees, not radians. Usable range is within -180..180
+// which is enforced, and values near the edge can be unstable.
+func SetJointTargetAngle(idx, dof int32, angDeg, stiff float32) {
+	pos := math32.WrapPi(math32.DegToRad(angDeg))
+	SetJointTargetPos(idx, dof, pos, stiff)
 }
 
 // GetJointTargetPos returns the target position
