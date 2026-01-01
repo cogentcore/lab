@@ -81,19 +81,22 @@ func (ob *Object) newJoint(typ physics.JointTypes, parent, child *Body, ppos, cp
 		pidx = parent.ObjectIndex
 	}
 	idx := len(ob.Joints)
-	jt := Joint{Parent: pidx, Child: child.ObjectIndex, Type: typ, LinearDoFN: linDoF, AngularDoFN: angDoF}
-	jt.PPose.Pos = ppos
-	jt.CPose.Pos = cpos
+	ob.Joints = append(ob.Joints, Joint{Parent: pidx, Child: child.ObjectIndex, Type: typ, LinearDoFN: linDoF, AngularDoFN: angDoF})
+	jd := ob.Joint(idx)
+	jd.PPose.Pos = ppos
+	jd.CPose.Pos = cpos
 	ndof := linDoF + angDoF
 	if ndof > 0 {
-		jt.DoFs = make([]DoF, linDoF+angDoF)
+		jd.DoFs = make([]DoF, linDoF+angDoF)
 		for i := range ndof {
-			jt.DoFs[i].Limit.Min = -physics.JointLimitUnlimited
-			jt.DoFs[i].Limit.Max = physics.JointLimitUnlimited
+			dof := jd.DoF(i)
+			dof.Limit.Min = -physics.JointLimitUnlimited
+			dof.Limit.Max = physics.JointLimitUnlimited
+			dof.TargetStiff = 1000
+			dof.TargetDamp = 100
 		}
 	}
-	ob.Joints = append(ob.Joints, jt)
-	return &ob.Joints[idx]
+	return jd
 }
 
 // NewJointFixed adds a new Fixed joint as a child of given parent.
@@ -168,8 +171,21 @@ func (ob *Object) NewJointDistance(parent, child *Body, ppos, cpos math32.Vector
 // to these positions as well).
 // Sets relative rotation matricies to identity by default.
 // Use [SetJointDoF] to set the remaining DoF parameters.
-func (ob *Object) NewJointFree(ml *physics.Model, parent, child *Body, ppos, cpos math32.Vector3) *Joint {
+func (ob *Object) NewJointFree(parent, child *Body, ppos, cpos math32.Vector3) *Joint {
 	jt := ob.newJoint(physics.Free, parent, child, ppos, cpos, 0, 0)
+	return jt
+}
+
+// NewJointPlaneXZ adds a new 3 DoF Planar motion joint suitable for
+// controlling the motion of a body on the standard X-Z play (Y = up).
+// The first two linear DoF control position in X, Z, and the third
+// angular DoF controls rotation in the plane (along the Y axis).
+// Use -1 for parent to add a world-anchored joint (typical).
+// ppos, cpos are the relative positions from the parent, child.
+// Sets relative rotation matricies to identity by default.
+// Use [SetJointDoF] to set the remaining DoF parameters.
+func (ob *Object) NewJointPlaneXZ(parent, child *Body, ppos, cpos math32.Vector3) *Joint {
+	jt := ob.newJoint(physics.PlaneXZ, parent, child, ppos, cpos, 2, 1)
 	return jt
 }
 
@@ -195,6 +211,8 @@ func (jd *Joint) NewPhysicsJoint(ml *physics.Model, ob *Object) int32 {
 		ji = ml.NewJointBall(pdi, cdi, jd.PPose.Pos, jd.CPose.Pos)
 	case physics.Free:
 		ji = ml.NewJointFree(pdi, cdi, jd.PPose.Pos, jd.CPose.Pos)
+	case physics.PlaneXZ:
+		ji = ml.NewJointPlaneXZ(pdi, cdi, jd.PPose.Pos, jd.CPose.Pos)
 	}
 	for i := range jd.LinearDoFN {
 		d := jd.DoF(i)
@@ -203,14 +221,16 @@ func (jd *Joint) NewPhysicsJoint(ml *physics.Model, ob *Object) int32 {
 		physics.SetJointDoF(ji, di, physics.JointLimitUpper, d.Limit.Max)
 		physics.SetJointTargetPos(ji, di, d.TargetPos, d.TargetStiff)
 		physics.SetJointTargetVel(ji, di, d.TargetVel, d.TargetDamp)
+		d.Axis = physics.JointAxis(ji, di)
 	}
 	for i := range jd.AngularDoFN {
-		d := jd.DoF(i)
 		di := int32(i + jd.LinearDoFN)
+		d := jd.DoF(int(di))
 		physics.SetJointDoF(ji, di, physics.JointLimitLower, d.Limit.Min)
 		physics.SetJointDoF(ji, di, physics.JointLimitUpper, d.Limit.Max)
 		physics.SetJointTargetPos(ji, di, d.TargetPos, d.TargetStiff)
 		physics.SetJointTargetVel(ji, di, d.TargetVel, d.TargetDamp)
+		d.Axis = physics.JointAxis(ji, di)
 	}
 	jd.JointIndex = ji
 	// fmt.Println("\t\tjoint:", pdi, cdi, jd.Type)

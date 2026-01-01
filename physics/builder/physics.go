@@ -40,11 +40,17 @@ func (ph *Physics) Init() {
 	}
 }
 
-// Step advances the physics world n steps, and then
-// updates the Scene.
+// Step advances the physics world n steps, updating the scene every time.
 func (ph *Physics) Step(n int) {
 	for range n {
 		ph.Model.Step()
+		ph.Scene.Update()
 	}
-	ph.Scene.Update()
+}
+
+// StepQuiet advances the physics world n steps.
+func (ph *Physics) StepQuiet(n int) {
+	for range n {
+		ph.Model.Step()
+	}
 }

@@ -104,7 +104,7 @@ func SetDim3(v math32.Vector3, dim int32, val float32) math32.Vector3 {
 	if dim == 1 {
 		nv.Y = val
 	}
-	if dim == 3 {
+	if dim == 2 {
 		nv.Z = val
 	}
 	return nv

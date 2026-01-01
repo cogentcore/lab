@@ -192,7 +192,7 @@ const ContactVarsN: ContactVars = 33;
 const JointControlVarsN: JointControlVars = 5;
 const DynamicVarsN: DynamicVars = 33;
 const GPUVarsN: GPUVars = 12;
-const JointTypesN: JointTypes = 7;
+const JointTypesN: JointTypes = 8;
 const JointVarsN: JointVars = 50;
 const JointDoFVarsN: JointDoFVars = 5;
 const ShapesN: Shapes = 6;
@@ -207,6 +207,7 @@ const  Fixed: JointTypes = 3;
 const  Free: JointTypes = 4;
 const  Distance: JointTypes = 5;
 const  D6: JointTypes = 6;
+const  PlaneXZ: JointTypes = 7;
 alias JointVars = i32; //enums:enum
 const  JointType: JointVars = 0;
 const  JointEnabled: JointVars = 1;
@@ -512,7 +513,7 @@ fn SetDim3(v: vec3<f32>, dim: i32, val: f32) -> vec3<f32> {
 	if (dim == 1) {
 		nv.y = val;
 	}
-	if (dim == 3) {
+	if (dim == 2) {
 		nv.z = val;
 	}return nv;
 }

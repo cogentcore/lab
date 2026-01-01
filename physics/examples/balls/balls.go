@@ -73,7 +73,7 @@ func main() {
 	ed.SetConfigFunc(func() {
 		ml := ed.Model
 		sc := ed.Scene
-		rot := math32.NewQuat(0, 0, 0, 1)
+		rot := math32.NewQuatIdentity()
 		sc.NewBody(ml, "floor", physics.Plane, "#D0D0D080", math32.Vec3(0, 0, 0),
 			math32.Vec3(0, 0, 0), rot)
 

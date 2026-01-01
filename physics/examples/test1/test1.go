@@ -56,7 +56,7 @@ func main() {
 		ml := ed.Model
 		ml.GPU = false
 		sc := ed.Scene
-		rot := math32.NewQuat(0, 0, 0, 1)
+		rot := math32.NewQuatIdentity()
 		// thick := float32(0.1)
 		fl := sc.NewBody(ml, "floor", physics.Plane, "#D0D0D080", math32.Vec3(10, 0, 10),
 			math32.Vec3(0, 0, 0), rot)

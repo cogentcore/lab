@@ -93,7 +93,7 @@ func main() {
 
 		ml := ed.Model
 		sc := ed.Scene
-		rot := math32.NewQuat(0, 0, 0, 1)
+		rot := math32.NewQuatIdentity()
 		rleft := math32.NewQuatAxisAngle(math32.Vec3(0, 0, 1), -math32.Pi/2)
 
 		if ps.StartVert {

@@ -5,6 +5,7 @@
 package physics
 
 import (
+	// "fmt"
 	"math"
 
 	"cogentcore.org/core/math32"
@@ -39,6 +40,10 @@ const (
 
 	// D6 is a generic 6-DoF joint.
 	D6
+	
+	// PlaneXZ is a version of D6 for navigation in the X-Z plane,
+	// which creates 2 linear DoF (X, Z) and 1 angular DoF (around Y axis).
+	PlaneXZ
 )
 
 // JointVars are joint state variables stored in tensor.Float32.
@@ -372,7 +377,7 @@ func SetJointDoF(idx, dof int32, vr JointDoFVars, value float32) {
 //gosl:end
 
 func (ml *Model) JointDefaults(idx int32) {
-	rot := math32.NewQuat(0, 0, 0, 1)
+	rot := math32.NewQuatIdentity()
 	SetJointPQuat(idx, rot)
 	SetJointCQuat(idx, rot)
 }
@@ -438,6 +443,22 @@ func (ml *Model) NewJointBall(parent, child int32, ppos, cpos math32.Vector3) in
 	return idx
 }
 
+// NewJointPlaneXZ adds a new 3 DoF Planar motion joint suitable for
+// controlling the motion of a body on the standard X-Z plane (Y = up).
+// The first two linear DoF control position in X, Z, and the third
+// angular DoF controls rotation in the plane (along the Y axis).
+// Use -1 for parent to add a world-anchored joint (typical).
+// ppos, cpos are the relative positions from the parent, child.
+// Sets relative rotation matricies to identity by default.
+// Use [SetJointDoF] to set the remaining DoF parameters.
+func (ml *Model) NewJointPlaneXZ(parent, child int32, ppos, cpos math32.Vector3) int32 {
+	idx := ml.NewJointD6(parent, child, ppos, cpos, 2, 1)
+	ml.newJointDoF(idx, 0, math32.Vec3(1,0,0))
+	ml.newJointDoF(idx, 1, math32.Vec3(0,0,1))
+	ml.newJointDoF(idx, 2, math32.Vec3(0,1,0))
+	return idx
+}
+
 // NewJointDistance adds a new Distance joint (6 DoF)
 // between parent and child dynamic object indexes,
 // with distance constrained only on the first linear X axis.
@@ -465,27 +486,28 @@ func (ml *Model) NewJointDistance(parent, child int32, ppos, cpos math32.Vector3
 	return idx
 }
 
-// NewJointFree adds a new Free joint
-// between parent and child dynamic object indexes,
-// with distance constrained only on the first linear X axis.
+// NewJointD6 adds a new D6 6 DoF joint with given number of actual
+// linear and angular degrees-of-freedom,
+// between parent and child dynamic object indexes.
 // Use -1 for parent to add a world-anchored joint.
 // ppos, cpos are the relative positions from the parent, child.
 // Sets relative rotation matricies to identity by default.
-// Use [SetJointDoF] to set the remaining DoF parameters.
+func (ml *Model) NewJointD6(parent, child int32, ppos, cpos math32.Vector3, linDoF, angDoF int32) int32 {
+	idx := ml.newJoint(D6, parent, child, ppos, cpos)
+	SetJointLinearDoFN(idx, linDoF)
+	SetJointAngularDoFN(idx, angDoF)
+	return idx
+}
+
+// NewJointFree adds a new Free joint (of which there is little point)
+// between parent and child dynamic object indexes.
+// Use -1 for parent to add a world-anchored joint.
+// ppos, cpos are the relative positions from the parent, child.
+// Sets relative rotation matricies to identity by default.
 func (ml *Model) NewJointFree(parent, child int32, ppos, cpos math32.Vector3) int32 {
-	idx := ml.newJoint(Distance, parent, child, ppos, cpos)
+	idx := ml.newJoint(Free, parent, child, ppos, cpos)
 	SetJointLinearDoFN(idx, 0)
 	SetJointAngularDoFN(idx, 0)
-	for d := range math32.W {
-		axis := math32.Vector3{}
-		axis.SetDim(d, 1)
-		ml.newJointDoF(idx, int32(d), axis)
-	}
-	for d := range math32.W {
-		axis := math32.Vector3{}
-		axis.SetDim(d, 1)
-		ml.newJointDoF(idx, int32(d), axis)
-	}
 	return idx
 }
 

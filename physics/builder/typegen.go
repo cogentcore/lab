@@ -195,6 +195,20 @@ func (t *Object) SetBodies(v ...Body) *Object { t.Bodies = v; return t }
 // Joint indexes here refer strictly within bodies.
 func (t *Object) SetJoints(v ...Joint) *Object { t.Joints = v; return t }
 
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Physics", IDName: "physics", Doc: "Physics provides a container and manager for the main physics elements:\n[Builder], [physics.Model], and [phyxyz.Scene]. This is helpful for\nmodels used within other apps (e.g., an AI simulation), whereas\n[phyxyz.Editor] provides a standalone GUI interface for testing models.", Fields: []types.Field{{Name: "Model", Doc: "Model has the physics Model."}, {Name: "Builder", Doc: "Builder for configuring the Model."}, {Name: "Scene", Doc: "Scene for visualizing the Model"}}})
+
+// SetModel sets the [Physics.Model]:
+// Model has the physics Model.
+func (t *Physics) SetModel(v *physics.Model) *Physics { t.Model = v; return t }
+
+// SetBuilder sets the [Physics.Builder]:
+// Builder for configuring the Model.
+func (t *Physics) SetBuilder(v *Builder) *Physics { t.Builder = v; return t }
+
+// SetScene sets the [Physics.Scene]:
+// Scene for visualizing the Model
+func (t *Physics) SetScene(v *phyxyz.Scene) *Physics { t.Scene = v; return t }
+
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Pose", IDName: "pose", Doc: "Pose represents the 3D position and rotation.", Methods: []types.Method{{Name: "MoveOnAxis", Doc: "MoveOnAxis moves (translates) the specified distance on the specified local axis,\nrelative to the current rotation orientation.\nThe axis is normalized prior to aplying the distance factor.\nSets the LinVel to motion vector.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}, Args: []string{"x", "y", "z", "dist"}}, {Name: "MoveOnAxisAbs", Doc: "MoveOnAxisAbs moves (translates) the specified distance on the specified local axis,\nin absolute X,Y,Z coordinates (does not apply the Quat rotation factor.\nThe axis is normalized prior to aplying the distance factor.\nSets the LinVel to motion vector.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}, Args: []string{"x", "y", "z", "dist"}}, {Name: "SetEulerRotation", Doc: "SetEulerRotation sets the rotation in Euler angles (degrees).", Directives: []types.Directive{{Tool: "types", Directive: "add"}}, Args: []string{"x", "y", "z"}}, {Name: "EulerRotation", Doc: "EulerRotation returns the current rotation in Euler angles (degrees).", Directives: []types.Directive{{Tool: "types", Directive: "add"}}, Returns: []string{"Vector3"}}, {Name: "SetAxisRotation", Doc: "SetAxisRotation sets rotation from local axis and angle in degrees.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}, Args: []string{"x", "y", "z", "angle"}}, {Name: "RotateOnAxis", Doc: "RotateOnAxis rotates around the specified local axis the specified angle in degrees.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}, Args: []string{"x", "y", "z", "angle"}}, {Name: "RotateEuler", Doc: "RotateEuler rotates by given Euler angles (in degrees) relative to existing rotation.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}, Args: []string{"x", "y", "z"}}}, Fields: []types.Field{{Name: "Pos", Doc: "Pos is the position of center of mass of object."}, {Name: "Quat", Doc: "Quat is the rotation specified as a quaternion."}}})
 
 // SetPos sets the [Pose.Pos]:

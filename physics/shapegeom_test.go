@@ -39,7 +39,7 @@ func TestSphereSphere(t *testing.T) {
 
 	tol := 1e-5
 
-	rot := math32.NewQuat(0, 0, 0, 1)
+	rot := math32.NewQuatIdentity()
 	for _, tc := range tests {
 		gdA := GeomData{Shape: Sphere, Radius: tc.radiusA, Size: math32.Vector3{tc.radiusA, 0, 0}, WbR: tc.posA, WbQ: rot}
 		gdB := GeomData{Shape: Sphere, Radius: tc.radiusB, Size: math32.Vector3{tc.radiusB, 0, 0}, WbR: tc.posB, WbQ: rot}

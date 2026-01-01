@@ -60,6 +60,9 @@ type Env struct { //types:add
 	// how far to rotate every step
 	RotStep float32
 
+	// number of model steps to take
+	ModelSteps int
+
 	// width of room
 	Width float32
 
@@ -90,6 +93,9 @@ type Env struct { //types:add
 	// emer object
 	Emer *builder.Object `display:"-"`
 
+	// emer PlaneXZ joint for controlling motion
+	EmerJoint *builder.Joint
+
 	// Right eye of emer
 	EyeR *builder.Body `display:"-"`
 
@@ -111,6 +117,7 @@ func (ev *Env) Defaults() {
 	ev.EmerHt = 1
 	ev.MoveStep = ev.EmerHt * .2
 	ev.RotStep = 15
+	ev.ModelSteps = 100
 	ev.DepthMap = core.ColorMapName("ColdHot")
 	ev.Camera.Defaults()
 	ev.Camera.FOV = 90
@@ -119,6 +126,7 @@ func (ev *Env) Defaults() {
 func (ev *Env) MakeWorld(sc *xyz.Scene) {
 	ev.Physics.Model = physics.NewModel()
 	ev.Physics.Builder = builder.NewBuilder()
+	ev.Physics.Model.GPU = false
 	sc.Background = colors.Scheme.Select.Container
 	xyz.NewAmbient(sc, "ambient", 0.3, xyz.DirectSun)
 
@@ -182,9 +190,9 @@ func (ev *Env) UpdateView() {
 }
 
 // ModelStep does one step of the physics model.
-func (ev *Env) ModelStep() {
-	physics.ToGPU(physics.DynamicsVar)
-	ev.Physics.Step(1)
+func (ev *Env) ModelStep() { //types:add
+	// physics.ToGPU(physics.DynamicsVar)
+	ev.Physics.Step(ev.ModelSteps)
 	// cts := pw.WorldCollide(physics.DynsTopGps)
 	// ev.Contacts = nil
 	// for _, cl := range cts {
@@ -208,41 +216,47 @@ func (ev *Env) ModelStep() {
 	ev.UpdateView()
 }
 
-// StepForward moves Emer forward in current facing direction one step, and takes GrabEyeImg
+// StepForward moves Emer forward in current facing direction one step,
+// and takes GrabEyeImg
 func (ev *Env) StepForward() { //types:add
+	// doesn't integrate well with joints..
 	ev.Emer.PoseFromPhysics()
-	ev.Emer.MoveOnAxisBody(0, 0, 0, 1, -ev.MoveStep)
-	ev.Emer.PoseToPhysics()
+	// ev.Emer.MoveOnAxisBody(0, 0, 0, 1, -ev.MoveStep)
+	// ev.Emer.PoseToPhysics()
+	ev.EmerJoint.AddTargetPos(1, -ev.MoveStep, 1000) // z axis
 	ev.ModelStep()
 }
 
 // StepBackward moves Emer backward in current facing direction one step, and takes GrabEyeImg
 func (ev *Env) StepBackward() { //types:add
 	ev.Emer.PoseFromPhysics()
-	ev.Emer.MoveOnAxisBody(0, 0, 0, 1, ev.MoveStep)
-	ev.Emer.PoseToPhysics()
+	// ev.Emer.MoveOnAxisBody(0, 0, 0, 1, ev.MoveStep)
+	// ev.Emer.PoseToPhysics()
+	ev.EmerJoint.AddTargetPos(1, ev.MoveStep, 1000)
 	ev.ModelStep()
 }
 
 // RotBodyLeft rotates emer left and takes GrabEyeImg
 func (ev *Env) RotBodyLeft() { //types:add
 	ev.Emer.PoseFromPhysics()
-	ev.Emer.RotateOnAxisBody(0, 0, 1, 0, ev.RotStep)
-	ev.Emer.PoseToPhysics()
+	// ev.Emer.RotateOnAxisBody(0, 0, 1, 0, ev.RotStep)
+	// ev.Emer.PoseToPhysics()
+	ev.EmerJoint.AddTargetPos(2, math32.DegToRad(ev.RotStep), 1000)
 	ev.ModelStep()
 }
 
 // RotBodyRight rotates emer right and takes GrabEyeImg
 func (ev *Env) RotBodyRight() { //types:add
 	ev.Emer.PoseFromPhysics()
-	ev.Emer.RotateOnAxisBody(0, 0, 1, 0, -ev.RotStep)
-	ev.Emer.PoseToPhysics()
+	// ev.Emer.RotateOnAxisBody(0, 0, 1, 0, -ev.RotStep)
+	// ev.Emer.PoseToPhysics()
+	ev.EmerJoint.AddTargetPos(2, math32.DegToRad(-ev.RotStep), 1000)
 	ev.ModelStep()
 }
 
 // RotHeadLeft rotates emer left and takes GrabEyeImg
 func (ev *Env) RotHeadLeft() { //types:add
-	ev.Emer.PoseFromPhysics()
+	// ev.Emer.PoseFromPhysics()
 	ev.NeckJoint.AddTargetPos(1, math32.DegToRad(ev.RotStep), 1000)
 	ev.ModelStep()
 }
@@ -282,7 +296,7 @@ func (ev *Env) MakeEmer(wl *builder.World, name string, height float32) {
 	hd := hh * .15
 	headsz := hd * 1.5
 	eyesz := headsz * .2
-	mass := float32(50) // kg
+	mass := float32(1) // kg
 	rot := math32.NewQuatIdentity()
 	obj := wl.NewObject()
 	ev.Emer = obj
@@ -290,9 +304,12 @@ func (ev *Env) MakeEmer(wl *builder.World, name string, height float32) {
 	emr := obj.NewDynamicSkin(sc, name+"_body", physics.Box, "purple", mass, math32.Vec3(hw, hh, hd), math32.Vec3(0, hh, 0), rot)
 	// body := physics.NewCapsule(emr, "body", math32.Vec3(0, hh, 0), hh, hw)
 	// body := physics.NewCylinder(emr, "body", math32.Vec3(0, hh, 0), hh, hw)
+	ev.EmerJoint = obj.NewJointPlaneXZ(nil, emr, math32.Vec3(0, 0, 0), math32.Vec3(0, -hh, 0))
+	emr.Group = 0
 
 	headPos := math32.Vec3(0, 2*hh+headsz, 0)
 	head := obj.NewDynamicSkin(sc, name+"_head", physics.Box, "tan", mass*.1, math32.Vec3(headsz, headsz, headsz), headPos, rot)
+	head.Group = 0
 	hdsk := head.Skin
 	hdsk.InitSkin = func(sld *xyz.Solid) {
 		hdsk.BoxInit(sld)
@@ -308,10 +325,12 @@ func (ev *Env) MakeEmer(wl *builder.World, name string, height float32) {
 
 	eyeoff := math32.Vec3(-headsz*.6, headsz*.1, -(headsz + eyesz*.3))
 	bd := obj.NewDynamicSkin(sc, name+"_eye-l", physics.Box, "green", mass*.001, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
+	bd.Group = 0
 	obj.NewJointBall(head, bd, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
 
 	eyeoff = math32.Vec3(headsz*.6, headsz*.1, -(headsz + eyesz*.3))
 	ev.EyeR = obj.NewDynamicSkin(sc, name+"_eye-r", physics.Box, "green", mass*.001, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
+	ev.EyeR.Group = 0
 	obj.NewJointBall(head, ev.EyeR, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
 }
 
@@ -388,6 +407,12 @@ func (ev *Env) MakeToolbar(p *tree.Plan) {
 	})
 	tree.Add(p, func(w *core.Separator) {})
 
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(ev.ModelStep).SetText("Step").SetIcon(icons.SkipNext).
+			Styler(func(s *styles.Style) {
+				s.SetAbilities(true, abilities.RepeatClickable)
+			})
+	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(ev.StepForward).SetText("Fwd").SetIcon(icons.SkipNext).
 			Styler(func(s *styles.Style) {

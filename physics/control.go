@@ -53,9 +53,9 @@ func SetJointControlForce(idx, dof int32, value float32) {
 }
 
 // SetJointTargetPos sets the target position and stiffness
-// for given joint, DoF to given values. Stiffness determines
-// how strongly the joint constraint is enforced
-// (0 = not at all; 1000+ = strongly; angular use lower!).
+// for given joint, DoF to given values.
+// Stiffness determines how strongly the joint constraint is enforced
+// (0 = not at all; 1000+ = strongly).
 // For angular joints, values are in radians, see also
 // [SetJointTargetAngle].
 func SetJointTargetPos(idx, dof int32, pos, stiff float32) {
@@ -66,9 +66,10 @@ func SetJointTargetPos(idx, dof int32, pos, stiff float32) {
 // SetJointTargetAngle sets the target angular position
 // and stiffness for given joint, DoF to given values.
 // Stiffness determines how strongly the joint constraint is enforced
-// (0 = not at all; 100+ = strongly; angular = lower values).
+// (0 = not at all; 1000+ = strongly).
 // Angle is in Degrees, not radians. Usable range is within -180..180
-// which is enforced, and values near the edge can be unstable.
+// which is enforced, and values near the edge can be unstable at higher
+// stiffness levels.
 func SetJointTargetAngle(idx, dof int32, angDeg, stiff float32) {
 	pos := math32.WrapPi(math32.DegToRad(angDeg))
 	SetJointTargetPos(idx, dof, pos, stiff)

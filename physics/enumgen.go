@@ -237,20 +237,20 @@ func (i GPUVars) MarshalText() ([]byte, error) { return []byte(i.String()), nil 
 // UnmarshalText implements the [encoding.TextUnmarshaler] interface.
 func (i *GPUVars) UnmarshalText(text []byte) error { return enums.UnmarshalText(i, text, "GPUVars") }
 
-var _JointTypesValues = []JointTypes{0, 1, 2, 3, 4, 5, 6}
+var _JointTypesValues = []JointTypes{0, 1, 2, 3, 4, 5, 6, 7}
 
 // JointTypesN is the highest valid value for type JointTypes, plus one.
 //
 //gosl:start
-const JointTypesN JointTypes = 7
+const JointTypesN JointTypes = 8
 
 //gosl:end
 
-var _JointTypesValueMap = map[string]JointTypes{`Prismatic`: 0, `Revolute`: 1, `Ball`: 2, `Fixed`: 3, `Free`: 4, `Distance`: 5, `D6`: 6}
+var _JointTypesValueMap = map[string]JointTypes{`Prismatic`: 0, `Revolute`: 1, `Ball`: 2, `Fixed`: 3, `Free`: 4, `Distance`: 5, `D6`: 6, `PlaneXZ`: 7}
 
-var _JointTypesDescMap = map[JointTypes]string{0: `Prismatic allows translation along a single axis (slider): 1 DoF.`, 1: `Revolute allows rotation about a single axis (axel): 1 DoF.`, 2: `Ball allows rotation about all three axes (3 DoF, quaternion).`, 3: `Fixed locks all relative motion: 0 DoF.`, 4: `Free allows full 6-DoF motion (translation and rotation).`, 5: `Distance keeps two bodies a distance within joint limits: 6 DoF.`, 6: `D6 is a generic 6-DoF joint.`}
+var _JointTypesDescMap = map[JointTypes]string{0: `Prismatic allows translation along a single axis (slider): 1 DoF.`, 1: `Revolute allows rotation about a single axis (axel): 1 DoF.`, 2: `Ball allows rotation about all three axes (3 DoF, quaternion).`, 3: `Fixed locks all relative motion: 0 DoF.`, 4: `Free allows full 6-DoF motion (translation and rotation).`, 5: `Distance keeps two bodies a distance within joint limits: 6 DoF.`, 6: `D6 is a generic 6-DoF joint.`, 7: `PlaneXZ is a version of D6 for navigation in the X-Z plane, which creates 2 linear DoF (X, Z) and 1 angular DoF (around Y axis).`}
 
-var _JointTypesMap = map[JointTypes]string{0: `Prismatic`, 1: `Revolute`, 2: `Ball`, 3: `Fixed`, 4: `Free`, 5: `Distance`, 6: `D6`}
+var _JointTypesMap = map[JointTypes]string{0: `Prismatic`, 1: `Revolute`, 2: `Ball`, 3: `Fixed`, 4: `Free`, 5: `Distance`, 6: `D6`, 7: `PlaneXZ`}
 
 // String returns the string representation of this JointTypes value.
 func (i JointTypes) String() string { return enums.String(i, _JointTypesMap) }
