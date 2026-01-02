@@ -429,6 +429,7 @@ fn StepIntegrateBodies(i: u32) { //gosl:kernel
 	var q1 = QuatAdd(q0, MulQuats(vec4<f32>(w1.x, w1.y, w1.z, 0), q0)*(0.5*params.Dt));
 	q1 = QuatNormalize(q1);
 	w1 = w1*(1.0 - params.AngularDamping*params.Dt);
+	w1 = ClampMagnitude3(w1, params.MaxForce);
 	var p1a = p1-(MulQuatVector(q1, com)); // pos corrected to nominal center.
 	SetDynamicPos(di, params.Next, p1a);
 	SetDynamicQuat(di, params.Next, q1);

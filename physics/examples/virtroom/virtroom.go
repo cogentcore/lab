@@ -117,7 +117,7 @@ func (ev *Env) Defaults() {
 	ev.EmerHt = 1
 	ev.MoveStep = ev.EmerHt * .2
 	ev.RotStep = 15
-	ev.ModelSteps = 10
+	ev.ModelSteps = 100
 	ev.DepthMap = core.ColorMapName("ColdHot")
 	ev.Camera.Defaults()
 	ev.Camera.FOV = 90
@@ -260,15 +260,15 @@ func (ev *Env) RotBodyRight() { //types:add
 
 // RotHeadLeft rotates emer left and takes GrabEyeImg
 func (ev *Env) RotHeadLeft() { //types:add
-	// ev.Emer.PoseFromPhysics()
-	ev.NeckJoint.AddTargetPos(1, math32.DegToRad(ev.RotStep), 1000)
+	ev.Emer.PoseFromPhysics()
+	ev.NeckJoint.AddTargetAngle(1, ev.RotStep, 1000)
 	ev.ModelStep()
 }
 
 // RotHeadRight rotates emer right and takes GrabEyeImg
 func (ev *Env) RotHeadRight() { //types:add
 	ev.Emer.PoseFromPhysics()
-	ev.NeckJoint.AddTargetPos(1, -math32.DegToRad(ev.RotStep), 1000)
+	ev.NeckJoint.AddTargetAngle(1, -ev.RotStep, 1000)
 	ev.ModelStep()
 }
 

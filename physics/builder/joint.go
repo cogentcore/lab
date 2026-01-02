@@ -233,6 +233,8 @@ func (jd *Joint) NewPhysicsJoint(ml *physics.Model, ob *Object) int32 {
 		ji = ml.NewJointRevolute(pdi, cdi, jd.PPose.Pos, jd.CPose.Pos, jd.DoFs[0].Axis)
 	case physics.Ball:
 		ji = ml.NewJointBall(pdi, cdi, jd.PPose.Pos, jd.CPose.Pos)
+	case physics.Fixed:
+		ji = ml.NewJointFixed(pdi, cdi, jd.PPose.Pos, jd.CPose.Pos)
 	case physics.Distance:
 		ji = ml.NewJointBall(pdi, cdi, jd.PPose.Pos, jd.CPose.Pos)
 	case physics.Free:
