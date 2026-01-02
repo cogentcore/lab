@@ -76,6 +76,27 @@ func Clamp3(v, min, max math32.Vector3) math32.Vector3 {
 	return r
 }
 
+// ClampMagnitude3 clamps the magnitude of the components below given value.
+func ClampMagnitude3(v math32.Vector3, mag float32) math32.Vector3 {
+	r := v
+	if r.X < -mag {
+		r.X = -mag
+	} else if r.X > mag {
+		r.X = mag
+	}
+	if r.Y < -mag {
+		r.Y = -mag
+	} else if r.Y > mag {
+		r.Y = mag
+	}
+	if r.Z < -mag {
+		r.Z = -mag
+	} else if r.Z > mag {
+		r.Z = mag
+	}
+	return r
+}
+
 // Normal3 returns this vector divided by its length (its unit vector).
 func Normal3(v math32.Vector3) math32.Vector3 {
 	return v.DivScalar(Length3(v))

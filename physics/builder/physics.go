@@ -28,15 +28,20 @@ type Physics struct {
 // and then Init on the Scene.
 func (ph *Physics) Build() {
 	ph.Builder.Build(ph.Model, ph.Scene)
-	ph.Init()
-}
-
-// Init calls Scene.Init with Model.
-func (ph *Physics) Init() {
 	if ph.Scene != nil {
 		ph.Scene.Init(ph.Model)
+	}
+}
+
+// InitState calls Scene.InitState or Model.InitState and Builder InitState.
+func (ph *Physics) InitState() {
+	if ph.Scene != nil {
+		ph.Scene.InitState(ph.Model)
 	} else {
 		ph.Model.InitState()
+	}
+	if ph.Builder != nil {
+		ph.Builder.InitState()
 	}
 }
 

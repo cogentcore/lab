@@ -152,7 +152,35 @@ func (t *Joint) SetDoFs(v ...DoF) *Joint { t.DoFs = v; return t }
 // JointIndex is the index of this joint in [physics.Joints] when built.
 func (t *Joint) SetJointIndex(v int32) *Joint { t.JointIndex = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.DoF", IDName: "do-f", Doc: "DoF is a degree-of-freedom for a [Joint].", Fields: []types.Field{{Name: "Axis", Doc: "Axis is the axis of articulation."}, {Name: "Limit", Doc: "Limit has the limits for motion of this DoF."}, {Name: "TargetPos", Doc: "TargetPos is the position target value, where 0 is the initial\nposition. For angular joints, this is in radians."}, {Name: "TargetStiff", Doc: "TargetStiff determines how strongly the target position\nis enforced: 0 = not at all; larger = stronger (e.g., 1000 or higher).\nSet to 0 to allow the joint to be fully flexible."}, {Name: "TargetVel", Doc: "TargetVel is the velocity target value. For example, 0\neffectively damps joint movement in proportion to Damp parameter."}, {Name: "TargetDamp", Doc: "TargetDamp determines how strongly the target velocity is enforced:\n0 = not at all; larger = stronger (e.g., 1 is reasonable).\nSet to 0 to allow the joint to be fully flexible."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Controls", IDName: "controls", Doc: "Controls are the per degrees-of-freedom (DoF) joint control inputs.", Fields: []types.Field{{Name: "Force", Doc: "Force is the force input driving the joint."}, {Name: "Pos", Doc: "Pos is the position target value, where 0 is the initial\nposition. For angular joints, this is in radians."}, {Name: "Stiff", Doc: "Stiff determines how strongly the target position\nis enforced: 0 = not at all; larger = stronger (e.g., 1000 or higher).\nSet to 0 to allow the joint to be fully flexible."}, {Name: "Vel", Doc: "Vel is the velocity target value. For example, 0\neffectively damps joint movement in proportion to Damp parameter."}, {Name: "Damp", Doc: "Damp determines how strongly the target velocity is enforced:\n0 = not at all; larger = stronger (e.g., 1 is reasonable).\nSet to 0 to allow the joint to be fully flexible."}}})
+
+// SetForce sets the [Controls.Force]:
+// Force is the force input driving the joint.
+func (t *Controls) SetForce(v float32) *Controls { t.Force = v; return t }
+
+// SetPos sets the [Controls.Pos]:
+// Pos is the position target value, where 0 is the initial
+// position. For angular joints, this is in radians.
+func (t *Controls) SetPos(v float32) *Controls { t.Pos = v; return t }
+
+// SetStiff sets the [Controls.Stiff]:
+// Stiff determines how strongly the target position
+// is enforced: 0 = not at all; larger = stronger (e.g., 1000 or higher).
+// Set to 0 to allow the joint to be fully flexible.
+func (t *Controls) SetStiff(v float32) *Controls { t.Stiff = v; return t }
+
+// SetVel sets the [Controls.Vel]:
+// Vel is the velocity target value. For example, 0
+// effectively damps joint movement in proportion to Damp parameter.
+func (t *Controls) SetVel(v float32) *Controls { t.Vel = v; return t }
+
+// SetDamp sets the [Controls.Damp]:
+// Damp determines how strongly the target velocity is enforced:
+// 0 = not at all; larger = stronger (e.g., 1 is reasonable).
+// Set to 0 to allow the joint to be fully flexible.
+func (t *Controls) SetDamp(v float32) *Controls { t.Damp = v; return t }
+
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.DoF", IDName: "do-f", Doc: "DoF is a degree-of-freedom for a [Joint].", Fields: []types.Field{{Name: "Axis", Doc: "Axis is the axis of articulation."}, {Name: "Limit", Doc: "Limit has the limits for motion of this DoF."}, {Name: "Init", Doc: "Init are the initial control values."}, {Name: "Current", Doc: "Current are the current control values (based on method calls)."}}})
 
 // SetAxis sets the [DoF.Axis]:
 // Axis is the axis of articulation.
@@ -162,27 +190,13 @@ func (t *DoF) SetAxis(v math32.Vector3) *DoF { t.Axis = v; return t }
 // Limit has the limits for motion of this DoF.
 func (t *DoF) SetLimit(v minmax.F32) *DoF { t.Limit = v; return t }
 
-// SetTargetPos sets the [DoF.TargetPos]:
-// TargetPos is the position target value, where 0 is the initial
-// position. For angular joints, this is in radians.
-func (t *DoF) SetTargetPos(v float32) *DoF { t.TargetPos = v; return t }
+// SetInit sets the [DoF.Init]:
+// Init are the initial control values.
+func (t *DoF) SetInit(v Controls) *DoF { t.Init = v; return t }
 
-// SetTargetStiff sets the [DoF.TargetStiff]:
-// TargetStiff determines how strongly the target position
-// is enforced: 0 = not at all; larger = stronger (e.g., 1000 or higher).
-// Set to 0 to allow the joint to be fully flexible.
-func (t *DoF) SetTargetStiff(v float32) *DoF { t.TargetStiff = v; return t }
-
-// SetTargetVel sets the [DoF.TargetVel]:
-// TargetVel is the velocity target value. For example, 0
-// effectively damps joint movement in proportion to Damp parameter.
-func (t *DoF) SetTargetVel(v float32) *DoF { t.TargetVel = v; return t }
-
-// SetTargetDamp sets the [DoF.TargetDamp]:
-// TargetDamp determines how strongly the target velocity is enforced:
-// 0 = not at all; larger = stronger (e.g., 1 is reasonable).
-// Set to 0 to allow the joint to be fully flexible.
-func (t *DoF) SetTargetDamp(v float32) *DoF { t.TargetDamp = v; return t }
+// SetCurrent sets the [DoF.Current]:
+// Current are the current control values (based on method calls).
+func (t *DoF) SetCurrent(v Controls) *DoF { t.Current = v; return t }
 
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Object", IDName: "object", Doc: "Object is an object within the [World].\nEach object is a coherent collection of bodies, typically\nconnected by joints. This is an organizational convenience\nfor positioning elements; has no physical implications.", Fields: []types.Field{{Name: "Bodies", Doc: "Bodies are the bodies in the object."}, {Name: "Joints", Doc: "Joints are joints connecting object bodies.\nJoint indexes here refer strictly within bodies."}}})
 

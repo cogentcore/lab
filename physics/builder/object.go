@@ -54,6 +54,13 @@ func (ob *Object) CopySkins(sc *phyxyz.Scene, so *Object) {
 	}
 }
 
+// InitState initializes current state variables in the object.
+func (ob *Object) InitState() {
+	for i := range ob.Joints {
+		ob.Joint(i).InitState()
+	}
+}
+
 //////// Transforms
 
 // PoseToPhysics sets the current body poses to the physics current state.

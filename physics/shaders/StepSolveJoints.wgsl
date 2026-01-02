@@ -344,6 +344,7 @@ struct PhysParams {
 	JointAngularComply: f32, // 0 def
 	AngularDamping: f32, // 0 def
 	SoftRelax: f32,
+	MaxForce: f32,
 	MaxGeomIter: i32,
 	ContactsMax: i32,
 	Cur: i32,
@@ -354,7 +355,6 @@ struct PhysParams {
 	JointDoFsN: i32,
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
-	pad: i32,
 	Gravity: vec4<f32>,
 }
 
@@ -714,6 +714,9 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 		var qtwist = QuatNormalize(vec4<f32>(relQ.x, 0.0, 0.0, relQ.w));
 		var qswing = MulQuats(relQ, QuatInverse(qtwist));
 		var s = sqrt(relQ.x*relQ.x + relQ.w*relQ.w);
+		if (s == 0) {
+			s = f32(1);
+		}
 		var invs = 1.0 / s;
 		var invscube = invs * invs * invs;
 		var err0 = 2.0 * asin(clamp(qtwist.x, -1.0, 1.0));

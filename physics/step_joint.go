@@ -149,6 +149,7 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 
 	jPR := JointPPos(ji)
 	jPQ := JointPQuat(ji)
+
 	xwPR := jPR // world xform, parent, pos
 	xwPQ := jPQ // quat
 	mInvP := float32(0.0)
@@ -163,6 +164,9 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 		posePR = DynamicPos(jPi, params.Next) // now using next
 		posePQ = DynamicQuat(jPi, params.Next)
 		slmath.MulSpatialTransforms(posePR, posePQ, jPR, jPQ, &xwPR, &xwPQ)
+		//	if xwPR.IsNaN() || xwPQ.IsNaN() {
+		//		fmt.Println("jpi:", jPi, posePR, posePQ, jPR, jPQ)
+		//	}
 		comP = BodyCom(jPbi)
 		mInvP = Bodies.Value(int(jPbi), int(BodyInvMass))
 		iInvP = BodyInvInertia(jPbi)
@@ -177,7 +181,17 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 	jCQ := JointCQuat(ji)
 	xwCR := jCR
 	xwCQ := jCQ
+	//	if jCQ.IsNaN() || jCR.IsNaN() {
+	//		fmt.Println("child joint start:", jCQ, jCR)
+	//	}
+	//
+	//	if poseCQ.IsNaN() || poseCR.IsNaN() {
+	//		fmt.Println("jCi:", jCi, poseCQ, poseCR)
+	//	}
 	slmath.MulSpatialTransforms(poseCR, poseCQ, jCR, jCQ, &xwCR, &xwCQ)
+	//	if xwCQ.IsNaN() || xwCR.IsNaN() {
+	//		fmt.Println("xwCQ:", xwCQ, xwCR, poseCR, poseCQ, jCR, jCQ)
+	//	}
 	comC := BodyCom(jCbi)
 	mInvC := Bodies.Value(int(jCbi), int(BodyInvMass))
 	iInvC := BodyInvInertia(jCbi)
@@ -323,6 +337,14 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 				angDeltaP = angDeltaP.Add(angularP.MulScalar(dLambda * params.JointAngularRelax))
 				linDeltaC = linDeltaC.Add(linearC.MulScalar(dLambda * params.JointLinearRelax))
 				angDeltaC = angDeltaC.Add(angularC.MulScalar(dLambda * params.JointAngularRelax))
+
+				//	if angDeltaC.IsNaN() || angDeltaP.IsNaN() {
+				//		fmt.Println("joint ang:", angDeltaC, angDeltaP)
+				//	}
+				//
+				//	if linDeltaC.IsNaN() || linDeltaP.IsNaN() {
+				//		fmt.Println("joint lin:", linDeltaC, linDeltaP)
+				//	}
 			}
 		}
 	}
@@ -337,8 +359,16 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 		qtwist := slmath.QuatNormalize(math32.NewQuat(relQ.X, 0.0, 0.0, relQ.W))
 		qswing := slmath.MulQuats(relQ, slmath.QuatInverse(qtwist))
 
+		// if qP.IsNaN() || qC.IsNaN() || relQ.IsNaN() {
+		// 	fmt.Println("qp, qc:", qP, qC, relQ)
+		// }
+
 		// decompose to a compound rotation each axis
 		s := math32.Sqrt(relQ.X*relQ.X + relQ.W*relQ.W)
+		if s == 0 {
+			// fmt.Println("s = 0", relQ, qP, qC)
+			s = 1
+		}
 		invs := 1.0 / s
 		invscube := invs * invs * invs
 
@@ -361,6 +391,9 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 			relQ.X*(relQ.Z*relQ.X-relQ.W*relQ.Y)*invscube)
 		grad0 = slmath.QuatMulScalar(grad0, 2.0/math32.Abs(qtwist.W))
 		//         # grad0 *= 2.0 / wp.sqrt(1.0-qtwist[0]*qtwist[0])	# derivative of asin(x) = 1/sqrt(1-x^2)
+		// if grad0.IsNaN() || grad1.IsNaN() || grad2.IsNaN() {
+		// 	fmt.Println("grads:", grad0, grad1, grad2)
+		// }
 
 		// rescale swing
 		swing_sq := qswing.W * qswing.W
@@ -417,6 +450,9 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 			// todo: verify -- does the 0.5 go inside??
 			// quat_c = 0.5 * q_p * grad * wp.quat_inverse(q_c)
 			quatC := slmath.MulQuats(slmath.MulQuats(slmath.QuatMulScalar(qP, 0.5), grad), slmath.QuatInverse(qC))
+			// if ji == 0 {
+			// 	fmt.Println(quatC, qP, qC, grad)
+			// }
 
 			angularC := math32.Vec3(quatC.X, quatC.Y, quatC.Z)
 			angularP := slmath.Negate3(angularC)
@@ -459,6 +495,13 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 			// note: no relaxation factors here:
 			angDeltaP = angDeltaP.Add(angularP.MulScalar(dLambda))
 			angDeltaC = angDeltaC.Add(angularC.MulScalar(dLambda))
+			//	if ji == 0 && dim == 1 {
+			//		fmt.Println(ji, dim, e, err, lambdaIn, angularP, angularC)
+			//	}
+			//
+			//	if angDeltaC.IsNaN() || angDeltaP.IsNaN() {
+			//		fmt.Println("ang joint ang:", angDeltaC, angDeltaP, angularC, angularP, dLambda)
+			//	}
 		}
 	}
 
@@ -514,7 +557,6 @@ func AngularCorrection(err, derr float32, tfaQ, tfbQ math32.Quat, iInva, iInvb m
 	if denom+alpha > 0.0 {
 		deltaLambda /= (dt+gamma)*denom + alpha/dt
 	}
-
 	return deltaLambda
 }
 

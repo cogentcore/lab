@@ -115,8 +115,7 @@ func main() {
 		targ := math32.DegToRad(float32(ps.TargetDegFromVert))
 
 		jd := obj.NewJointRevolute(nil, pb, math32.Vec3(0, stY, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
-		jd.DoF(0).SetTargetPos(targ).SetTargetStiff(ps.Stiff).
-			SetTargetVel(0).SetTargetDamp(ps.Damp)
+		jd.DoF(0).Init.SetPos(targ).SetStiff(ps.Stiff).SetVel(0).SetDamp(ps.Damp)
 
 		for i := 1; i < ps.NPendula; i++ {
 			clr := colors.Names[12+i%len(colors.Names)]
@@ -131,8 +130,7 @@ func main() {
 				cb.SetGroup(1 + i)
 			}
 			jd = obj.NewJointRevolute(pb, cb, math32.Vec3(0, -ps.HSize.Y, 0), math32.Vec3(0, ps.HSize.Y, 0), math32.Vec3(0, 0, 1))
-			jd.DoF(0).SetTargetPos(targ).SetTargetStiff(ps.Stiff).
-				SetTargetVel(0).SetTargetDamp(ps.Damp)
+			jd.DoF(0).Init.SetPos(targ).SetStiff(ps.Stiff).SetVel(0).SetDamp(ps.Damp)
 			pb = cb
 			botJoint = jd
 		}

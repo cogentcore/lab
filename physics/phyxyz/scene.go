@@ -71,6 +71,12 @@ func (sc *Scene) Init(ml *physics.Model) {
 	sc.Update()
 }
 
+// InitState calls InitState on the Model and then Update.
+func (sc *Scene) InitState(ml *physics.Model) {
+	ml.InitState()
+	sc.Update()
+}
+
 // Reset resets any existing views, starting fresh for a new configuration.
 func (sc *Scene) Reset() {
 	sc.Skins = nil

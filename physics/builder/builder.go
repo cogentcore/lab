@@ -93,6 +93,19 @@ func (bl *Builder) Build(ml *physics.Model, sc *phyxyz.Scene) {
 	}
 }
 
+// InitState initializes the current state variables in the builder.
+// This does not call InitState in physics, because that depends on
+// whether the Sccene is being used.
+func (bl *Builder) InitState() {
+	for wi := range bl.Worlds {
+		wl := bl.World(wi)
+		for oi := range wl.Objects {
+			ob := wl.Object(oi)
+			ob.InitState()
+		}
+	}
+}
+
 // ReplicateWorld makes copies of given world to form an X,Y grid of
 // worlds with given optional offsets (Y, X) added between world objects.
 // Note that worldIdx is the index in Worlds, not the world number.

@@ -324,6 +324,7 @@ struct PhysParams {
 	JointAngularComply: f32, // 0 def
 	AngularDamping: f32, // 0 def
 	SoftRelax: f32,
+	MaxForce: f32,
 	MaxGeomIter: i32,
 	ContactsMax: i32,
 	Cur: i32,
@@ -334,7 +335,6 @@ struct PhysParams {
 	JointDoFsN: i32,
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
-	pad: i32,
 	Gravity: vec4<f32>,
 }
 

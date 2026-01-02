@@ -279,6 +279,7 @@ struct PhysParams {
 	JointAngularComply: f32, // 0 def
 	AngularDamping: f32, // 0 def
 	SoftRelax: f32,
+	MaxForce: f32,
 	MaxGeomIter: i32,
 	ContactsMax: i32,
 	Cur: i32,
@@ -289,7 +290,6 @@ struct PhysParams {
 	JointDoFsN: i32,
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
-	pad: i32,
 	Gravity: vec4<f32>,
 }
 
@@ -370,6 +370,24 @@ return nq;
 //////// import: "slmath-vector2.go"
 
 //////// import: "slmath-vector3.go"
+fn ClampMagnitude3(v: vec3<f32>, mag: f32) -> vec3<f32> {
+	var r = v;
+	if (r.x < -mag) {
+		r.x = -mag;
+	} else if (r.x > mag) {
+		r.x = mag;
+	}
+	if (r.y < -mag) {
+		r.y = -mag;
+	} else if (r.y > mag) {
+		r.y = mag;
+	}
+	if (r.z < -mag) {
+		r.z = -mag;
+	} else if (r.z > mag) {
+		r.z = mag;
+	}return r;
+}
 fn Cross3(v: vec3<f32>,o: vec3<f32>) -> vec3<f32> {
 	return vec3<f32>(v.y*o.z-v.z*o.y, v.z*o.x-v.x*o.z, v.x*o.y-v.y*o.x);
 }
@@ -406,6 +424,7 @@ fn StepIntegrateBodies(i: u32) { //gosl:kernel
 	var p1 = pcom+(v1*(params.Dt));
 	var wb = MulQuatVectorInverse(q0, w0);
 	var tb = MulQuatVectorInverse(q0, t0)-(Cross3(wb, inertia*(wb))); // coriolis forces
+	tb = ClampMagnitude3(tb, params.MaxForce);
 	var w1 = MulQuatVector(q0, wb+(invInertia*(tb)*(params.Dt)));
 	var q1 = QuatAdd(q0, MulQuats(vec4<f32>(w1.x, w1.y, w1.z, 0), q0)*(0.5*params.Dt));
 	q1 = QuatNormalize(q1);

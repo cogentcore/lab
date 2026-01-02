@@ -124,16 +124,24 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 	wb := slmath.MulQuatVectorInverse(q0, w0)
 	tb := slmath.MulQuatVectorInverse(q0, t0).Sub(slmath.Cross3(wb, inertia.MulVector3(wb))) // coriolis forces
 
+	tb = slmath.ClampMagnitude3(tb, params.MaxForce)
+
 	w1 := slmath.MulQuatVector(q0, wb.Add(invInertia.MulVector3(tb).MulScalar(params.Dt)))
 	q1 := slmath.QuatAdd(q0, slmath.MulQuats(math32.NewQuat(w1.X, w1.Y, w1.Z, 0), q0).MulScalar(0.5*params.Dt))
 	q1 = slmath.QuatNormalize(q1)
 
 	// angular damping
 	w1 = w1.MulScalar(1.0 - params.AngularDamping*params.Dt)
+	w1 = slmath.ClampMagnitude3(w1, params.MaxForce)
 
 	p1a := p1.Sub(slmath.MulQuatVector(q1, com)) // pos corrected to nominal center.
 
 	// fmt.Println(params.Next, "integrate:", v0, v1)
+
+	// if p1a.IsNaN() || q1.IsNaN() {
+	// if di == 0 {
+	// 	fmt.Println("integ:", di, p1a, q1, "r0:", r0, "q0:", q0, "v0:", v0, "w0:", w0, "f0:", f0, "t0:", t0, "pcom:", pcom, "v1:", v1, "p1:", p1, "wb:", wb, "tb:", tb, "w1:", w1)
+	// }
 
 	SetDynamicPos(di, params.Next, p1a)
 	SetDynamicQuat(di, params.Next, q1)

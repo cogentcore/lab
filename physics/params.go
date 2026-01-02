@@ -61,6 +61,10 @@ type PhysParams struct {
 	// SoftRelax is soft-body relaxation constant.
 	SoftRelax float32 `default:"0.9"`
 
+	// MaxForce is the maximum computed force value, which prevents
+	// runaway numerical overflow.
+	MaxForce float32 `default:"1e5"`
+
 	// MaxGeomIter is number of iterations to perform in shape-based
 	// geometry collision computations
 	MaxGeomIter int32 `default:"10"`
@@ -93,8 +97,6 @@ type PhysParams struct {
 	// to examine.
 	BodyCollidePairsN int32 `edit:"-"`
 
-	pad int32
-
 	// Gravity is the gravity acceleration function
 	Gravity slvec.Vector3
 }
@@ -117,6 +119,7 @@ func (pr *PhysParams) Defaults() {
 
 	pr.AngularDamping = 0
 	pr.SoftRelax = 0.9
+	pr.MaxForce = 1.0e5
 	pr.MaxGeomIter = 10
 }
 

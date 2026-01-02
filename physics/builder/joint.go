@@ -43,6 +43,35 @@ type Joint struct {
 	JointIndex int32
 }
 
+// Controls are the per degrees-of-freedom (DoF) joint control inputs.
+type Controls struct {
+	// Force is the force input driving the joint.
+	Force float32
+
+	// Pos is the position target value, where 0 is the initial
+	// position. For angular joints, this is in radians.
+	Pos float32
+
+	// Stiff determines how strongly the target position
+	// is enforced: 0 = not at all; larger = stronger (e.g., 1000 or higher).
+	// Set to 0 to allow the joint to be fully flexible.
+	Stiff float32
+
+	// Vel is the velocity target value. For example, 0
+	// effectively damps joint movement in proportion to Damp parameter.
+	Vel float32
+
+	// Damp determines how strongly the target velocity is enforced:
+	// 0 = not at all; larger = stronger (e.g., 1 is reasonable).
+	// Set to 0 to allow the joint to be fully flexible.
+	Damp float32
+}
+
+func (ct *Controls) Defaults() {
+	ct.Stiff = 1000
+	ct.Damp = 20
+}
+
 // DoF is a degree-of-freedom for a [Joint].
 type DoF struct {
 	// Axis is the axis of articulation.
@@ -51,23 +80,23 @@ type DoF struct {
 	// Limit has the limits for motion of this DoF.
 	Limit minmax.F32
 
-	// TargetPos is the position target value, where 0 is the initial
-	// position. For angular joints, this is in radians.
-	TargetPos float32
+	// Init are the initial control values.
+	Init Controls
 
-	// TargetStiff determines how strongly the target position
-	// is enforced: 0 = not at all; larger = stronger (e.g., 1000 or higher).
-	// Set to 0 to allow the joint to be fully flexible.
-	TargetStiff float32
+	// Current are the current control values (based on method calls).
+	Current Controls
+}
 
-	// TargetVel is the velocity target value. For example, 0
-	// effectively damps joint movement in proportion to Damp parameter.
-	TargetVel float32
+func (df *DoF) Defaults() {
+	df.Limit.Min = -physics.JointLimitUnlimited
+	df.Limit.Max = physics.JointLimitUnlimited
+	df.Init.Defaults()
+	df.Current.Defaults()
+}
 
-	// TargetDamp determines how strongly the target velocity is enforced:
-	// 0 = not at all; larger = stronger (e.g., 1 is reasonable).
-	// Set to 0 to allow the joint to be fully flexible.
-	TargetDamp float32
+func (df *DoF) InitState() {
+	df.Current = df.Init
+
 }
 
 func (jd *Joint) DoF(idx int) *DoF {
@@ -90,10 +119,7 @@ func (ob *Object) newJoint(typ physics.JointTypes, parent, child *Body, ppos, cp
 		jd.DoFs = make([]DoF, linDoF+angDoF)
 		for i := range ndof {
 			dof := jd.DoF(i)
-			dof.Limit.Min = -physics.JointLimitUnlimited
-			dof.Limit.Max = physics.JointLimitUnlimited
-			dof.TargetStiff = 1000
-			dof.TargetDamp = 100
+			dof.Defaults()
 		}
 	}
 	return jd
@@ -219,8 +245,8 @@ func (jd *Joint) NewPhysicsJoint(ml *physics.Model, ob *Object) int32 {
 		di := int32(i)
 		physics.SetJointDoF(ji, di, physics.JointLimitLower, d.Limit.Min)
 		physics.SetJointDoF(ji, di, physics.JointLimitUpper, d.Limit.Max)
-		physics.SetJointTargetPos(ji, di, d.TargetPos, d.TargetStiff)
-		physics.SetJointTargetVel(ji, di, d.TargetVel, d.TargetDamp)
+		physics.SetJointTargetPos(ji, di, d.Init.Pos, d.Init.Stiff)
+		physics.SetJointTargetVel(ji, di, d.Init.Vel, d.Init.Damp)
 		d.Axis = physics.JointAxis(ji, di)
 	}
 	for i := range jd.AngularDoFN {
@@ -228,8 +254,8 @@ func (jd *Joint) NewPhysicsJoint(ml *physics.Model, ob *Object) int32 {
 		d := jd.DoF(int(di))
 		physics.SetJointDoF(ji, di, physics.JointLimitLower, d.Limit.Min)
 		physics.SetJointDoF(ji, di, physics.JointLimitUpper, d.Limit.Max)
-		physics.SetJointTargetPos(ji, di, d.TargetPos, d.TargetStiff)
-		physics.SetJointTargetVel(ji, di, d.TargetVel, d.TargetDamp)
+		physics.SetJointTargetPos(ji, di, d.Init.Pos, d.Init.Stiff)
+		physics.SetJointTargetVel(ji, di, d.Init.Vel, d.Init.Damp)
 		d.Axis = physics.JointAxis(ji, di)
 	}
 	jd.JointIndex = ji
@@ -243,6 +269,17 @@ func (jd *Joint) NewPhysicsJoint(ml *physics.Model, ob *Object) int32 {
 // IsGlobal returns true if this joint has a global world anchor parent.
 func (jd *Joint) IsGlobal() bool {
 	return jd.Parent < 0
+}
+
+// InitState initializes current state variables in the Joint.
+func (jd *Joint) InitState() {
+	ji := jd.JointIndex
+	for di := range jd.DoFs {
+		d := jd.DoF(di)
+		d.InitState()
+		physics.SetJointTargetPos(ji, int32(di), d.Init.Pos, d.Init.Stiff)
+		physics.SetJointTargetVel(ji, int32(di), d.Init.Vel, d.Init.Damp)
+	}
 }
 
 // PoseToPhysics sets the current world-anchored joint pose
@@ -265,21 +302,70 @@ func (jd *Joint) PoseFromPhysics() {
 	jd.PPose.Quat = physics.JointPQuat(jd.JointIndex)
 }
 
+// SetTargetVel sets the target position for given DoF for
+// this joint in the physics model. Records into [DoF.Current].
+func (jd *Joint) SetTargetVel(dof int32, vel, damp float32) {
+	d := jd.DoF(int(dof))
+	d.Current.Vel = vel
+	d.Current.Damp = damp
+	physics.SetJointTargetVel(jd.JointIndex, dof, vel, damp)
+}
+
 // SetTargetPos sets the target position for given DoF for
-// this joint in the physics model.
+// this joint in the physics model. Records into [DoF.Current].
 func (jd *Joint) SetTargetPos(dof int32, pos, stiff float32) {
+	d := jd.DoF(int(dof))
+	d.Current.Pos = pos
+	d.Current.Stiff = stiff
 	physics.SetJointTargetPos(jd.JointIndex, dof, pos, stiff)
 }
 
-// AddTargetPos adds to the target position for given DoF for
+// AddTargetPos adds to the Current target position for given DoF for
 // this joint in the physics model, setting stiffness.
 func (jd *Joint) AddTargetPos(dof int32, pos, stiff float32) {
-	cpos := physics.GetJointTargetPos(jd.JointIndex, dof)
-	physics.SetJointTargetPos(jd.JointIndex, dof, cpos+pos, stiff)
+	d := jd.DoF(int(dof))
+	d.Current.Pos += pos
+	d.Current.Stiff = stiff
+	physics.SetJointTargetPos(jd.JointIndex, dof, d.Current.Pos, stiff)
 }
 
-// SetTargetVel sets the target position for given DoF for
-// this joint in the physics model.
-func (jd *Joint) SetTargetVel(dof int32, vel, damp float32) {
-	physics.SetJointTargetVel(jd.JointIndex, dof, vel, damp)
+// SetTargetAngle sets the target angular position
+// and stiffness for given joint, DoF to given values.
+// Stiffness determines how strongly the joint constraint is enforced
+// (0 = not at all; 1000+ = strongly).
+// Angle is in Degrees, not radians. Usable range is within -180..180
+// which is enforced, and values near the edge can be unstable at higher
+// stiffness levels.
+func (jd *Joint) SetTargetAngle(dof int32, angDeg, stiff float32) {
+	pos := math32.WrapPi(math32.DegToRad(angDeg))
+	d := jd.DoF(int(dof))
+	d.Current.Pos = pos
+	d.Current.Stiff = stiff
+	physics.SetJointTargetPos(jd.JointIndex, dof, pos, stiff)
+}
+
+// AddTargetAngle adds to the Current target angular position,
+// and sets stiffness for given joint, DoF to given values.
+// Stiffness determines how strongly the joint constraint is enforced
+// (0 = not at all; 1000+ = strongly).
+// Angle is in Degrees, not radians. Usable range is within -180..180
+// which is enforced, and values near the edge can be unstable at higher
+// stiffness levels.
+func (jd *Joint) AddTargetAngle(dof int32, angDeg, stiff float32) {
+	d := jd.DoF(int(dof))
+	d.Current.Pos = math32.WrapPi(d.Current.Pos + math32.DegToRad(angDeg))
+	d.Current.Stiff = stiff
+	physics.SetJointTargetPos(jd.JointIndex, dof, d.Current.Pos, stiff)
+}
+
+// AddPlaneXZPos adds to the Current target X and Z axis positions for
+// a PlaneXZ joint, using the current Y axis rotation angle to project
+// along the current angle direction. angOff provides an angle offset to
+// add to the Y axis angle.
+func (jd *Joint) AddPlaneXZPos(angOff, delta, stiff float32) {
+	ang := angOff - jd.DoF(2).Current.Pos
+	dx := delta * math32.Cos(ang)
+	dz := delta * math32.Sin(ang)
+	jd.AddTargetPos(0, dx, stiff)
+	jd.AddTargetPos(1, dz, stiff)
 }

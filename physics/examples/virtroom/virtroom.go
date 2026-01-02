@@ -117,7 +117,7 @@ func (ev *Env) Defaults() {
 	ev.EmerHt = 1
 	ev.MoveStep = ev.EmerHt * .2
 	ev.RotStep = 15
-	ev.ModelSteps = 100
+	ev.ModelSteps = 10
 	ev.DepthMap = core.ColorMapName("ColdHot")
 	ev.Camera.Defaults()
 	ev.Camera.FOV = 90
@@ -140,12 +140,16 @@ func (ev *Env) MakeWorld(sc *xyz.Scene) {
 	ev.MakeEmer(ew, "emer", ev.EmerHt)
 	// ev.Physics.Builder.ReplicateWorld(1, 8, 2)
 	ev.Physics.Build()
-	physics.GetParams(0).Gravity.Y = 0
+	params := physics.GetParams(0)
+	params.Gravity.Y = 0
+	params.MaxForce = 1.0e3
+	params.AngularDamping = 0.5
+	// params.SubSteps = 1
 }
 
-// InitWorld does init on world.
-func (ev *Env) WorldInit() { //types:add
-	ev.Physics.Init()
+// Initstate reinitializes the physics model state.
+func (ev *Env) InitState() { //types:add
+	ev.Physics.InitState()
 	ev.UpdateView()
 }
 
@@ -219,11 +223,11 @@ func (ev *Env) ModelStep() { //types:add
 // StepForward moves Emer forward in current facing direction one step,
 // and takes GrabEyeImg
 func (ev *Env) StepForward() { //types:add
-	// doesn't integrate well with joints..
 	ev.Emer.PoseFromPhysics()
+	// doesn't integrate well with joints..
 	// ev.Emer.MoveOnAxisBody(0, 0, 0, 1, -ev.MoveStep)
 	// ev.Emer.PoseToPhysics()
-	ev.EmerJoint.AddTargetPos(1, -ev.MoveStep, 1000) // z axis
+	ev.EmerJoint.AddPlaneXZPos(math32.Pi*.5, -ev.MoveStep, 1000)
 	ev.ModelStep()
 }
 
@@ -232,7 +236,7 @@ func (ev *Env) StepBackward() { //types:add
 	ev.Emer.PoseFromPhysics()
 	// ev.Emer.MoveOnAxisBody(0, 0, 0, 1, ev.MoveStep)
 	// ev.Emer.PoseToPhysics()
-	ev.EmerJoint.AddTargetPos(1, ev.MoveStep, 1000)
+	ev.EmerJoint.AddPlaneXZPos(math32.Pi*.5, ev.MoveStep, 1000)
 	ev.ModelStep()
 }
 
@@ -324,14 +328,14 @@ func (ev *Env) MakeEmer(wl *builder.World, name string, height float32) {
 	ev.NeckJoint = obj.NewJointBall(emr, head, math32.Vec3(0, hh, 0), math32.Vec3(0, -headsz, 0))
 
 	eyeoff := math32.Vec3(-headsz*.6, headsz*.1, -(headsz + eyesz*.3))
-	bd := obj.NewDynamicSkin(sc, name+"_eye-l", physics.Box, "green", mass*.001, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
+	bd := obj.NewDynamicSkin(sc, name+"_eye-l", physics.Box, "green", mass*.01, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
 	bd.Group = 0
-	obj.NewJointBall(head, bd, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
+	obj.NewJointFixed(head, bd, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
 
 	eyeoff = math32.Vec3(headsz*.6, headsz*.1, -(headsz + eyesz*.3))
-	ev.EyeR = obj.NewDynamicSkin(sc, name+"_eye-r", physics.Box, "green", mass*.001, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
+	ev.EyeR = obj.NewDynamicSkin(sc, name+"_eye-r", physics.Box, "green", mass*.01, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
 	ev.EyeR.Group = 0
-	obj.NewJointBall(head, ev.EyeR, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
+	obj.NewJointFixed(head, ev.EyeR, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
 }
 
 func (ev *Env) ConfigGUI() *core.Body {
@@ -400,7 +404,7 @@ func (ev *Env) ConfigGUI() *core.Body {
 
 func (ev *Env) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.FuncButton) {
-		w.SetFunc(ev.WorldInit).SetText("Init").SetIcon(icons.Update)
+		w.SetFunc(ev.InitState).SetText("Init").SetIcon(icons.Update)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(ev.GrabEyeImg).SetText("Grab Image").SetIcon(icons.Image)
