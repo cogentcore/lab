@@ -9,6 +9,8 @@
 
 package physics
 
+import "cogentcore.org/core/math32"
+
 //gosl:start
 //gosl:import "cogentcore.org/lab/gosl/slmath"
 
@@ -37,7 +39,11 @@ func StepInit(i uint32) { //gosl:kernel read-write:Params
 	for j := range params.JointDoFsN {
 		tpos := JointControls.Value(int(j), int(JointTargetPos))
 		tcur := JointControls.Value(int(j), int(JointTargetPosCur))
-		tcur += params.ControlDt * (tpos - tcur)
+		if math32.Abs(tpos-tcur) < params.ControlDtThr {
+			tcur = tpos
+		} else {
+			tcur += params.ControlDt * (tpos - tcur)
+		}
 		JointControls.Set(tcur, int(j), int(JointTargetPosCur))
 	}
 }

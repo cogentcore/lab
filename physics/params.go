@@ -31,7 +31,14 @@ type PhysicsParams struct {
 
 	// ControlDt is the stepsize for integrating joint control position values
 	// [JointTargetPos] over time, to avoid sudden strong changes in force.
-	ControlDt float32 `default:"0.1"`
+	// For higher-DoF joints (e.g., Ball), this can be important for stability,
+	// but it can also result in under-shoot of the target position.
+	ControlDt float32 `default:"1,0.1"`
+
+	// ControlDtThr is the threshold on the control delta above which
+	// ControlDt is used. ControlDt is most important for large changes,
+	// and can result in under-shoot if engaged for small changes.
+	ControlDtThr float32 `default:"1"`
 
 	// Contact margin is the extra distance for broadphase collision
 	// around rigid bodies. This can make some joints potentially unstable if > 0
@@ -111,6 +118,8 @@ type PhysicsParams struct {
 	// to examine.
 	BodyCollidePairsN int32 `edit:"-"`
 
+	pad, pad1, pad2 int32
+
 	// Gravity is the gravity acceleration function
 	Gravity slvec.Vector3
 }
@@ -119,7 +128,8 @@ func (pr *PhysicsParams) Defaults() {
 	pr.Iterations = 1
 	pr.Dt = 0.0001
 	pr.SubSteps = 10
-	pr.ControlDt = 0.1
+	pr.ControlDt = 1
+	pr.ControlDtThr = 1
 	pr.Gravity.Set(0, -9.81, 0)
 
 	pr.ContactMargin = 0

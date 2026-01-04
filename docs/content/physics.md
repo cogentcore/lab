@@ -105,7 +105,7 @@ ed.SetConfigFunc(func() {
     
     obj := sc.NewDynamic(ml, "body", physics.Box, "blue", mass, hsz, math32.Vec3(0, hsz.Y, 0), math32.NewQuatIdentity())
 	ml.NewObject()
-	ji := sc.NewJointPrismatic(ml, nil, obj, math32.Vec3(-5, 0, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(1, 0, 0))
+	ji := sc.NewJointPrismatic(ml, nil, obj, math32.Vec3(-5, 0, 0), math32.Vec3(0, -hsz.Y, 0), math32.Vec3(1, 0, 0))
 })
 
 // variables to control
@@ -169,9 +169,10 @@ ed.Styler(func(s *styles.Style) {
 
 ed.SetConfigFunc(func() {
 	ml := ed.Model
+    physics.GetParams(0).ControlDt = 0.1 // much better behaved with this
 	sc := ed.Scene
     hsz := math32.Vec3(0.5, 1.5, 0.2)
-    mass := float32(0.1)
+    mass := float32(1)
     
     obj := sc.NewDynamic(ml, "body", physics.Box, "blue", mass, hsz, math32.Vec3(0, hsz.Y, 0), math32.NewQuatIdentity())
 	ml.NewObject()

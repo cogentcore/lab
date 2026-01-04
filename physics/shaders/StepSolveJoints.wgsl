@@ -350,6 +350,7 @@ struct PhysicsParams {
 	Dt: f32,
 	SubSteps: i32,
 	ControlDt: f32,
+	ControlDtThr: f32,
 	ContactMargin: f32,
 	ContactRelax: f32, // 0.8 def
 	ContactWeighting: i32, // true
@@ -374,6 +375,9 @@ struct PhysicsParams {
 	JointDoFsN: i32,
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
+	pad: i32,
+	pad1: i32,
+	pad2: i32,
 	Gravity: vec4<f32>,
 }
 
