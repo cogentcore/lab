@@ -5,6 +5,8 @@
 package builder
 
 import (
+	"slices"
+
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/physics/phyxyz"
 )
@@ -58,9 +60,20 @@ func (ob *Object) CopySkins(sc *phyxyz.Scene, so *Object) {
 
 // InitState initializes current state variables in the object.
 func (ob *Object) InitState() {
-	for i := range ob.Joints {
-		ob.Joint(i).InitState()
+	for _, jd := range ob.Joints {
+		jd.InitState()
 	}
+}
+
+// HasBodyIndex returns true if a body in the object has any of
+// given body index(es).
+func (ob *Object) HasBodyIndex(bodyIndex ...int32) bool {
+	for _, bd := range ob.Bodies {
+		if slices.Contains(bodyIndex, bd.BodyIndex) {
+			return true
+		}
+	}
+	return false
 }
 
 //////// Transforms
@@ -68,33 +81,32 @@ func (ob *Object) InitState() {
 // PoseToPhysics sets the current body poses to the physics current state.
 // For Dynamic bodies, sets dynamic state. Also updates world-anchored joints.
 func (ob *Object) PoseToPhysics() {
-	for i := range ob.Bodies {
-		ob.Body(i).PoseToPhysics()
+	for _, bd := range ob.Bodies {
+		bd.PoseToPhysics()
 	}
-	for i := range ob.Joints {
-		ob.Joint(i).PoseToPhysics()
+	for _, jd := range ob.Joints {
+		jd.PoseToPhysics()
 	}
 }
 
 // PoseFromPhysics gets the current body poses from the physics current state.
 // Also updates world-anchored joints.
 func (ob *Object) PoseFromPhysics() {
-	for i := range ob.Bodies {
-		ob.Body(i).PoseFromPhysics()
+	for _, bd := range ob.Bodies {
+		bd.PoseFromPhysics()
 	}
-	for i := range ob.Joints {
-		ob.Joint(i).PoseFromPhysics()
+	for _, jd := range ob.Joints {
+		jd.PoseFromPhysics()
 	}
 }
 
 // Move applies positional and rotational transforms to all bodies,
 // and world-anchored joints.
 func (ob *Object) Move(pos math32.Vector3) {
-	for i := range ob.Bodies {
-		ob.Body(i).Pose.Move(pos)
+	for _, bd := range ob.Bodies {
+		bd.Pose.Move(pos)
 	}
-	for i := range ob.Joints {
-		jd := ob.Joint(i)
+	for _, jd := range ob.Joints {
 		if jd.IsGlobal() {
 			jd.PPose.Move(pos)
 		}
@@ -103,11 +115,10 @@ func (ob *Object) Move(pos math32.Vector3) {
 
 // RotateAround rotates around a given point
 func (ob *Object) RotateAround(rot math32.Quat, around math32.Vector3) {
-	for i := range ob.Bodies {
-		ob.Body(i).Pose.RotateAround(rot, around)
+	for _, bd := range ob.Bodies {
+		bd.Pose.RotateAround(rot, around)
 	}
-	for i := range ob.Joints {
-		jd := ob.Joint(i)
+	for _, jd := range ob.Joints {
 		if jd.IsGlobal() {
 			jd.PPose.RotateAround(rot, around)
 		}

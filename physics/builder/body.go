@@ -88,6 +88,7 @@ func (ob *Object) NewBody(shape physics.Shapes, hsize, pos math32.Vector3, rot m
 	bd := &Body{ObjectIndex: idx, Shape: shape, HSize: hsize}
 	bd.Pose.Pos = pos
 	bd.Pose.Quat = rot
+	bd.Group = -1 // default static
 	ob.Bodies = append(ob.Bodies, bd)
 	return ob.Bodies[idx]
 }
@@ -98,6 +99,7 @@ func (ob *Object) NewDynamic(shape physics.Shapes, mass float32, hsize, pos math
 	bd := ob.NewBody(shape, hsize, pos, rot)
 	bd.Dynamic = true
 	bd.Mass = mass
+	bd.Group = 1
 	return bd
 }
 
@@ -107,6 +109,7 @@ func (ob *Object) NewDynamic(shape physics.Shapes, mass float32, hsize, pos math
 // Use this for Static elements; NewDynamicSkin for dynamic elements.
 func (ob *Object) NewBodySkin(sc *phyxyz.Scene, name string, shape physics.Shapes, clr string, hsize, pos math32.Vector3, rot math32.Quat) *Body {
 	bd := ob.NewBody(shape, hsize, pos, rot)
+	bd.Group = -1 // default static
 	bd.NewSkin(sc, name, clr)
 	return bd
 }
@@ -126,6 +129,7 @@ func (ob *Object) NewDynamicSkin(sc *phyxyz.Scene, name string, shape physics.Sh
 	bd := ob.NewBodySkin(sc, name, shape, clr, hsize, pos, rot)
 	bd.Dynamic = true
 	bd.Mass = mass
+	bd.Group = 1
 	return bd
 }
 

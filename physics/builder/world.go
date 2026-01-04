@@ -46,22 +46,22 @@ func (wl *World) Copy(ow *World) {
 // CopySkins makes new skins for bodies in world,
 // based on those in source world, which must be a Copy.
 func (wl *World) CopySkins(sc *phyxyz.Scene, ow *World) {
-	for i := range wl.Objects {
-		wl.Object(i).CopySkins(sc, ow.Object(i))
+	for i, ob := range wl.Objects {
+		ob.CopySkins(sc, ow.Object(i))
 	}
 }
 
 // Move moves all objects in world by given delta.
 func (wl *World) Move(delta math32.Vector3) {
-	for i := range wl.Objects {
-		wl.Object(i).Move(delta)
+	for _, ob := range wl.Objects {
+		ob.Move(delta)
 	}
 }
 
 // PoseToPhysics sets the current body poses to the physics current state.
 // For Dynamic bodies, sets dynamic state. Also updates world-anchored joints.
 func (wl *World) PoseToPhysics() {
-	for i := range wl.Objects {
-		wl.Object(i).PoseToPhysics()
+	for _, ob := range wl.Objects {
+		ob.PoseToPhysics()
 	}
 }

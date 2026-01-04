@@ -5,7 +5,6 @@
 package physics
 
 import (
-	"fmt"
 	"testing"
 
 	"cogentcore.org/core/math32"
@@ -62,13 +61,14 @@ func TestSphereSphere(t *testing.T) {
 
 		assert.InDelta(t, tc.dist, distActual, tol)
 		assert.InDelta(t, 1.0, norm.Length(), tol)
+		assert.Equal(t, distActual < margin, actual)
 
 		if !actual {
 			continue
 		}
 		cpA := ctA.Add(offA)
 		cpB := ctB.Add(offB)
-		fmt.Println(cpA, cpB)
+		// fmt.Println(cpA, cpB, tc.dist, actual)
 	}
 
 	//

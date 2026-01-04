@@ -8,6 +8,7 @@ package main
 
 import (
 	"image"
+	"math/rand/v2"
 	"os"
 
 	"cogentcore.org/core/base/iox/imagex"
@@ -143,6 +144,7 @@ func (ev *Env) MakeWorld(sc *xyz.Scene) {
 	ev.Physics.Model = physics.NewModel()
 	ev.Physics.Builder = builder.NewBuilder()
 	ev.Physics.Model.GPU = false
+	ev.Physics.Model.GetContacts = true
 	sc.Background = colors.Scheme.Select.Container
 	xyz.NewAmbient(sc, "ambient", 0.3, xyz.DirectSun)
 
@@ -215,27 +217,22 @@ func (ev *Env) UpdateView() {
 
 // ModelStep does one step of the physics model.
 func (ev *Env) ModelStep() { //types:add
-	// physics.ToGPU(physics.DynamicsVar)
 	ev.Physics.Step(ev.ModelSteps)
-	// cts := pw.WorldCollide(physics.DynsTopGps)
-	// ev.Contacts = nil
-	// for _, cl := range cts {
-	// 	if len(cl) > 1 {
-	// 		for _, c := range cl {
-	// 			if c.A.AsTree().Name == "body" {
-	// 				ev.Contacts = cl
-	// 			}
-	// 			fmt.Printf("A: %v  B: %v\n", c.A.AsTree().Name, c.B.AsTree().Name)
-	// 		}
-	// 	}
-	// }
 	ev.Emer.Angry = false
-	// if len(ev.Contacts) > 1 { // turn around
-	// 	ev.EmerAngry = true
-	// 	fmt.Printf("hit wall: turn around!\n")
-	// 	rot := 100.0 + 90.0*rand.Float32()
-	// 	ev.Emer.Rel.RotateOnAxis(0, 1, 0, rot)
-	// }
+	ctN := physics.ContactsN.Value(0)
+	for ci := range ctN {
+		ca := physics.GetContactA(ci)
+		cb := physics.GetContactB(ci)
+		if ca == 0 || cb == 0 { // ignore the floor
+			continue
+		}
+		if ev.Emer.Obj.HasBodyIndex(ca, cb) {
+			ev.Emer.Angry = true
+			// fmt.Println("hit wall: turn around!")
+			rot := 100.0 + 90.0*rand.Float32()
+			ev.Emer.XZ.AddTargetAngle(2, rot, ev.Stiff)
+		}
+	}
 	ev.GrabEyeImg()
 	ev.UpdateView()
 }
@@ -321,11 +318,11 @@ func (ev *Env) MakeEmer(wl *builder.World, em *Emer, name string) {
 	// body := physics.NewCapsule(emr, "body", math32.Vec3(0, hh, 0), hh, hw)
 	// body := physics.NewCylinder(emr, "body", math32.Vec3(0, hh, 0), hh, hw)
 	em.XZ = obj.NewJointPlaneXZ(nil, emr, math32.Vec3(0, 0, 0), math32.Vec3(0, -hh, 0))
-	emr.Group = 0 // no collide (temporary)
+	// emr.Group = 0 // no collide (temporary)
 
 	headPos := math32.Vec3(0, 2*hh+headsz, 0)
 	head := obj.NewDynamicSkin(sc, name+"_head", physics.Box, "tan", mass*.1, math32.Vec3(headsz, headsz, headsz), headPos, rot)
-	head.Group = 0
+	// head.Group = 0
 	hdsk := head.Skin
 	hdsk.InitSkin = func(sld *xyz.Solid) {
 		hdsk.BoxInit(sld)
@@ -345,13 +342,13 @@ func (ev *Env) MakeEmer(wl *builder.World, em *Emer, name string) {
 
 	eyeoff := math32.Vec3(-headsz*.6, headsz*.1, -(headsz + eyesz*.3))
 	bd := obj.NewDynamicSkin(sc, name+"_eye-l", physics.Box, "green", mass*.001, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
-	bd.Group = 0
+	// bd.Group = 0
 	ej := obj.NewJointFixed(head, bd, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
 	ej.ParentFixed = true
 
 	eyeoff = math32.Vec3(headsz*.6, headsz*.1, -(headsz + eyesz*.3))
 	em.EyeR = obj.NewDynamicSkin(sc, name+"_eye-r", physics.Box, "green", mass*.001, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
-	em.EyeR.Group = 0
+	// em.EyeR.Group = 0
 	ej = obj.NewJointFixed(head, em.EyeR, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
 	ej.ParentFixed = true
 }

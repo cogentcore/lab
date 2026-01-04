@@ -96,6 +96,9 @@ func (ml *Model) Step() {
 // StepGet runs one physics step and gets the given vars back
 // from the GPU.
 func (ml *Model) StepGet(vars ...GPUVars) {
+	if ml.GetContacts {
+		vars = append(vars, ContactsVar, ContactsNVar)
+	}
 	params := GetParams(0)
 	RunStepInit(1)
 	ml.StepCollision()
