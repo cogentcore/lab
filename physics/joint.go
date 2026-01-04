@@ -44,7 +44,7 @@ const (
 	D6
 
 	// PlaneXZ is a version of D6 for navigation in the X-Z plane,
-	// which creates 2 linear DoF (X, Z) and 1 angular DoF (around Y axis).
+	// which creates 2 linear DoF (X, Z) for movement.
 	PlaneXZ
 )
 
@@ -59,6 +59,11 @@ const (
 
 	// JointEnabled allows joints to be dynamically enabled.
 	JointEnabled
+
+	// JointParentFixed means that the parent is NOT updated based on
+	// the forces and positions for this joint. This can make dynamics
+	// cleaner when full accuracy is not necessary.
+	JointParentFixed
 
 	// JointParent is the dynamic body index for parent body.
 	// Can be -1 for a fixed parent for absolute anchor.
@@ -128,26 +133,6 @@ const (
 	JointCTorqueX
 	JointCTorqueY
 	JointCTorqueZ
-
-	// Computed parent joint delta value.
-	JointPDeltaX
-	JointPDeltaY
-	JointPDeltaZ
-
-	// Computed parent joint angdelta value.
-	JointPAngDeltaX
-	JointPAngDeltaY
-	JointPAngDeltaZ
-
-	// Computed child joint delta value.
-	JointCDeltaX
-	JointCDeltaY
-	JointCDeltaZ
-
-	// Computed child joint angdelta value.
-	JointCAngDeltaX
-	JointCAngDeltaY
-	JointCAngDeltaZ
 )
 
 func GetJointType(idx int32) JointTypes {
@@ -169,6 +154,19 @@ func SetJointEnabled(idx int32, enabled bool) {
 		je = 1
 	}
 	Joints.Set(math.Float32frombits(je), int(idx), int(JointEnabled))
+}
+
+func GetJointParentFixed(idx int32) bool {
+	je := math.Float32bits(Joints.Value(int(idx), int(JointParentFixed)))
+	return je != 0
+}
+
+func SetJointParentFixed(idx int32, enabled bool) {
+	je := uint32(0)
+	if enabled {
+		je = 1
+	}
+	Joints.Set(math.Float32frombits(je), int(idx), int(JointParentFixed))
 }
 
 func SetJointParent(idx, bodyIdx int32) {
@@ -293,46 +291,6 @@ func SetJointCTorque(idx int32, t math32.Vector3) {
 	Joints.Set(t.Z, int(idx), int(JointCTorqueZ))
 }
 
-func JointPDelta(idx int32) math32.Vector3 {
-	return math32.Vec3(Joints.Value(int(idx), int(JointPDeltaX)), Joints.Value(int(idx), int(JointPDeltaY)), Joints.Value(int(idx), int(JointPDeltaZ)))
-}
-
-func SetJointPDelta(idx int32, f math32.Vector3) {
-	Joints.Set(f.X, int(idx), int(JointPDeltaX))
-	Joints.Set(f.Y, int(idx), int(JointPDeltaY))
-	Joints.Set(f.Z, int(idx), int(JointPDeltaZ))
-}
-
-func JointPAngDelta(idx int32) math32.Vector3 {
-	return math32.Vec3(Joints.Value(int(idx), int(JointPAngDeltaX)), Joints.Value(int(idx), int(JointPAngDeltaY)), Joints.Value(int(idx), int(JointPAngDeltaZ)))
-}
-
-func SetJointPAngDelta(idx int32, t math32.Vector3) {
-	Joints.Set(t.X, int(idx), int(JointPAngDeltaX))
-	Joints.Set(t.Y, int(idx), int(JointPAngDeltaY))
-	Joints.Set(t.Z, int(idx), int(JointPAngDeltaZ))
-}
-
-func JointCDelta(idx int32) math32.Vector3 {
-	return math32.Vec3(Joints.Value(int(idx), int(JointCDeltaX)), Joints.Value(int(idx), int(JointCDeltaY)), Joints.Value(int(idx), int(JointCDeltaZ)))
-}
-
-func SetJointCDelta(idx int32, f math32.Vector3) {
-	Joints.Set(f.X, int(idx), int(JointCDeltaX))
-	Joints.Set(f.Y, int(idx), int(JointCDeltaY))
-	Joints.Set(f.Z, int(idx), int(JointCDeltaZ))
-}
-
-func JointCAngDelta(idx int32) math32.Vector3 {
-	return math32.Vec3(Joints.Value(int(idx), int(JointCAngDeltaX)), Joints.Value(int(idx), int(JointCAngDeltaY)), Joints.Value(int(idx), int(JointCAngDeltaZ)))
-}
-
-func SetJointCAngDelta(idx int32, t math32.Vector3) {
-	Joints.Set(t.X, int(idx), int(JointCAngDeltaX))
-	Joints.Set(t.Y, int(idx), int(JointCAngDeltaY))
-	Joints.Set(t.Z, int(idx), int(JointCAngDeltaZ))
-}
-
 // JointDoFVars are joint DoF state variables stored in tensor.Float32,
 // one for each DoF.
 type JointDoFVars int32 //enums:enum
@@ -445,8 +403,8 @@ func (ml *Model) NewJointBall(parent, child int32, ppos, cpos math32.Vector3) in
 
 // NewJointPlaneXZ adds a new 3 DoF Planar motion joint suitable for
 // controlling the motion of a body on the standard X-Z plane (Y = up).
-// The first two linear DoF control position in X, Z, and the third
-// angular DoF controls rotation in the plane (along the Y axis).
+// The two linear DoF control position in X, Z, and 3rd angular
+// controls rotation in Y axis.
 // Use -1 for parent to add a world-anchored joint (typical).
 // ppos, cpos are the relative positions from the parent, child.
 // Sets relative rotation matricies to identity by default.
@@ -519,7 +477,8 @@ func (ml *Model) NewJointFree(parent, child int32, ppos, cpos math32.Vector3) in
 func (ml *Model) newJoint(joint JointTypes, parent, child int32, ppos, cpos math32.Vector3) int32 {
 	sizes := ml.Joints.ShapeSizes()
 	idx := int32(sizes[0])
-	ml.Params[0].JointsN = idx + 1
+	params := &ml.Params[0]
+	params.JointsN = idx + 1
 	ml.Joints.SetShapeSizes(int(idx+1), int(JointVarsN))
 	ml.JointDefaults(idx)
 	SetJointType(idx, joint)
@@ -528,6 +487,13 @@ func (ml *Model) newJoint(joint JointTypes, parent, child int32, ppos, cpos math
 	SetJointChild(idx, child)
 	SetJointPPos(idx, ppos)
 	SetJointCPos(idx, cpos)
+	if ml.CurrentObjectJoint >= int(params.MaxObjectJoints)-1 {
+		params.MaxObjectJoints = int32(ml.CurrentObjectJoint + 1)
+		ml.Objects.SetShapeSizes(ml.CurrentObject+1, int(params.MaxObjectJoints+1))
+	}
+	ml.Objects.Set(idx, int(ml.CurrentObject), int(1+ml.CurrentObjectJoint))
+	ml.CurrentObjectJoint++
+	ml.Objects.Set(int32(ml.CurrentObjectJoint), int(ml.CurrentObject), int(0))
 	return idx
 }
 

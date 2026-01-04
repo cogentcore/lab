@@ -81,6 +81,10 @@ func (bl *Builder) Build(ml *physics.Model, sc *phyxyz.Scene) {
 					}
 				}
 			}
+			if len(ob.Joints) == 0 {
+				continue
+			}
+			ml.NewObject()
 			for bji := range ob.Joints {
 				jd := ob.Joint(bji)
 				jd.NewPhysicsJoint(ml, ob)

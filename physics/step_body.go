@@ -149,42 +149,6 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 	SetDynamicAngDelta(di, params.Next, w1)
 }
 
-// StepBodyJointDeltas gathers raw deltas, angDeltas from joints per dynamic
-// and computes updated deltas integrated via StepBodyDeltas.
-func StepBodyJointDeltas(i uint32) { //gosl:kernel
-	params := GetParams(0)
-	di := int32(i)
-	if di >= params.DynamicsN {
-		return
-	}
-	bi := DynamicBody(di)
-	invMass := Bodies.Value(int(bi), int(BodyInvMass))
-	if invMass == 0 {
-		return // no updates
-	}
-
-	np := BodyJoints.Value(int(di), int(0), int(0))
-	nc := BodyJoints.Value(int(di), int(1), int(0))
-
-	linDel := math32.Vec3(0, 0, 0)
-	angDel := math32.Vec3(0, 0, 0)
-	for i := int32(1); i <= np; i++ {
-		ji := BodyJoints.Value(int(di), int(0), int(i))
-		d := JointPDelta(ji)
-		linDel = linDel.Add(d)
-		a := JointPAngDelta(ji)
-		angDel = angDel.Add(a)
-	}
-	for i := int32(1); i <= nc; i++ {
-		ji := BodyJoints.Value(int(di), int(1), int(i))
-		d := JointCDelta(ji)
-		linDel = linDel.Add(d)
-		a := JointCAngDelta(ji)
-		angDel = angDel.Add(a)
-	}
-	StepBodyDeltas(di, bi, false, 0, linDel, angDel)
-}
-
 // newton: solvers/xpbd/kernels.py: apply_body_deltas
 
 // StepBodyDeltas updates Next position with deltas from joints

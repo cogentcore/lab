@@ -30,6 +30,9 @@ type Joint struct {
 	// in the parent's body-centered coordinates.
 	CPose Pose
 
+	// ParentFixed does not update the parent side of the joint.
+	ParentFixed bool
+
 	// LinearDoFN is the number of linear degrees of freedom (3 max).
 	LinearDoFN int
 
@@ -113,7 +116,9 @@ func (ob *Object) newJoint(typ physics.JointTypes, parent, child *Body, ppos, cp
 	ob.Joints = append(ob.Joints, Joint{Parent: pidx, Child: child.ObjectIndex, Type: typ, LinearDoFN: linDoF, AngularDoFN: angDoF})
 	jd := ob.Joint(idx)
 	jd.PPose.Pos = ppos
+	jd.PPose.Quat = math32.NewQuatIdentity()
 	jd.CPose.Pos = cpos
+	jd.CPose.Quat = math32.NewQuatIdentity()
 	ndof := linDoF + angDoF
 	if ndof > 0 {
 		jd.DoFs = make([]DoF, linDoF+angDoF)
@@ -203,9 +208,9 @@ func (ob *Object) NewJointFree(parent, child *Body, ppos, cpos math32.Vector3) *
 }
 
 // NewJointPlaneXZ adds a new 3 DoF Planar motion joint suitable for
-// controlling the motion of a body on the standard X-Z play (Y = up).
-// The first two linear DoF control position in X, Z, and the third
-// angular DoF controls rotation in the plane (along the Y axis).
+// controlling the motion of a body on the standard X-Z plane (Y = up).
+// The two linear DoF control position in X, Z, and 3rd angular
+// controls rotation in Y axis.
 // Use -1 for parent to add a world-anchored joint (typical).
 // ppos, cpos are the relative positions from the parent, child.
 // Sets relative rotation matricies to identity by default.
@@ -242,6 +247,7 @@ func (jd *Joint) NewPhysicsJoint(ml *physics.Model, ob *Object) int32 {
 	case physics.PlaneXZ:
 		ji = ml.NewJointPlaneXZ(pdi, cdi, jd.PPose.Pos, jd.CPose.Pos)
 	}
+	physics.SetJointParentFixed(ji, jd.ParentFixed)
 	for i := range jd.LinearDoFN {
 		d := jd.DoF(i)
 		di := int32(i)
@@ -361,11 +367,10 @@ func (jd *Joint) AddTargetAngle(dof int32, angDeg, stiff float32) {
 }
 
 // AddPlaneXZPos adds to the Current target X and Z axis positions for
-// a PlaneXZ joint, using the current Y axis rotation angle to project
+// a PlaneXZ joint, using the given Y axis rotation angle to project
 // along the current angle direction. angOff provides an angle offset to
 // add to the Y axis angle.
-func (jd *Joint) AddPlaneXZPos(angOff, delta, stiff float32) {
-	ang := angOff - jd.DoF(2).Current.Pos
+func (jd *Joint) AddPlaneXZPos(ang, delta, stiff float32) {
 	dx := delta * math32.Cos(ang)
 	dz := delta * math32.Sin(ang)
 	jd.AddTargetPos(0, dx, stiff)

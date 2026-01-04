@@ -92,6 +92,7 @@ func main() {
 		obj := wld.NewObject()
 
 		ml := ed.Model
+		// ml.GPU = false
 		sc := ed.Scene
 		rot := math32.NewQuatIdentity()
 		rleft := math32.NewQuatAxisAngle(math32.Vec3(0, 0, 1), -math32.Pi/2)

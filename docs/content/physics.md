@@ -40,6 +40,7 @@ ed.SetConfigFunc(func() {
     rleft := math32.NewQuatAxisAngle(math32.Vec3(0, 0, 1), -math32.Pi/2)
     pb := sc.NewDynamic(ml, "top", physics.Capsule, "blue", mass, hsz, math32.Vec3(x, stY, 0), rleft)
 	pb.SetBodyGroup(1) // no collide across groups
+	ml.NewObject()
 	ji := sc.NewJointRevolute(ml, nil, pb, math32.Vec3(0, stY, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(0, 0, 1))
 	physics.SetJointTargetPos(ji, 0, 0, 0)
 	physics.SetJointTargetVel(ji, 0, 0, 0)
@@ -103,6 +104,7 @@ ed.SetConfigFunc(func() {
     mass := float32(0.1)
     
     obj := sc.NewDynamic(ml, "body", physics.Box, "blue", mass, hsz, math32.Vec3(0, hsz.Y, 0), math32.NewQuatIdentity())
+	ml.NewObject()
 	ji := sc.NewJointPrismatic(ml, nil, obj, math32.Vec3(-5, 0, 0), math32.Vec3(0, hsz.Y, 0), math32.Vec3(1, 0, 0))
 })
 
@@ -172,6 +174,7 @@ ed.SetConfigFunc(func() {
     mass := float32(0.1)
     
     obj := sc.NewDynamic(ml, "body", physics.Box, "blue", mass, hsz, math32.Vec3(0, hsz.Y, 0), math32.NewQuatIdentity())
+	ml.NewObject()
 	ji := sc.NewJointBall(ml, nil, obj, math32.Vec3(0, 0, 0), math32.Vec3(0, -hsz.Y, 0))
 })
 

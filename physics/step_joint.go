@@ -10,13 +10,10 @@
 package physics
 
 import (
+	// "fmt"
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/gosl/slmath"
 )
-
-// todo: joint types in solve -- seems wrong
-// see if does anything when dofs are empty
-// limits, damping, etc in test.
 
 // notation convention:
 // spatial transform: R = position, Q = quat rotation
@@ -119,33 +116,43 @@ func StepJointForces(i uint32) { //gosl:kernel
 // newton: solvers/xpbd/kernels.py: solve_body_joints
 
 // StepSolveJoints applies target positions to joints.
+// This is per Object because it needs to solve joints in parent -> child order.
 func StepSolveJoints(i uint32) { //gosl:kernel
 	params := GetParams(0)
-	ji := int32(i)
-	if ji >= params.JointsN {
+	oi := int32(i)
+	if oi >= params.ObjectsN {
 		return
 	}
+	n := Objects.Value(int(oi), int(0))
+	for i := int32(1); i < n+1; i++ {
+		ji := Objects.Value(int(oi), int(i))
+		jt := GetJointType(ji)
+		if jt == Free || !GetJointEnabled(ji) {
+			continue
+		}
+		StepSolveJointLinear(ji)
+		StepSolveJointAngular(ji)
+	}
+}
 
-	zv := math32.Vec3(0, 0, 0)
-	SetJointPDelta(ji, zv)
-	SetJointCDelta(ji, zv)
-	SetJointPAngDelta(ji, zv)
-	SetJointCAngDelta(ji, zv)
+// StepSolveJointLinear applies target positions to linear DoFs.
+// Position is updated prior to computing angulars.
+func StepSolveJointLinear(ji int32) {
+	params := GetParams(0)
 
 	jt := GetJointType(ji)
-	if jt == Free || !GetJointEnabled(ji) {
-		return
-	}
 	jPi := JointParentIndex(ji)
 	jPbi := int32(-1)
+	parentFixed := true
 	if jPi >= 0 {
 		jPbi = DynamicBody(jPi)
+		parentFixed = GetJointParentFixed(ji)
 	}
 	jCi := JointChildIndex(ji)
 	jCbi := DynamicBody(jCi)
 
 	jLinearN := GetJointLinearDoFN(ji)
-	jAngularN := GetJointAngularDoFN(ji)
+	// jAngularN := GetJointAngularDoFN(ji)
 
 	jPR := JointPPos(ji)
 	jPQ := JointPQuat(ji)
@@ -164,14 +171,14 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 		posePR = DynamicPos(jPi, params.Next) // now using next
 		posePQ = DynamicQuat(jPi, params.Next)
 		slmath.MulSpatialTransforms(posePR, posePQ, jPR, jPQ, &xwPR, &xwPQ)
-		//	if xwPR.IsNaN() || xwPQ.IsNaN() {
-		//		fmt.Println("jpi:", jPi, posePR, posePQ, jPR, jPQ)
-		//	}
 		comP = BodyCom(jPbi)
 		mInvP = Bodies.Value(int(jPbi), int(BodyInvMass))
 		iInvP = BodyInvInertia(jPbi)
 		vP = DynamicDelta(jPi, params.Next)
 		wP = DynamicAngDelta(jPi, params.Next)
+		if mInvP == 0 {
+			parentFixed = true
+		}
 	}
 
 	// child transform and moment arm
@@ -181,17 +188,7 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 	jCQ := JointCQuat(ji)
 	xwCR := jCR
 	xwCQ := jCQ
-	//	if jCQ.IsNaN() || jCR.IsNaN() {
-	//		fmt.Println("child joint start:", jCQ, jCR)
-	//	}
-	//
-	//	if poseCQ.IsNaN() || poseCR.IsNaN() {
-	//		fmt.Println("jCi:", jCi, poseCQ, poseCR)
-	//	}
 	slmath.MulSpatialTransforms(poseCR, poseCQ, jCR, jCQ, &xwCR, &xwCQ)
-	//	if xwCQ.IsNaN() || xwCR.IsNaN() {
-	//		fmt.Println("xwCQ:", xwCQ, xwCR, poseCR, poseCQ, jCR, jCQ)
-	//	}
 	comC := BodyCom(jCbi)
 	mInvC := Bodies.Value(int(jCbi), int(BodyInvMass))
 	iInvC := BodyInvInertia(jCbi)
@@ -241,7 +238,7 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 			angularC := slmath.Cross3(dC, linearC)
 			// constraint time derivative
 			derr := slmath.Dot3(linearP, vP) + slmath.Dot3(linearC, vC) + slmath.Dot3(angularP, wP) + slmath.Dot3(angularC, wC)
-			lambdaIn := float32(0.0)
+			lambdaIn := float32(0.0) // note: multiple iter is supposed to increment these
 			compliance := params.JointLinearComply
 			ke := JointControl(ji, 0, JointTargetStiff)
 			kd := JointControl(ji, 0, JointTargetDamp)
@@ -255,7 +252,7 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 			linDeltaC = linDeltaC.Add(linearC.MulScalar(dLambda * params.JointLinearRelax))
 			angDeltaC = angDeltaC.Add(angularC.MulScalar(dLambda * params.JointAngularRelax))
 		}
-	} else { // compute joint target, stiffness, damping
+	} else {
 		// all joints impose linear constraints!
 		var axisLimitsD, axisLimitsA math32.Vector3
 		var axisTargetPosKeD, axisTargetPosKeA math32.Vector3
@@ -334,182 +331,231 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 					iInvP, iInvC, linearP, linearC, angularP, angularC, lambdaIn, compliance, damping, params.Dt)
 
 				linDeltaP = linDeltaP.Add(linearP.MulScalar(dLambda * params.JointLinearRelax))
-				angDeltaP = angDeltaP.Add(angularP.MulScalar(dLambda * params.JointAngularRelax))
 				linDeltaC = linDeltaC.Add(linearC.MulScalar(dLambda * params.JointLinearRelax))
+				angDeltaP = angDeltaP.Add(angularP.MulScalar(dLambda * params.JointAngularRelax))
 				angDeltaC = angDeltaC.Add(angularC.MulScalar(dLambda * params.JointAngularRelax))
-
-				//	if angDeltaC.IsNaN() || angDeltaP.IsNaN() {
-				//		fmt.Println("joint ang:", angDeltaC, angDeltaP)
-				//	}
-				//
-				//	if linDeltaC.IsNaN() || linDeltaP.IsNaN() {
-				//		fmt.Println("joint lin:", linDeltaC, linDeltaP)
-				//	}
 			}
 		}
 	}
-	if jt == Fixed || jt == Prismatic || jt == Revolute || jt == Ball || jt == D6 {
-		qP := xwPQ
-		qC := xwCQ
-		// make quats lie in same hemisphere
-		if slmath.QuatDot(qP, qC) < 0 {
-			qC = slmath.QuatMulScalar(qC, -1.0)
+	// apply the linear deltas so the
+	if !parentFixed {
+		StepBodyDeltas(jPi, jPbi, false, 0, linDeltaP, angDeltaP)
+	}
+	if mInvC > 0 {
+		StepBodyDeltas(jCi, jCbi, false, 0, linDeltaC, angDeltaC)
+	}
+}
+
+// StepSolveJointAngular applies target positions to angular DoFs.
+func StepSolveJointAngular(ji int32) {
+	params := GetParams(0)
+
+	jPi := JointParentIndex(ji)
+	jPbi := int32(-1)
+	parentFixed := true
+	if jPi >= 0 {
+		jPbi = DynamicBody(jPi)
+		parentFixed = GetJointParentFixed(ji)
+	}
+	jCi := JointChildIndex(ji)
+	jCbi := DynamicBody(jCi)
+
+	jLinearN := GetJointLinearDoFN(ji)
+	jAngularN := GetJointAngularDoFN(ji)
+
+	jPR := JointPPos(ji)
+	jPQ := JointPQuat(ji)
+
+	xwPR := jPR // world xform, parent, pos
+	xwPQ := jPQ // quat
+	mInvP := float32(0.0)
+	iInvP := math32.Mat3(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+	posePR := jPR
+	posePQ := jPQ
+
+	var wP math32.Vector3
+
+	// parent transform and moment arm
+	if jPi >= 0 {
+		posePR = DynamicPos(jPi, params.Next) // now using next
+		posePQ = DynamicQuat(jPi, params.Next)
+		slmath.MulSpatialTransforms(posePR, posePQ, jPR, jPQ, &xwPR, &xwPQ)
+		mInvP = Bodies.Value(int(jPbi), int(BodyInvMass))
+		iInvP = BodyInvInertia(jPbi)
+		wP = DynamicAngDelta(jPi, params.Next)
+		if mInvP == 0 {
+			parentFixed = true
 		}
-		relQ := slmath.MulQuats(slmath.QuatInverse(qP), qC)
-		qtwist := slmath.QuatNormalize(math32.NewQuat(relQ.X, 0.0, 0.0, relQ.W))
-		qswing := slmath.MulQuats(relQ, slmath.QuatInverse(qtwist))
+	}
 
-		// if qP.IsNaN() || qC.IsNaN() || relQ.IsNaN() {
-		// 	fmt.Println("qp, qc:", qP, qC, relQ)
-		// }
+	// child transform and moment arm
+	poseCR := DynamicPos(jCi, params.Next)
+	poseCQ := DynamicQuat(jCi, params.Next)
+	jCR := JointCPos(ji)
+	jCQ := JointCQuat(ji)
+	xwCR := jCR
+	xwCQ := jCQ
+	slmath.MulSpatialTransforms(poseCR, poseCQ, jCR, jCQ, &xwCR, &xwCQ)
+	mInvC := Bodies.Value(int(jCbi), int(BodyInvMass))
+	iInvC := BodyInvInertia(jCbi)
+	wC := DynamicAngDelta(jCi, params.Next)
 
-		// decompose to a compound rotation each axis
-		s := math32.Sqrt(relQ.X*relQ.X + relQ.W*relQ.W)
-		if s == 0 {
-			// fmt.Println("s = 0", relQ, qP, qC)
-			s = 1
+	if mInvP == 0.0 && mInvC == 0.0 { // connection between two immovable bodies
+		return
+	}
+
+	// accumulate constraint deltas
+	var linDeltaP, angDeltaP, linDeltaC, angDeltaC math32.Vector3
+
+	relPoseR := xwPR
+	relPoseQ := xwPQ
+	slmath.SpatialTransformInverse(xwPR, xwPQ, &relPoseR, &relPoseQ)
+	slmath.MulSpatialTransforms(relPoseR, relPoseQ, xwCR, xwCQ, &relPoseR, &relPoseQ)
+
+	qP := xwPQ
+	qC := xwCQ
+	// make quats lie in same hemisphere
+	if slmath.QuatDot(qP, qC) < 0 {
+		qC = slmath.QuatMulScalar(qC, -1.0)
+	}
+	relQ := slmath.MulQuats(slmath.QuatInverse(qP), qC)
+	qtwist := slmath.QuatNormalize(math32.NewQuat(relQ.X, 0.0, 0.0, relQ.W))
+	qswing := slmath.MulQuats(relQ, slmath.QuatInverse(qtwist))
+
+	// decompose to a compound rotation each axis
+	s := math32.Sqrt(relQ.X*relQ.X + relQ.W*relQ.W)
+	if s == 0 {
+		// fmt.Println("s = 0", relQ, qP, qC)
+		s = 1
+	}
+	invs := 1.0 / s
+	invscube := invs * invs * invs
+
+	// handle axis-angle joints
+	// rescale twist from quaternion space to angular
+	err0 := 2.0 * math32.Asin(math32.Clamp(qtwist.X, -1.0, 1.0))
+	err1 := qswing.Y
+	err2 := qswing.Z
+	// analytic gradients of swing-twist decomposition
+	grad0 := math32.NewQuat(invs-relQ.X*relQ.X*invscube, 0.0, 0.0, -(relQ.W*relQ.X)*invscube)
+	grad1 := math32.NewQuat(
+		-relQ.W*(relQ.W*relQ.Z+relQ.X*relQ.Y)*invscube,
+		relQ.W*invs,
+		-relQ.X*invs,
+		relQ.X*(relQ.W*relQ.Z+relQ.X*relQ.Y)*invscube)
+	grad2 := math32.NewQuat(
+		relQ.W*(relQ.W*relQ.Y-relQ.X*relQ.Z)*invscube,
+		relQ.X*invs,
+		relQ.W*invs,
+		relQ.X*(relQ.Z*relQ.X-relQ.W*relQ.Y)*invscube)
+	grad0 = slmath.QuatMulScalar(grad0, 2.0/math32.Abs(qtwist.W))
+	//         # grad0 *= 2.0 / wp.sqrt(1.0-qtwist[0]*qtwist[0])	# derivative of asin(x) = 1/sqrt(1-x^2)
+
+	// rescale swing
+	swing_sq := qswing.W * qswing.W
+	// if swing axis magnitude close to zero vector, just treat in quaternion space
+	angularEps := float32(1.0e-4)
+	if swing_sq+angularEps < 1.0 {
+		d := math32.Sqrt(1.0 - qswing.W*qswing.W)
+		theta := 2.0 * math32.Acos(math32.Clamp(qswing.W, -1.0, 1.0))
+		scale := theta / d
+		err1 *= scale
+		err2 *= scale
+		grad1 = slmath.QuatMulScalar(grad1, scale)
+		grad2 = slmath.QuatMulScalar(grad2, scale)
+	}
+	errs := math32.Vec3(err0, err1, err2)
+	gradX := math32.Vec3(grad0.X, grad1.X, grad2.X)
+	gradY := math32.Vec3(grad0.Y, grad1.Y, grad2.Y)
+	gradZ := math32.Vec3(grad0.Z, grad1.Z, grad2.Z)
+	gradW := math32.Vec3(grad0.W, grad1.W, grad2.W)
+
+	// compute joint target, stiffness, damping
+	var axisLimitsD, axisLimitsA math32.Vector3
+	var axisTargetPosKeD, axisTargetPosKeA math32.Vector3
+	var axisTargetVelKdD, axisTargetVelKdA math32.Vector3
+
+	for dof := range jAngularN {
+		di := dof + jLinearN
+		axis := JointAxis(ji, di)
+		JointAxisLimitsUpdate(dof, axis, JointDoF(ji, di, JointLimitLower), JointDoF(ji, di, JointLimitUpper), &axisLimitsD, &axisLimitsA)
+		ke := JointControl(ji, di, JointTargetStiff)
+		kd := JointControl(ji, di, JointTargetDamp)
+		targetPos := JointControl(ji, di, JointTargetPos)
+		targetVel := JointControl(ji, di, JointTargetVel)
+		if ke > 0.0 { // has position control
+			JointAxisTarget(axis, targetPos, ke, &axisTargetPosKeD, &axisTargetPosKeA)
 		}
-		invs := 1.0 / s
-		invscube := invs * invs * invs
+		if kd > 0.0 { // has velocity control
+			JointAxisTarget(axis, targetVel, kd, &axisTargetVelKdD, &axisTargetVelKdA)
+		}
+	}
 
-		// handle axis-angle joints
-		// rescale twist from quaternion space to angular
-		err0 := 2.0 * math32.Asin(math32.Clamp(qtwist.X, -1.0, 1.0))
-		err1 := qswing.Y
-		err2 := qswing.Z
+	axisStiffness := axisTargetPosKeA
+	axisDamping := axisTargetVelKdA
+	axisTargetPosKeD = slmath.DivSafe3(axisTargetPosKeD, axisStiffness)
+	axisTargetVelKdD = slmath.DivSafe3(axisTargetVelKdD, axisDamping)
+	axisLimitsLower := axisLimitsD
+	axisLimitsUpper := axisLimitsA
+
+	for dim := range int32(3) {
+		e := slmath.Dim3(errs, dim)
+
 		// analytic gradients of swing-twist decomposition
-		grad0 := math32.NewQuat(invs-relQ.X*relQ.X*invscube, 0.0, 0.0, -(relQ.W*relQ.X)*invscube)
-		grad1 := math32.NewQuat(
-			-relQ.W*(relQ.W*relQ.Z+relQ.X*relQ.Y)*invscube,
-			relQ.W*invs,
-			-relQ.X*invs,
-			relQ.X*(relQ.W*relQ.Z+relQ.X*relQ.Y)*invscube)
-		grad2 := math32.NewQuat(
-			relQ.W*(relQ.W*relQ.Y-relQ.X*relQ.Z)*invscube,
-			relQ.X*invs,
-			relQ.W*invs,
-			relQ.X*(relQ.Z*relQ.X-relQ.W*relQ.Y)*invscube)
-		grad0 = slmath.QuatMulScalar(grad0, 2.0/math32.Abs(qtwist.W))
-		//         # grad0 *= 2.0 / wp.sqrt(1.0-qtwist[0]*qtwist[0])	# derivative of asin(x) = 1/sqrt(1-x^2)
-		// if grad0.IsNaN() || grad1.IsNaN() || grad2.IsNaN() {
-		// 	fmt.Println("grads:", grad0, grad1, grad2)
-		// }
+		grad := math32.NewQuat(slmath.Dim3(gradX, dim), slmath.Dim3(gradY, dim), slmath.Dim3(gradZ, dim), slmath.Dim3(gradW, dim))
+		// todo: verify -- does the 0.5 go inside??
+		// quat_c = 0.5 * q_p * grad * wp.quat_inverse(q_c)
+		quatC := slmath.MulQuats(slmath.MulQuats(slmath.QuatMulScalar(qP, 0.5), grad), slmath.QuatInverse(qC))
 
-		// rescale swing
-		swing_sq := qswing.W * qswing.W
-		// if swing axis magnitude close to zero vector, just treat in quaternion space
-		angularEps := float32(1.0e-4)
-		if swing_sq+angularEps < 1.0 {
-			d := math32.Sqrt(1.0 - qswing.W*qswing.W)
-			theta := 2.0 * math32.Acos(math32.Clamp(qswing.W, -1.0, 1.0))
-			scale := theta / d
-			err1 *= scale
-			err2 *= scale
-			grad1 = slmath.QuatMulScalar(grad1, scale)
-			grad2 = slmath.QuatMulScalar(grad2, scale)
-		}
-		errs := math32.Vec3(err0, err1, err2)
-		gradX := math32.Vec3(grad0.X, grad1.X, grad2.X)
-		gradY := math32.Vec3(grad0.Y, grad1.Y, grad2.Y)
-		gradZ := math32.Vec3(grad0.Z, grad1.Z, grad2.Z)
-		gradW := math32.Vec3(grad0.W, grad1.W, grad2.W)
+		angularC := math32.Vec3(quatC.X, quatC.Y, quatC.Z)
+		angularP := slmath.Negate3(angularC)
+		// constraint time derivative
+		derr := slmath.Dot3(angularP, wP) + slmath.Dot3(angularC, wC)
 
-		// compute joint target, stiffness, damping
-		var axisLimitsD, axisLimitsA math32.Vector3
-		var axisTargetPosKeD, axisTargetPosKeA math32.Vector3
-		var axisTargetVelKdD, axisTargetVelKdA math32.Vector3
+		err := float32(0.0)
+		compliance := params.JointLinearComply
+		damping := float32(0.0)
 
-		for dof := range jAngularN {
-			di := dof + jLinearN
-			axis := JointAxis(ji, di)
-			JointAxisLimitsUpdate(dof, axis, JointDoF(ji, di, JointLimitLower), JointDoF(ji, di, JointLimitUpper), &axisLimitsD, &axisLimitsA)
-			ke := JointControl(ji, di, JointTargetStiff)
-			kd := JointControl(ji, di, JointTargetDamp)
-			targetPos := JointControl(ji, di, JointTargetPos)
-			targetVel := JointControl(ji, di, JointTargetVel)
-			if ke > 0.0 { // has position control
-				JointAxisTarget(axis, targetPos, ke, &axisTargetPosKeD, &axisTargetPosKeA)
-			}
-			if kd > 0.0 { // has velocity control
-				JointAxisTarget(axis, targetVel, kd, &axisTargetVelKdD, &axisTargetVelKdA)
+		targetVel := slmath.Dim3(axisTargetVelKdD, dim)
+		angularClen := slmath.Length3(angularC)
+		derrRel := derr - targetVel*angularClen
+
+		// consider joint limits irrespective of axis mode
+		lower := slmath.Dim3(axisLimitsLower, dim)
+		upper := slmath.Dim3(axisLimitsUpper, dim)
+		if e < lower {
+			err = e - lower
+		} else if e > upper {
+			err = e - upper
+		} else {
+			targetPos := slmath.Dim3(axisTargetPosKeD, dim)
+			targetPos = math32.Clamp(targetPos, lower, upper)
+
+			ke := slmath.Dim3(axisStiffness, dim)
+			kd := slmath.Dim3(axisDamping, dim)
+			if ke > 0.0 {
+				err = e - targetPos
+				compliance = 1.0 / ke
+				damping = slmath.Dim3(axisDamping, dim)
+			} else if kd > 0.0 {
+				compliance = 1.0 / kd
+				damping = kd
 			}
 		}
+		lambdaIn := float32(0)
+		dLambda := AngularCorrection(err, derrRel, posePQ, poseCQ, iInvP, iInvC, angularP, angularC, lambdaIn, compliance, damping, params.Dt)
 
-		axisStiffness := axisTargetPosKeA
-		axisDamping := axisTargetVelKdA
-		axisTargetPosKeD = slmath.DivSafe3(axisTargetPosKeD, axisStiffness)
-		axisTargetVelKdD = slmath.DivSafe3(axisTargetVelKdD, axisDamping)
-		axisLimitsLower := axisLimitsD
-		axisLimitsUpper := axisLimitsA
-
-		for dim := range int32(3) {
-			e := slmath.Dim3(errs, dim)
-
-			// analytic gradients of swing-twist decomposition
-			grad := math32.NewQuat(slmath.Dim3(gradX, dim), slmath.Dim3(gradY, dim), slmath.Dim3(gradZ, dim), slmath.Dim3(gradW, dim))
-			// todo: verify -- does the 0.5 go inside??
-			// quat_c = 0.5 * q_p * grad * wp.quat_inverse(q_c)
-			quatC := slmath.MulQuats(slmath.MulQuats(slmath.QuatMulScalar(qP, 0.5), grad), slmath.QuatInverse(qC))
-			// if ji == 0 {
-			// 	fmt.Println(quatC, qP, qC, grad)
-			// }
-
-			angularC := math32.Vec3(quatC.X, quatC.Y, quatC.Z)
-			angularP := slmath.Negate3(angularC)
-			// constraint time derivative
-			derr := slmath.Dot3(angularP, wP) + slmath.Dot3(angularC, wC)
-
-			err := float32(0.0)
-			compliance := params.JointLinearComply
-			damping := float32(0.0)
-
-			targetVel := slmath.Dim3(axisTargetVelKdD, dim)
-			angularClen := slmath.Length3(angularC)
-			derrRel := derr - targetVel*angularClen
-
-			// consider joint limits irrespective of axis mode
-			lower := slmath.Dim3(axisLimitsLower, dim)
-			upper := slmath.Dim3(axisLimitsUpper, dim)
-			if e < lower {
-				err = e - lower
-			} else if e > upper {
-				err = e - upper
-			} else {
-				targetPos := slmath.Dim3(axisTargetPosKeD, dim)
-				targetPos = math32.Clamp(targetPos, lower, upper)
-
-				ke := slmath.Dim3(axisStiffness, dim)
-				kd := slmath.Dim3(axisDamping, dim)
-				if ke > 0.0 {
-					err = e - targetPos
-					compliance = 1.0 / ke
-					damping = slmath.Dim3(axisDamping, dim)
-				} else if kd > 0.0 {
-					compliance = 1.0 / kd
-					damping = kd
-				}
-			}
-			lambdaIn := float32(0)
-			dLambda := AngularCorrection(err, derrRel, posePQ, poseCQ, iInvP, iInvC, angularP, angularC, lambdaIn, compliance, damping, params.Dt)
-
-			// note: no relaxation factors here:
-			angDeltaP = angDeltaP.Add(angularP.MulScalar(dLambda))
-			angDeltaC = angDeltaC.Add(angularC.MulScalar(dLambda))
-			//	if ji == 0 && dim == 1 {
-			//		fmt.Println(ji, dim, e, err, lambdaIn, angularP, angularC)
-			//	}
-			//
-			//	if angDeltaC.IsNaN() || angDeltaP.IsNaN() {
-			//		fmt.Println("ang joint ang:", angDeltaC, angDeltaP, angularC, angularP, dLambda)
-			//	}
-		}
+		// note: no relaxation factors here:
+		angDeltaP = angDeltaP.Add(angularP.MulScalar(dLambda))
+		angDeltaC = angDeltaC.Add(angularC.MulScalar(dLambda))
 	}
 
-	// These are unique to joint: aggregate into dynamics Next in separate step.
-	SetJointPDelta(ji, linDeltaP)
-	SetJointCDelta(ji, linDeltaC)
-	SetJointPAngDelta(ji, angDeltaP)
-	SetJointCAngDelta(ji, angDeltaC)
+	if !parentFixed {
+		StepBodyDeltas(jPi, jPbi, false, 0, linDeltaP, angDeltaP)
+	}
+	if mInvC > 0 {
+		StepBodyDeltas(jCi, jCbi, false, 0, linDeltaC, angDeltaC)
+	}
 }
 
 func JointAxisTarget(axis math32.Vector3, targ, weight float32, axisTargets, axisWeights *math32.Vector3) {
@@ -541,14 +587,14 @@ func PositionalCorrection(err, derr float32, tfaQ, tfbQ math32.Quat, mInvA, mInv
 	return lambda
 }
 
-func AngularCorrection(err, derr float32, tfaQ, tfbQ math32.Quat, iInva, iInvb math32.Matrix3, angulara, angularb math32.Vector3, lambdaIn, compliance, damping, dt float32) float32 {
+func AngularCorrection(err, derr float32, tfaQ, tfbQ math32.Quat, iInvA, iInvB math32.Matrix3, angA, angB math32.Vector3, lambdaIn, compliance, damping, dt float32) float32 {
 	// # Eq. 2-3 (make sure to project into the frame of the body)
-	rotAngulara := slmath.MulQuatVectorInverse(tfaQ, angulara)
-	rotAngularb := slmath.MulQuatVectorInverse(tfbQ, angularb)
+	rotAngA := slmath.MulQuatVectorInverse(tfaQ, angA)
+	rotAngB := slmath.MulQuatVectorInverse(tfbQ, angB)
 
 	denom := float32(0.0)
-	denom += slmath.Dot3(rotAngulara, iInva.MulVector3(rotAngulara))
-	denom += slmath.Dot3(rotAngularb, iInvb.MulVector3(rotAngularb))
+	denom += slmath.Dot3(rotAngA, iInvA.MulVector3(rotAngA))
+	denom += slmath.Dot3(rotAngB, iInvB.MulVector3(rotAngB))
 
 	alpha := compliance
 	gamma := compliance * damping

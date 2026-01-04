@@ -192,20 +192,20 @@ func (i *DynamicVars) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "DynamicVars")
 }
 
-var _GPUVarsValues = []GPUVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
+var _GPUVarsValues = []GPUVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
 
 // GPUVarsN is the highest valid value for type GPUVars, plus one.
 //
 //gosl:start
-const GPUVarsN GPUVars = 12
+const GPUVarsN GPUVars = 13
 
 //gosl:end
 
-var _GPUVarsValueMap = map[string]GPUVars{`ParamsVar`: 0, `BodiesVar`: 1, `JointsVar`: 2, `JointDoFsVar`: 3, `BodyJointsVar`: 4, `BodyCollidePairsVar`: 5, `DynamicsVar`: 6, `BroadContactsNVar`: 7, `BroadContactsVar`: 8, `ContactsNVar`: 9, `ContactsVar`: 10, `JointControlsVar`: 11}
+var _GPUVarsValueMap = map[string]GPUVars{`ParamsVar`: 0, `BodiesVar`: 1, `ObjectsVar`: 2, `BodyJointsVar`: 3, `JointsVar`: 4, `JointDoFsVar`: 5, `BodyCollidePairsVar`: 6, `DynamicsVar`: 7, `BroadContactsNVar`: 8, `BroadContactsVar`: 9, `ContactsNVar`: 10, `ContactsVar`: 11, `JointControlsVar`: 12}
 
-var _GPUVarsDescMap = map[GPUVars]string{0: ``, 1: ``, 2: ``, 3: ``, 4: ``, 5: ``, 6: ``, 7: ``, 8: ``, 9: ``, 10: ``, 11: ``}
+var _GPUVarsDescMap = map[GPUVars]string{0: ``, 1: ``, 2: ``, 3: ``, 4: ``, 5: ``, 6: ``, 7: ``, 8: ``, 9: ``, 10: ``, 11: ``, 12: ``}
 
-var _GPUVarsMap = map[GPUVars]string{0: `ParamsVar`, 1: `BodiesVar`, 2: `JointsVar`, 3: `JointDoFsVar`, 4: `BodyJointsVar`, 5: `BodyCollidePairsVar`, 6: `DynamicsVar`, 7: `BroadContactsNVar`, 8: `BroadContactsVar`, 9: `ContactsNVar`, 10: `ContactsVar`, 11: `JointControlsVar`}
+var _GPUVarsMap = map[GPUVars]string{0: `ParamsVar`, 1: `BodiesVar`, 2: `ObjectsVar`, 3: `BodyJointsVar`, 4: `JointsVar`, 5: `JointDoFsVar`, 6: `BodyCollidePairsVar`, 7: `DynamicsVar`, 8: `BroadContactsNVar`, 9: `BroadContactsVar`, 10: `ContactsNVar`, 11: `ContactsVar`, 12: `JointControlsVar`}
 
 // String returns the string representation of this GPUVars value.
 func (i GPUVars) String() string { return enums.String(i, _GPUVarsMap) }
@@ -248,7 +248,7 @@ const JointTypesN JointTypes = 8
 
 var _JointTypesValueMap = map[string]JointTypes{`Prismatic`: 0, `Revolute`: 1, `Ball`: 2, `Fixed`: 3, `Free`: 4, `Distance`: 5, `D6`: 6, `PlaneXZ`: 7}
 
-var _JointTypesDescMap = map[JointTypes]string{0: `Prismatic allows translation along a single axis (slider): 1 DoF.`, 1: `Revolute allows rotation about a single axis (axel): 1 DoF.`, 2: `Ball allows rotation about all three axes (3 DoF, quaternion).`, 3: `Fixed locks all relative motion: 0 DoF.`, 4: `Free allows full 6-DoF motion (translation and rotation).`, 5: `Distance keeps two bodies a distance within joint limits: 6 DoF.`, 6: `D6 is a generic 6-DoF joint.`, 7: `PlaneXZ is a version of D6 for navigation in the X-Z plane, which creates 2 linear DoF (X, Z) and 1 angular DoF (around Y axis).`}
+var _JointTypesDescMap = map[JointTypes]string{0: `Prismatic allows translation along a single axis (slider): 1 DoF.`, 1: `Revolute allows rotation about a single axis (axel): 1 DoF.`, 2: `Ball allows rotation about all three axes (3 DoF, quaternion).`, 3: `Fixed locks all relative motion: 0 DoF.`, 4: `Free allows full 6-DoF motion (translation and rotation).`, 5: `Distance keeps two bodies a distance within joint limits: 6 DoF.`, 6: `D6 is a generic 6-DoF joint.`, 7: `PlaneXZ is a version of D6 for navigation in the X-Z plane, which creates 2 linear DoF (X, Z) for movement.`}
 
 var _JointTypesMap = map[JointTypes]string{0: `Prismatic`, 1: `Revolute`, 2: `Ball`, 3: `Fixed`, 4: `Free`, 5: `Distance`, 6: `D6`, 7: `PlaneXZ`}
 
@@ -284,20 +284,20 @@ func (i *JointTypes) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "JointTypes")
 }
 
-var _JointVarsValues = []JointVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49}
+var _JointVarsValues = []JointVars{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38}
 
 // JointVarsN is the highest valid value for type JointVars, plus one.
 //
 //gosl:start
-const JointVarsN JointVars = 50
+const JointVarsN JointVars = 39
 
 //gosl:end
 
-var _JointVarsValueMap = map[string]JointVars{`JointType`: 0, `JointEnabled`: 1, `JointParent`: 2, `JointChild`: 3, `JointPPosX`: 4, `JointPPosY`: 5, `JointPPosZ`: 6, `JointPQuatX`: 7, `JointPQuatY`: 8, `JointPQuatZ`: 9, `JointPQuatW`: 10, `JointCPosX`: 11, `JointCPosY`: 12, `JointCPosZ`: 13, `JointCQuatX`: 14, `JointCQuatY`: 15, `JointCQuatZ`: 16, `JointCQuatW`: 17, `JointLinearDoFN`: 18, `JointAngularDoFN`: 19, `JointDoF1`: 20, `JointDoF2`: 21, `JointDoF3`: 22, `JointDoF4`: 23, `JointDoF5`: 24, `JointDoF6`: 25, `JointPForceX`: 26, `JointPForceY`: 27, `JointPForceZ`: 28, `JointPTorqueX`: 29, `JointPTorqueY`: 30, `JointPTorqueZ`: 31, `JointCForceX`: 32, `JointCForceY`: 33, `JointCForceZ`: 34, `JointCTorqueX`: 35, `JointCTorqueY`: 36, `JointCTorqueZ`: 37, `JointPDeltaX`: 38, `JointPDeltaY`: 39, `JointPDeltaZ`: 40, `JointPAngDeltaX`: 41, `JointPAngDeltaY`: 42, `JointPAngDeltaZ`: 43, `JointCDeltaX`: 44, `JointCDeltaY`: 45, `JointCDeltaZ`: 46, `JointCAngDeltaX`: 47, `JointCAngDeltaY`: 48, `JointCAngDeltaZ`: 49}
+var _JointVarsValueMap = map[string]JointVars{`JointType`: 0, `JointEnabled`: 1, `JointParentFixed`: 2, `JointParent`: 3, `JointChild`: 4, `JointPPosX`: 5, `JointPPosY`: 6, `JointPPosZ`: 7, `JointPQuatX`: 8, `JointPQuatY`: 9, `JointPQuatZ`: 10, `JointPQuatW`: 11, `JointCPosX`: 12, `JointCPosY`: 13, `JointCPosZ`: 14, `JointCQuatX`: 15, `JointCQuatY`: 16, `JointCQuatZ`: 17, `JointCQuatW`: 18, `JointLinearDoFN`: 19, `JointAngularDoFN`: 20, `JointDoF1`: 21, `JointDoF2`: 22, `JointDoF3`: 23, `JointDoF4`: 24, `JointDoF5`: 25, `JointDoF6`: 26, `JointPForceX`: 27, `JointPForceY`: 28, `JointPForceZ`: 29, `JointPTorqueX`: 30, `JointPTorqueY`: 31, `JointPTorqueZ`: 32, `JointCForceX`: 33, `JointCForceY`: 34, `JointCForceZ`: 35, `JointCTorqueX`: 36, `JointCTorqueY`: 37, `JointCTorqueZ`: 38}
 
-var _JointVarsDescMap = map[JointVars]string{0: `JointType (as an int32 from bits).`, 1: `JointEnabled allows joints to be dynamically enabled.`, 2: `JointParent is the dynamic body index for parent body. Can be -1 for a fixed parent for absolute anchor.`, 3: `JointChild is the dynamic body index for child body.`, 4: `relative position of joint, in parent frame. This is prior to parent body rotation.`, 5: ``, 6: ``, 7: `relative orientation of joint, in parent frame. This is prior to parent body rotation.`, 8: ``, 9: ``, 10: ``, 11: `relative position of joint, in child frame. This is prior to child body rotation.`, 12: ``, 13: ``, 14: `relative orientation of joint, in child frame. This is prior to parent body rotation.`, 15: ``, 16: ``, 17: ``, 18: `JointLinearDoFN is the number of linear degrees-of-freedom for the joint.`, 19: `JointAngularDoFN is the number of angular degrees-of-freedom for the joint.`, 20: `indexes in JointDoFs for each DoF`, 21: ``, 22: ``, 23: `angular starts here for Free, Distance, D6`, 24: ``, 25: ``, 26: `Computed parent joint force value.`, 27: ``, 28: ``, 29: `Computed parent joint torque value.`, 30: ``, 31: ``, 32: `Computed child joint force value.`, 33: ``, 34: ``, 35: `Computed child joint torque value.`, 36: ``, 37: ``, 38: `Computed parent joint delta value.`, 39: ``, 40: ``, 41: `Computed parent joint angdelta value.`, 42: ``, 43: ``, 44: `Computed child joint delta value.`, 45: ``, 46: ``, 47: `Computed child joint angdelta value.`, 48: ``, 49: ``}
+var _JointVarsDescMap = map[JointVars]string{0: `JointType (as an int32 from bits).`, 1: `JointEnabled allows joints to be dynamically enabled.`, 2: `JointParentFixed means that the parent is NOT updated based on the forces and positions for this joint. This can make dynamics cleaner when full accuracy is not necessary.`, 3: `JointParent is the dynamic body index for parent body. Can be -1 for a fixed parent for absolute anchor.`, 4: `JointChild is the dynamic body index for child body.`, 5: `relative position of joint, in parent frame. This is prior to parent body rotation.`, 6: ``, 7: ``, 8: `relative orientation of joint, in parent frame. This is prior to parent body rotation.`, 9: ``, 10: ``, 11: ``, 12: `relative position of joint, in child frame. This is prior to child body rotation.`, 13: ``, 14: ``, 15: `relative orientation of joint, in child frame. This is prior to parent body rotation.`, 16: ``, 17: ``, 18: ``, 19: `JointLinearDoFN is the number of linear degrees-of-freedom for the joint.`, 20: `JointAngularDoFN is the number of angular degrees-of-freedom for the joint.`, 21: `indexes in JointDoFs for each DoF`, 22: ``, 23: ``, 24: `angular starts here for Free, Distance, D6`, 25: ``, 26: ``, 27: `Computed parent joint force value.`, 28: ``, 29: ``, 30: `Computed parent joint torque value.`, 31: ``, 32: ``, 33: `Computed child joint force value.`, 34: ``, 35: ``, 36: `Computed child joint torque value.`, 37: ``, 38: ``}
 
-var _JointVarsMap = map[JointVars]string{0: `JointType`, 1: `JointEnabled`, 2: `JointParent`, 3: `JointChild`, 4: `JointPPosX`, 5: `JointPPosY`, 6: `JointPPosZ`, 7: `JointPQuatX`, 8: `JointPQuatY`, 9: `JointPQuatZ`, 10: `JointPQuatW`, 11: `JointCPosX`, 12: `JointCPosY`, 13: `JointCPosZ`, 14: `JointCQuatX`, 15: `JointCQuatY`, 16: `JointCQuatZ`, 17: `JointCQuatW`, 18: `JointLinearDoFN`, 19: `JointAngularDoFN`, 20: `JointDoF1`, 21: `JointDoF2`, 22: `JointDoF3`, 23: `JointDoF4`, 24: `JointDoF5`, 25: `JointDoF6`, 26: `JointPForceX`, 27: `JointPForceY`, 28: `JointPForceZ`, 29: `JointPTorqueX`, 30: `JointPTorqueY`, 31: `JointPTorqueZ`, 32: `JointCForceX`, 33: `JointCForceY`, 34: `JointCForceZ`, 35: `JointCTorqueX`, 36: `JointCTorqueY`, 37: `JointCTorqueZ`, 38: `JointPDeltaX`, 39: `JointPDeltaY`, 40: `JointPDeltaZ`, 41: `JointPAngDeltaX`, 42: `JointPAngDeltaY`, 43: `JointPAngDeltaZ`, 44: `JointCDeltaX`, 45: `JointCDeltaY`, 46: `JointCDeltaZ`, 47: `JointCAngDeltaX`, 48: `JointCAngDeltaY`, 49: `JointCAngDeltaZ`}
+var _JointVarsMap = map[JointVars]string{0: `JointType`, 1: `JointEnabled`, 2: `JointParentFixed`, 3: `JointParent`, 4: `JointChild`, 5: `JointPPosX`, 6: `JointPPosY`, 7: `JointPPosZ`, 8: `JointPQuatX`, 9: `JointPQuatY`, 10: `JointPQuatZ`, 11: `JointPQuatW`, 12: `JointCPosX`, 13: `JointCPosY`, 14: `JointCPosZ`, 15: `JointCQuatX`, 16: `JointCQuatY`, 17: `JointCQuatZ`, 18: `JointCQuatW`, 19: `JointLinearDoFN`, 20: `JointAngularDoFN`, 21: `JointDoF1`, 22: `JointDoF2`, 23: `JointDoF3`, 24: `JointDoF4`, 25: `JointDoF5`, 26: `JointDoF6`, 27: `JointPForceX`, 28: `JointPForceY`, 29: `JointPForceZ`, 30: `JointPTorqueX`, 31: `JointPTorqueY`, 32: `JointPTorqueZ`, 33: `JointCForceX`, 34: `JointCForceY`, 35: `JointCForceZ`, 36: `JointCTorqueX`, 37: `JointCTorqueY`, 38: `JointCTorqueZ`}
 
 // String returns the string representation of this JointVars value.
 func (i JointVars) String() string { return enums.String(i, _JointVarsMap) }

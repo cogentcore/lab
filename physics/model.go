@@ -26,6 +26,14 @@ type Model struct {
 	// while 0 and positive numbers only interact amongst themselves.
 	CurrentWorld int
 
+	// CurrentObject is the Object to use when creating new joints.
+	// Call NewObject to increment.
+	CurrentObject int
+
+	// CurrentObjectJoint is the Joint index in CurrentObject
+	// to use when creating new joints.
+	CurrentObjectJoint int
+
 	// ReplicasStart is the starting body index for replicated world bodies,
 	// which is needed for viewers to efficiently select a specific world to view.
 	// This is the start of the World=0 first instance.
@@ -42,6 +50,17 @@ type Model struct {
 	// [body][BodyVarsN]
 	Bodies *tensor.Float32 `display:"no-inline"`
 
+	// Objects is a list of joint indexes for each object, where each object
+	// contains all the joints interconnecting an overlapping set of bodies.
+	// Joints must be added in parent -> child order within objects, as joints
+	// are updated in sequential order within object.
+	// [object][maxjointsperobj]
+	Objects *tensor.Int32 `display:"no-inline"`
+
+	// BodyJoints is a list of joint indexes for each dynamic body, for aggregating.
+	// [dyn body][parent, child][Params.BodyJointsMax]
+	BodyJoints *tensor.Int32 `display:"no-inline"`
+
 	// Joints is a list of permanent joints connecting bodies,
 	// which do not change (no dynamic variables).
 	// [joint][JointVarsN]
@@ -50,10 +69,6 @@ type Model struct {
 	// JointDoFs is a list of joint DoF parameters, allocated per joint.
 	// [dof][JointDoFVars]
 	JointDoFs *tensor.Float32 `display:"no-inline"`
-
-	// BodyJoints is a list of joint indexes for each dynamic body, for aggregating.
-	// [dyn body][parent, child][Params.BodyJointsMax]
-	BodyJoints *tensor.Int32 `display:"no-inline"`
 
 	// BodyCollidePairs are pairs of Body indexes that could potentially collide
 	// based on precomputed collision logic, using World, Group, and Joint indexes.
@@ -107,7 +122,12 @@ func (ml *Model) Init() {
 
 // Reset resets all data to empty: starting over.
 func (ml *Model) Reset() {
+	ml.CurrentWorld = 0
+	ml.CurrentObject = 0
+	ml.CurrentObjectJoint = 0
+	ml.Params[0].Reset()
 	ml.Bodies = tensor.NewFloat32(0, int(BodyVarsN))
+	ml.Objects = tensor.NewInt32(0, 1)
 	ml.Joints = tensor.NewFloat32(0, int(JointVarsN))
 	ml.JointDoFs = tensor.NewFloat32(0, int(JointDoFVarsN))
 	ml.BodyJoints = tensor.NewInt32(0, 2, 2)
@@ -119,6 +139,18 @@ func (ml *Model) Reset() {
 	ml.Contacts = tensor.NewFloat32(0, int(ContactVarsN))
 	ml.JointControls = tensor.NewFloat32(0, int(JointControlVarsN))
 	ml.SetAsCurrentVars()
+}
+
+// NewObject adds a new object. Returns the CurrentObject.
+func (ml *Model) NewObject() int32 {
+	params := &ml.Params[0]
+	sizes := ml.Objects.ShapeSizes()
+	idx := int32(sizes[0])
+	ml.Objects.SetShapeSizes(int(idx+1), int(params.MaxObjectJoints+1))
+	params.ObjectsN = idx + 1
+	ml.CurrentObject = int(idx)
+	ml.CurrentObjectJoint = 0
+	return idx
 }
 
 // NewBody adds a new body with given parameters. Returns the index.
@@ -175,6 +207,7 @@ func (ml *Model) SetAsCurrent() {
 func (ml *Model) SetAsCurrentVars() {
 	Params = ml.Params
 	Bodies = ml.Bodies
+	Objects = ml.Objects
 	Joints = ml.Joints
 	JointDoFs = ml.JointDoFs
 	BodyJoints = ml.BodyJoints
@@ -199,7 +232,7 @@ func (ml *Model) GPUInit() {
 // the GPU. This is done in GPUInit, and if current switched.
 func (ml *Model) ToGPUInfra() {
 	ToGPUTensorStrides()
-	ToGPU(ParamsVar, BodiesVar, JointsVar, JointDoFsVar, BodyJointsVar, BodyCollidePairsVar, DynamicsVar, BroadContactsNVar, BroadContactsVar, ContactsNVar, ContactsVar, JointControlsVar)
+	ToGPU(ParamsVar, BodiesVar, ObjectsVar, JointsVar, JointDoFsVar, BodyJointsVar, BodyCollidePairsVar, DynamicsVar, BroadContactsNVar, BroadContactsVar, ContactsNVar, ContactsVar, JointControlsVar)
 }
 
 // ReplicaWorldsN returns the number of replicated worlds. 0 if none.

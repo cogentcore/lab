@@ -172,26 +172,26 @@ const  DynAngDeltaX: DynamicVars = 29;
 const  DynAngDeltaY: DynamicVars = 30;
 const  DynAngDeltaZ: DynamicVars = 31;
 const  DynContactWeight: DynamicVars = 32;
-fn DynamicBody(idx: i32) -> i32 { return i32(bitcast<u32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(0), u32(DynBody))])); }
-fn DynamicPos(idx: i32,cni: i32) -> vec3<f32> { return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosZ))]); }
-fn SetDynamicPos(idx: i32,cni: i32, pos: vec3<f32>) { Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosX))] = pos.x;; Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosY))] = pos.y;; Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosZ))] = pos.z; }
-fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> { return vec4<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatZ))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatW))]); }
-fn SetDynamicQuat(idx: i32,cni: i32, rot: vec4<f32>) { Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatX))] = rot.x;; Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatY))] = rot.y;; Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatZ))] = rot.z;; Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatW))] = rot.w; }
-fn DynamicForce(idx: i32,cni: i32) -> vec3<f32> { return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynForceX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynForceY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynForceZ))]); }
-fn DynamicTorque(idx: i32,cni: i32) -> vec3<f32> { return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynTorqueX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynTorqueY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynTorqueZ))]); }
-fn DynamicDelta(idx: i32,cni: i32) -> vec3<f32> { return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaZ))]); }
-fn SetDynamicDelta(idx: i32,cni: i32, delta: vec3<f32>) { Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaX))] = delta.x;; Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaY))] = delta.y;; Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaZ))] = delta.z; }
-fn DynamicAngDelta(idx: i32,cni: i32) -> vec3<f32> { return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaZ))]); }
-fn SetDynamicAngDelta(idx: i32,cni: i32, angDelta: vec3<f32>) { Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaX))] = angDelta.x;; Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaY))] = angDelta.y;; Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaZ))] = angDelta.z; }
+fn DynamicBody(idx: i32) -> i32 { return i32(bitcast<u32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(0), u32(DynBody))])); }
+fn DynamicPos(idx: i32,cni: i32) -> vec3<f32> { return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosZ))]); }
+fn SetDynamicPos(idx: i32,cni: i32, pos: vec3<f32>) { Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosX))] = pos.x;; Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosY))] = pos.y;; Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosZ))] = pos.z; }
+fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> { return vec4<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatZ))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatW))]); }
+fn SetDynamicQuat(idx: i32,cni: i32, rot: vec4<f32>) { Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatX))] = rot.x;; Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatY))] = rot.y;; Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatZ))] = rot.z;; Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatW))] = rot.w; }
+fn DynamicForce(idx: i32,cni: i32) -> vec3<f32> { return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynForceX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynForceY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynForceZ))]); }
+fn DynamicTorque(idx: i32,cni: i32) -> vec3<f32> { return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynTorqueX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynTorqueY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynTorqueZ))]); }
+fn DynamicDelta(idx: i32,cni: i32) -> vec3<f32> { return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaZ))]); }
+fn SetDynamicDelta(idx: i32,cni: i32, delta: vec3<f32>) { Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaX))] = delta.x;; Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaY))] = delta.y;; Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaZ))] = delta.z; }
+fn DynamicAngDelta(idx: i32,cni: i32) -> vec3<f32> { return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaZ))]); }
+fn SetDynamicAngDelta(idx: i32,cni: i32, angDelta: vec3<f32>) { Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaX))] = angDelta.x;; Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaY))] = angDelta.y;; Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaZ))] = angDelta.z; }
 
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 43;
 const ContactVarsN: ContactVars = 33;
 const JointControlVarsN: JointControlVars = 5;
 const DynamicVarsN: DynamicVars = 33;
-const GPUVarsN: GPUVars = 12;
+const GPUVarsN: GPUVars = 13;
 const JointTypesN: JointTypes = 8;
-const JointVarsN: JointVars = 50;
+const JointVarsN: JointVars = 39;
 const JointDoFVarsN: JointDoFVars = 5;
 const ShapesN: Shapes = 6;
 
@@ -209,54 +209,43 @@ const  PlaneXZ: JointTypes = 7;
 alias JointVars = i32; //enums:enum
 const  JointType: JointVars = 0;
 const  JointEnabled: JointVars = 1;
-const  JointParent: JointVars = 2;
-const  JointChild: JointVars = 3;
-const  JointPPosX: JointVars = 4;
-const  JointPPosY: JointVars = 5;
-const  JointPPosZ: JointVars = 6;
-const  JointPQuatX: JointVars = 7;
-const  JointPQuatY: JointVars = 8;
-const  JointPQuatZ: JointVars = 9;
-const  JointPQuatW: JointVars = 10;
-const  JointCPosX: JointVars = 11;
-const  JointCPosY: JointVars = 12;
-const  JointCPosZ: JointVars = 13;
-const  JointCQuatX: JointVars = 14;
-const  JointCQuatY: JointVars = 15;
-const  JointCQuatZ: JointVars = 16;
-const  JointCQuatW: JointVars = 17;
-const  JointLinearDoFN: JointVars = 18;
-const  JointAngularDoFN: JointVars = 19;
-const  JointDoF1: JointVars = 20;
-const  JointDoF2: JointVars = 21;
-const  JointDoF3: JointVars = 22;
-const  JointDoF4: JointVars = 23;
-const  JointDoF5: JointVars = 24;
-const  JointDoF6: JointVars = 25;
-const  JointPForceX: JointVars = 26;
-const  JointPForceY: JointVars = 27;
-const  JointPForceZ: JointVars = 28;
-const  JointPTorqueX: JointVars = 29;
-const  JointPTorqueY: JointVars = 30;
-const  JointPTorqueZ: JointVars = 31;
-const  JointCForceX: JointVars = 32;
-const  JointCForceY: JointVars = 33;
-const  JointCForceZ: JointVars = 34;
-const  JointCTorqueX: JointVars = 35;
-const  JointCTorqueY: JointVars = 36;
-const  JointCTorqueZ: JointVars = 37;
-const  JointPDeltaX: JointVars = 38;
-const  JointPDeltaY: JointVars = 39;
-const  JointPDeltaZ: JointVars = 40;
-const  JointPAngDeltaX: JointVars = 41;
-const  JointPAngDeltaY: JointVars = 42;
-const  JointPAngDeltaZ: JointVars = 43;
-const  JointCDeltaX: JointVars = 44;
-const  JointCDeltaY: JointVars = 45;
-const  JointCDeltaZ: JointVars = 46;
-const  JointCAngDeltaX: JointVars = 47;
-const  JointCAngDeltaY: JointVars = 48;
-const  JointCAngDeltaZ: JointVars = 49;
+const  JointParentFixed: JointVars = 2;
+const  JointParent: JointVars = 3;
+const  JointChild: JointVars = 4;
+const  JointPPosX: JointVars = 5;
+const  JointPPosY: JointVars = 6;
+const  JointPPosZ: JointVars = 7;
+const  JointPQuatX: JointVars = 8;
+const  JointPQuatY: JointVars = 9;
+const  JointPQuatZ: JointVars = 10;
+const  JointPQuatW: JointVars = 11;
+const  JointCPosX: JointVars = 12;
+const  JointCPosY: JointVars = 13;
+const  JointCPosZ: JointVars = 14;
+const  JointCQuatX: JointVars = 15;
+const  JointCQuatY: JointVars = 16;
+const  JointCQuatZ: JointVars = 17;
+const  JointCQuatW: JointVars = 18;
+const  JointLinearDoFN: JointVars = 19;
+const  JointAngularDoFN: JointVars = 20;
+const  JointDoF1: JointVars = 21;
+const  JointDoF2: JointVars = 22;
+const  JointDoF3: JointVars = 23;
+const  JointDoF4: JointVars = 24;
+const  JointDoF5: JointVars = 25;
+const  JointDoF6: JointVars = 26;
+const  JointPForceX: JointVars = 27;
+const  JointPForceY: JointVars = 28;
+const  JointPForceZ: JointVars = 29;
+const  JointPTorqueX: JointVars = 30;
+const  JointPTorqueY: JointVars = 31;
+const  JointPTorqueZ: JointVars = 32;
+const  JointCForceX: JointVars = 33;
+const  JointCForceY: JointVars = 34;
+const  JointCForceZ: JointVars = 35;
+const  JointCTorqueX: JointVars = 36;
+const  JointCTorqueY: JointVars = 37;
+const  JointCTorqueZ: JointVars = 38;
 alias JointDoFVars = i32; //enums:enum
 const  JointAxisX: JointDoFVars = 0;
 const  JointAxisY: JointDoFVars = 1;
@@ -286,10 +275,14 @@ struct PhysParams {
 	Next: i32,
 	BodiesN: i32,
 	DynamicsN: i32,
+	ObjectsN: i32,
+	MaxObjectJoints: i32,
 	JointsN: i32,
 	JointDoFsN: i32,
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
+	pad: i32,
+	pad1: i32,
 	Gravity: vec4<f32>,
 }
 

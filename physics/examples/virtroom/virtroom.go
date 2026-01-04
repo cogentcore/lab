@@ -45,14 +45,41 @@ func main() {
 	b.RunMainWindow()
 }
 
+type Emer struct {
+	// if true, emer is angry: changes face color
+	Angry bool
+
+	// height of emer
+	Height float32
+
+	// emer object
+	Obj *builder.Object `display:"-"`
+
+	// Revolute joint controlling orientation.
+	Orient *builder.Joint
+
+	// PlaneXZ joint for controlling 2D position.
+	XZ *builder.Joint
+
+	// ball joint for the neck.
+	Neck *builder.Joint
+
+	// Right eye of emer
+	EyeR *builder.Body `display:"-"`
+}
+
+func (em *Emer) Defaults() {
+	em.Height = 1
+}
+
 // Env encapsulates the virtual environment
 type Env struct { //types:add
 
-	// if true, emer is angry: changes face color
-	EmerAngry bool
+	// Emer state
+	Emer Emer `new-window:"+"`
 
-	// height of emer
-	EmerHt float32
+	// Stiffness for actions
+	Stiff float32
 
 	// how far to move every step
 	MoveStep float32
@@ -90,32 +117,21 @@ type Env struct { //types:add
 	// 3D visualization of the Scene
 	SceneEditor *xyzcore.SceneEditor
 
-	// emer object
-	Emer *builder.Object `display:"-"`
-
-	// emer PlaneXZ joint for controlling motion
-	EmerJoint *builder.Joint
-
-	// Right eye of emer
-	EyeR *builder.Body `display:"-"`
-
 	// snapshot image
 	EyeRImg *core.Image `display:"-"`
-
-	// ball joint for the neck.
-	NeckJoint *builder.Joint
 
 	// depth map image
 	DepthImage *core.Image `display:"-"`
 }
 
 func (ev *Env) Defaults() {
+	ev.Emer.Defaults()
 	ev.Width = 10
 	ev.Depth = 15
 	ev.Height = 2
 	ev.Thick = 0.2
-	ev.EmerHt = 1
-	ev.MoveStep = ev.EmerHt * .2
+	ev.Stiff = 1000
+	ev.MoveStep = ev.Emer.Height * .2
 	ev.RotStep = 15
 	ev.ModelSteps = 100
 	ev.DepthMap = core.ColorMapName("ColdHot")
@@ -137,13 +153,13 @@ func (ev *Env) MakeWorld(sc *xyz.Scene) {
 	wl := ev.Physics.Builder.NewGlobalWorld()
 	ev.MakeRoom(wl, "room1", ev.Width, ev.Depth, ev.Height, ev.Thick)
 	ew := ev.Physics.Builder.NewWorld()
-	ev.MakeEmer(ew, "emer", ev.EmerHt)
+	ev.MakeEmer(ew, &ev.Emer, "emer")
 	// ev.Physics.Builder.ReplicateWorld(1, 8, 2)
 	ev.Physics.Build()
-	params := physics.GetParams(0)
-	params.Gravity.Y = 0
-	params.MaxForce = 1.0e3
-	params.AngularDamping = 0.5
+	// params := physics.GetParams(0)
+	// params.Gravity.Y = 0
+	// params.MaxForce = 1.0e3
+	// params.AngularDamping = 0.5
 	// params.SubSteps = 1
 }
 
@@ -160,7 +176,10 @@ func (ev *Env) ConfigView3D(sc *xyz.Scene) {
 
 // RenderEyeImg returns a snapshot from the perspective of Emer's right eye
 func (ev *Env) RenderEyeImg() image.Image {
-	return ev.Physics.Scene.RenderFrom(ev.EyeR.Skin, &ev.Camera, 0)
+	if ev.Emer.EyeR == nil {
+		return nil
+	}
+	return ev.Physics.Scene.RenderFrom(ev.Emer.EyeR.Skin, &ev.Camera, 0)
 }
 
 // GrabEyeImg takes a snapshot from the perspective of Emer's right eye
@@ -209,7 +228,7 @@ func (ev *Env) ModelStep() { //types:add
 	// 		}
 	// 	}
 	// }
-	ev.EmerAngry = false
+	ev.Emer.Angry = false
 	// if len(ev.Contacts) > 1 { // turn around
 	// 	ev.EmerAngry = true
 	// 	fmt.Printf("hit wall: turn around!\n")
@@ -223,52 +242,44 @@ func (ev *Env) ModelStep() { //types:add
 // StepForward moves Emer forward in current facing direction one step,
 // and takes GrabEyeImg
 func (ev *Env) StepForward() { //types:add
-	ev.Emer.PoseFromPhysics()
 	// doesn't integrate well with joints..
 	// ev.Emer.MoveOnAxisBody(0, 0, 0, 1, -ev.MoveStep)
 	// ev.Emer.PoseToPhysics()
-	ev.EmerJoint.AddPlaneXZPos(math32.Pi*.5, -ev.MoveStep, 1000)
+	ang := math32.Pi*.5 - ev.Emer.XZ.DoF(2).Current.Pos
+	// ang := float32(math32.Pi * .5)
+	ev.Emer.XZ.AddPlaneXZPos(ang, -ev.MoveStep, ev.Stiff)
 	ev.ModelStep()
 }
 
 // StepBackward moves Emer backward in current facing direction one step, and takes GrabEyeImg
 func (ev *Env) StepBackward() { //types:add
-	ev.Emer.PoseFromPhysics()
-	// ev.Emer.MoveOnAxisBody(0, 0, 0, 1, ev.MoveStep)
-	// ev.Emer.PoseToPhysics()
-	ev.EmerJoint.AddPlaneXZPos(math32.Pi*.5, ev.MoveStep, 1000)
+	ang := math32.Pi*.5 - ev.Emer.XZ.DoF(2).Current.Pos
+	// ang := float32(math32.Pi * .5)
+	ev.Emer.XZ.AddPlaneXZPos(ang, ev.MoveStep, ev.Stiff)
 	ev.ModelStep()
 }
 
 // RotBodyLeft rotates emer left and takes GrabEyeImg
 func (ev *Env) RotBodyLeft() { //types:add
-	ev.Emer.PoseFromPhysics()
-	// ev.Emer.RotateOnAxisBody(0, 0, 1, 0, ev.RotStep)
-	// ev.Emer.PoseToPhysics()
-	ev.EmerJoint.AddTargetPos(2, math32.DegToRad(ev.RotStep), 1000)
+	ev.Emer.XZ.AddTargetAngle(2, ev.RotStep, ev.Stiff)
 	ev.ModelStep()
 }
 
 // RotBodyRight rotates emer right and takes GrabEyeImg
 func (ev *Env) RotBodyRight() { //types:add
-	ev.Emer.PoseFromPhysics()
-	// ev.Emer.RotateOnAxisBody(0, 0, 1, 0, -ev.RotStep)
-	// ev.Emer.PoseToPhysics()
-	ev.EmerJoint.AddTargetPos(2, math32.DegToRad(-ev.RotStep), 1000)
+	ev.Emer.XZ.AddTargetAngle(2, -ev.RotStep, ev.Stiff)
 	ev.ModelStep()
 }
 
 // RotHeadLeft rotates emer left and takes GrabEyeImg
 func (ev *Env) RotHeadLeft() { //types:add
-	ev.Emer.PoseFromPhysics()
-	ev.NeckJoint.AddTargetAngle(1, ev.RotStep, 1000)
+	ev.Emer.Neck.AddTargetAngle(0, ev.RotStep, ev.Stiff)
 	ev.ModelStep()
 }
 
 // RotHeadRight rotates emer right and takes GrabEyeImg
 func (ev *Env) RotHeadRight() { //types:add
-	ev.Emer.PoseFromPhysics()
-	ev.NeckJoint.AddTargetAngle(1, -ev.RotStep, 1000)
+	ev.Emer.Neck.AddTargetAngle(0, -ev.RotStep, ev.Stiff)
 	ev.ModelStep()
 }
 
@@ -294,8 +305,8 @@ func (ev *Env) MakeRoom(wl *builder.World, name string, width, depth, height, th
 }
 
 // MakeEmer constructs a new Emer virtual robot of given height (e.g., 1).
-func (ev *Env) MakeEmer(wl *builder.World, name string, height float32) {
-	hh := height / 2
+func (ev *Env) MakeEmer(wl *builder.World, em *Emer, name string) {
+	hh := em.Height / 2
 	hw := hh * .4
 	hd := hh * .15
 	headsz := hd * 1.5
@@ -303,13 +314,13 @@ func (ev *Env) MakeEmer(wl *builder.World, name string, height float32) {
 	mass := float32(1) // kg
 	rot := math32.NewQuatIdentity()
 	obj := wl.NewObject()
-	ev.Emer = obj
+	em.Obj = obj
 	sc := ev.Physics.Scene
 	emr := obj.NewDynamicSkin(sc, name+"_body", physics.Box, "purple", mass, math32.Vec3(hw, hh, hd), math32.Vec3(0, hh, 0), rot)
 	// body := physics.NewCapsule(emr, "body", math32.Vec3(0, hh, 0), hh, hw)
 	// body := physics.NewCylinder(emr, "body", math32.Vec3(0, hh, 0), hh, hw)
-	ev.EmerJoint = obj.NewJointPlaneXZ(nil, emr, math32.Vec3(0, 0, 0), math32.Vec3(0, -hh, 0))
-	emr.Group = 0
+	em.XZ = obj.NewJointPlaneXZ(nil, emr, math32.Vec3(0, 0, 0), math32.Vec3(0, -hh, 0))
+	emr.Group = 0 // no collide (temporary)
 
 	headPos := math32.Vec3(0, 2*hh+headsz, 0)
 	head := obj.NewDynamicSkin(sc, name+"_head", physics.Box, "tan", mass*.1, math32.Vec3(headsz, headsz, headsz), headPos, rot)
@@ -319,23 +330,27 @@ func (ev *Env) MakeEmer(wl *builder.World, name string, height float32) {
 		hdsk.BoxInit(sld)
 		sld.Updater(func() {
 			clr := hdsk.Color
-			if ev.EmerAngry {
+			if ev.Emer.Angry {
 				clr = "pink"
 			}
 			hdsk.UpdateColor(clr, sld)
 		})
 	}
-	ev.NeckJoint = obj.NewJointBall(emr, head, math32.Vec3(0, hh, 0), math32.Vec3(0, -headsz, 0))
+	em.Neck = obj.NewJointBall(emr, head, math32.Vec3(0, hh, 0), math32.Vec3(0, -headsz, 0))
+	em.Neck.ParentFixed = true
+	// obj.NewJointFixed(emr, head, math32.Vec3(0, hh, 0), math32.Vec3(0, -headsz, 0))
 
 	eyeoff := math32.Vec3(-headsz*.6, headsz*.1, -(headsz + eyesz*.3))
-	bd := obj.NewDynamicSkin(sc, name+"_eye-l", physics.Box, "green", mass*.01, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
+	bd := obj.NewDynamicSkin(sc, name+"_eye-l", physics.Box, "green", mass*.001, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
 	bd.Group = 0
-	obj.NewJointFixed(head, bd, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
+	ej := obj.NewJointFixed(head, bd, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
+	ej.ParentFixed = true
 
 	eyeoff = math32.Vec3(headsz*.6, headsz*.1, -(headsz + eyesz*.3))
-	ev.EyeR = obj.NewDynamicSkin(sc, name+"_eye-r", physics.Box, "green", mass*.01, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
-	ev.EyeR.Group = 0
-	obj.NewJointFixed(head, ev.EyeR, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
+	em.EyeR = obj.NewDynamicSkin(sc, name+"_eye-r", physics.Box, "green", mass*.001, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
+	em.EyeR.Group = 0
+	ej = obj.NewJointFixed(head, em.EyeR, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
+	ej.ParentFixed = true
 }
 
 func (ev *Env) ConfigGUI() *core.Body {

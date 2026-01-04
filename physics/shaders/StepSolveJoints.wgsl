@@ -10,8 +10,10 @@ var<storage, read_write> Params: array<PhysParams>;
 @group(1) @binding(0)
 var<storage, read_write> Bodies: array<f32>;
 @group(1) @binding(1)
+var<storage, read_write> Objects: array<i32>;
+@group(1) @binding(3)
 var<storage, read_write> Joints: array<f32>;
-@group(1) @binding(2)
+@group(1) @binding(4)
 var<storage, read_write> JointDoFs: array<f32>;
 // // Dynamics are the dynamic rigid body elements: these actually move. // Two alternating states are used: Params.Cur and Params.Next. // [dyn body][cur/next][DynamicVarsN] 
 @group(2) @binding(0)
@@ -87,6 +89,11 @@ const  BodyRadius: BodyVars = 42;
 fn BodyCom(idx: i32) -> vec3<f32> {
 	return vec3<f32>(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyComX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyComY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyComZ))]);
 }
+fn BodyInertia(idx: i32) -> mat3x3f {
+	return mat3x3f(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyInertiaXX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyInertiaYX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyInertiaZX))],
+		Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyInertiaXY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyInertiaYY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyInertiaZY))],
+		Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyInertiaXZ))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyInertiaYZ))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyInertiaZZ))]);
+}
 fn BodyInvInertia(idx: i32) -> mat3x3f {
 	return mat3x3f(Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyInvInertiaXX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyInvInertiaYX))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyInvInertiaZX))],
 		Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyInvInertiaXY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyInvInertiaYY))], Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(idx), u32(BodyInvInertiaZY))],
@@ -138,7 +145,7 @@ const  JointTargetStiff: JointControlVars = 2;
 const  JointTargetVel: JointControlVars = 3;
 const  JointTargetDamp: JointControlVars = 4;
 fn JointControl(idx: i32,dof: i32, vr: JointControlVars) -> f32 {
-	return JointControls[Index2D(TensorStrides[100], TensorStrides[101], u32(JointDoFIndex(idx, dof)), u32(vr))];
+	return JointControls[Index2D(TensorStrides[110], TensorStrides[111], u32(JointDoFIndex(idx, dof)), u32(vr))];
 }
 
 //////// import: "dynamics.go"
@@ -176,14 +183,26 @@ const  DynAngDeltaX: DynamicVars = 29;
 const  DynAngDeltaY: DynamicVars = 30;
 const  DynAngDeltaZ: DynamicVars = 31;
 const  DynContactWeight: DynamicVars = 32;
-fn DynamicBody(idx: i32) -> i32 { return i32(bitcast<u32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(0), u32(DynBody))])); }
-fn DynamicPos(idx: i32,cni: i32) -> vec3<f32> { return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosZ))]); }
-fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> { return vec4<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatZ))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatW))]); }
+fn DynamicBody(idx: i32) -> i32 { return i32(bitcast<u32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(0), u32(DynBody))])); }
+fn DynamicPos(idx: i32,cni: i32) -> vec3<f32> { return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosZ))]); }
+fn SetDynamicPos(idx: i32,cni: i32, pos: vec3<f32>) { Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosX))] = pos.x;; Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosY))] = pos.y;; Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosZ))] = pos.z; }
+fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> { return vec4<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatZ))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatW))]); }
+fn SetDynamicQuat(idx: i32,cni: i32, rot: vec4<f32>) { Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatX))] = rot.x;; Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatY))] = rot.y;; Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatZ))] = rot.z;; Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatW))] = rot.w; }
 fn DynamicDelta(idx: i32,cni: i32) -> vec3<f32> {
-	return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynDeltaZ))]);
+	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaZ))]);
+}
+fn SetDynamicDelta(idx: i32,cni: i32, delta: vec3<f32>) {
+	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaX))] = delta.x;
+	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaY))] = delta.y;
+	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaZ))] = delta.z;
 }
 fn DynamicAngDelta(idx: i32,cni: i32) -> vec3<f32> {
-	return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynAngDeltaZ))]);
+	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaZ))]);
+}
+fn SetDynamicAngDelta(idx: i32,cni: i32, angDelta: vec3<f32>) {
+	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaX))] = angDelta.x;
+	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaY))] = angDelta.y;
+	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaZ))] = angDelta.z;
 }
 
 //////// import: "enumgen.go"
@@ -191,9 +210,9 @@ const BodyVarsN: BodyVars = 43;
 const ContactVarsN: ContactVars = 33;
 const JointControlVarsN: JointControlVars = 5;
 const DynamicVarsN: DynamicVars = 33;
-const GPUVarsN: GPUVars = 12;
+const GPUVarsN: GPUVars = 13;
 const JointTypesN: JointTypes = 8;
-const JointVarsN: JointVars = 50;
+const JointVarsN: JointVars = 39;
 const JointDoFVarsN: JointDoFVars = 5;
 const ShapesN: Shapes = 6;
 
@@ -211,107 +230,80 @@ const  PlaneXZ: JointTypes = 7;
 alias JointVars = i32; //enums:enum
 const  JointType: JointVars = 0;
 const  JointEnabled: JointVars = 1;
-const  JointParent: JointVars = 2;
-const  JointChild: JointVars = 3;
-const  JointPPosX: JointVars = 4;
-const  JointPPosY: JointVars = 5;
-const  JointPPosZ: JointVars = 6;
-const  JointPQuatX: JointVars = 7;
-const  JointPQuatY: JointVars = 8;
-const  JointPQuatZ: JointVars = 9;
-const  JointPQuatW: JointVars = 10;
-const  JointCPosX: JointVars = 11;
-const  JointCPosY: JointVars = 12;
-const  JointCPosZ: JointVars = 13;
-const  JointCQuatX: JointVars = 14;
-const  JointCQuatY: JointVars = 15;
-const  JointCQuatZ: JointVars = 16;
-const  JointCQuatW: JointVars = 17;
-const  JointLinearDoFN: JointVars = 18;
-const  JointAngularDoFN: JointVars = 19;
-const  JointDoF1: JointVars = 20;
-const  JointDoF2: JointVars = 21;
-const  JointDoF3: JointVars = 22;
-const  JointDoF4: JointVars = 23;
-const  JointDoF5: JointVars = 24;
-const  JointDoF6: JointVars = 25;
-const  JointPForceX: JointVars = 26;
-const  JointPForceY: JointVars = 27;
-const  JointPForceZ: JointVars = 28;
-const  JointPTorqueX: JointVars = 29;
-const  JointPTorqueY: JointVars = 30;
-const  JointPTorqueZ: JointVars = 31;
-const  JointCForceX: JointVars = 32;
-const  JointCForceY: JointVars = 33;
-const  JointCForceZ: JointVars = 34;
-const  JointCTorqueX: JointVars = 35;
-const  JointCTorqueY: JointVars = 36;
-const  JointCTorqueZ: JointVars = 37;
-const  JointPDeltaX: JointVars = 38;
-const  JointPDeltaY: JointVars = 39;
-const  JointPDeltaZ: JointVars = 40;
-const  JointPAngDeltaX: JointVars = 41;
-const  JointPAngDeltaY: JointVars = 42;
-const  JointPAngDeltaZ: JointVars = 43;
-const  JointCDeltaX: JointVars = 44;
-const  JointCDeltaY: JointVars = 45;
-const  JointCDeltaZ: JointVars = 46;
-const  JointCAngDeltaX: JointVars = 47;
-const  JointCAngDeltaY: JointVars = 48;
-const  JointCAngDeltaZ: JointVars = 49;
+const  JointParentFixed: JointVars = 2;
+const  JointParent: JointVars = 3;
+const  JointChild: JointVars = 4;
+const  JointPPosX: JointVars = 5;
+const  JointPPosY: JointVars = 6;
+const  JointPPosZ: JointVars = 7;
+const  JointPQuatX: JointVars = 8;
+const  JointPQuatY: JointVars = 9;
+const  JointPQuatZ: JointVars = 10;
+const  JointPQuatW: JointVars = 11;
+const  JointCPosX: JointVars = 12;
+const  JointCPosY: JointVars = 13;
+const  JointCPosZ: JointVars = 14;
+const  JointCQuatX: JointVars = 15;
+const  JointCQuatY: JointVars = 16;
+const  JointCQuatZ: JointVars = 17;
+const  JointCQuatW: JointVars = 18;
+const  JointLinearDoFN: JointVars = 19;
+const  JointAngularDoFN: JointVars = 20;
+const  JointDoF1: JointVars = 21;
+const  JointDoF2: JointVars = 22;
+const  JointDoF3: JointVars = 23;
+const  JointDoF4: JointVars = 24;
+const  JointDoF5: JointVars = 25;
+const  JointDoF6: JointVars = 26;
+const  JointPForceX: JointVars = 27;
+const  JointPForceY: JointVars = 28;
+const  JointPForceZ: JointVars = 29;
+const  JointPTorqueX: JointVars = 30;
+const  JointPTorqueY: JointVars = 31;
+const  JointPTorqueZ: JointVars = 32;
+const  JointCForceX: JointVars = 33;
+const  JointCForceY: JointVars = 34;
+const  JointCForceZ: JointVars = 35;
+const  JointCTorqueX: JointVars = 36;
+const  JointCTorqueY: JointVars = 37;
+const  JointCTorqueZ: JointVars = 38;
 fn GetJointType(idx: i32) -> JointTypes {
-	return JointTypes(bitcast<u32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointType))]));
+	return JointTypes(bitcast<u32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointType))]));
 }
 fn GetJointEnabled(idx: i32) -> bool {
-	var je = bitcast<u32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointEnabled))]);
+	var je = bitcast<u32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointEnabled))]);
+return je != 0;
+}
+fn GetJointParentFixed(idx: i32) -> bool {
+	var je = bitcast<u32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointParentFixed))]);
 return je != 0;
 }
 fn JointParentIndex(idx: i32) -> i32 {
-	return i32(bitcast<u32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointParent))]));
+	return i32(bitcast<u32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointParent))]));
 }
 fn JointChildIndex(idx: i32) -> i32 {
-	return i32(bitcast<u32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointChild))]));
+	return i32(bitcast<u32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointChild))]));
 }
 fn GetJointLinearDoFN(idx: i32) -> i32 {
-	return i32(bitcast<u32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointLinearDoFN))]));
+	return i32(bitcast<u32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointLinearDoFN))]));
 }
 fn GetJointAngularDoFN(idx: i32) -> i32 {
-	return i32(bitcast<u32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointAngularDoFN))]));
+	return i32(bitcast<u32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointAngularDoFN))]));
 }
 fn JointDoFIndex(idx: i32,dof: i32) -> i32 {
-	return i32(bitcast<u32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(i32(JointDoF1) + dof))]));
+	return i32(bitcast<u32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(i32(JointDoF1) + dof))]));
 }
 fn JointPPos(idx: i32) -> vec3<f32> {
-	return vec3<f32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPPosX))], Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPPosY))], Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPPosZ))]);
+	return vec3<f32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointPPosX))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointPPosY))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointPPosZ))]);
 }
 fn JointPQuat(idx: i32) -> vec4<f32> {
-	return vec4<f32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPQuatX))], Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPQuatY))], Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPQuatZ))], Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPQuatW))]);
+	return vec4<f32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointPQuatX))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointPQuatY))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointPQuatZ))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointPQuatW))]);
 }
 fn JointCPos(idx: i32) -> vec3<f32> {
-	return vec3<f32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCPosX))], Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCPosY))], Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCPosZ))]);
+	return vec3<f32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCPosX))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCPosY))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCPosZ))]);
 }
 fn JointCQuat(idx: i32) -> vec4<f32> {
-	return vec4<f32>(Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCQuatX))], Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCQuatY))], Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCQuatZ))], Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCQuatW))]);
-}
-fn SetJointPDelta(idx: i32, f: vec3<f32>) {
-	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPDeltaX))] = f.x;
-	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPDeltaY))] = f.y;
-	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPDeltaZ))] = f.z;
-}
-fn SetJointPAngDelta(idx: i32, t: vec3<f32>) {
-	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPAngDeltaX))] = t.x;
-	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPAngDeltaY))] = t.y;
-	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointPAngDeltaZ))] = t.z;
-}
-fn SetJointCDelta(idx: i32, f: vec3<f32>) {
-	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCDeltaX))] = f.x;
-	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCDeltaY))] = f.y;
-	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCDeltaZ))] = f.z;
-}
-fn SetJointCAngDelta(idx: i32, t: vec3<f32>) {
-	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCAngDeltaX))] = t.x;
-	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCAngDeltaY))] = t.y;
-	Joints[Index2D(TensorStrides[10], TensorStrides[11], u32(idx), u32(JointCAngDeltaZ))] = t.z;
+	return vec4<f32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCQuatX))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCQuatY))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCQuatZ))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCQuatW))]);
 }
 alias JointDoFVars = i32; //enums:enum
 const  JointAxisX: JointDoFVars = 0;
@@ -320,13 +312,13 @@ const  JointAxisZ: JointDoFVars = 2;
 const  JointLimitLower: JointDoFVars = 3;
 const  JointLimitUpper: JointDoFVars = 4;
 fn JointAxisDoF(didx: i32) -> vec3<f32> {
-	return vec3<f32>(JointDoFs[Index2D(TensorStrides[20], TensorStrides[21], u32(didx), u32(JointAxisX))], JointDoFs[Index2D(TensorStrides[20], TensorStrides[21], u32(didx), u32(JointAxisY))], JointDoFs[Index2D(TensorStrides[20], TensorStrides[21], u32(didx), u32(JointAxisZ))]);
+	return vec3<f32>(JointDoFs[Index2D(TensorStrides[40], TensorStrides[41], u32(didx), u32(JointAxisX))], JointDoFs[Index2D(TensorStrides[40], TensorStrides[41], u32(didx), u32(JointAxisY))], JointDoFs[Index2D(TensorStrides[40], TensorStrides[41], u32(didx), u32(JointAxisZ))]);
 }
 fn JointAxis(idx: i32,dof: i32) -> vec3<f32> {
 	return JointAxisDoF(JointDoFIndex(idx, dof));
 }
 fn JointDoF(idx: i32,dof: i32, vr: JointDoFVars) -> f32 {
-	return JointDoFs[Index2D(TensorStrides[20], TensorStrides[21], u32(JointDoFIndex(idx, dof)), u32(vr))];
+	return JointDoFs[Index2D(TensorStrides[40], TensorStrides[41], u32(JointDoFIndex(idx, dof)), u32(vr))];
 }
 
 //////// import: "params.go"
@@ -351,10 +343,14 @@ struct PhysParams {
 	Next: i32,
 	BodiesN: i32,
 	DynamicsN: i32,
+	ObjectsN: i32,
+	MaxObjectJoints: i32,
 	JointsN: i32,
 	JointDoFsN: i32,
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
+	pad: i32,
+	pad1: i32,
 	Gravity: vec4<f32>,
 }
 
@@ -521,32 +517,81 @@ fn SetDim3(v: vec3<f32>, dim: i32, val: f32) -> vec3<f32> {
 //////// import: "step.go"
 
 //////// import: "step_body.go"
+fn StepBodyDeltas(di: i32,bi: i32, contacts: bool, cWt: f32, linDel: vec3<f32>,angDel: vec3<f32>) {
+	var params = Params[0];
+	var invMass = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(bi), u32(BodyInvMass))];
+	var inertia = BodyInertia(bi);
+	var invInertia = BodyInvInertia(bi);
+	var r0 = DynamicPos(di, params.Next);
+	var q0 = DynamicQuat(di, params.Next);
+	var v0 = DynamicDelta(di, params.Next);
+	var w0 = DynamicAngDelta(di, params.Next);
+	var weight = f32(1.0);
+	if (contacts && params.ContactWeighting == 1) {
+		if (cWt > 0) {
+			weight = 1.0 / cWt;
+		}
+	}
+	var dp = linDel*(invMass * weight);
+	var dq = angDel*(weight);
+	var wb = MulQuatVectorInverse(q0, w0);
+	var dwb = invInertia*(MulQuatVectorInverse(q0, dq));
+	var tb = Cross3(dwb, inertia*(wb+(dwb)))+(Cross3(wb, inertia*(dwb)));
+	var dw1 = MulQuatVector(q0, dwb-(invInertia*(tb)*(params.Dt)));
+	var q1 = q0+(MulQuats(vec4<f32>(dw1.x, dw1.y, dw1.z, 0), q0)*(0.5 * params.Dt));
+	q1 = QuatNormalize(q1);
+	var com = BodyCom(bi);
+	var pcom = MulQuatVector(q0, com)+(r0);
+	var p1 = pcom+(dp*(params.Dt));
+	p1 = p1-(MulQuatVector(q1, com));
+	var v1 = v0+(dp);
+	var w1 = w0+(dw1);
+	if (Length3(v1) < 1e-4) {
+		v1 = vec3<f32>(0, 0, 0);
+	}
+	if (Length3(w1) < 1e-4) {
+		w1 = vec3<f32>(0, 0, 0);
+	}
+	SetDynamicPos(di, params.Next, p1);
+	SetDynamicQuat(di, params.Next, q1);
+	SetDynamicDelta(di, params.Next, v1);
+	SetDynamicAngDelta(di, params.Next, w1);
+	Params[0] = params;
+}
 
 //////// import: "step_joint.go"
 fn StepSolveJoints(i: u32) { //gosl:kernel
 	var params = Params[0];
-	var ji = i32(i);
-	if (ji >= params.JointsN) {
+	var oi = i32(i);
+	if (oi >= params.ObjectsN) {
 		return;
 	}
-	var zv = vec3<f32>(0, 0, 0);
-	SetJointPDelta(ji, zv);
-	SetJointCDelta(ji, zv);
-	SetJointPAngDelta(ji, zv);
-	SetJointCAngDelta(ji, zv);
+	var n = Objects[Index2D(TensorStrides[10], TensorStrides[11], u32(oi), u32(0))];
+	for (var i = i32(1);
+	 i < n+1; i++) {
+		var ji = Objects[Index2D(TensorStrides[10], TensorStrides[11], u32(oi), u32(i))];
+		var jt = GetJointType(ji);
+		if (jt == Free || !GetJointEnabled(ji)) {
+			continue;
+		}
+		StepSolveJointLinear(ji);
+		StepSolveJointAngular(ji);
+	}
+	Params[0] = params;
+}
+fn StepSolveJointLinear(ji: i32) {
+	var params = Params[0];
 	var jt = GetJointType(ji);
-	if (jt == Free || !GetJointEnabled(ji)) {
-		return;
-	}
 	var jPi = JointParentIndex(ji);
 	var jPbi = i32(-1);
+	var parentFixed = true;
 	if (jPi >= 0) {
 		jPbi = DynamicBody(jPi);
+		parentFixed = GetJointParentFixed(ji);
 	}
 	var jCi = JointChildIndex(ji);
 	var jCbi = DynamicBody(jCi);
 	var jLinearN = GetJointLinearDoFN(ji);
-	var jAngularN = GetJointAngularDoFN(ji);
 	var jPR = JointPPos(ji);
 	var jPQ = JointPQuat(ji);
 	var xwPR = jPR; // world xform, parent, pos
@@ -568,6 +613,9 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 		iInvP = BodyInvInertia(jPbi);
 		vP = DynamicDelta(jPi, params.Next);
 		wP = DynamicAngDelta(jPi, params.Next);
+		if (mInvP == 0) {
+			parentFixed = true;
+		}
 	}
 	var poseCR = DynamicPos(jCi, params.Next);
 	var poseCQ = DynamicQuat(jCi, params.Next);
@@ -617,7 +665,7 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 			var angularP = Negate3(Cross3(dP, linearC));
 			var angularC = Cross3(dC, linearC);
 			var derr = Dot3(linearP, vP) + Dot3(linearC, vC) + Dot3(angularP, wP) + Dot3(angularC, wC);
-			var lambdaIn = f32(0.0);
+			var lambdaIn = f32(0.0); // note: multiple iter is supposed to increment these
 			var compliance = params.JointLinearComply;
 			var ke = JointControl(ji, i32(i32(0)), JointTargetStiff);
 			var kd = JointControl(ji, i32(i32(0)), JointTargetDamp);
@@ -631,7 +679,7 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 			linDeltaC = linDeltaC+(linearC*(dLambda * params.JointLinearRelax));
 			angDeltaC = angDeltaC+(angularC*(dLambda * params.JointAngularRelax));
 		}
-	} else { // compute joint target, stiffness, damping
+	} else {
 		var axisLimitsD: vec3<f32>;
 		var axisLimitsA: vec3<f32>;
 		var axisTargetPosKeD: vec3<f32>;
@@ -698,128 +746,190 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 				var dLambda = PositionalCorrection(err, derrRel, posePQ, poseCQ, mInvP, mInvC,
 					iInvP, iInvC, linearP, linearC, angularP, angularC, lambdaIn, compliance, damping, params.Dt);
 				linDeltaP = linDeltaP+(linearP*(dLambda * params.JointLinearRelax));
-				angDeltaP = angDeltaP+(angularP*(dLambda * params.JointAngularRelax));
 				linDeltaC = linDeltaC+(linearC*(dLambda * params.JointLinearRelax));
+				angDeltaP = angDeltaP+(angularP*(dLambda * params.JointAngularRelax));
 				angDeltaC = angDeltaC+(angularC*(dLambda * params.JointAngularRelax));
 			}
 		}
 	}
-	if (jt == Fixed || jt == Prismatic || jt == Revolute || jt == Ball || jt == D6) {
-		var qP = xwPQ;
-		var qC = xwCQ;
-		if (QuatDot(qP, qC) < 0) {
-			qC = QuatMulScalar(qC, -1.0);
-		}
-		var relQ = MulQuats(QuatInverse(qP), qC);
-		var qtwist = QuatNormalize(vec4<f32>(relQ.x, 0.0, 0.0, relQ.w));
-		var qswing = MulQuats(relQ, QuatInverse(qtwist));
-		var s = sqrt(relQ.x*relQ.x + relQ.w*relQ.w);
-		if (s == 0) {
-			s = f32(1);
-		}
-		var invs = 1.0 / s;
-		var invscube = invs * invs * invs;
-		var err0 = 2.0 * asin(clamp(qtwist.x, -1.0, 1.0));
-		var err1 = qswing.y;
-		var err2 = qswing.z;
-		var grad0 = vec4<f32>(invs-relQ.x*relQ.x*invscube, 0.0, 0.0, -(relQ.w*relQ.x)*invscube);
-		var grad1 = vec4<f32>(
-			-relQ.w*(relQ.w*relQ.z+relQ.x*relQ.y)*invscube,
-			relQ.w*invs,
-			-relQ.x*invs,
-			relQ.x*(relQ.w*relQ.z+relQ.x*relQ.y)*invscube);
-		var grad2 = vec4<f32>(
-			relQ.w*(relQ.w*relQ.y-relQ.x*relQ.z)*invscube,
-			relQ.x*invs,
-			relQ.w*invs,
-			relQ.x*(relQ.z*relQ.x-relQ.w*relQ.y)*invscube);
-		grad0 = QuatMulScalar(grad0, 2.0/abs(qtwist.w));
-		var swing_sq = qswing.w * qswing.w;
-		var angularEps = f32(1.0e-4);
-		if (swing_sq+angularEps < 1.0) {
-			var d = sqrt(1.0 - qswing.w*qswing.w);
-			var theta = 2.0 * acos(clamp(qswing.w, -1.0, 1.0));
-			var scale = theta / d;
-			err1 *= scale;
-			err2 *= scale;
-			grad1 = QuatMulScalar(grad1, scale);
-			grad2 = QuatMulScalar(grad2, scale);
-		}
-		var errs = vec3<f32>(err0, err1, err2);
-		var gradX = vec3<f32>(grad0.x, grad1.x, grad2.x);
-		var gradY = vec3<f32>(grad0.y, grad1.y, grad2.y);
-		var gradZ = vec3<f32>(grad0.z, grad1.z, grad2.z);
-		var gradW = vec3<f32>(grad0.w, grad1.w, grad2.w);
-		var axisLimitsD: vec3<f32>;
-		var axisLimitsA: vec3<f32>;
-		var axisTargetPosKeD: vec3<f32>;
-		var axisTargetPosKeA: vec3<f32>;
-		var axisTargetVelKdD: vec3<f32>;
-		var axisTargetVelKdA: vec3<f32>;
-		for (var dof=0; dof<jAngularN; dof++) {
-			var di = dof + jLinearN;
-			var axis = JointAxis(ji, di);
-			JointAxisLimitsUpdate(dof, axis, JointDoF(ji, di, JointLimitLower), JointDoF(ji, di, JointLimitUpper), &axisLimitsD, &axisLimitsA);
-			var ke = JointControl(ji, di, JointTargetStiff);
-			var kd = JointControl(ji, di, JointTargetDamp);
-			var targetPos = JointControl(ji, di, JointTargetPos);
-			var targetVel = JointControl(ji, di, JointTargetVel);
-			if (ke > 0.0) { // has position control
-				JointAxisTarget(axis, targetPos, ke, &axisTargetPosKeD, &axisTargetPosKeA);
-			}
-			if (kd > 0.0) { // has velocity control
-				JointAxisTarget(axis, targetVel, kd, &axisTargetVelKdD, &axisTargetVelKdA);
-			}
-		}
-		var axisStiffness = axisTargetPosKeA;
-		var axisDamping = axisTargetVelKdA;
-		axisTargetPosKeD = DivSafe3(axisTargetPosKeD, axisStiffness);
-		axisTargetVelKdD = DivSafe3(axisTargetVelKdD, axisDamping);
-		var axisLimitsLower = axisLimitsD;
-		var axisLimitsUpper = axisLimitsA;
-		for (var dim=0; dim<i32(3); dim++) {
-			var e = Dim3(errs, dim);
-			var grad = vec4<f32>(Dim3(gradX, dim), Dim3(gradY, dim), Dim3(gradZ, dim), Dim3(gradW, dim));
-			var quatC = MulQuats(MulQuats(QuatMulScalar(qP, f32(0.5)), grad), QuatInverse(qC));
-			var angularC = vec3<f32>(quatC.x, quatC.y, quatC.z);
-			var angularP = Negate3(angularC);
-			var derr = Dot3(angularP, wP) + Dot3(angularC, wC);
-			var err = f32(0.0);
-			var compliance = params.JointLinearComply;
-			var damping = f32(0.0);
-			var targetVel = Dim3(axisTargetVelKdD, dim);
-			var angularClen = Length3(angularC);
-			var derrRel = derr - targetVel*angularClen;
-			var lower = Dim3(axisLimitsLower, dim);
-			var upper = Dim3(axisLimitsUpper, dim);
-			if (e < lower) {
-				err = e - lower;
-			} else if (e > upper) {
-				err = e - upper;
-			} else {
-				var targetPos = Dim3(axisTargetPosKeD, dim);
-				targetPos = clamp(targetPos, lower, upper);
-				var ke = Dim3(axisStiffness, dim);
-				var kd = Dim3(axisDamping, dim);
-				if (ke > 0.0) {
-					err = e - targetPos;
-					compliance = 1.0 / ke;
-					damping = Dim3(axisDamping, dim);
-				} else if (kd > 0.0) {
-					compliance = 1.0 / kd;
-					damping = kd;
-				}
-			}
-			var lambdaIn = f32(0);
-			var dLambda = AngularCorrection(err, derrRel, posePQ, poseCQ, iInvP, iInvC, angularP, angularC, lambdaIn, compliance, damping, params.Dt);
-			angDeltaP = angDeltaP+(angularP*(dLambda));
-			angDeltaC = angDeltaC+(angularC*(dLambda));
+	if (!parentFixed) {
+		StepBodyDeltas(jPi, jPbi, false, f32(f32(0)), linDeltaP, angDeltaP);
+	}
+	if (mInvC > 0) {
+		StepBodyDeltas(jCi, jCbi, false, f32(f32(0)), linDeltaC, angDeltaC);
+	}
+	Params[0] = params;
+}
+fn StepSolveJointAngular(ji: i32) {
+	var params = Params[0];
+	var jPi = JointParentIndex(ji);
+	var jPbi = i32(-1);
+	var parentFixed = true;
+	if (jPi >= 0) {
+		jPbi = DynamicBody(jPi);
+		parentFixed = GetJointParentFixed(ji);
+	}
+	var jCi = JointChildIndex(ji);
+	var jCbi = DynamicBody(jCi);
+	var jLinearN = GetJointLinearDoFN(ji);
+	var jAngularN = GetJointAngularDoFN(ji);
+	var jPR = JointPPos(ji);
+	var jPQ = JointPQuat(ji);
+	var xwPR = jPR; // world xform, parent, pos
+	var xwPQ = jPQ; // quat
+	var mInvP = f32(0.0);
+	var iInvP = mat3x3f(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+	var posePR = jPR;
+	var posePQ = jPQ;
+	var wP: vec3<f32>;
+	if (jPi >= 0) {
+		posePR = DynamicPos(jPi, params.Next); // now using next
+		posePQ = DynamicQuat(jPi, params.Next);
+		MulSpatialTransforms(posePR, posePQ, jPR, jPQ, &xwPR, &xwPQ);
+		mInvP = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(jPbi), u32(BodyInvMass))];
+		iInvP = BodyInvInertia(jPbi);
+		wP = DynamicAngDelta(jPi, params.Next);
+		if (mInvP == 0) {
+			parentFixed = true;
 		}
 	}
-	SetJointPDelta(ji, linDeltaP);
-	SetJointCDelta(ji, linDeltaC);
-	SetJointPAngDelta(ji, angDeltaP);
-	SetJointCAngDelta(ji, angDeltaC);
+	var poseCR = DynamicPos(jCi, params.Next);
+	var poseCQ = DynamicQuat(jCi, params.Next);
+	var jCR = JointCPos(ji);
+	var jCQ = JointCQuat(ji);
+	var xwCR = jCR;
+	var xwCQ = jCQ;
+	MulSpatialTransforms(poseCR, poseCQ, jCR, jCQ, &xwCR, &xwCQ);
+	var mInvC = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(jCbi), u32(BodyInvMass))];
+	var iInvC = BodyInvInertia(jCbi);
+	var wC = DynamicAngDelta(jCi, params.Next);
+	if (mInvP == 0.0 && mInvC == 0.0) { // connection between two immovable bodies
+		return;
+	}
+	var linDeltaP: vec3<f32>;
+	var angDeltaP: vec3<f32>;
+	var linDeltaC: vec3<f32>;
+	var angDeltaC: vec3<f32>;
+	var relPoseR = xwPR;
+	var relPoseQ = xwPQ;
+	SpatialTransformInverse(xwPR, xwPQ, &relPoseR, &relPoseQ);
+	MulSpatialTransforms(relPoseR, relPoseQ, xwCR, xwCQ, &relPoseR, &relPoseQ);
+	var qP = xwPQ;
+	var qC = xwCQ;
+	if (QuatDot(qP, qC) < 0) {
+		qC = QuatMulScalar(qC, -1.0);
+	}
+	var relQ = MulQuats(QuatInverse(qP), qC);
+	var qtwist = QuatNormalize(vec4<f32>(relQ.x, 0.0, 0.0, relQ.w));
+	var qswing = MulQuats(relQ, QuatInverse(qtwist));
+	var s = sqrt(relQ.x*relQ.x + relQ.w*relQ.w);
+	if (s == 0) {
+		s = f32(1);
+	}
+	var invs = 1.0 / s;
+	var invscube = invs * invs * invs;
+	var err0 = 2.0 * asin(clamp(qtwist.x, -1.0, 1.0));
+	var err1 = qswing.y;
+	var err2 = qswing.z;
+	var grad0 = vec4<f32>(invs-relQ.x*relQ.x*invscube, 0.0, 0.0, -(relQ.w*relQ.x)*invscube);
+	var grad1 = vec4<f32>(
+		-relQ.w*(relQ.w*relQ.z+relQ.x*relQ.y)*invscube,
+		relQ.w*invs,
+		-relQ.x*invs,
+		relQ.x*(relQ.w*relQ.z+relQ.x*relQ.y)*invscube);
+	var grad2 = vec4<f32>(
+		relQ.w*(relQ.w*relQ.y-relQ.x*relQ.z)*invscube,
+		relQ.x*invs,
+		relQ.w*invs,
+		relQ.x*(relQ.z*relQ.x-relQ.w*relQ.y)*invscube);
+	grad0 = QuatMulScalar(grad0, 2.0/abs(qtwist.w));
+	var swing_sq = qswing.w * qswing.w;
+	var angularEps = f32(1.0e-4);
+	if (swing_sq+angularEps < 1.0) {
+		var d = sqrt(1.0 - qswing.w*qswing.w);
+		var theta = 2.0 * acos(clamp(qswing.w, -1.0, 1.0));
+		var scale = theta / d;
+		err1 *= scale;
+		err2 *= scale;
+		grad1 = QuatMulScalar(grad1, scale);
+		grad2 = QuatMulScalar(grad2, scale);
+	}
+	var errs = vec3<f32>(err0, err1, err2);
+	var gradX = vec3<f32>(grad0.x, grad1.x, grad2.x);
+	var gradY = vec3<f32>(grad0.y, grad1.y, grad2.y);
+	var gradZ = vec3<f32>(grad0.z, grad1.z, grad2.z);
+	var gradW = vec3<f32>(grad0.w, grad1.w, grad2.w);
+	var axisLimitsD: vec3<f32>;
+	var axisLimitsA: vec3<f32>;
+	var axisTargetPosKeD: vec3<f32>;
+	var axisTargetPosKeA: vec3<f32>;
+	var axisTargetVelKdD: vec3<f32>;
+	var axisTargetVelKdA: vec3<f32>;
+	for (var dof=0; dof<jAngularN; dof++) {
+		var di = dof + jLinearN;
+		var axis = JointAxis(ji, di);
+		JointAxisLimitsUpdate(dof, axis, JointDoF(ji, di, JointLimitLower), JointDoF(ji, di, JointLimitUpper), &axisLimitsD, &axisLimitsA);
+		var ke = JointControl(ji, di, JointTargetStiff);
+		var kd = JointControl(ji, di, JointTargetDamp);
+		var targetPos = JointControl(ji, di, JointTargetPos);
+		var targetVel = JointControl(ji, di, JointTargetVel);
+		if (ke > 0.0) { // has position control
+			JointAxisTarget(axis, targetPos, ke, &axisTargetPosKeD, &axisTargetPosKeA);
+		}
+		if (kd > 0.0) { // has velocity control
+			JointAxisTarget(axis, targetVel, kd, &axisTargetVelKdD, &axisTargetVelKdA);
+		}
+	}
+	var axisStiffness = axisTargetPosKeA;
+	var axisDamping = axisTargetVelKdA;
+	axisTargetPosKeD = DivSafe3(axisTargetPosKeD, axisStiffness);
+	axisTargetVelKdD = DivSafe3(axisTargetVelKdD, axisDamping);
+	var axisLimitsLower = axisLimitsD;
+	var axisLimitsUpper = axisLimitsA;
+	for (var dim=0; dim<i32(3); dim++) {
+		var e = Dim3(errs, dim);
+		var grad = vec4<f32>(Dim3(gradX, dim), Dim3(gradY, dim), Dim3(gradZ, dim), Dim3(gradW, dim));
+		var quatC = MulQuats(MulQuats(QuatMulScalar(qP, f32(0.5)), grad), QuatInverse(qC));
+		var angularC = vec3<f32>(quatC.x, quatC.y, quatC.z);
+		var angularP = Negate3(angularC);
+		var derr = Dot3(angularP, wP) + Dot3(angularC, wC);
+		var err = f32(0.0);
+		var compliance = params.JointLinearComply;
+		var damping = f32(0.0);
+		var targetVel = Dim3(axisTargetVelKdD, dim);
+		var angularClen = Length3(angularC);
+		var derrRel = derr - targetVel*angularClen;
+		var lower = Dim3(axisLimitsLower, dim);
+		var upper = Dim3(axisLimitsUpper, dim);
+		if (e < lower) {
+			err = e - lower;
+		} else if (e > upper) {
+			err = e - upper;
+		} else {
+			var targetPos = Dim3(axisTargetPosKeD, dim);
+			targetPos = clamp(targetPos, lower, upper);
+			var ke = Dim3(axisStiffness, dim);
+			var kd = Dim3(axisDamping, dim);
+			if (ke > 0.0) {
+				err = e - targetPos;
+				compliance = 1.0 / ke;
+				damping = Dim3(axisDamping, dim);
+			} else if (kd > 0.0) {
+				compliance = 1.0 / kd;
+				damping = kd;
+			}
+		}
+		var lambdaIn = f32(0);
+		var dLambda = AngularCorrection(err, derrRel, posePQ, poseCQ, iInvP, iInvC, angularP, angularC, lambdaIn, compliance, damping, params.Dt);
+		angDeltaP = angDeltaP+(angularP*(dLambda));
+		angDeltaC = angDeltaC+(angularC*(dLambda));
+	}
+	if (!parentFixed) {
+		StepBodyDeltas(jPi, jPbi, false, f32(f32(0)), linDeltaP, angDeltaP);
+	}
+	if (mInvC > 0) {
+		StepBodyDeltas(jCi, jCbi, false, f32(f32(0)), linDeltaC, angDeltaC);
+	}
 	Params[0] = params;
 }
 fn JointAxisTarget(axis: vec3<f32>, targ: f32,weight: f32, axisTargets: ptr<function,vec3<f32>>,axisWeights: ptr<function,vec3<f32>>) {
@@ -842,12 +952,12 @@ fn PositionalCorrection(err: f32,derr: f32, tfaQ: vec4<f32>,tfbQ: vec4<f32>, mIn
 		lambda /= (dt+gamma)*denom + alpha/dt;
 	}return lambda;
 }
-fn AngularCorrection(err: f32,derr: f32, tfaQ: vec4<f32>,tfbQ: vec4<f32>, iInva: mat3x3f,iInvb: mat3x3f, angulara: vec3<f32>,angularb: vec3<f32>, lambdaIn: f32,compliance: f32,damping: f32,dt: f32) -> f32 {
-	var rotAngulara = MulQuatVectorInverse(tfaQ, angulara);
-	var rotAngularb = MulQuatVectorInverse(tfbQ, angularb);
+fn AngularCorrection(err: f32,derr: f32, tfaQ: vec4<f32>,tfbQ: vec4<f32>, iInvA: mat3x3f,iInvB: mat3x3f, angA: vec3<f32>,angB: vec3<f32>, lambdaIn: f32,compliance: f32,damping: f32,dt: f32) -> f32 {
+	var rotAngA = MulQuatVectorInverse(tfaQ, angA);
+	var rotAngB = MulQuatVectorInverse(tfbQ, angB);
 	var denom = f32(0.0);
-	denom += Dot3(rotAngulara, iInva*(rotAngulara));
-	denom += Dot3(rotAngularb, iInvb*(rotAngularb));
+	denom += Dot3(rotAngA, iInvA*(rotAngA));
+	denom += Dot3(rotAngB, iInvB*(rotAngB));
 	var alpha = compliance;
 	var gamma = compliance * damping;
 	var deltaLambda = -(err + alpha*lambdaIn + gamma*derr);

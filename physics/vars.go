@@ -30,6 +30,19 @@ var (
 	//gosl:dims 2
 	Bodies *tensor.Float32
 
+	// Objects is a list of joint indexes for each object, where each object
+	// contains all the joints interconnecting an overlapping set of bodies.
+	// Joints must be added in parent -> child order within objects, as joints
+	// are updated in sequential order within object. First element is n joints.
+	// [object][MaxJointsPerObject+1]
+	//gosl:dims 2
+	Objects *tensor.Int32
+
+	// BodyJoints is a list of joint indexes for each dynamic body, for aggregating.
+	// [dyn body][parent, child][maxjointsperbody]
+	//gosl:dims 3
+	BodyJoints *tensor.Int32
+
 	// Joints is a list of permanent joints connecting bodies,
 	// which do not change (no dynamic variables, except temps).
 	// [joint][JointVars]
@@ -40,11 +53,6 @@ var (
 	// [dof][JointDoFVars]
 	//gosl:dims 2
 	JointDoFs *tensor.Float32
-
-	// BodyJoints is a list of joint indexes for each dynamic body, for aggregating.
-	// [dyn body][parent, child][maxjointsperbody]
-	//gosl:dims 3
-	BodyJoints *tensor.Int32
 
 	// BodyCollidePairs are pairs of Body indexes that could potentially collide
 	// based on precomputed collision logic, using World, Group, and Joint indexes.

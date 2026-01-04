@@ -120,8 +120,7 @@ func (ml *Model) StepIntegrateBodies() {
 
 func (ml *Model) StepSolveJoints() {
 	params := GetParams(0)
-	RunStepSolveJoints(int(params.JointsN))
-	RunStepBodyJointDeltas(int(params.DynamicsN))
+	RunStepSolveJoints(int(params.ObjectsN))
 }
 
 func (ml *Model) StepBodyContacts() {

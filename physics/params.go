@@ -84,6 +84,12 @@ type PhysParams struct {
 	// DynamicsN is number of dynamics bodies.
 	DynamicsN int32 `edit:"-"`
 
+	// ObjectsN is number of objects.
+	ObjectsN int32 `edit:"-"`
+
+	// MaxObjectJoints is max number of joints per object.
+	MaxObjectJoints int32 `edit:"-"`
+
 	// JointsN is number of joints.
 	JointsN int32 `edit:"-"`
 
@@ -96,6 +102,8 @@ type PhysParams struct {
 	// BodyCollidePairsN is the total number of pre-compiled collision pairs
 	// to examine.
 	BodyCollidePairsN int32 `edit:"-"`
+
+	pad, pad1 int32
 
 	// Gravity is the gravity acceleration function
 	Gravity slvec.Vector3
@@ -121,6 +129,18 @@ func (pr *PhysParams) Defaults() {
 	pr.SoftRelax = 0.9
 	pr.MaxForce = 1.0e5
 	pr.MaxGeomIter = 10
+}
+
+// Reset resets the N's
+func (pr *PhysParams) Reset() {
+	pr.BodiesN = 0
+	pr.DynamicsN = 0
+	pr.ObjectsN = 0
+	pr.MaxObjectJoints = 0
+	pr.JointsN = 0
+	pr.JointDoFsN = 0
+	pr.BodyJointsMax = 0
+	pr.BodyCollidePairsN = 0
 }
 
 // StepsToMsec returns the given number of individual Step calls

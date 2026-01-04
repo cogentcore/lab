@@ -41,16 +41,17 @@ type GPUVars int32 //enums:enum
 const (
 	ParamsVar GPUVars = 0
 	BodiesVar GPUVars = 1
-	JointsVar GPUVars = 2
-	JointDoFsVar GPUVars = 3
-	BodyJointsVar GPUVars = 4
-	BodyCollidePairsVar GPUVars = 5
-	DynamicsVar GPUVars = 6
-	BroadContactsNVar GPUVars = 7
-	BroadContactsVar GPUVars = 8
-	ContactsNVar GPUVars = 9
-	ContactsVar GPUVars = 10
-	JointControlsVar GPUVars = 11
+	ObjectsVar GPUVars = 2
+	BodyJointsVar GPUVars = 3
+	JointsVar GPUVars = 4
+	JointDoFsVar GPUVars = 5
+	BodyCollidePairsVar GPUVars = 6
+	DynamicsVar GPUVars = 7
+	BroadContactsNVar GPUVars = 8
+	BroadContactsVar GPUVars = 9
+	ContactsNVar GPUVars = 10
+	ContactsVar GPUVars = 11
+	JointControlsVar GPUVars = 12
 )
 
 // Tensor stride variables
@@ -90,9 +91,10 @@ func GPUInit() {
 			var vr *gpu.Var
 			_ = vr
 			vr = sgp.Add("Bodies", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("Objects", gpu.Int32, 1, gpu.ComputeShader)
+			vr = sgp.Add("BodyJoints", gpu.Int32, 1, gpu.ComputeShader)
 			vr = sgp.Add("Joints", gpu.Float32, 1, gpu.ComputeShader)
 			vr = sgp.Add("JointDoFs", gpu.Float32, 1, gpu.ComputeShader)
-			vr = sgp.Add("BodyJoints", gpu.Int32, 1, gpu.ComputeShader)
 			vr = sgp.Add("BodyCollidePairs", gpu.Int32, 1, gpu.ComputeShader)
 			sgp.SetNValues(1)
 		}
@@ -161,13 +163,6 @@ func GPUInit() {
 		pl.AddVarUsed(2, "ContactsN")
 		pl.AddVarUsed(2, "Dynamics")
 		pl.AddVarUsed(0, "Params")
-		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepBodyJointDeltas.wgsl", sy)
-		pl.AddVarUsed(0, "TensorStrides")
-		pl.AddVarUsed(1, "Bodies")
-		pl.AddVarUsed(1, "BodyJoints")
-		pl.AddVarUsed(2, "Dynamics")
-		pl.AddVarUsed(1, "Joints")
-		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepInit.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(2, "BroadContactsN")
@@ -193,6 +188,7 @@ func GPUInit() {
 		pl.AddVarUsed(3, "JointControls")
 		pl.AddVarUsed(1, "JointDoFs")
 		pl.AddVarUsed(1, "Joints")
+		pl.AddVarUsed(1, "Objects")
 		pl.AddVarUsed(0, "Params")
 		sy.Config()
 	}
@@ -507,48 +503,6 @@ func RunOneStepBodyContacts(n int, syncVars ...GPUVars) {
 		RunStepBodyContactsCPU(n)
 	}
 }
-// RunStepBodyJointDeltas runs the StepBodyJointDeltas kernel with given number of elements,
-// on either the CPU or GPU depending on the UseGPU variable.
-// Can call multiple Run* kernels in a row, which are then all launched
-// in the same command submission on the GPU, which is by far the most efficient.
-// MUST call RunDone (with optional vars to sync) after all Run calls.
-// Alternatively, a single-shot RunOneStepBodyJointDeltas call does Run and Done for a
-// single run-and-sync case.
-func RunStepBodyJointDeltas(n int) {
-	if UseGPU {
-		RunStepBodyJointDeltasGPU(n)
-	} else {
-		RunStepBodyJointDeltasCPU(n)
-	}
-}
-
-// RunStepBodyJointDeltasGPU runs the StepBodyJointDeltas kernel on the GPU. See [RunStepBodyJointDeltas] for more info.
-func RunStepBodyJointDeltasGPU(n int) {
-	sy := GPUSystem
-	pl := sy.ComputePipelines["StepBodyJointDeltas"]
-	ce, _ := sy.BeginComputePass()
-	pl.Dispatch1D(ce, n, 64)
-}
-
-// RunStepBodyJointDeltasCPU runs the StepBodyJointDeltas kernel on the CPU.
-func RunStepBodyJointDeltasCPU(n int) {
-	gpu.VectorizeFunc(0, n, StepBodyJointDeltas)
-}
-
-// RunOneStepBodyJointDeltas runs the StepBodyJointDeltas kernel with given number of elements,
-// on either the CPU or GPU depending on the UseGPU variable.
-// This version then calls RunDone with the given variables to sync
-// after the Run, for a single-shot Run-and-Done call. If multiple kernels
-// can be run in sequence, it is much more efficient to do multiple Run*
-// calls followed by a RunDone call.
-func RunOneStepBodyJointDeltas(n int, syncVars ...GPUVars) {
-	if UseGPU {
-		RunStepBodyJointDeltasGPU(n)
-		RunDone(syncVars...)
-	} else {
-		RunStepBodyJointDeltasCPU(n)
-	}
-}
 // RunStepInit runs the StepInit kernel with given number of elements,
 // on either the CPU or GPU depending on the UseGPU variable.
 // Can call multiple Run* kernels in a row, which are then all launched
@@ -748,15 +702,18 @@ func ToGPU(vars ...GPUVars) {
 		case BodiesVar:
 			v, _ := syVars.ValueByIndex(1, "Bodies", 0)
 			gpu.SetValueFrom(v, Bodies.Values)
+		case ObjectsVar:
+			v, _ := syVars.ValueByIndex(1, "Objects", 0)
+			gpu.SetValueFrom(v, Objects.Values)
+		case BodyJointsVar:
+			v, _ := syVars.ValueByIndex(1, "BodyJoints", 0)
+			gpu.SetValueFrom(v, BodyJoints.Values)
 		case JointsVar:
 			v, _ := syVars.ValueByIndex(1, "Joints", 0)
 			gpu.SetValueFrom(v, Joints.Values)
 		case JointDoFsVar:
 			v, _ := syVars.ValueByIndex(1, "JointDoFs", 0)
 			gpu.SetValueFrom(v, JointDoFs.Values)
-		case BodyJointsVar:
-			v, _ := syVars.ValueByIndex(1, "BodyJoints", 0)
-			gpu.SetValueFrom(v, BodyJoints.Values)
 		case BodyCollidePairsVar:
 			v, _ := syVars.ValueByIndex(1, "BodyCollidePairs", 0)
 			gpu.SetValueFrom(v, BodyCollidePairs.Values)
@@ -799,29 +756,31 @@ func ToGPUTensorStrides() {
 	}
 	sy := GPUSystem
 	syVars := sy.Vars()
-	TensorStrides.SetShapeSizes(110)
+	TensorStrides.SetShapeSizes(120)
 	TensorStrides.SetInt1D(Bodies.Shape().Strides[0], 0)
 	TensorStrides.SetInt1D(Bodies.Shape().Strides[1], 1)
-	TensorStrides.SetInt1D(Joints.Shape().Strides[0], 10)
-	TensorStrides.SetInt1D(Joints.Shape().Strides[1], 11)
-	TensorStrides.SetInt1D(JointDoFs.Shape().Strides[0], 20)
-	TensorStrides.SetInt1D(JointDoFs.Shape().Strides[1], 21)
-	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[0], 30)
-	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[1], 31)
-	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[2], 32)
-	TensorStrides.SetInt1D(BodyCollidePairs.Shape().Strides[0], 40)
-	TensorStrides.SetInt1D(BodyCollidePairs.Shape().Strides[1], 41)
-	TensorStrides.SetInt1D(Dynamics.Shape().Strides[0], 50)
-	TensorStrides.SetInt1D(Dynamics.Shape().Strides[1], 51)
-	TensorStrides.SetInt1D(Dynamics.Shape().Strides[2], 52)
-	TensorStrides.SetInt1D(BroadContactsN.Shape().Strides[0], 60)
-	TensorStrides.SetInt1D(BroadContacts.Shape().Strides[0], 70)
-	TensorStrides.SetInt1D(BroadContacts.Shape().Strides[1], 71)
-	TensorStrides.SetInt1D(ContactsN.Shape().Strides[0], 80)
-	TensorStrides.SetInt1D(Contacts.Shape().Strides[0], 90)
-	TensorStrides.SetInt1D(Contacts.Shape().Strides[1], 91)
-	TensorStrides.SetInt1D(JointControls.Shape().Strides[0], 100)
-	TensorStrides.SetInt1D(JointControls.Shape().Strides[1], 101)
+	TensorStrides.SetInt1D(Objects.Shape().Strides[0], 10)
+	TensorStrides.SetInt1D(Objects.Shape().Strides[1], 11)
+	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[0], 20)
+	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[1], 21)
+	TensorStrides.SetInt1D(BodyJoints.Shape().Strides[2], 22)
+	TensorStrides.SetInt1D(Joints.Shape().Strides[0], 30)
+	TensorStrides.SetInt1D(Joints.Shape().Strides[1], 31)
+	TensorStrides.SetInt1D(JointDoFs.Shape().Strides[0], 40)
+	TensorStrides.SetInt1D(JointDoFs.Shape().Strides[1], 41)
+	TensorStrides.SetInt1D(BodyCollidePairs.Shape().Strides[0], 50)
+	TensorStrides.SetInt1D(BodyCollidePairs.Shape().Strides[1], 51)
+	TensorStrides.SetInt1D(Dynamics.Shape().Strides[0], 60)
+	TensorStrides.SetInt1D(Dynamics.Shape().Strides[1], 61)
+	TensorStrides.SetInt1D(Dynamics.Shape().Strides[2], 62)
+	TensorStrides.SetInt1D(BroadContactsN.Shape().Strides[0], 70)
+	TensorStrides.SetInt1D(BroadContacts.Shape().Strides[0], 80)
+	TensorStrides.SetInt1D(BroadContacts.Shape().Strides[1], 81)
+	TensorStrides.SetInt1D(ContactsN.Shape().Strides[0], 90)
+	TensorStrides.SetInt1D(Contacts.Shape().Strides[0], 100)
+	TensorStrides.SetInt1D(Contacts.Shape().Strides[1], 101)
+	TensorStrides.SetInt1D(JointControls.Shape().Strides[0], 110)
+	TensorStrides.SetInt1D(JointControls.Shape().Strides[1], 111)
 	v, _ := syVars.ValueByIndex(0, "TensorStrides", 0)
 	gpu.SetValueFrom(v, TensorStrides.Values)
 }
@@ -838,14 +797,17 @@ func ReadFromGPU(vars ...GPUVars) {
 		case BodiesVar:
 			v, _ := syVars.ValueByIndex(1, "Bodies", 0)
 			v.GPUToRead(sy.CommandEncoder)
+		case ObjectsVar:
+			v, _ := syVars.ValueByIndex(1, "Objects", 0)
+			v.GPUToRead(sy.CommandEncoder)
+		case BodyJointsVar:
+			v, _ := syVars.ValueByIndex(1, "BodyJoints", 0)
+			v.GPUToRead(sy.CommandEncoder)
 		case JointsVar:
 			v, _ := syVars.ValueByIndex(1, "Joints", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case JointDoFsVar:
 			v, _ := syVars.ValueByIndex(1, "JointDoFs", 0)
-			v.GPUToRead(sy.CommandEncoder)
-		case BodyJointsVar:
-			v, _ := syVars.ValueByIndex(1, "BodyJoints", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case BodyCollidePairsVar:
 			v, _ := syVars.ValueByIndex(1, "BodyCollidePairs", 0)
@@ -886,6 +848,14 @@ func SyncFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(1, "Bodies", 0)
 			v.ReadSync()
 			gpu.ReadToBytes(v, Bodies.Values)
+		case ObjectsVar:
+			v, _ := syVars.ValueByIndex(1, "Objects", 0)
+			v.ReadSync()
+			gpu.ReadToBytes(v, Objects.Values)
+		case BodyJointsVar:
+			v, _ := syVars.ValueByIndex(1, "BodyJoints", 0)
+			v.ReadSync()
+			gpu.ReadToBytes(v, BodyJoints.Values)
 		case JointsVar:
 			v, _ := syVars.ValueByIndex(1, "Joints", 0)
 			v.ReadSync()
@@ -894,10 +864,6 @@ func SyncFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(1, "JointDoFs", 0)
 			v.ReadSync()
 			gpu.ReadToBytes(v, JointDoFs.Values)
-		case BodyJointsVar:
-			v, _ := syVars.ValueByIndex(1, "BodyJoints", 0)
-			v.ReadSync()
-			gpu.ReadToBytes(v, BodyJoints.Values)
 		case BodyCollidePairsVar:
 			v, _ := syVars.ValueByIndex(1, "BodyCollidePairs", 0)
 			v.ReadSync()

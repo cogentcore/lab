@@ -14,13 +14,14 @@ func init() {
 		"NewBuilder":      reflect.ValueOf(builder.NewBuilder),
 
 		// type definitions
-		"Body":    reflect.ValueOf((*builder.Body)(nil)),
-		"Builder": reflect.ValueOf((*builder.Builder)(nil)),
-		"DoF":     reflect.ValueOf((*builder.DoF)(nil)),
-		"Joint":   reflect.ValueOf((*builder.Joint)(nil)),
-		"Object":  reflect.ValueOf((*builder.Object)(nil)),
-		"Physics": reflect.ValueOf((*builder.Physics)(nil)),
-		"Pose":    reflect.ValueOf((*builder.Pose)(nil)),
-		"World":   reflect.ValueOf((*builder.World)(nil)),
+		"Body":     reflect.ValueOf((*builder.Body)(nil)),
+		"Builder":  reflect.ValueOf((*builder.Builder)(nil)),
+		"Controls": reflect.ValueOf((*builder.Controls)(nil)),
+		"DoF":      reflect.ValueOf((*builder.DoF)(nil)),
+		"Joint":    reflect.ValueOf((*builder.Joint)(nil)),
+		"Object":   reflect.ValueOf((*builder.Object)(nil)),
+		"Physics":  reflect.ValueOf((*builder.Physics)(nil)),
+		"Pose":     reflect.ValueOf((*builder.Pose)(nil)),
+		"World":    reflect.ValueOf((*builder.World)(nil)),
 	}
 }

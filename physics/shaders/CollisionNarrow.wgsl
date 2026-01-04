@@ -156,48 +156,48 @@ const  ContactBAngDeltaY: ContactVars = 31;
 const  ContactBAngDeltaZ: ContactVars = 32;
 const BroadContactVarsN = ContactAPointX;
 fn GetBroadContactA(idx: i32) -> i32 {
-	return i32(bitcast<u32>(BroadContacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactA))]));
+	return i32(bitcast<u32>(BroadContacts[Index2D(TensorStrides[80], TensorStrides[81], u32(idx), u32(ContactA))]));
 }
 fn GetBroadContactB(idx: i32) -> i32 {
-	return i32(bitcast<u32>(BroadContacts[Index2D(TensorStrides[70], TensorStrides[71], u32(idx), u32(ContactB))]));
+	return i32(bitcast<u32>(BroadContacts[Index2D(TensorStrides[80], TensorStrides[81], u32(idx), u32(ContactB))]));
 }
 fn GetBroadContactPointIdx(idx: i32) -> i32 {
-	return i32(bitcast<u32>(BroadContacts[Index2D(TensorStrides[70], TensorStrides[71],
+	return i32(bitcast<u32>(BroadContacts[Index2D(TensorStrides[80], TensorStrides[81],
 	u32(idx), u32(ContactPointIdx))]));
 }
 fn SetContactA(idx: i32,bodIdx: i32) {
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactA))] = bitcast<f32>(u32(bodIdx));
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactA))] = bitcast<f32>(u32(bodIdx));
 }
 fn SetContactB(idx: i32,bodIdx: i32) {
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactB))] = bitcast<f32>(u32(bodIdx));
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactB))] = bitcast<f32>(u32(bodIdx));
 }
 fn SetContactPointIdx(idx: i32,ptIdx: i32) {
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactPointIdx))] = bitcast<f32>(u32(ptIdx));
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactPointIdx))] = bitcast<f32>(u32(ptIdx));
 }
 fn SetContactAPoint(idx: i32, pos: vec3<f32>) {
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactAPointX))] = pos.x;
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactAPointY))] = pos.y;
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactAPointZ))] = pos.z;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAPointX))] = pos.x;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAPointY))] = pos.y;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAPointZ))] = pos.z;
 }
 fn SetContactBPoint(idx: i32, pos: vec3<f32>) {
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBPointX))] = pos.x;
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBPointY))] = pos.y;
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBPointZ))] = pos.z;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBPointX))] = pos.x;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBPointY))] = pos.y;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBPointZ))] = pos.z;
 }
 fn SetContactAOff(idx: i32, pos: vec3<f32>) {
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactAOffX))] = pos.x;
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactAOffY))] = pos.y;
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactAOffZ))] = pos.z;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAOffX))] = pos.x;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAOffY))] = pos.y;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAOffZ))] = pos.z;
 }
 fn SetContactBOff(idx: i32, pos: vec3<f32>) {
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBOffX))] = pos.x;
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBOffY))] = pos.y;
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactBOffZ))] = pos.z;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBOffX))] = pos.x;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBOffY))] = pos.y;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBOffZ))] = pos.z;
 }
 fn SetContactNorm(idx: i32, pos: vec3<f32>) {
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactNormX))] = pos.x;
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactNormY))] = pos.y;
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(idx), u32(ContactNormZ))] = pos.z;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactNormX))] = pos.x;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactNormY))] = pos.y;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactNormZ))] = pos.z;
 }
 fn CollisionNarrow(i: u32) { //gosl:kernel
 	var params = Params[0];
@@ -305,8 +305,8 @@ fn CollisionNarrow(i: u32) { //gosl:kernel
 	SetContactAOff(nci, offA);
 	SetContactBOff(nci, offB);
 	SetContactNorm(nci, norm);
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(nci), u32(ContactAThick))] = offMagA;
-	Contacts[Index2D(TensorStrides[90], TensorStrides[91], u32(nci), u32(ContactBThick))] = offMagB;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(nci), u32(ContactAThick))] = offMagA;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(nci), u32(ContactBThick))] = offMagB;
 	Params[0] = params;
 }
 
@@ -354,10 +354,10 @@ const  DynAngDeltaY: DynamicVars = 30;
 const  DynAngDeltaZ: DynamicVars = 31;
 const  DynContactWeight: DynamicVars = 32;
 fn DynamicPos(idx: i32,cni: i32) -> vec3<f32> {
-	return vec3<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynPosZ))]);
+	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosZ))]);
 }
 fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> {
-	return vec4<f32>(Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatX))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatY))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatZ))], Dynamics[Index3D(TensorStrides[50], TensorStrides[51], TensorStrides[52], u32(idx), u32(cni), u32(DynQuatW))]);
+	return vec4<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatZ))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatW))]);
 }
 
 //////// import: "enumgen.go"
@@ -365,9 +365,9 @@ const BodyVarsN: BodyVars = 43;
 const ContactVarsN: ContactVars = 33;
 const JointControlVarsN: JointControlVars = 5;
 const DynamicVarsN: DynamicVars = 33;
-const GPUVarsN: GPUVars = 12;
+const GPUVarsN: GPUVars = 13;
 const JointTypesN: JointTypes = 8;
-const JointVarsN: JointVars = 50;
+const JointVarsN: JointVars = 39;
 const JointDoFVarsN: JointDoFVars = 5;
 const ShapesN: Shapes = 6;
 
@@ -385,54 +385,43 @@ const  PlaneXZ: JointTypes = 7;
 alias JointVars = i32; //enums:enum
 const  JointType: JointVars = 0;
 const  JointEnabled: JointVars = 1;
-const  JointParent: JointVars = 2;
-const  JointChild: JointVars = 3;
-const  JointPPosX: JointVars = 4;
-const  JointPPosY: JointVars = 5;
-const  JointPPosZ: JointVars = 6;
-const  JointPQuatX: JointVars = 7;
-const  JointPQuatY: JointVars = 8;
-const  JointPQuatZ: JointVars = 9;
-const  JointPQuatW: JointVars = 10;
-const  JointCPosX: JointVars = 11;
-const  JointCPosY: JointVars = 12;
-const  JointCPosZ: JointVars = 13;
-const  JointCQuatX: JointVars = 14;
-const  JointCQuatY: JointVars = 15;
-const  JointCQuatZ: JointVars = 16;
-const  JointCQuatW: JointVars = 17;
-const  JointLinearDoFN: JointVars = 18;
-const  JointAngularDoFN: JointVars = 19;
-const  JointDoF1: JointVars = 20;
-const  JointDoF2: JointVars = 21;
-const  JointDoF3: JointVars = 22;
-const  JointDoF4: JointVars = 23;
-const  JointDoF5: JointVars = 24;
-const  JointDoF6: JointVars = 25;
-const  JointPForceX: JointVars = 26;
-const  JointPForceY: JointVars = 27;
-const  JointPForceZ: JointVars = 28;
-const  JointPTorqueX: JointVars = 29;
-const  JointPTorqueY: JointVars = 30;
-const  JointPTorqueZ: JointVars = 31;
-const  JointCForceX: JointVars = 32;
-const  JointCForceY: JointVars = 33;
-const  JointCForceZ: JointVars = 34;
-const  JointCTorqueX: JointVars = 35;
-const  JointCTorqueY: JointVars = 36;
-const  JointCTorqueZ: JointVars = 37;
-const  JointPDeltaX: JointVars = 38;
-const  JointPDeltaY: JointVars = 39;
-const  JointPDeltaZ: JointVars = 40;
-const  JointPAngDeltaX: JointVars = 41;
-const  JointPAngDeltaY: JointVars = 42;
-const  JointPAngDeltaZ: JointVars = 43;
-const  JointCDeltaX: JointVars = 44;
-const  JointCDeltaY: JointVars = 45;
-const  JointCDeltaZ: JointVars = 46;
-const  JointCAngDeltaX: JointVars = 47;
-const  JointCAngDeltaY: JointVars = 48;
-const  JointCAngDeltaZ: JointVars = 49;
+const  JointParentFixed: JointVars = 2;
+const  JointParent: JointVars = 3;
+const  JointChild: JointVars = 4;
+const  JointPPosX: JointVars = 5;
+const  JointPPosY: JointVars = 6;
+const  JointPPosZ: JointVars = 7;
+const  JointPQuatX: JointVars = 8;
+const  JointPQuatY: JointVars = 9;
+const  JointPQuatZ: JointVars = 10;
+const  JointPQuatW: JointVars = 11;
+const  JointCPosX: JointVars = 12;
+const  JointCPosY: JointVars = 13;
+const  JointCPosZ: JointVars = 14;
+const  JointCQuatX: JointVars = 15;
+const  JointCQuatY: JointVars = 16;
+const  JointCQuatZ: JointVars = 17;
+const  JointCQuatW: JointVars = 18;
+const  JointLinearDoFN: JointVars = 19;
+const  JointAngularDoFN: JointVars = 20;
+const  JointDoF1: JointVars = 21;
+const  JointDoF2: JointVars = 22;
+const  JointDoF3: JointVars = 23;
+const  JointDoF4: JointVars = 24;
+const  JointDoF5: JointVars = 25;
+const  JointDoF6: JointVars = 26;
+const  JointPForceX: JointVars = 27;
+const  JointPForceY: JointVars = 28;
+const  JointPForceZ: JointVars = 29;
+const  JointPTorqueX: JointVars = 30;
+const  JointPTorqueY: JointVars = 31;
+const  JointPTorqueZ: JointVars = 32;
+const  JointCForceX: JointVars = 33;
+const  JointCForceY: JointVars = 34;
+const  JointCForceZ: JointVars = 35;
+const  JointCTorqueX: JointVars = 36;
+const  JointCTorqueY: JointVars = 37;
+const  JointCTorqueZ: JointVars = 38;
 alias JointDoFVars = i32; //enums:enum
 const  JointAxisX: JointDoFVars = 0;
 const  JointAxisY: JointDoFVars = 1;
@@ -462,10 +451,14 @@ struct PhysParams {
 	Next: i32,
 	BodiesN: i32,
 	DynamicsN: i32,
+	ObjectsN: i32,
+	MaxObjectJoints: i32,
 	JointsN: i32,
 	JointDoFsN: i32,
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
+	pad: i32,
+	pad1: i32,
 	Gravity: vec4<f32>,
 }
 
