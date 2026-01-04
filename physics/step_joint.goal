@@ -147,6 +147,7 @@ func StepSolveJoint(ji int32) {
 	}
 	jCi := JointChildIndex(ji)
 	jCbi := DynamicBody(jCi)
+	noLinearRot := GetJointNoLinearRotation(ji)
 
 	jLinearN := GetJointLinearDoFN(ji)
 	// jAngularN := GetJointAngularDoFN(ji)
@@ -248,9 +249,11 @@ func StepSolveJoint(ji int32) {
 			dLambda := PositionalCorrection(err, derr, posePQ, poseCQ, mInvP, mInvC,
 				iInvP, iInvC, linearP, linearC, angularP, angularC, lambdaIn, compliance, kd, params.Dt)
 			linDeltaP = linDeltaP.Add(linearP.MulScalar(dLambda * params.JointLinearRelax))
-			angDeltaP = angDeltaP.Add(angularP.MulScalar(dLambda * params.JointAngularRelax))
 			linDeltaC = linDeltaC.Add(linearC.MulScalar(dLambda * params.JointLinearRelax))
-			angDeltaC = angDeltaC.Add(angularC.MulScalar(dLambda * params.JointAngularRelax))
+			if !noLinearRot {
+				angDeltaP = angDeltaP.Add(angularP.MulScalar(dLambda * params.JointAngularRelax))
+				angDeltaC = angDeltaC.Add(angularC.MulScalar(dLambda * params.JointAngularRelax))
+			}
 		}
 	} else {
 		// all joints impose linear constraints!
@@ -326,26 +329,25 @@ func StepSolveJoint(ji int32) {
 				}
 			}
 			if math32.Abs(err) > 1e-9 || math32.Abs(derrRel) > 1e-9 {
-				lambdaIn := slmath.Dim3(lambdaPrev, dim)
-				// lambdaIn := float32(0)
+				// lambdaIn := slmath.Dim3(lambdaPrev, dim)
+				lambdaIn := float32(0)
 				dLambda := PositionalCorrection(err, derrRel, posePQ, poseCQ, mInvP, mInvC,
 					iInvP, iInvC, linearP, linearC, angularP, angularC, lambdaIn, compliance, damping, params.Dt)
 
 				linDeltaP = linDeltaP.Add(linearP.MulScalar(dLambda * params.JointLinearRelax))
 				linDeltaC = linDeltaC.Add(linearC.MulScalar(dLambda * params.JointLinearRelax))
-				angDeltaP = angDeltaP.Add(angularP.MulScalar(dLambda * params.JointAngularRelax))
-				angDeltaC = angDeltaC.Add(angularC.MulScalar(dLambda * params.JointAngularRelax))
+				if !noLinearRot {
+					angDeltaP = angDeltaP.Add(angularP.MulScalar(dLambda * params.JointAngularRelax))
+					angDeltaC = angDeltaC.Add(angularC.MulScalar(dLambda * params.JointAngularRelax))
+				}
 				
 				lambdaNext = slmath.SetDim3(lambdaNext, dim, dLambda)
-				// if angularP.Length() > 0.001 && dLambda > 0.001 {
-				// 	fmt.Println("lin:", angularP.Length(), dLambda, angularP, angDeltaP, dP, linearC, angularC.Length())
-				// }
 			}
 		}
 	}
 	SetJointLinLambda(ji, lambdaNext)
 
-	//////// Angular positions
+	//////// Angular DoFs
 	
 	jAngularN := GetJointAngularDoFN(ji)
 
@@ -413,6 +415,7 @@ func StepSolveJoint(ji int32) {
 	var axisTargetVelKdD, axisTargetVelKdA math32.Vector3
 	lambdaPrev = JointAngLambda(ji)
 	lambdaNext = math32.Vec3(0,0,0)
+	_ = lambdaPrev
 
 	for dof := range jAngularN {
 		di := dof + jLinearN
@@ -484,7 +487,8 @@ func StepSolveJoint(ji int32) {
 			// 	fmt.Println(targetPos, e, err)
 			// }
 		}
-		lambdaIn := slmath.Dim3(lambdaPrev, dim)
+		// lambdaIn := slmath.Dim3(lambdaPrev, dim)
+		lambdaIn := float32(0)
 		dLambda := AngularCorrection(err, derrRel, posePQ, poseCQ, iInvP, iInvC, angularP, angularC, lambdaIn, compliance, damping, params.Dt)
 
 		// note: no relaxation factors here:

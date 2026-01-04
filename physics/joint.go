@@ -65,6 +65,13 @@ const (
 	// cleaner when full accuracy is not necessary.
 	JointParentFixed
 
+	// JointNoLinearRotation ignores the rotational (angular) effects of
+	// linear joint position constraints (i.e., Coriolis and centrifugal forces)
+	// which can otherwise interfere with rotational position constraints in
+	// joints with both linear and angular DoFs
+	// (e.g., [PlaneXZ], for which this is on by default).
+	JointNoLinearRotation
+
 	// JointParent is the dynamic body index for parent body.
 	// Can be -1 for a fixed parent for absolute anchor.
 	JointParent
@@ -177,6 +184,19 @@ func SetJointParentFixed(idx int32, enabled bool) {
 		je = 1
 	}
 	Joints.Set(math.Float32frombits(je), int(idx), int(JointParentFixed))
+}
+
+func GetJointNoLinearRotation(idx int32) bool {
+	je := math.Float32bits(Joints.Value(int(idx), int(JointNoLinearRotation)))
+	return je != 0
+}
+
+func SetJointNoLinearRotation(idx int32, enabled bool) {
+	je := uint32(0)
+	if enabled {
+		je = 1
+	}
+	Joints.Set(math.Float32frombits(je), int(idx), int(JointNoLinearRotation))
 }
 
 func SetJointParent(idx, bodyIdx int32) {
@@ -392,7 +412,6 @@ func (ml *Model) NewJointFixed(parent, child int32, ppos, cpos math32.Vector3) i
 // ppos, cpos are the relative positions from the parent, child.
 // Sets relative rotation matricies to identity by default.
 // axis is the axis of articulation for the joint.
-// Use [SetJointDoF] to set the remaining DoF parameters.
 func (ml *Model) NewJointPrismatic(parent, child int32, ppos, cpos, axis math32.Vector3) int32 {
 	idx := ml.newJoint(Prismatic, parent, child, ppos, cpos)
 	SetJointLinearDoFN(idx, 1)
@@ -406,7 +425,6 @@ func (ml *Model) NewJointPrismatic(parent, child int32, ppos, cpos, axis math32.
 // ppos, cpos are the relative positions from the parent, child.
 // Sets relative rotation matricies to identity by default.
 // axis is the axis of articulation for the joint.
-// Use [SetJointDoF] to set the remaining DoF parameters.
 func (ml *Model) NewJointRevolute(parent, child int32, ppos, cpos, axis math32.Vector3) int32 {
 	idx := ml.newJoint(Revolute, parent, child, ppos, cpos)
 	SetJointAngularDoFN(idx, 1)
@@ -419,7 +437,6 @@ func (ml *Model) NewJointRevolute(parent, child int32, ppos, cpos, axis math32.V
 // Use -1 for parent to add a world-anchored joint.
 // ppos, cpos are the relative positions from the parent, child.
 // Sets relative rotation matricies to identity by default.
-// Use [SetJointDoF] to set the remaining DoF parameters.
 func (ml *Model) NewJointBall(parent, child int32, ppos, cpos math32.Vector3) int32 {
 	idx := ml.newJoint(Ball, parent, child, ppos, cpos)
 	SetJointAngularDoFN(idx, 3)
@@ -434,16 +451,16 @@ func (ml *Model) NewJointBall(parent, child int32, ppos, cpos math32.Vector3) in
 // NewJointPlaneXZ adds a new 3 DoF Planar motion joint suitable for
 // controlling the motion of a body on the standard X-Z plane (Y = up).
 // The two linear DoF control position in X, Z, and 3rd angular
-// controls rotation in Y axis.
+// controls rotation in Y axis. Sets [JointNoLinearRotation]
 // Use -1 for parent to add a world-anchored joint (typical).
 // ppos, cpos are the relative positions from the parent, child.
 // Sets relative rotation matricies to identity by default.
-// Use [SetJointDoF] to set the remaining DoF parameters.
 func (ml *Model) NewJointPlaneXZ(parent, child int32, ppos, cpos math32.Vector3) int32 {
 	idx := ml.NewJointD6(parent, child, ppos, cpos, 2, 1)
 	ml.newJointDoF(idx, 0, math32.Vec3(1, 0, 0))
 	ml.newJointDoF(idx, 1, math32.Vec3(0, 0, 1))
 	ml.newJointDoF(idx, 2, math32.Vec3(0, 1, 0))
+	SetJointNoLinearRotation(idx, true)
 	return idx
 }
 
@@ -453,7 +470,6 @@ func (ml *Model) NewJointPlaneXZ(parent, child int32, ppos, cpos math32.Vector3)
 // Use -1 for parent to add a world-anchored joint.
 // ppos, cpos are the relative positions from the parent, child.
 // Sets relative rotation matricies to identity by default.
-// Use [SetJointDoF] to set the remaining DoF parameters.
 func (ml *Model) NewJointDistance(parent, child int32, ppos, cpos math32.Vector3, minDist, maxDist float32) int32 {
 	idx := ml.newJoint(Distance, parent, child, ppos, cpos)
 	SetJointLinearDoFN(idx, 3)

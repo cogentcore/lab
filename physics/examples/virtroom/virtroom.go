@@ -156,8 +156,8 @@ func (ev *Env) MakeWorld(sc *xyz.Scene) {
 	ev.MakeEmer(ew, &ev.Emer, "emer")
 	// ev.Physics.Builder.ReplicateWorld(1, 8, 2)
 	ev.Physics.Build()
-	params := physics.GetParams(0)
-	params.ControlDt = 1
+	// params := physics.GetParams(0)
+	// params.ControlDt = 1
 	// params.Gravity.Y = 0
 	// params.MaxForce = 1.0e3
 	// params.AngularDamping = 0.5
