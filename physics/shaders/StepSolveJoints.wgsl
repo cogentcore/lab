@@ -361,6 +361,7 @@ struct PhysicsParams {
 	AngularDamping: f32, // 0 def
 	SoftRelax: f32,
 	MaxForce: f32,
+	MaxDelta: f32,
 	MaxGeomIter: i32,
 	ContactsMax: i32,
 	Cur: i32,
@@ -373,7 +374,6 @@ struct PhysicsParams {
 	JointDoFsN: i32,
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
-	pad: i32,
 	Gravity: vec4<f32>,
 }
 
@@ -569,6 +569,8 @@ fn StepBodyDeltas(di: i32,bi: i32, contacts: bool, cWt: f32, linDel: vec3<f32>,a
 	}
 	var dp = linDel*(invMass * weight);
 	var dq = angDel*(weight);
+	dp = LimitDelta(dp, params.MaxDelta);
+	dq = LimitDelta(dq, params.MaxDelta);
 	var wb = MulQuatVectorInverse(q0, w0);
 	var dwb = invInertia*(MulQuatVectorInverse(q0, dq));
 	var tb = Cross3(dwb, inertia*(wb+(dwb)))+(Cross3(wb, inertia*(dwb)));
@@ -593,6 +595,12 @@ fn StepBodyDeltas(di: i32,bi: i32, contacts: bool, cWt: f32, linDel: vec3<f32>,a
 	SetDynamicAngDelta(di, params.Next, w1);
 	Params[0] = params;
 }
+fn LimitDelta(v: vec3<f32>, lim: f32) -> vec3<f32> {
+	var l = Length3(v);
+	if (l < lim) {
+		return v;
+	}return v*((lim / l));
+}
 
 //////// import: "step_joint.go"
 fn StepSolveJoints(i: u32) { //gosl:kernel
@@ -609,12 +617,11 @@ fn StepSolveJoints(i: u32) { //gosl:kernel
 		if (jt == Free || !GetJointEnabled(ji)) {
 			continue;
 		}
-		StepSolveJointLinear(ji);
-		StepSolveJointAngular(ji);
+		StepSolveJoint(ji);
 	}
 	Params[0] = params;
 }
-fn StepSolveJointLinear(ji: i32) {
+fn StepSolveJoint(ji: i32) {
 	var params = Params[0];
 	var jt = GetJointType(ji);
 	var jPi = JointParentIndex(ji);
@@ -791,68 +798,7 @@ fn StepSolveJointLinear(ji: i32) {
 		}
 	}
 	SetJointLinLambda(ji, lambdaNext);
-	if (!parentFixed) {
-		StepBodyDeltas(jPi, jPbi, false, f32(f32(0)), linDeltaP, angDeltaP);
-	}
-	if (mInvC > 0) {
-		StepBodyDeltas(jCi, jCbi, false, f32(f32(0)), linDeltaC, angDeltaC);
-	}
-	Params[0] = params;
-}
-fn StepSolveJointAngular(ji: i32) {
-	var params = Params[0];
-	var jPi = JointParentIndex(ji);
-	var jPbi = i32(-1);
-	var parentFixed = true;
-	if (jPi >= 0) {
-		jPbi = DynamicBody(jPi);
-		parentFixed = GetJointParentFixed(ji);
-	}
-	var jCi = JointChildIndex(ji);
-	var jCbi = DynamicBody(jCi);
-	var jLinearN = GetJointLinearDoFN(ji);
 	var jAngularN = GetJointAngularDoFN(ji);
-	var jPR = JointPPos(ji);
-	var jPQ = JointPQuat(ji);
-	var xwPR = jPR; // world xform, parent, pos
-	var xwPQ = jPQ; // quat
-	var mInvP = f32(0.0);
-	var iInvP = mat3x3f(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-	var posePR = jPR;
-	var posePQ = jPQ;
-	var wP: vec3<f32>;
-	if (jPi >= 0) {
-		posePR = DynamicPos(jPi, params.Next); // now using next
-		posePQ = DynamicQuat(jPi, params.Next);
-		MulSpatialTransforms(posePR, posePQ, jPR, jPQ, &xwPR, &xwPQ);
-		mInvP = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(jPbi), u32(BodyInvMass))];
-		iInvP = BodyInvInertia(jPbi);
-		wP = DynamicAngDelta(jPi, params.Next);
-		if (mInvP == 0) {
-			parentFixed = true;
-		}
-	}
-	var poseCR = DynamicPos(jCi, params.Next);
-	var poseCQ = DynamicQuat(jCi, params.Next);
-	var jCR = JointCPos(ji);
-	var jCQ = JointCQuat(ji);
-	var xwCR = jCR;
-	var xwCQ = jCQ;
-	MulSpatialTransforms(poseCR, poseCQ, jCR, jCQ, &xwCR, &xwCQ);
-	var mInvC = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(jCbi), u32(BodyInvMass))];
-	var iInvC = BodyInvInertia(jCbi);
-	var wC = DynamicAngDelta(jCi, params.Next);
-	if (mInvP == 0.0 && mInvC == 0.0) { // connection between two immovable bodies
-		return;
-	}
-	var linDeltaP: vec3<f32>;
-	var angDeltaP: vec3<f32>;
-	var linDeltaC: vec3<f32>;
-	var angDeltaC: vec3<f32>;
-	var relPoseR = xwPR;
-	var relPoseQ = xwPQ;
-	SpatialTransformInverse(xwPR, xwPQ, &relPoseR, &relPoseQ);
-	MulSpatialTransforms(relPoseR, relPoseQ, xwCR, xwCQ, &relPoseR, &relPoseQ);
 	var qP = xwPQ;
 	var qC = xwCQ;
 	if (QuatDot(qP, qC) < 0) {
@@ -904,8 +850,8 @@ fn StepSolveJointAngular(ji: i32) {
 	var axisTargetPosKeA: vec3<f32>;
 	var axisTargetVelKdD: vec3<f32>;
 	var axisTargetVelKdA: vec3<f32>;
-	var lambdaPrev = JointAngLambda(ji);
-	var lambdaNext = vec3<f32>(0, 0, 0);
+	lambdaPrev = JointAngLambda(ji);
+	lambdaNext = vec3<f32>(0, 0, 0);
 	for (var dof=0; dof<jAngularN; dof++) {
 		var di = dof + jLinearN;
 		var axis = JointAxis(ji, di);

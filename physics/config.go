@@ -68,6 +68,7 @@ func (ml *Model) ConfigJoints() {
 		}
 	}
 	if nj == 0 {
+		ml.Objects = tensor.NewInt32(1, 1)
 		ml.Joints = tensor.NewFloat32(1, int(JointVarsN))
 		ml.JointDoFs = tensor.NewFloat32(1, int(JointDoFVarsN))
 		ml.JointControls = tensor.NewFloat32(1, int(JointControlVarsN))

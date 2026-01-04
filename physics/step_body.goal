@@ -177,6 +177,10 @@ func StepBodyDeltas(di, bi int32, contacts bool, cWt float32, linDel, angDel mat
 	dp := linDel.MulScalar(invMass * weight)
 	dq := angDel.MulScalar(weight)
 
+	// note: this is essential for rationalizing PlaneXZ and ball collision behavior!
+	dp = LimitDelta(dp, params.MaxDelta)
+	dq = LimitDelta(dq, params.MaxDelta)
+
 	wb := slmath.MulQuatVectorInverse(q0, w0)
 	dwb := invInertia.MulVector3(slmath.MulQuatVectorInverse(q0, dq))
 	// coriolis forces delta from dwb = (wb + dwb) I (wb + dwb) - wb I wb
@@ -213,6 +217,15 @@ func StepBodyDeltas(di, bi int32, contacts bool, cWt float32, linDel, angDel mat
 	SetDynamicQuat(di, params.Next, q1)
 	SetDynamicDelta(di, params.Next, v1)
 	SetDynamicAngDelta(di, params.Next, w1)
+}
+
+// LimitDelta limits the magnitude of a delta vector
+func LimitDelta(v math32.Vector3, lim float32) math32.Vector3 {
+	l := slmath.Length3(v)
+	if l < lim {
+		return v
+	}
+	return v.MulScalar((lim / l))
 }
 
 func VelocityAtPoint(lin, ang, r math32.Vector3) math32.Vector3 {

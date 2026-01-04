@@ -69,6 +69,10 @@ type PhysicsParams struct {
 	// runaway numerical overflow.
 	MaxForce float32 `default:"1e5"`
 
+	// MaxDelta is the maximum computed change in position magnitude,
+	// which prevents runaway numerical overflow.
+	MaxDelta float32 `default:"2"`
+
 	// MaxGeomIter is number of iterations to perform in shape-based
 	// geometry collision computations
 	MaxGeomIter int32 `default:"10"`
@@ -107,8 +111,6 @@ type PhysicsParams struct {
 	// to examine.
 	BodyCollidePairsN int32 `edit:"-"`
 
-	pad int32
-
 	// Gravity is the gravity acceleration function
 	Gravity slvec.Vector3
 }
@@ -133,6 +135,7 @@ func (pr *PhysicsParams) Defaults() {
 	pr.AngularDamping = 0
 	pr.SoftRelax = 0.9
 	pr.MaxForce = 1.0e5
+	pr.MaxDelta = 2
 	pr.MaxGeomIter = 10
 }
 

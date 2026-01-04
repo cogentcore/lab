@@ -128,14 +128,13 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 		if jt == Free || !GetJointEnabled(ji) {
 			continue
 		}
-		StepSolveJointLinear(ji)
-		StepSolveJointAngular(ji)
+		StepSolveJoint(ji)
 	}
 }
 
-// StepSolveJointLinear applies target positions to linear DoFs.
+// StepSolveJoint applies target positions to linear DoFs.
 // Position is updated prior to computing angulars.
-func StepSolveJointLinear(ji int32) {
+func StepSolveJoint(ji int32) {
 	params := GetParams(0)
 
 	jt := GetJointType(ji)
@@ -345,80 +344,10 @@ func StepSolveJointLinear(ji int32) {
 		}
 	}
 	SetJointLinLambda(ji, lambdaNext)
-	// apply the linear deltas so the 
-	if !parentFixed {
-		StepBodyDeltas(jPi, jPbi, false, 0, linDeltaP, angDeltaP)
-	}
-	if mInvC > 0 {
-		StepBodyDeltas(jCi, jCbi, false, 0, linDeltaC, angDeltaC)
-	}
-}
 
-// StepSolveJointAngular applies target positions to angular DoFs.
-func StepSolveJointAngular(ji int32) {
-	params := GetParams(0)
-
-	jPi := JointParentIndex(ji)
-	jPbi := int32(-1)
-	parentFixed := true
-	if jPi >= 0 {
-		jPbi = DynamicBody(jPi)
-		parentFixed = GetJointParentFixed(ji)
-	}
-	jCi := JointChildIndex(ji)
-	jCbi := DynamicBody(jCi)
-
-	jLinearN := GetJointLinearDoFN(ji)
+	//////// Angular positions
+	
 	jAngularN := GetJointAngularDoFN(ji)
-
-	jPR := JointPPos(ji)
-	jPQ := JointPQuat(ji)
-
-	xwPR := jPR // world xform, parent, pos
-	xwPQ := jPQ // quat
-	mInvP := float32(0.0)
-	iInvP := math32.Mat3(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-	posePR := jPR
-	posePQ := jPQ
-
-	var wP math32.Vector3
-
-	// parent transform and moment arm
-	if jPi >= 0 {
-		posePR = DynamicPos(jPi, params.Next) // now using next
-		posePQ = DynamicQuat(jPi, params.Next)
-		slmath.MulSpatialTransforms(posePR, posePQ, jPR, jPQ, &xwPR, &xwPQ)
-		mInvP = Bodies[jPbi, BodyInvMass]
-		iInvP = BodyInvInertia(jPbi)
-		wP = DynamicAngDelta(jPi, params.Next)
-		if mInvP == 0 {
-			parentFixed = true
-		}
-	}
-
-	// child transform and moment arm
-	poseCR := DynamicPos(jCi, params.Next)
-	poseCQ := DynamicQuat(jCi, params.Next)
-	jCR := JointCPos(ji)
-	jCQ := JointCQuat(ji)
-	xwCR := jCR
-	xwCQ := jCQ
-	slmath.MulSpatialTransforms(poseCR, poseCQ, jCR, jCQ, &xwCR, &xwCQ)
-	mInvC := Bodies[jCbi, BodyInvMass]
-	iInvC := BodyInvInertia(jCbi)
-	wC := DynamicAngDelta(jCi, params.Next)
-
-	if mInvP == 0.0 && mInvC == 0.0 { // connection between two immovable bodies
-		return
-	}
-
-	// accumulate constraint deltas
-	var linDeltaP, angDeltaP, linDeltaC, angDeltaC math32.Vector3
-
-	relPoseR := xwPR
-	relPoseQ := xwPQ
-	slmath.SpatialTransformInverse(xwPR, xwPQ, &relPoseR, &relPoseQ)
-	slmath.MulSpatialTransforms(relPoseR, relPoseQ, xwCR, xwCQ, &relPoseR, &relPoseQ)
 
 	qP := xwPQ
 	qC := xwCQ
@@ -482,8 +411,8 @@ func StepSolveJointAngular(ji int32) {
 	var axisLimitsD, axisLimitsA math32.Vector3
 	var axisTargetPosKeD, axisTargetPosKeA math32.Vector3
 	var axisTargetVelKdD, axisTargetVelKdA math32.Vector3
-	lambdaPrev := JointAngLambda(ji)
-	lambdaNext := math32.Vec3(0,0,0)
+	lambdaPrev = JointAngLambda(ji)
+	lambdaNext = math32.Vec3(0,0,0)
 
 	for dof := range jAngularN {
 		di := dof + jLinearN

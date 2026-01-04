@@ -350,6 +350,7 @@ struct PhysicsParams {
 	AngularDamping: f32, // 0 def
 	SoftRelax: f32,
 	MaxForce: f32,
+	MaxDelta: f32,
 	MaxGeomIter: i32,
 	ContactsMax: i32,
 	Cur: i32,
@@ -362,7 +363,6 @@ struct PhysicsParams {
 	JointDoFsN: i32,
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
-	pad: i32,
 	Gravity: vec4<f32>,
 }
 
@@ -465,6 +465,8 @@ fn StepBodyDeltas(di: i32,bi: i32, contacts: bool, cWt: f32, linDel: vec3<f32>,a
 	}
 	var dp = linDel*(invMass * weight);
 	var dq = angDel*(weight);
+	dp = LimitDelta(dp, params.MaxDelta);
+	dq = LimitDelta(dq, params.MaxDelta);
 	var wb = MulQuatVectorInverse(q0, w0);
 	var dwb = invInertia*(MulQuatVectorInverse(q0, dq));
 	var tb = Cross3(dwb, inertia*(wb+(dwb)))+(Cross3(wb, inertia*(dwb)));
@@ -488,6 +490,12 @@ fn StepBodyDeltas(di: i32,bi: i32, contacts: bool, cWt: f32, linDel: vec3<f32>,a
 	SetDynamicDelta(di, params.Next, v1);
 	SetDynamicAngDelta(di, params.Next, w1);
 	Params[0] = params;
+}
+fn LimitDelta(v: vec3<f32>, lim: f32) -> vec3<f32> {
+	var l = Length3(v);
+	if (l < lim) {
+		return v;
+	}return v*((lim / l));
 }
 
 //////// import: "step_joint.go"

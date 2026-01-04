@@ -322,6 +322,7 @@ struct PhysicsParams {
 	AngularDamping: f32, // 0 def
 	SoftRelax: f32,
 	MaxForce: f32,
+	MaxDelta: f32,
 	MaxGeomIter: i32,
 	ContactsMax: i32,
 	Cur: i32,
@@ -334,7 +335,6 @@ struct PhysicsParams {
 	JointDoFsN: i32,
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
-	pad: i32,
 	Gravity: vec4<f32>,
 }
 

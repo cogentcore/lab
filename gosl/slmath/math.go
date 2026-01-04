@@ -9,7 +9,7 @@ package slmath
 const Pi = 3.141592653589793
 
 // MinAngleDiff returns the minimum difference between two angles
-// (in radians): a-b
+// (in radians): a-b, dealing with the wrap-around issues with angles.
 func MinAngleDiff(a, b float32) float32 {
 	d := a - b
 	if d > Pi {

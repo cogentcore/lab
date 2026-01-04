@@ -321,7 +321,6 @@ func (ev *Env) MakeEmer(wl *builder.World, em *Emer, name string) {
 	// body := physics.NewCylinder(emr, "body", math32.Vec3(0, hh, 0), hh, hw)
 	em.XZ = obj.NewJointPlaneXZ(nil, emr, math32.Vec3(0, 0, 0), math32.Vec3(0, -hh, 0))
 	emr.Group = 0 // no collide (temporary)
-	return
 
 	headPos := math32.Vec3(0, 2*hh+headsz, 0)
 	head := obj.NewDynamicSkin(sc, name+"_head", physics.Box, "tan", mass*.1, math32.Vec3(headsz, headsz, headsz), headPos, rot)
