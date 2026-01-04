@@ -19,25 +19,26 @@ type World struct {
 	// Each object is a coherent collection of bodies, typically
 	// connected by joints. This is an organizational convenience
 	// for positioning elements; has no physical implications.
-	Objects []Object
+	Objects []*Object
 }
 
 func (wl *World) Object(idx int) *Object {
-	return &wl.Objects[idx]
+	return wl.Objects[idx]
 }
 
 func (wl *World) NewObject() *Object {
 	idx := len(wl.Objects)
-	wl.Objects = append(wl.Objects, Object{})
-	return &wl.Objects[idx]
+	wl.Objects = append(wl.Objects, &Object{})
+	return wl.Objects[idx]
 }
 
 // Copy copies all objects from given source world into this one.
 // (The worlds will be identical after, regardless of current starting
 // condition).
 func (wl *World) Copy(ow *World) {
-	wl.Objects = make([]Object, len(ow.Objects))
+	wl.Objects = make([]*Object, len(ow.Objects))
 	for i := range wl.Objects {
+		wl.Objects[i] = &Object{}
 		wl.Object(i).Copy(ow.Object(i))
 	}
 }

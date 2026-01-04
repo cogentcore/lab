@@ -340,6 +340,7 @@ func (ev *Env) MakeEmer(wl *builder.World, em *Emer, name string) {
 	// em.Neck = obj.NewJointBall(emr, head, math32.Vec3(0, hh, 0), math32.Vec3(0, -headsz, 0))
 	em.Neck = obj.NewJointRevolute(emr, head, math32.Vec3(0, hh, 0), math32.Vec3(0, -headsz, 0), math32.Vec3(0, 1, 0))
 	em.Neck.ParentFixed = true
+	em.Neck.NoLinearRotation = true
 	// obj.NewJointFixed(emr, head, math32.Vec3(0, hh, 0), math32.Vec3(0, -headsz, 0))
 
 	eyeoff := math32.Vec3(-headsz*.6, headsz*.1, -(headsz + eyesz*.3))

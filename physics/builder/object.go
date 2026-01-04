@@ -15,32 +15,34 @@ import (
 // for positioning elements; has no physical implications.
 type Object struct {
 	// Bodies are the bodies in the object.
-	Bodies []Body
+	Bodies []*Body
 
 	// Joints are joints connecting object bodies.
 	// Joint indexes here refer strictly within bodies.
-	Joints []Joint
+	Joints []*Joint
 }
 
 func (ob *Object) Body(idx int) *Body {
-	return &ob.Bodies[idx]
+	return ob.Bodies[idx]
 }
 
 func (ob *Object) Joint(idx int) *Joint {
-	return &ob.Joints[idx]
+	return ob.Joints[idx]
 }
 
 // Copy copies all bodies and joints from given source world into this one.
 // (The objects will be identical after, regardless of current starting
 // condition).
 func (ob *Object) Copy(so *Object) {
-	ob.Bodies = make([]Body, len(so.Bodies))
-	ob.Joints = make([]Joint, len(so.Joints))
-	copy(ob.Bodies, so.Bodies)
-	copy(ob.Joints, so.Joints)
+	ob.Bodies = make([]*Body, len(so.Bodies))
+	ob.Joints = make([]*Joint, len(so.Joints))
 	for i := range ob.Bodies {
-		bd := ob.Body(i)
-		bd.Skin = nil
+		ob.Bodies[i] = &Body{}
+		ob.Body(i).Copy(so.Body(i))
+	}
+	for i := range ob.Joints {
+		ob.Joints[i] = &Joint{}
+		ob.Joint(i).Copy(so.Joint(i))
 	}
 }
 

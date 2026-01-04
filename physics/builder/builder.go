@@ -16,7 +16,7 @@ import (
 // organized into worlds that are independently updated.
 type Builder struct {
 	// Worlds are the independent world elements.
-	Worlds []World
+	Worlds []*World
 
 	// ReplicasStart is the starting Worlds index for replicated world bodies.
 	// Set by ReplicateWorld, and used to set corresponding value in Model.
@@ -37,15 +37,15 @@ func (bl *Builder) Reset() {
 }
 
 func (bl *Builder) World(idx int) *World {
-	return &bl.Worlds[idx]
+	return bl.Worlds[idx]
 }
 
 // NewGlobalWorld creates a new world with World index = -1,
 // which are globals that collide with all worlds.
 func (bl *Builder) NewGlobalWorld() *World {
 	idx := len(bl.Worlds)
-	bl.Worlds = append(bl.Worlds, World{World: -1})
-	return &bl.Worlds[idx]
+	bl.Worlds = append(bl.Worlds, &World{World: -1})
+	return bl.Worlds[idx]
 }
 
 // NewWorld creates a new standard (non-global) world, with
@@ -56,8 +56,8 @@ func (bl *Builder) NewWorld() *World {
 	if idx > 0 {
 		wn = bl.Worlds[idx-1].World + 1
 	}
-	bl.Worlds = append(bl.Worlds, World{World: wn})
-	return &bl.Worlds[idx]
+	bl.Worlds = append(bl.Worlds, &World{World: wn})
+	return bl.Worlds[idx]
 }
 
 // Build builds a physics model, with optional [phyxyz.Scene] for
@@ -65,14 +65,11 @@ func (bl *Builder) NewWorld() *World {
 func (bl *Builder) Build(ml *physics.Model, sc *phyxyz.Scene) {
 	repSt := int32(0)
 	repN := int32(0)
-	for wi := range bl.Worlds {
-		wl := bl.World(wi)
+	for wi, wl := range bl.Worlds {
 		// fmt.Println("\n######## World:", wl.World)
-		for oi := range wl.Objects {
-			ob := wl.Object(oi)
+		for _, ob := range wl.Objects {
 			// fmt.Println("\n\t#### Object")
-			for bbi := range ob.Bodies {
-				bd := ob.Body(bbi)
+			for bbi, bd := range ob.Bodies {
 				bd.NewPhysicsBody(ml, wl.World)
 				if bl.ReplicasN > 0 && wi == bl.ReplicasStart {
 					repN++
@@ -85,8 +82,7 @@ func (bl *Builder) Build(ml *physics.Model, sc *phyxyz.Scene) {
 				continue
 			}
 			ml.NewObject()
-			for bji := range ob.Joints {
-				jd := ob.Joint(bji)
+			for _, jd := range ob.Joints {
 				jd.NewPhysicsJoint(ml, ob)
 			}
 		}
@@ -101,10 +97,8 @@ func (bl *Builder) Build(ml *physics.Model, sc *phyxyz.Scene) {
 // This does not call InitState in physics, because that depends on
 // whether the Sccene is being used.
 func (bl *Builder) InitState() {
-	for wi := range bl.Worlds {
-		wl := bl.World(wi)
-		for oi := range wl.Objects {
-			ob := wl.Object(oi)
+	for _, wl := range bl.Worlds {
+		for _, ob := range wl.Objects {
 			ob.InitState()
 		}
 	}

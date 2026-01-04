@@ -85,11 +85,11 @@ type Body struct {
 // Use this for Static elements; NewDynamic for dynamic elements.
 func (ob *Object) NewBody(shape physics.Shapes, hsize, pos math32.Vector3, rot math32.Quat) *Body {
 	idx := len(ob.Bodies)
-	bd := Body{ObjectIndex: idx, Shape: shape, HSize: hsize}
+	bd := &Body{ObjectIndex: idx, Shape: shape, HSize: hsize}
 	bd.Pose.Pos = pos
 	bd.Pose.Quat = rot
 	ob.Bodies = append(ob.Bodies, bd)
-	return &(ob.Bodies[idx])
+	return ob.Bodies[idx]
 }
 
 // NewDynamic adds a new dynamic body with given parameters.
@@ -127,6 +127,11 @@ func (ob *Object) NewDynamicSkin(sc *phyxyz.Scene, name string, shape physics.Sh
 	bd.Dynamic = true
 	bd.Mass = mass
 	return bd
+}
+
+func (bd *Body) Copy(sb *Body) {
+	*bd = *sb
+	bd.Skin = nil // skins are unique
 }
 
 /////// Physics functions

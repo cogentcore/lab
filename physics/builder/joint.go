@@ -33,6 +33,13 @@ type Joint struct {
 	// ParentFixed does not update the parent side of the joint.
 	ParentFixed bool
 
+	// NoLinearRotation ignores the rotational (angular) effects of
+	// linear joint position constraints (i.e., Coriolis and centrifugal forces)
+	// which can otherwise interfere with rotational position constraints in
+	// joints with both linear and angular DoFs
+	// (e.g., [PlaneXZ], for which this is on by default).
+	NoLinearRotation bool
+
 	// LinearDoFN is the number of linear degrees of freedom (3 max).
 	LinearDoFN int
 
@@ -40,7 +47,7 @@ type Joint struct {
 	AngularDoFN int
 
 	// DoFs are the degrees-of-freedom for this joint.
-	DoFs []DoF
+	DoFs []*DoF
 
 	// JointIndex is the index of this joint in [physics.Joints] when built.
 	JointIndex int32
@@ -103,7 +110,20 @@ func (df *DoF) InitState() {
 }
 
 func (jd *Joint) DoF(idx int) *DoF {
-	return &jd.DoFs[idx]
+	return jd.DoFs[idx]
+}
+
+func (jd *Joint) Copy(sj *Joint) {
+	*jd = *sj
+	jd.DoFs = make([]*DoF, len(sj.DoFs))
+	for i := range jd.DoFs {
+		jd.DoFs[i] = &DoF{}
+		jd.DoF(i).Copy(sj.DoF(i))
+	}
+}
+
+func (df *DoF) Copy(sd *DoF) {
+	*df = *sd
 }
 
 // newJoint adds a new joint of given type.
@@ -113,7 +133,7 @@ func (ob *Object) newJoint(typ physics.JointTypes, parent, child *Body, ppos, cp
 		pidx = parent.ObjectIndex
 	}
 	idx := len(ob.Joints)
-	ob.Joints = append(ob.Joints, Joint{Parent: pidx, Child: child.ObjectIndex, Type: typ, LinearDoFN: linDoF, AngularDoFN: angDoF})
+	ob.Joints = append(ob.Joints, &Joint{Parent: pidx, Child: child.ObjectIndex, Type: typ, LinearDoFN: linDoF, AngularDoFN: angDoF})
 	jd := ob.Joint(idx)
 	jd.PPose.Pos = ppos
 	jd.PPose.Quat = math32.NewQuatIdentity()
@@ -121,9 +141,10 @@ func (ob *Object) newJoint(typ physics.JointTypes, parent, child *Body, ppos, cp
 	jd.CPose.Quat = math32.NewQuatIdentity()
 	ndof := linDoF + angDoF
 	if ndof > 0 {
-		jd.DoFs = make([]DoF, linDoF+angDoF)
+		jd.DoFs = make([]*DoF, linDoF+angDoF)
 		for i := range ndof {
-			dof := jd.DoF(i)
+			dof := &DoF{}
+			jd.DoFs[i] = dof
 			dof.Defaults()
 		}
 	}
@@ -137,7 +158,9 @@ func (ob *Object) newJoint(typ physics.JointTypes, parent, child *Body, ppos, cp
 // to these positions as well).
 // Sets relative rotation matricies to identity by default.
 func (ob *Object) NewJointFixed(parent, child *Body, ppos, cpos math32.Vector3) *Joint {
-	return ob.newJoint(physics.Fixed, parent, child, ppos, cpos, 0, 0)
+	jd := ob.newJoint(physics.Fixed, parent, child, ppos, cpos, 0, 0)
+	jd.NoLinearRotation = true
+	return jd
 }
 
 // NewJointPrismatic adds a new Prismatic (slider) joint as a child
@@ -149,9 +172,9 @@ func (ob *Object) NewJointFixed(parent, child *Body, ppos, cpos math32.Vector3) 
 // axis is the axis of articulation for the joint.
 // Use [SetJointDoF] to set the remaining DoF parameters.
 func (ob *Object) NewJointPrismatic(parent, child *Body, ppos, cpos, axis math32.Vector3) *Joint {
-	jt := ob.newJoint(physics.Prismatic, parent, child, ppos, cpos, 1, 0)
-	jt.DoFs[0].Axis = axis
-	return jt
+	jd := ob.newJoint(physics.Prismatic, parent, child, ppos, cpos, 1, 0)
+	jd.DoFs[0].Axis = axis
+	return jd
 }
 
 // NewJointRevolute adds a new Revolute (hinge, axel) joint as a child
@@ -163,9 +186,9 @@ func (ob *Object) NewJointPrismatic(parent, child *Body, ppos, cpos, axis math32
 // axis is the axis of articulation for the joint.
 // Use [SetJointDoF] to set the remaining DoF parameters.
 func (ob *Object) NewJointRevolute(parent, child *Body, ppos, cpos, axis math32.Vector3) *Joint {
-	jt := ob.newJoint(physics.Revolute, parent, child, ppos, cpos, 0, 1)
-	jt.DoFs[0].Axis = axis
-	return jt
+	jd := ob.newJoint(physics.Revolute, parent, child, ppos, cpos, 0, 1)
+	jd.DoFs[0].Axis = axis
+	return jd
 }
 
 // NewJointBall adds a new Ball joint (3 angular DoF) as a child
@@ -176,8 +199,8 @@ func (ob *Object) NewJointRevolute(parent, child *Body, ppos, cpos, axis math32.
 // Sets relative rotation matricies to identity by default.
 // Use [SetJointDoF] to set the remaining DoF parameters.
 func (ob *Object) NewJointBall(parent, child *Body, ppos, cpos math32.Vector3) *Joint {
-	jt := ob.newJoint(physics.Ball, parent, child, ppos, cpos, 0, 3)
-	return jt
+	jd := ob.newJoint(physics.Ball, parent, child, ppos, cpos, 0, 3)
+	return jd
 }
 
 // NewJointDistance adds a new Distance joint (6 DoF),
@@ -189,10 +212,10 @@ func (ob *Object) NewJointBall(parent, child *Body, ppos, cpos math32.Vector3) *
 // Sets relative rotation matricies to identity by default.
 // Use [SetJointDoF] to set the remaining DoF parameters.
 func (ob *Object) NewJointDistance(parent, child *Body, ppos, cpos math32.Vector3, minDist, maxDist float32) *Joint {
-	jt := ob.newJoint(physics.Ball, parent, child, ppos, cpos, 3, 3)
-	jt.DoFs[0].Limit.Min = minDist
-	jt.DoFs[0].Limit.Max = maxDist
-	return jt
+	jd := ob.newJoint(physics.Ball, parent, child, ppos, cpos, 3, 3)
+	jd.DoFs[0].Limit.Min = minDist
+	jd.DoFs[0].Limit.Max = maxDist
+	return jd
 }
 
 // NewJointFree adds a new Free joint as a child
@@ -203,8 +226,8 @@ func (ob *Object) NewJointDistance(parent, child *Body, ppos, cpos math32.Vector
 // Sets relative rotation matricies to identity by default.
 // Use [SetJointDoF] to set the remaining DoF parameters.
 func (ob *Object) NewJointFree(parent, child *Body, ppos, cpos math32.Vector3) *Joint {
-	jt := ob.newJoint(physics.Free, parent, child, ppos, cpos, 0, 0)
-	return jt
+	jd := ob.newJoint(physics.Free, parent, child, ppos, cpos, 0, 0)
+	return jd
 }
 
 // NewJointPlaneXZ adds a new 3 DoF Planar motion joint suitable for
@@ -216,8 +239,9 @@ func (ob *Object) NewJointFree(parent, child *Body, ppos, cpos math32.Vector3) *
 // Sets relative rotation matricies to identity by default.
 // Use [SetJointDoF] to set the remaining DoF parameters.
 func (ob *Object) NewJointPlaneXZ(parent, child *Body, ppos, cpos math32.Vector3) *Joint {
-	jt := ob.newJoint(physics.PlaneXZ, parent, child, ppos, cpos, 2, 1)
-	return jt
+	jd := ob.newJoint(physics.PlaneXZ, parent, child, ppos, cpos, 2, 1)
+	jd.NoLinearRotation = true
+	return jd
 }
 
 // NewPhysicsJoint makes the physics joint for joint
@@ -248,6 +272,7 @@ func (jd *Joint) NewPhysicsJoint(ml *physics.Model, ob *Object) int32 {
 		ji = ml.NewJointPlaneXZ(pdi, cdi, jd.PPose.Pos, jd.CPose.Pos)
 	}
 	physics.SetJointParentFixed(ji, jd.ParentFixed)
+	physics.SetJointNoLinearRotation(ji, jd.NoLinearRotation)
 	for i := range jd.LinearDoFN {
 		d := jd.DoF(i)
 		di := int32(i)
@@ -267,7 +292,7 @@ func (jd *Joint) NewPhysicsJoint(ml *physics.Model, ob *Object) int32 {
 		d.Axis = physics.JointAxis(ji, di)
 	}
 	jd.JointIndex = ji
-	// fmt.Println("\t\tjoint:", pdi, cdi, jd.Type)
+	// fmt.Printf("\tjoint: %p  %d\n", jd, jd.JointIndex)
 	// if pdi < 0 {
 	// 	fmt.Println("\t\t\t", jd.PPose.Pos)
 	// }

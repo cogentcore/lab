@@ -403,6 +403,7 @@ func (ml *Model) JointDoFDefaults(didx int32) {
 // Sets relative rotation matricies to identity by default.
 func (ml *Model) NewJointFixed(parent, child int32, ppos, cpos math32.Vector3) int32 {
 	idx := ml.newJoint(Fixed, parent, child, ppos, cpos)
+	SetJointNoLinearRotation(idx, true)
 	return idx
 }
 

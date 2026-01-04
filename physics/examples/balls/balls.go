@@ -72,6 +72,7 @@ func main() {
 
 	ed.SetConfigFunc(func() {
 		ml := ed.Model
+		ml.Params[0].SubSteps = 100
 		sc := ed.Scene
 		rot := math32.NewQuatIdentity()
 		sc.NewBody(ml, "floor", physics.Plane, "#D0D0D080", math32.Vec3(0, 0, 0),

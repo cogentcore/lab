@@ -99,7 +99,7 @@ var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Buil
 
 // SetWorlds sets the [Builder.Worlds]:
 // Worlds are the independent world elements.
-func (t *Builder) SetWorlds(v ...World) *Builder { t.Worlds = v; return t }
+func (t *Builder) SetWorlds(v ...*World) *Builder { t.Worlds = v; return t }
 
 // SetReplicasStart sets the [Builder.ReplicasStart]:
 // ReplicasStart is the starting Worlds index for replicated world bodies.
@@ -111,7 +111,7 @@ func (t *Builder) SetReplicasStart(v int) *Builder { t.ReplicasStart = v; return
 // Set by ReplicateWorld, and used to set corresponding value in Model.
 func (t *Builder) SetReplicasN(v int) *Builder { t.ReplicasN = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Joint", IDName: "joint", Doc: "Joint describes a joint between two bodies.", Fields: []types.Field{{Name: "Parent", Doc: "Parent is index within an Object for parent body.\n-1 for world-anchored parent."}, {Name: "Child", Doc: "Parent is index within an Object for parent body."}, {Name: "Type", Doc: "Type is the type of the joint."}, {Name: "PPose", Doc: "PPose is the parent position and orientation of the joint\nin the parent's body-centered coordinates."}, {Name: "CPose", Doc: "CPose is the child position and orientation of the joint\nin the parent's body-centered coordinates."}, {Name: "LinearDoFN", Doc: "LinearDoFN is the number of linear degrees of freedom (3 max)."}, {Name: "AngularDoFN", Doc: "AngularDoFN is the number of linear degrees of freedom (3 max)."}, {Name: "DoFs", Doc: "DoFs are the degrees-of-freedom for this joint."}, {Name: "JointIndex", Doc: "JointIndex is the index of this joint in [physics.Joints] when built."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Joint", IDName: "joint", Doc: "Joint describes a joint between two bodies.", Fields: []types.Field{{Name: "Parent", Doc: "Parent is index within an Object for parent body.\n-1 for world-anchored parent."}, {Name: "Child", Doc: "Parent is index within an Object for parent body."}, {Name: "Type", Doc: "Type is the type of the joint."}, {Name: "PPose", Doc: "PPose is the parent position and orientation of the joint\nin the parent's body-centered coordinates."}, {Name: "CPose", Doc: "CPose is the child position and orientation of the joint\nin the parent's body-centered coordinates."}, {Name: "ParentFixed", Doc: "ParentFixed does not update the parent side of the joint."}, {Name: "NoLinearRotation", Doc: "NoLinearRotation ignores the rotational (angular) effects of\nlinear joint position constraints (i.e., Coriolis and centrifugal forces)\nwhich can otherwise interfere with rotational position constraints in\njoints with both linear and angular DoFs\n(e.g., [PlaneXZ], for which this is on by default)."}, {Name: "LinearDoFN", Doc: "LinearDoFN is the number of linear degrees of freedom (3 max)."}, {Name: "AngularDoFN", Doc: "AngularDoFN is the number of linear degrees of freedom (3 max)."}, {Name: "DoFs", Doc: "DoFs are the degrees-of-freedom for this joint."}, {Name: "JointIndex", Doc: "JointIndex is the index of this joint in [physics.Joints] when built."}}})
 
 // SetParent sets the [Joint.Parent]:
 // Parent is index within an Object for parent body.
@@ -136,6 +136,18 @@ func (t *Joint) SetPPose(v Pose) *Joint { t.PPose = v; return t }
 // in the parent's body-centered coordinates.
 func (t *Joint) SetCPose(v Pose) *Joint { t.CPose = v; return t }
 
+// SetParentFixed sets the [Joint.ParentFixed]:
+// ParentFixed does not update the parent side of the joint.
+func (t *Joint) SetParentFixed(v bool) *Joint { t.ParentFixed = v; return t }
+
+// SetNoLinearRotation sets the [Joint.NoLinearRotation]:
+// NoLinearRotation ignores the rotational (angular) effects of
+// linear joint position constraints (i.e., Coriolis and centrifugal forces)
+// which can otherwise interfere with rotational position constraints in
+// joints with both linear and angular DoFs
+// (e.g., [PlaneXZ], for which this is on by default).
+func (t *Joint) SetNoLinearRotation(v bool) *Joint { t.NoLinearRotation = v; return t }
+
 // SetLinearDoFN sets the [Joint.LinearDoFN]:
 // LinearDoFN is the number of linear degrees of freedom (3 max).
 func (t *Joint) SetLinearDoFN(v int) *Joint { t.LinearDoFN = v; return t }
@@ -146,7 +158,7 @@ func (t *Joint) SetAngularDoFN(v int) *Joint { t.AngularDoFN = v; return t }
 
 // SetDoFs sets the [Joint.DoFs]:
 // DoFs are the degrees-of-freedom for this joint.
-func (t *Joint) SetDoFs(v ...DoF) *Joint { t.DoFs = v; return t }
+func (t *Joint) SetDoFs(v ...*DoF) *Joint { t.DoFs = v; return t }
 
 // SetJointIndex sets the [Joint.JointIndex]:
 // JointIndex is the index of this joint in [physics.Joints] when built.
@@ -202,12 +214,12 @@ var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Obje
 
 // SetBodies sets the [Object.Bodies]:
 // Bodies are the bodies in the object.
-func (t *Object) SetBodies(v ...Body) *Object { t.Bodies = v; return t }
+func (t *Object) SetBodies(v ...*Body) *Object { t.Bodies = v; return t }
 
 // SetJoints sets the [Object.Joints]:
 // Joints are joints connecting object bodies.
 // Joint indexes here refer strictly within bodies.
-func (t *Object) SetJoints(v ...Joint) *Object { t.Joints = v; return t }
+func (t *Object) SetJoints(v ...*Joint) *Object { t.Joints = v; return t }
 
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Physics", IDName: "physics", Doc: "Physics provides a container and manager for the main physics elements:\n[Builder], [physics.Model], and [phyxyz.Scene]. This is helpful for\nmodels used within other apps (e.g., an AI simulation), whereas\n[phyxyz.Editor] provides a standalone GUI interface for testing models.", Fields: []types.Field{{Name: "Model", Doc: "Model has the physics Model."}, {Name: "Builder", Doc: "Builder for configuring the Model."}, {Name: "Scene", Doc: "Scene for visualizing the Model"}}})
 
@@ -245,4 +257,4 @@ func (t *World) SetWorld(v int) *World { t.World = v; return t }
 // Each object is a coherent collection of bodies, typically
 // connected by joints. This is an organizational convenience
 // for positioning elements; has no physical implications.
-func (t *World) SetObjects(v ...Object) *World { t.Objects = v; return t }
+func (t *World) SetObjects(v ...*Object) *World { t.Objects = v; return t }
