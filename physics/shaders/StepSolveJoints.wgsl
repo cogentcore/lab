@@ -212,7 +212,7 @@ const JointControlVarsN: JointControlVars = 5;
 const DynamicVarsN: DynamicVars = 33;
 const GPUVarsN: GPUVars = 13;
 const JointTypesN: JointTypes = 8;
-const JointVarsN: JointVars = 39;
+const JointVarsN: JointVars = 45;
 const JointDoFVarsN: JointDoFVars = 5;
 const ShapesN: Shapes = 6;
 
@@ -267,6 +267,12 @@ const  JointCForceZ: JointVars = 35;
 const  JointCTorqueX: JointVars = 36;
 const  JointCTorqueY: JointVars = 37;
 const  JointCTorqueZ: JointVars = 38;
+const  JointLinLambdaX: JointVars = 39;
+const  JointLinLambdaY: JointVars = 40;
+const  JointLinLambdaZ: JointVars = 41;
+const  JointAngLambdaX: JointVars = 42;
+const  JointAngLambdaY: JointVars = 43;
+const  JointAngLambdaZ: JointVars = 44;
 fn GetJointType(idx: i32) -> JointTypes {
 	return JointTypes(bitcast<u32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointType))]));
 }
@@ -304,6 +310,22 @@ fn JointCPos(idx: i32) -> vec3<f32> {
 }
 fn JointCQuat(idx: i32) -> vec4<f32> {
 	return vec4<f32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCQuatX))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCQuatY))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCQuatZ))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCQuatW))]);
+}
+fn JointLinLambda(idx: i32) -> vec3<f32> {
+	return vec3<f32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointLinLambdaX))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointLinLambdaY))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointLinLambdaZ))]);
+}
+fn SetJointLinLambda(idx: i32, t: vec3<f32>) {
+	Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointLinLambdaX))] = t.x;
+	Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointLinLambdaY))] = t.y;
+	Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointLinLambdaZ))] = t.z;
+}
+fn JointAngLambda(idx: i32) -> vec3<f32> {
+	return vec3<f32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointAngLambdaX))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointAngLambdaY))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointAngLambdaZ))]);
+}
+fn SetJointAngLambda(idx: i32, t: vec3<f32>) {
+	Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointAngLambdaX))] = t.x;
+	Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointAngLambdaY))] = t.y;
+	Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointAngLambdaZ))] = t.z;
 }
 alias JointDoFVars = i32; //enums:enum
 const  JointAxisX: JointDoFVars = 0;
@@ -378,6 +400,18 @@ const  Capsule: Shapes = 2;
 const  Cylinder: Shapes = 3;
 const  Box: Shapes = 4;
 const  Cone: Shapes = 5;
+
+//////// import: "slmath-math.go"
+const Pi = 3.141592653589793;
+fn MinAngleDiff(a: f32,b: f32) -> f32 {
+	var d = a - b;
+	if (d > Pi) {
+		d -= 2 * Pi;
+	}
+	if (d < -Pi) {
+		d += 2 * Pi;
+	}return d;
+}
 
 //////// import: "slmath-matrix3.go"
 
@@ -642,6 +676,8 @@ fn StepSolveJointLinear(ji: i32) {
 	MulSpatialTransforms(relPoseR, relPoseQ, xwCR, xwCQ, &relPoseR, &relPoseQ);
 	var wComP = MulSpatialPoint(posePR, posePQ, comP);
 	var wComC = MulSpatialPoint(poseCR, poseCQ, comC);
+	var lambdaPrev = JointLinLambda(ji);
+	var lambdaNext = vec3<f32>(0, 0, 0);
 	if (jt == Distance) {
 		var dP = xwPR-(wComP);
 		var dC = xwCR-(wComC);
@@ -742,16 +778,18 @@ fn StepSolveJointLinear(ji: i32) {
 				}
 			}
 			if (abs(err) > 1e-9 || abs(derrRel) > 1e-9) {
-				var lambdaIn = f32(0.0);
+				var lambdaIn = Dim3(lambdaPrev, dim);
 				var dLambda = PositionalCorrection(err, derrRel, posePQ, poseCQ, mInvP, mInvC,
 					iInvP, iInvC, linearP, linearC, angularP, angularC, lambdaIn, compliance, damping, params.Dt);
 				linDeltaP = linDeltaP+(linearP*(dLambda * params.JointLinearRelax));
 				linDeltaC = linDeltaC+(linearC*(dLambda * params.JointLinearRelax));
 				angDeltaP = angDeltaP+(angularP*(dLambda * params.JointAngularRelax));
 				angDeltaC = angDeltaC+(angularC*(dLambda * params.JointAngularRelax));
+				lambdaNext = SetDim3(lambdaNext, dim, dLambda);
 			}
 		}
 	}
+	SetJointLinLambda(ji, lambdaNext);
 	if (!parentFixed) {
 		StepBodyDeltas(jPi, jPbi, false, f32(f32(0)), linDeltaP, angDeltaP);
 	}
@@ -865,6 +903,8 @@ fn StepSolveJointAngular(ji: i32) {
 	var axisTargetPosKeA: vec3<f32>;
 	var axisTargetVelKdD: vec3<f32>;
 	var axisTargetVelKdA: vec3<f32>;
+	var lambdaPrev = JointAngLambda(ji);
+	var lambdaNext = vec3<f32>(0, 0, 0);
 	for (var dof=0; dof<jAngularN; dof++) {
 		var di = dof + jLinearN;
 		var axis = JointAxis(ji, di);
@@ -911,7 +951,7 @@ fn StepSolveJointAngular(ji: i32) {
 			var ke = Dim3(axisStiffness, dim);
 			var kd = Dim3(axisDamping, dim);
 			if (ke > 0.0) {
-				err = e - targetPos;
+				err = MinAngleDiff(e, targetPos);
 				compliance = 1.0 / ke;
 				damping = Dim3(axisDamping, dim);
 			} else if (kd > 0.0) {
@@ -919,11 +959,13 @@ fn StepSolveJointAngular(ji: i32) {
 				damping = kd;
 			}
 		}
-		var lambdaIn = f32(0);
+		var lambdaIn = Dim3(lambdaPrev, dim);
 		var dLambda = AngularCorrection(err, derrRel, posePQ, poseCQ, iInvP, iInvC, angularP, angularC, lambdaIn, compliance, damping, params.Dt);
 		angDeltaP = angDeltaP+(angularP*(dLambda));
 		angDeltaC = angDeltaC+(angularC*(dLambda));
+		lambdaNext = SetDim3(lambdaNext, dim, dLambda);
 	}
+	SetJointAngLambda(ji, lambdaNext);
 	if (!parentFixed) {
 		StepBodyDeltas(jPi, jPbi, false, f32(f32(0)), linDeltaP, angDeltaP);
 	}

@@ -133,6 +133,16 @@ const (
 	JointCTorqueX
 	JointCTorqueY
 	JointCTorqueZ
+
+	// Computed linear lambdas.
+	JointLinLambdaX
+	JointLinLambdaY
+	JointLinLambdaZ
+
+	// Computed angular lambdas.
+	JointAngLambdaX
+	JointAngLambdaY
+	JointAngLambdaZ
 )
 
 func GetJointType(idx int32) JointTypes {
@@ -289,6 +299,26 @@ func SetJointCTorque(idx int32, t math32.Vector3) {
 	Joints.Set(t.X, int(idx), int(JointCTorqueX))
 	Joints.Set(t.Y, int(idx), int(JointCTorqueY))
 	Joints.Set(t.Z, int(idx), int(JointCTorqueZ))
+}
+
+func JointLinLambda(idx int32) math32.Vector3 {
+	return math32.Vec3(Joints.Value(int(idx), int(JointLinLambdaX)), Joints.Value(int(idx), int(JointLinLambdaY)), Joints.Value(int(idx), int(JointLinLambdaZ)))
+}
+
+func SetJointLinLambda(idx int32, t math32.Vector3) {
+	Joints.Set(t.X, int(idx), int(JointLinLambdaX))
+	Joints.Set(t.Y, int(idx), int(JointLinLambdaY))
+	Joints.Set(t.Z, int(idx), int(JointLinLambdaZ))
+}
+
+func JointAngLambda(idx int32) math32.Vector3 {
+	return math32.Vec3(Joints.Value(int(idx), int(JointAngLambdaX)), Joints.Value(int(idx), int(JointAngLambdaY)), Joints.Value(int(idx), int(JointAngLambdaZ)))
+}
+
+func SetJointAngLambda(idx int32, t math32.Vector3) {
+	Joints.Set(t.X, int(idx), int(JointAngLambdaX))
+	Joints.Set(t.Y, int(idx), int(JointAngLambdaY))
+	Joints.Set(t.Z, int(idx), int(JointAngLambdaZ))
 }
 
 // JointDoFVars are joint DoF state variables stored in tensor.Float32,

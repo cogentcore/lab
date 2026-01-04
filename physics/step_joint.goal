@@ -208,6 +208,9 @@ func StepSolveJointLinear(ji int32) {
 	wComP := slmath.MulSpatialPoint(posePR, posePQ, comP)
 	wComC := slmath.MulSpatialPoint(poseCR, poseCQ, comC)
 
+	lambdaPrev := JointLinLambda(ji)
+	lambdaNext := math32.Vec3(0,0,0)
+	
 	// handle positional constraints
 	if jt == Distance {
 		dP := xwPR.Sub(wComP)
@@ -324,7 +327,8 @@ func StepSolveJointLinear(ji int32) {
 				}
 			}
 			if math32.Abs(err) > 1e-9 || math32.Abs(derrRel) > 1e-9 {
-				lambdaIn := float32(0.0)
+				lambdaIn := slmath.Dim3(lambdaPrev, dim)
+				// lambdaIn := float32(0)
 				dLambda := PositionalCorrection(err, derrRel, posePQ, poseCQ, mInvP, mInvC,
 					iInvP, iInvC, linearP, linearC, angularP, angularC, lambdaIn, compliance, damping, params.Dt)
 
@@ -332,9 +336,15 @@ func StepSolveJointLinear(ji int32) {
 				linDeltaC = linDeltaC.Add(linearC.MulScalar(dLambda * params.JointLinearRelax))
 				angDeltaP = angDeltaP.Add(angularP.MulScalar(dLambda * params.JointAngularRelax))
 				angDeltaC = angDeltaC.Add(angularC.MulScalar(dLambda * params.JointAngularRelax))
+				
+				lambdaNext = slmath.SetDim3(lambdaNext, dim, dLambda)
+				// if angularP.Length() > 0.001 && dLambda > 0.001 {
+				// 	fmt.Println("lin:", angularP.Length(), dLambda, angularP, angDeltaP, dP, linearC, angularC.Length())
+				// }
 			}
 		}
 	}
+	SetJointLinLambda(ji, lambdaNext)
 	// apply the linear deltas so the 
 	if !parentFixed {
 		StepBodyDeltas(jPi, jPbi, false, 0, linDeltaP, angDeltaP)
@@ -472,6 +482,8 @@ func StepSolveJointAngular(ji int32) {
 	var axisLimitsD, axisLimitsA math32.Vector3
 	var axisTargetPosKeD, axisTargetPosKeA math32.Vector3
 	var axisTargetVelKdD, axisTargetVelKdA math32.Vector3
+	lambdaPrev := JointAngLambda(ji)
+	lambdaNext := math32.Vec3(0,0,0)
 
 	for dof := range jAngularN {
 		di := dof + jLinearN
@@ -532,21 +544,26 @@ func StepSolveJointAngular(ji int32) {
 			ke := slmath.Dim3(axisStiffness, dim)
 			kd := slmath.Dim3(axisDamping, dim)
 			if ke > 0.0 {
-				err = e - targetPos
+				err = slmath.MinAngleDiff(e, targetPos)
 				compliance = 1.0 / ke
 				damping = slmath.Dim3(axisDamping, dim)
 			} else if kd > 0.0 {
 				compliance = 1.0 / kd
 				damping = kd
 			}
+			// if ji == 0 && dim == 1 {
+			// 	fmt.Println(targetPos, e, err)
+			// }
 		}
-		lambdaIn := float32(0)
+		lambdaIn := slmath.Dim3(lambdaPrev, dim)
 		dLambda := AngularCorrection(err, derrRel, posePQ, poseCQ, iInvP, iInvC, angularP, angularC, lambdaIn, compliance, damping, params.Dt)
 
 		// note: no relaxation factors here:
 		angDeltaP = angDeltaP.Add(angularP.MulScalar(dLambda))
 		angDeltaC = angDeltaC.Add(angularC.MulScalar(dLambda))
+		lambdaNext = slmath.SetDim3(lambdaNext, dim, dLambda)
 	}
+	SetJointAngLambda(ji, lambdaNext)
 
 	if !parentFixed {
 		StepBodyDeltas(jPi, jPbi, false, 0, linDeltaP, angDeltaP)

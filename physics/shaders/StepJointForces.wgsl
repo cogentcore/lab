@@ -182,7 +182,7 @@ const JointControlVarsN: JointControlVars = 5;
 const DynamicVarsN: DynamicVars = 33;
 const GPUVarsN: GPUVars = 13;
 const JointTypesN: JointTypes = 8;
-const JointVarsN: JointVars = 39;
+const JointVarsN: JointVars = 45;
 const JointDoFVarsN: JointDoFVars = 5;
 const ShapesN: Shapes = 6;
 
@@ -237,6 +237,12 @@ const  JointCForceZ: JointVars = 35;
 const  JointCTorqueX: JointVars = 36;
 const  JointCTorqueY: JointVars = 37;
 const  JointCTorqueZ: JointVars = 38;
+const  JointLinLambdaX: JointVars = 39;
+const  JointLinLambdaY: JointVars = 40;
+const  JointLinLambdaZ: JointVars = 41;
+const  JointAngLambdaX: JointVars = 42;
+const  JointAngLambdaY: JointVars = 43;
+const  JointAngLambdaZ: JointVars = 44;
 fn GetJointType(idx: i32) -> JointTypes {
 	return JointTypes(bitcast<u32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointType))]));
 }
@@ -283,8 +289,7 @@ fn SetJointCForce(idx: i32, f: vec3<f32>) {
 fn SetJointCTorque(idx: i32, t: vec3<f32>) {
 	Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCTorqueX))] = t.x;
 	Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCTorqueY))] = t.y;
-	Joints[Index2D(TensorStrides[30], TensorStrides[31],
-	u32(idx), u32(JointCTorqueZ))] = t.z;
+	Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCTorqueZ))] = t.z;
 }
 alias JointDoFVars = i32; //enums:enum
 const  JointAxisX: JointDoFVars = 0;
@@ -356,6 +361,9 @@ const  Capsule: Shapes = 2;
 const  Cylinder: Shapes = 3;
 const  Box: Shapes = 4;
 const  Cone: Shapes = 5;
+
+//////// import: "slmath-math.go"
+const Pi = 3.141592653589793;
 
 //////// import: "slmath-matrix3.go"
 

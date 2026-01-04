@@ -264,7 +264,7 @@ const JointControlVarsN: JointControlVars = 5;
 const DynamicVarsN: DynamicVars = 33;
 const GPUVarsN: GPUVars = 13;
 const JointTypesN: JointTypes = 8;
-const JointVarsN: JointVars = 39;
+const JointVarsN: JointVars = 45;
 const JointDoFVarsN: JointDoFVars = 5;
 const ShapesN: Shapes = 6;
 
@@ -319,6 +319,12 @@ const  JointCForceZ: JointVars = 35;
 const  JointCTorqueX: JointVars = 36;
 const  JointCTorqueY: JointVars = 37;
 const  JointCTorqueZ: JointVars = 38;
+const  JointLinLambdaX: JointVars = 39;
+const  JointLinLambdaY: JointVars = 40;
+const  JointLinLambdaZ: JointVars = 41;
+const  JointAngLambdaX: JointVars = 42;
+const  JointAngLambdaY: JointVars = 43;
+const  JointAngLambdaZ: JointVars = 44;
 alias JointDoFVars = i32; //enums:enum
 const  JointAxisX: JointDoFVars = 0;
 const  JointAxisY: JointDoFVars = 1;
@@ -383,6 +389,9 @@ const  Capsule: Shapes = 2;
 const  Cylinder: Shapes = 3;
 const  Box: Shapes = 4;
 const  Cone: Shapes = 5;
+
+//////// import: "slmath-math.go"
+const Pi = 3.141592653589793;
 
 //////// import: "slmath-matrix3.go"
 
