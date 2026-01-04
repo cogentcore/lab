@@ -83,7 +83,7 @@ func GPUInit() {
 			_ = vr
 			vr = sgp.Add("TensorStrides", gpu.Uint32, 1, gpu.ComputeShader)
 			vr.ReadOnly = true
-			vr = sgp.AddStruct("Params", int(unsafe.Sizeof(PhysParams{})), 1, gpu.ComputeShader)
+			vr = sgp.AddStruct("Params", int(unsafe.Sizeof(PhysicsParams{})), 1, gpu.ComputeShader)
 			sgp.SetNValues(1)
 		}
 		{
@@ -167,6 +167,7 @@ func GPUInit() {
 		pl.AddVarUsed(0, "TensorStrides")
 		pl.AddVarUsed(2, "BroadContactsN")
 		pl.AddVarUsed(2, "ContactsN")
+		pl.AddVarUsed(3, "JointControls")
 		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/StepIntegrateBodies.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
@@ -897,8 +898,8 @@ func SyncFromGPU(vars ...GPUVars) {
 }
 
 // GetParams returns a pointer to the given global variable: 
-// [Params] []PhysParams at given index. This directly processed in the GPU code,
+// [Params] []PhysicsParams at given index. This directly processed in the GPU code,
 // so this function call is an equivalent for the CPU.
-func GetParams(idx uint32) *PhysParams {
+func GetParams(idx uint32) *PhysicsParams {
 	return &Params[idx]
 }

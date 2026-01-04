@@ -20,7 +20,7 @@ var CurModel *Model
 var (
 	// Params are global parameters.
 	//gosl:group Params
-	Params []PhysParams
+	Params []PhysicsParams
 
 	// Bodies are the rigid body elements (dynamic and static),
 	// specifying the constant, non-dynamic properties,
@@ -32,9 +32,10 @@ var (
 
 	// Objects is a list of joint indexes for each object, where each object
 	// contains all the joints interconnecting an overlapping set of bodies.
+	// This is known as an articulation in other physics software.
 	// Joints must be added in parent -> child order within objects, as joints
 	// are updated in sequential order within object. First element is n joints.
-	// [object][MaxJointsPerObject+1]
+	// [object][MaxObjectJoints+1]
 	//gosl:dims 2
 	Objects *tensor.Int32
 

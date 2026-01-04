@@ -34,6 +34,12 @@ func StepInit(i uint32) { //gosl:kernel read-write:Params
 		params.Cur = 0
 		params.Next = 1
 	}
+	for j := range params.JointDoFsN {
+		tpos := JointControls.Value(int(j), int(JointTargetPos))
+		tcur := JointControls.Value(int(j), int(JointTargetPosCur))
+		tcur += params.ControlDt * (tpos - tcur)
+		JointControls.Set(tcur, int(j), int(JointTargetPosCur))
+	}
 }
 
 // step does the following:

@@ -98,20 +98,20 @@ func (i *ContactVars) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "ContactVars")
 }
 
-var _JointControlVarsValues = []JointControlVars{0, 1, 2, 3, 4}
+var _JointControlVarsValues = []JointControlVars{0, 1, 2, 3, 4, 5}
 
 // JointControlVarsN is the highest valid value for type JointControlVars, plus one.
 //
 //gosl:start
-const JointControlVarsN JointControlVars = 5
+const JointControlVarsN JointControlVars = 6
 
 //gosl:end
 
-var _JointControlVarsValueMap = map[string]JointControlVars{`JointControlForce`: 0, `JointTargetPos`: 1, `JointTargetStiff`: 2, `JointTargetVel`: 3, `JointTargetDamp`: 4}
+var _JointControlVarsValueMap = map[string]JointControlVars{`JointControlForce`: 0, `JointTargetPos`: 1, `JointTargetPosCur`: 2, `JointTargetStiff`: 3, `JointTargetVel`: 4, `JointTargetDamp`: 5}
 
-var _JointControlVarsDescMap = map[JointControlVars]string{0: `Joint force and torque inputs`, 1: `JointTargetPos is the position target value, where 0 is the initial position. For angular joints, this is in radians.`, 2: `JointTargetStiff determines how strongly the target position is enforced: 0 = not at all; larger = stronger (e.g., 1000 or higher). Set to 0 to allow the joint to be fully flexible.`, 3: `JointTargetVel is the velocity target value. For example, 0 effectively damps joint movement in proportion to Damp parameter.`, 4: `JointTargetDamp determines how strongly the target velocity is enforced: 0 = not at all; larger = stronger (e.g., 1 is reasonable). Set to 0 to allow the joint to be fully flexible.`}
+var _JointControlVarsDescMap = map[JointControlVars]string{0: `Joint force and torque inputs`, 1: `JointTargetPos is the position target value input to the model, where 0 is the initial position. For angular joints, this is in radians. This is subject to a graded transition over time, [JointTargetPosCur] has the current effective value.`, 2: `JointTargetPosCur is the current position target value, updated from [JointTargetPos] input using the [Params.ControlDt] time constant.`, 3: `JointTargetStiff determines how strongly the target position is enforced: 0 = not at all; larger = stronger (e.g., 1000 or higher). Set to 0 to allow the joint to be fully flexible.`, 4: `JointTargetVel is the velocity target value. For example, 0 effectively damps joint movement in proportion to Damp parameter.`, 5: `JointTargetDamp determines how strongly the target velocity is enforced: 0 = not at all; larger = stronger (e.g., 1 is reasonable). Set to 0 to allow the joint to be fully flexible.`}
 
-var _JointControlVarsMap = map[JointControlVars]string{0: `JointControlForce`, 1: `JointTargetPos`, 2: `JointTargetStiff`, 3: `JointTargetVel`, 4: `JointTargetDamp`}
+var _JointControlVarsMap = map[JointControlVars]string{0: `JointControlForce`, 1: `JointTargetPos`, 2: `JointTargetPosCur`, 3: `JointTargetStiff`, 4: `JointTargetVel`, 5: `JointTargetDamp`}
 
 // String returns the string representation of this JointControlVars value.
 func (i JointControlVars) String() string { return enums.String(i, _JointControlVarsMap) }

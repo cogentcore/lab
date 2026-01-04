@@ -66,6 +66,9 @@ fn CycleUpdt(i: u32) { //gosl:kernel read-write:Ctx
 	Ctx[0] = ctx;
 }
 
+//////// import: "slmath-math.go"
+const Pi = 3.141592653589793;
+
 //////// import: "slmath-matrix3.go"
 
 //////// import: "slmath-quaternion.go"

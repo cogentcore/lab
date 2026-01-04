@@ -87,9 +87,19 @@ func (ml *Model) ConfigBodies() {
 	}
 }
 
+// InitControlState initializes the JointTargetPosCur values to 0.
+// This is done on the CPU prior to copying up to GPU, in InitState.
+func (ml *Model) InitControlState() {
+	params := GetParams(0)
+	for j := range params.JointDoFsN {
+		JointControls.Set(0, int(j), int(JointTargetPosCur))
+	}
+}
+
 // InitState initializes the simulation state.
 func (ml *Model) InitState() {
 	params := GetParams(0)
+	ml.InitControlState()
 	ml.ToGPUInfra()
 	RunInitDynamics(int(params.DynamicsN))
 	RunDone(DynamicsVar)

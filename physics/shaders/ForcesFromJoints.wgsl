@@ -5,7 +5,7 @@
 @group(0) @binding(0)
 var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
-var<storage, read_write> Params: array<PhysParams>;
+var<storage, read_write> Params: array<PhysicsParams>;
 // // Bodies are the rigid body elements (dynamic and static), // specifying the constant, non-dynamic properties, // which is initial state for dynamics. // [body][BodyVarsN] 
 @group(1) @binding(2)
 var<storage, read_write> BodyJoints: array<i32>;
@@ -122,9 +122,10 @@ const BroadContactVarsN = ContactAPointX;
 alias JointControlVars = i32; //enums:enum
 const  JointControlForce: JointControlVars = 0;
 const  JointTargetPos: JointControlVars = 1;
-const  JointTargetStiff: JointControlVars = 2;
-const  JointTargetVel: JointControlVars = 3;
-const  JointTargetDamp: JointControlVars = 4;
+const  JointTargetPosCur: JointControlVars = 2;
+const  JointTargetStiff: JointControlVars = 3;
+const  JointTargetVel: JointControlVars = 4;
+const  JointTargetDamp: JointControlVars = 5;
 
 //////// import: "dynamics.go"
 alias DynamicVars = i32; //enums:enum
@@ -175,7 +176,7 @@ fn SetDynamicTorque(idx: i32,cni: i32, torque: vec3<f32>) {
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 43;
 const ContactVarsN: ContactVars = 33;
-const JointControlVarsN: JointControlVars = 5;
+const JointControlVarsN: JointControlVars = 6;
 const DynamicVarsN: DynamicVars = 33;
 const GPUVarsN: GPUVars = 13;
 const JointTypesN: JointTypes = 8;
@@ -260,10 +261,11 @@ const  JointLimitLower: JointDoFVars = 3;
 const  JointLimitUpper: JointDoFVars = 4;
 
 //////// import: "params.go"
-struct PhysParams {
+struct PhysicsParams {
 	Iterations: i32,
 	Dt: f32,
 	SubSteps: i32,
+	ControlDt: f32,
 	ContactMargin: f32,
 	ContactRelax: f32, // 0.8 def
 	ContactWeighting: i32, // true
@@ -288,7 +290,6 @@ struct PhysParams {
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
 	pad: i32,
-	pad1: i32,
 	Gravity: vec4<f32>,
 }
 

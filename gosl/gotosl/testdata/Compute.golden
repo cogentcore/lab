@@ -241,6 +241,9 @@ fn Compute(i: u32) { //gosl:kernel
 	ParamStruct_IntegFromRaw(params, i32(i));
 }
 
+//////// import: "slmath-math.go"
+const Pi = 3.141592653589793;
+
 //////// import: "slmath-matrix3.go"
 
 //////// import: "slmath-quaternion.go"

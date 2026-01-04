@@ -197,9 +197,9 @@ ed.SetControlFunc(func(timeStep int) {
 })
 
 func update() {
-    posXstr = fmt.Sprintf("Pos X: %g", posX)
-    posYstr = fmt.Sprintf("Pos Y: %g", posY)
-    posZstr = fmt.Sprintf("Pos Z: %g", posZ)
+    posXstr = fmt.Sprintf("Angle X: %g", posX)
+    posYstr = fmt.Sprintf("Angle Y: %g", posY)
+    posZstr = fmt.Sprintf("Angle Z: %g", posZ)
     stiffStr = fmt.Sprintf("Stiff: %g", stiff)
     dampStr = fmt.Sprintf("Damp: %g", damp)
 }

@@ -264,7 +264,7 @@ func StepSolveJointLinear(ji int32) {
 			JointAxisLimitsUpdate(dof, axis, JointDoF(ji, dof, JointLimitLower), JointDoF(ji, dof, JointLimitUpper), &axisLimitsD, &axisLimitsA)
 			ke := JointControl(ji, dof, JointTargetStiff)
 			kd := JointControl(ji, dof, JointTargetDamp)
-			targetPos := JointControl(ji, dof, JointTargetPos)
+			targetPos := JointControl(ji, dof, JointTargetPosCur)
 			targetVel := JointControl(ji, dof, JointTargetVel)
 			if ke > 0.0 { // has position control
 				JointAxisTarget(axis, targetPos, ke, &axisTargetPosKeD, &axisTargetPosKeA)
@@ -491,7 +491,7 @@ func StepSolveJointAngular(ji int32) {
 		JointAxisLimitsUpdate(dof, axis, JointDoF(ji, di, JointLimitLower), JointDoF(ji, di, JointLimitUpper), &axisLimitsD, &axisLimitsA)
 		ke := JointControl(ji, di, JointTargetStiff)
 		kd := JointControl(ji, di, JointTargetDamp)
-		targetPos := JointControl(ji, di, JointTargetPos)
+		targetPos := JointControl(ji, di, JointTargetPosCur)
 		targetVel := JointControl(ji, di, JointTargetVel)
 		if ke > 0.0 { // has position control
 			JointAxisTarget(axis, targetPos, ke, &axisTargetPosKeD, &axisTargetPosKeA)

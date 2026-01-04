@@ -12,8 +12,8 @@ import (
 
 //gosl:start
 
-// PhysParams are the physics parameters
-type PhysParams struct {
+// PhysicsParams are the physics parameters
+type PhysicsParams struct {
 	// Iterations is the number of integration iterations to perform
 	// within each solver step. Muller et al (2020) report that 1 is best.
 	Iterations int32 `default:"1"`
@@ -28,6 +28,10 @@ type PhysParams struct {
 	// function call. These sub steps are taken without any sync to/from
 	// the GPU and are therefore much faster.
 	SubSteps int32 `default:"10" min:"1"`
+
+	// ControlDt is the stepsize for integrating joint control position values
+	// [JointTargetPos] over time, to avoid sudden strong changes in force.
+	ControlDt float32 `default:"0.1"`
 
 	// Contact margin is the extra distance for broadphase collision
 	// around rigid bodies. This can make some joints potentially unstable if > 0
@@ -103,16 +107,17 @@ type PhysParams struct {
 	// to examine.
 	BodyCollidePairsN int32 `edit:"-"`
 
-	pad, pad1 int32
+	pad int32
 
 	// Gravity is the gravity acceleration function
 	Gravity slvec.Vector3
 }
 
-func (pr *PhysParams) Defaults() {
+func (pr *PhysicsParams) Defaults() {
 	pr.Iterations = 1
 	pr.Dt = 0.0001
 	pr.SubSteps = 10
+	pr.ControlDt = 0.1
 	pr.Gravity.Set(0, -9.81, 0)
 
 	pr.ContactMargin = 0
@@ -132,7 +137,7 @@ func (pr *PhysParams) Defaults() {
 }
 
 // Reset resets the N's
-func (pr *PhysParams) Reset() {
+func (pr *PhysicsParams) Reset() {
 	pr.BodiesN = 0
 	pr.DynamicsN = 0
 	pr.ObjectsN = 0
@@ -145,7 +150,7 @@ func (pr *PhysParams) Reset() {
 
 // StepsToMsec returns the given number of individual Step calls
 // converted into milliseconds, suitable for driving controls.
-func (pr *PhysParams) StepsToMsec(steps int) int {
+func (pr *PhysicsParams) StepsToMsec(steps int) int {
 	msper := 1000 * pr.Dt * float32(pr.SubSteps)
 	return int(math32.Round(float32(steps) * msper))
 }

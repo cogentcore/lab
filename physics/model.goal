@@ -17,7 +17,7 @@ type Model struct {
 	GPU bool
 
 	// Params are global parameters.
-	Params []PhysParams
+	Params []PhysicsParams
 
 	// CurrentWorld is the [BodyWorld] value to use when creating new bodies.
 	// Set to -1 to create global elements that interact with everything,
@@ -26,21 +26,21 @@ type Model struct {
 
 	// CurrentObject is the Object to use when creating new joints.
 	// Call NewObject to increment.
-	CurrentObject int
+	CurrentObject int `edit:"-"`
 
 	// CurrentObjectJoint is the Joint index in CurrentObject
 	// to use when creating new joints.
-	CurrentObjectJoint int
+	CurrentObjectJoint int `edit:"-"`
 
 	// ReplicasStart is the starting body index for replicated world bodies,
 	// which is needed for viewers to efficiently select a specific world to view.
 	// This is the start of the World=0 first instance.
-	ReplicasStart int32
+	ReplicasStart int32 `edit:"-"`
 
 	// ReplicasN is the number of body elements within each set of
 	// replicated world bodies, which is needed for viewers to efficiently select
 	// a specific world to view.
-	ReplicasN int32
+	ReplicasN int32 `edit:"-"`
 
 	// Bodies are the rigid body elements (dynamic and static),
 	// specifying the constant, non-dynamic properties,
@@ -50,9 +50,10 @@ type Model struct {
 
 	// Objects is a list of joint indexes for each object, where each object
 	// contains all the joints interconnecting an overlapping set of bodies.
+	// This is known as an articulation in other physics software.
 	// Joints must be added in parent -> child order within objects, as joints
 	// are updated in sequential order within object.
-	// [object][maxjointsperobj]
+	// [object][MaxObjectJoints+1]
 	Objects *tensor.Int32 `display:"no-inline"`
 
 	// BodyJoints is a list of joint indexes for each dynamic body, for aggregating.
@@ -80,7 +81,7 @@ type Model struct {
 
 	// BroadContactsN has number of points of broad contact
 	// between bodies. [1]
-	BroadContactsN *tensor.Int32
+	BroadContactsN *tensor.Int32 `display:"no-inline"`
 
 	// BroadContacts are the results of broad-phase contact processing,
 	// establishing possible points of contact between bodies.
@@ -113,7 +114,7 @@ func NewModel() *Model {
 // Must call Config once configured.
 func (ml *Model) Init() {
 	ml.GPU = true
-	ml.Params = make([]PhysParams, 1)
+	ml.Params = make([]PhysicsParams, 1)
 	ml.Params[0].Defaults()
 	ml.Reset()
 }

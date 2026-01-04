@@ -18,9 +18,16 @@ const (
 	// Joint force and torque inputs
 	JointControlForce JointControlVars = iota
 
-	// JointTargetPos is the position target value, where 0 is the initial
-	// position. For angular joints, this is in radians.
+	// JointTargetPos is the position target value input to the model,
+	// where 0 is the initial position. For angular joints, this is in radians.
+	// This is subject to a graded transition over time, [JointTargetPosCur]
+	// has the current effective value.
 	JointTargetPos
+
+	// JointTargetPosCur is the current position target value,
+	// updated from [JointTargetPos] input using the [Params.ControlDt]
+	// time constant.
+	JointTargetPosCur
 
 	// JointTargetStiff determines how strongly the target position
 	// is enforced: 0 = not at all; larger = stronger (e.g., 1000 or higher).

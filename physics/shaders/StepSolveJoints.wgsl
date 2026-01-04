@@ -5,7 +5,7 @@
 @group(0) @binding(0)
 var<storage, read> TensorStrides: array<u32>;
 @group(0) @binding(1)
-var<storage, read_write> Params: array<PhysParams>;
+var<storage, read_write> Params: array<PhysicsParams>;
 // // Bodies are the rigid body elements (dynamic and static), // specifying the constant, non-dynamic properties, // which is initial state for dynamics. // [body][BodyVarsN] 
 @group(1) @binding(0)
 var<storage, read_write> Bodies: array<f32>;
@@ -141,9 +141,10 @@ const BroadContactVarsN = ContactAPointX;
 alias JointControlVars = i32; //enums:enum
 const  JointControlForce: JointControlVars = 0;
 const  JointTargetPos: JointControlVars = 1;
-const  JointTargetStiff: JointControlVars = 2;
-const  JointTargetVel: JointControlVars = 3;
-const  JointTargetDamp: JointControlVars = 4;
+const  JointTargetPosCur: JointControlVars = 2;
+const  JointTargetStiff: JointControlVars = 3;
+const  JointTargetVel: JointControlVars = 4;
+const  JointTargetDamp: JointControlVars = 5;
 fn JointControl(idx: i32,dof: i32, vr: JointControlVars) -> f32 {
 	return JointControls[Index2D(TensorStrides[110], TensorStrides[111], u32(JointDoFIndex(idx, dof)), u32(vr))];
 }
@@ -208,7 +209,7 @@ fn SetDynamicAngDelta(idx: i32,cni: i32, angDelta: vec3<f32>) {
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 43;
 const ContactVarsN: ContactVars = 33;
-const JointControlVarsN: JointControlVars = 5;
+const JointControlVarsN: JointControlVars = 6;
 const DynamicVarsN: DynamicVars = 33;
 const GPUVarsN: GPUVars = 13;
 const JointTypesN: JointTypes = 8;
@@ -344,10 +345,11 @@ fn JointDoF(idx: i32,dof: i32, vr: JointDoFVars) -> f32 {
 }
 
 //////// import: "params.go"
-struct PhysParams {
+struct PhysicsParams {
 	Iterations: i32,
 	Dt: f32,
 	SubSteps: i32,
+	ControlDt: f32,
 	ContactMargin: f32,
 	ContactRelax: f32, // 0.8 def
 	ContactWeighting: i32, // true
@@ -372,7 +374,6 @@ struct PhysParams {
 	BodyJointsMax: i32,
 	BodyCollidePairsN: i32,
 	pad: i32,
-	pad1: i32,
 	Gravity: vec4<f32>,
 }
 
@@ -727,7 +728,7 @@ fn StepSolveJointLinear(ji: i32) {
 			JointAxisLimitsUpdate(dof, axis, JointDoF(ji, dof, JointLimitLower), JointDoF(ji, dof, JointLimitUpper), &axisLimitsD, &axisLimitsA);
 			var ke = JointControl(ji, dof, JointTargetStiff);
 			var kd = JointControl(ji, dof, JointTargetDamp);
-			var targetPos = JointControl(ji, dof, JointTargetPos);
+			var targetPos = JointControl(ji, dof, JointTargetPosCur);
 			var targetVel = JointControl(ji, dof, JointTargetVel);
 			if (ke > 0.0) { // has position control
 				JointAxisTarget(axis, targetPos, ke, &axisTargetPosKeD, &axisTargetPosKeA);
@@ -911,7 +912,7 @@ fn StepSolveJointAngular(ji: i32) {
 		JointAxisLimitsUpdate(dof, axis, JointDoF(ji, di, JointLimitLower), JointDoF(ji, di, JointLimitUpper), &axisLimitsD, &axisLimitsA);
 		var ke = JointControl(ji, di, JointTargetStiff);
 		var kd = JointControl(ji, di, JointTargetDamp);
-		var targetPos = JointControl(ji, di, JointTargetPos);
+		var targetPos = JointControl(ji, di, JointTargetPosCur);
 		var targetVel = JointControl(ji, di, JointTargetVel);
 		if (ke > 0.0) { // has position control
 			JointAxisTarget(axis, targetPos, ke, &axisTargetPosKeD, &axisTargetPosKeA);

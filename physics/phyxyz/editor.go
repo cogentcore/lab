@@ -163,6 +163,7 @@ func (pe *Editor) ConfigModel() {
 	pe.Scene.Init(pe.Model)
 	pe.stop = false
 	pe.TimeStep = 0
+	pe.editor.NeedsRender()
 }
 
 // Restart restarts the simulation, returning true if successful (i.e., not running).
@@ -173,7 +174,8 @@ func (pe *Editor) Restart() bool {
 	}
 	pe.stop = false
 	pe.TimeStep = 0
-	pe.Scene.Init(pe.Model)
+	pe.Scene.InitState(pe.Model)
+	pe.editor.NeedsRender()
 	return true
 }
 
@@ -258,9 +260,6 @@ func (pe *Editor) MakeToolbar(p *tree.Plan) {
 		w.SetText("Rebuild").SetIcon(icons.Reset).
 			SetTooltip("Rebuild the environment, when you change parameters").
 			OnClick(func(e events.Event) {
-				if !pe.Restart() {
-					return
-				}
 				pe.ConfigModel()
 			})
 		w.FirstStyler(func(s *styles.Style) { s.SetEnabled(!pe.isRunning) })
