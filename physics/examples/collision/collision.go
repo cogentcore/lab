@@ -46,6 +46,7 @@ type Collide struct {
 	// Friction is for sliding: around 0.01 seems pretty realistic
 	Friction float32
 
+	// FrictionTortion is for rotating. Not generally relevant here.
 	FrictionTortion float32
 
 	// FrictionRolling is for rolling: around 0.01 seems pretty realistic
@@ -61,6 +62,7 @@ func (cl *Collide) Defaults() {
 	cl.MassB = 1
 	cl.PushMass = 1
 	cl.Friction = 0.01
+	cl.FrictionTortion = 0.01
 	cl.FrictionRolling = 0.01
 }
 

@@ -31,6 +31,7 @@ ed.SetUserParams(&params)
 
 ed.SetConfigFunc(func() {
 	ml := ed.Model
+    ml.GPU = false // small models run faster on CPU
 	sc := ed.Scene
     hsz := math32.Vec3(0.05, .2, 0.05)
     mass := float32(0.1)
@@ -58,7 +59,9 @@ ed.SetConfigFunc(func() {
 })
 ```
 
-The [[doc:physics/phyxyz/Editor]] widget provides the [[doc:physics/Model]] and [[doc:physics/phyxyz/Scene]] elements, and the `ConfigFunc` function that configures the physics elements. Stepping through these elements in order:
+The [[doc:physics/phyxyz/Editor]] widget provides the [[doc:physics/Model]] and [[doc:physics/phyxyz/Scene]] elements. Click the `Step` buttons to run the physics updates for the given number of steps. `Restart` puts the configuration back to the initial conditions, while `Rebuild` re-builds the model using any updated parameters (in this case, the `N pendula` -- try increasing the number of links!).
+
+The `ConfigFunc` function configures the physics elements. Stepping through these elements in order:
 
 ```go
     rleft := math32.NewQuatAxisAngle(math32.Vec3(0, 0, 1), -math32.Pi/2)
@@ -257,6 +260,8 @@ There is also an `Object` index for each body, that is used for external manipul
 
 The elemental shapes are a `Plane`, `Sphere`, `Capsule`, `Cylinder`, `Cone`, and `Box`: [[doc:physics.Shapes]]. The `Size` property on bodies is always the _half_ size, such as the radius or the half-height of a cylinder or capsule. This is used in `newton-physics` and makes more sense for center-based computations: physics operates on the center-of-mass of a body. Consistent with the overall coordinate system, the `Cylinder` and `Capsule` are oriented with `Y` as the height dimension, which is unfortunately inconsistent with the Z=up convention in `newton-physics`.
 
+The `Capsule` half-size (Y axis) specifies the _entire_ half-size of the capsule, _including_ the end cap radius (X axis value). This allows one to use the same size specification for `Box`, `Capsule`, and `Cylinder` and have it make sense in terms of total vertical size, and it also allows using this Y half-size directly as an offset in joints, to make bodies connect at the top or bottom of the capsule. The Y half-size is constrained to be >= 1.01 * X half-size, where the 1.01 multiplier ensures that there is at least a very thin amount of cylindrical height, which is necessary for the collision computations. This height specification differs from `newton-physics`, where the half-height only specifies the height of the cylindrical portion of the capsule.
+
 ### Multi-shape bodies
 
 The newton-physics framework, and MuJoCo upon which it is based, support multiple shapes per body, which can then be integrated to produce an aggregate inertia. This adds an additional level of complexity and management overhead, which we are currently avoiding in favor of putting the shapes directly on the body, so each body has 1 and only 1 shape. This simplifies collision considerably as well. It would not be difficult to add a shape layer at some point in the future. The same goes for Mesh, SDF, and HeightField types.
@@ -279,27 +284,27 @@ The supported [[doc:physics.JointTypes]] include the following (DoF = degrees-of
 
 * `D6` is a generic 6-DoF joint that can be configured with up to 3 linear DoF and 3 angular DoF.
 
+* `PlaneXZ` is a configuration of `D6` for navigation within the X-Z horizontal plane, with two linear DoF for motion in X and Z, and one angular DoF for rotation along the Y (vertical) axis.
+
 Use `NewJoint*` with _dynamic_ body indexes to create joints (e.g., `NewJointPrismatic` etc). Each joint can be positioned with a relative offset and orientation relative to the _parent_ and _child_ elements. The parent index can be set to -1 to anchor a child body in an arbitrary and fixed position within the overall world.
 
 ## Phyxyz viewer
 
-Typically, bodies are created using the enhanced functions in the [[doc:physics/phyxyz]] package, which provides a [[doc:physics/phyxyz.View]] wrapper for physics bodies. This wrapper has a default `Color` setting to provide simple color coding of bodies, and supports `NewView` and `InitView` functions that allow arbitrary visualization dynamics to be associated with each body (textures, meshes, dynamic updating etc).
+Typically, bodies are created using the enhanced functions in the [[doc:physics/phyxyz]] package, which provides a [[doc:physics/phyxyz.Skin]] wrapper for physics bodies. This wrapper has a default `Color` setting to provide simple color coding of bodies, and supports `NewSkin` and `InitSkin` functions that allow arbitrary visualization dynamics to be associated with each body (textures, meshes, dynamic updating etc).
+
+## Builder 
+
+The [[doc:physics/builder]] package provides a hierarchically-structured tree for constructing models, where you construct the specification of everything in terms of `World`, `Object`, and `Body` elements, and then call the `Build` function to actually generate the flat, GPU-compatible representation used directly in the `physics` engine. The overall API is similar, so it is easy to switch to using builder instead of directly constructing in `physics` or `phyxyz` (builder also supports making phyxyz Skins).
+
+A major advantage of using `builder` is to take advantage of the `ReplicateWorld` method, which makes it easy to configure parallel worlds, as described next. It also provides convenient functions for incrementally adjusting positions relative to existing values, and manipulating the position of an entire `Object` as a collection of interconnected bodies (see [[doc:physics/builder.Object]] methods such as `Move` and `RotateAround`.
 
 ## Parallel worlds
-
-TODO: switch over to builder here.
 
 The compute efficiency of the GPU goes up with the more elements that are processed in parallel, amortizing the memory transfer overhead and leveraging the parallel cores. Furthermore, in AI applications for example, models can be trained in parallel on different instances of the same environment, with each instance having its own random initial starting point and trajectory over time. All of these instances can be simulated in one `physics.Model` by using the `World` index on the bodies, with the shared static environment living in World -1, and the elements of each instance (e.g., a simulated robot) living in its own separate world.
 
 The `NewBody` and `NewDynamic` methods automatically use the `Model.CurrentWorld` index by default, or you can directly use `SetBodyWorld` to assign a specific world index.
 
-The `ReplicateWorld` method creates N replicas of an existing world, including all associated joints. This can only be called once, as it records the start and N-per-world of each such replicated world, which allows the `phyxyz` viewer to efficiently view a specific world. Thus, under this scenario, you create world 0 and then replicate it, then modify the initial positions and orientations accordingly, using `PositionObject`, as described next. The object numbers are also replicated so uniquely indexing a specific object instance requires specifying the world and object indexes.
-
-The phyxyz viewer can display a specific world, or all worlds.
-
-## Manipulating objects
-
-TODO.
+The [[doc:physics/builder.Builder.ReplicateWorld]] method creates N replicas of an existing world, including all associated joints. This can only be called once, as it records the start and N-per-world of each such replicated world, which allows the `phyxyz` `Editor` to efficiently view a specific world. Thus, under this scenario, you create world 0 and then replicate it, then modify the initial positions and orientations accordingly, using the Object-based methods. 
 
 ## Sensors
 

@@ -198,9 +198,8 @@ func (sk *Skin) CylinderInit(sld *xyz.Solid) {
 // add updaters for that.
 func (sk *Skin) CapsuleInit(sld *xyz.Solid) {
 	rat := sk.HSize.Y / sk.HSize.X
-	mnm := fmt.Sprintf("physics.Capsule_%3g", rat)
+	mnm := fmt.Sprintf("physics.Capsule_%g", math32.Truncate(rat, 3))
 	if ms, _ := sld.Scene.MeshByName(mnm); ms == nil {
-		fmt.Println(rat, mnm, 2*(sk.HSize.Y-sk.HSize.X)/sk.HSize.X)
 		ms = xyz.NewCapsule(sld.Scene, mnm, 2*(sk.HSize.Y-sk.HSize.X)/sk.HSize.X, 1, 32, 1)
 	}
 	sld.SetMeshName(mnm)

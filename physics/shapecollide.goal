@@ -406,4 +406,8 @@ func ColCylinderPlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, 
 	return dist
 }
 
+// todo: newton geometry/collision_primitive.py supports collide_sphere_cylinder
+// could adapt that. But there is no Box-Cylinder collision, nor anything with Capsule.
+// so in general it is not super urgent.
+
 //gosl:end

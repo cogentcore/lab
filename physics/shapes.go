@@ -44,7 +44,8 @@ const (
 
 	// Cylinder, natively oriented vertically along the Y axis.
 	// SizeX = radius, SizeY = half-height of Y axis
-	// Cylinder can not collide with a Box.
+	// Cylinder does not support most collisions and is thus not recommended
+	// where collision data is needed.
 	Cylinder
 
 	// Box is a 3D rectalinear shape.
