@@ -66,8 +66,8 @@ func TestSphereSphere(t *testing.T) {
 		if !actual {
 			continue
 		}
-		cpA := ctA.Add(offA)
-		cpB := ctB.Add(offB)
+		// cpA := ctA.Add(offA)
+		// cpB := ctB.Add(offB)
 		// fmt.Println(cpA, cpB, tc.dist, actual)
 	}
 
