@@ -22,6 +22,13 @@ type Object struct {
 	// Joints are joints connecting object bodies.
 	// Joint indexes here refer strictly within bodies.
 	Joints []*Joint
+
+	// Sensors are functions that can be configured to report arbitrary values
+	// on given body element. The output must be stored directly somewhere via
+	// the closure function: the utility of the sensor function is being able
+	// to capture all the configuration-time parameters needed to make it work,
+	// and to have it automatically called on replicated objects.
+	Sensors []func(obj *Object)
 }
 
 func (ob *Object) Body(idx int) *Body {
@@ -38,6 +45,7 @@ func (ob *Object) Joint(idx int) *Joint {
 func (ob *Object) Copy(so *Object) {
 	ob.Bodies = make([]*Body, len(so.Bodies))
 	ob.Joints = make([]*Joint, len(so.Joints))
+	ob.Sensors = make([]func(obj *Object), len(so.Sensors))
 	for i := range ob.Bodies {
 		ob.Bodies[i] = &Body{}
 		ob.Body(i).Copy(so.Body(i))
@@ -46,6 +54,7 @@ func (ob *Object) Copy(so *Object) {
 		ob.Joints[i] = &Joint{}
 		ob.Joint(i).Copy(so.Joint(i))
 	}
+	copy(ob.Sensors, so.Sensors)
 }
 
 // CopySkins makes new skins for bodies based on those in source object.
@@ -145,4 +154,16 @@ func (ob *Object) MoveOnAxisBody(body int, x, y, z, dist float32) {
 func (ob *Object) RotateOnAxisBody(body int, x, y, z, angle float32) {
 	rot := math32.NewQuatAxisAngle(math32.Vec3(x, y, z), math32.DegToRad(angle))
 	ob.RotateAroundBody(body, rot)
+}
+
+//////// Sensors
+
+func (ob *Object) NewSensor(fun func(obj *Object)) {
+	ob.Sensors = append(ob.Sensors, fun)
+}
+
+func (ob *Object) RunSensors() {
+	for _, sf := range ob.Sensors {
+		sf(ob)
+	}
 }

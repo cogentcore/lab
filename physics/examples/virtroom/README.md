@@ -1,4 +1,4 @@
-# xyz/physics example
+# physics virtual room navigation
 
 This demo shows how to construct and visualize a [physics](../../physics) model of a simple virtual room environment, with a virtual robot ("emer") having a first-person view of the world.
 

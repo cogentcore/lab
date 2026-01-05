@@ -231,3 +231,17 @@ func (ml *Model) TotalKineticEnergy() float32 {
 	}
 	return ke
 }
+
+// AngularVelocityAt returns the angular velocity vector of given dynamic body
+// index and Next index, relative to given rotation axis at given point
+// relative to the structural center of the given dynamic body.
+// For example, to get rotation around the XZ plane, axis = (0,1,0) and
+// the velocity value will show up in the Z axis for an X-axis point,
+// and vice-versa (X for a Z-axis point).
+// This uses DynamicAngVel which is computed after each step (into Next).
+func AngularVelocityAt(di int32, point, axis math32.Vector3) math32.Vector3 {
+	params := GetParams(0)
+	w := DynamicAngVel(di, params.Next)
+	wp := slmath.Cross3(w.Mul(axis), point)
+	return wp
+}

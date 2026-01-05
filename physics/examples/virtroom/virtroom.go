@@ -7,6 +7,7 @@ package main
 //go:generate core generate
 
 import (
+	"fmt"
 	"image"
 	"math/rand/v2"
 	"os"
@@ -49,6 +50,10 @@ func main() {
 type Emer struct {
 	// if true, emer is angry: changes face color
 	Angry bool
+
+	// VestibHRightEar is the horizontal rotation vestibular signal measured
+	// at the right ear, averaged over the steps.
+	VestibHRightEar float32
 
 	// height of emer
 	Height float32
@@ -185,8 +190,8 @@ func (ev *Env) RenderEyeImg() image.Image {
 	return ev.Physics.Scene.RenderFrom(ev.Emer.EyeR.Skin, &ev.Camera, 0)
 }
 
-// GrabEyeImg takes a snapshot from the perspective of Emer's right eye
-func (ev *Env) GrabEyeImg() { //types:add
+// GrabEyeImage takes a snapshot from the perspective of Emer's right eye
+func (ev *Env) GrabEyeImage() { //types:add
 	img := ev.RenderEyeImg()
 	if img != nil {
 		ev.EyeRImg.SetImage(img)
@@ -197,6 +202,11 @@ func (ev *Env) GrabEyeImg() { //types:add
 	// 	ev.DepthVals = depth
 	// 	ev.ViewDepth(depth)
 	// }
+}
+
+// Sensors reads sensors at various key points on body.
+func (ev *Env) Sensors() {
+	ev.Emer.Obj.RunSensors()
 }
 
 // ViewDepth updates depth bitmap with depth data
@@ -217,7 +227,13 @@ func (ev *Env) UpdateView() {
 
 // ModelStep does one step of the physics model.
 func (ev *Env) ModelStep() { //types:add
-	ev.Physics.Step(ev.ModelSteps)
+	ev.Emer.VestibHRightEar = 0
+	for range ev.ModelSteps {
+		ev.Physics.Step(1)
+		ev.Sensors()
+	}
+	ev.Emer.VestibHRightEar /= float32(ev.ModelSteps)
+	fmt.Println("vestibH right ear:", ev.Emer.VestibHRightEar)
 	ev.Emer.Angry = false
 	ctN := physics.ContactsN.Value(0)
 	for ci := range ctN {
@@ -233,12 +249,11 @@ func (ev *Env) ModelStep() { //types:add
 			ev.Emer.XZ.AddTargetAngle(2, rot, ev.Stiff)
 		}
 	}
-	ev.GrabEyeImg()
+	ev.GrabEyeImage()
 	ev.UpdateView()
 }
 
-// StepForward moves Emer forward in current facing direction one step,
-// and takes GrabEyeImg
+// StepForward moves Emer forward in current facing direction one step
 func (ev *Env) StepForward() { //types:add
 	// doesn't integrate well with joints..
 	// ev.Emer.MoveOnAxisBody(0, 0, 0, 1, -ev.MoveStep)
@@ -249,7 +264,7 @@ func (ev *Env) StepForward() { //types:add
 	ev.ModelStep()
 }
 
-// StepBackward moves Emer backward in current facing direction one step, and takes GrabEyeImg
+// StepBackward moves Emer backward in current facing direction one step.
 func (ev *Env) StepBackward() { //types:add
 	ang := math32.Pi*.5 - ev.Emer.XZ.DoF(2).Current.Pos
 	// ang := float32(math32.Pi * .5)
@@ -257,25 +272,25 @@ func (ev *Env) StepBackward() { //types:add
 	ev.ModelStep()
 }
 
-// RotBodyLeft rotates emer left and takes GrabEyeImg
+// RotBodyLeft rotates emer left.
 func (ev *Env) RotBodyLeft() { //types:add
 	ev.Emer.XZ.AddTargetAngle(2, ev.RotStep, ev.Stiff)
 	ev.ModelStep()
 }
 
-// RotBodyRight rotates emer right and takes GrabEyeImg
+// RotBodyRight rotates emer right.
 func (ev *Env) RotBodyRight() { //types:add
 	ev.Emer.XZ.AddTargetAngle(2, -ev.RotStep, ev.Stiff)
 	ev.ModelStep()
 }
 
-// RotHeadLeft rotates emer left and takes GrabEyeImg
+// RotHeadLeft rotates emer left.
 func (ev *Env) RotHeadLeft() { //types:add
 	ev.Emer.Neck.AddTargetAngle(0, ev.RotStep, ev.Stiff)
 	ev.ModelStep()
 }
 
-// RotHeadRight rotates emer right and takes GrabEyeImg
+// RotHeadRight rotates emer right.
 func (ev *Env) RotHeadRight() { //types:add
 	ev.Emer.Neck.AddTargetAngle(0, -ev.RotStep, ev.Stiff)
 	ev.ModelStep()
@@ -339,6 +354,12 @@ func (ev *Env) MakeEmer(wl *builder.World, em *Emer, name string) {
 	em.Neck.ParentFixed = true
 	em.Neck.NoLinearRotation = true
 	// obj.NewJointFixed(emr, head, math32.Vec3(0, hh, 0), math32.Vec3(0, -headsz, 0))
+
+	obj.NewSensor(func(obj *builder.Object) {
+		hd := obj.Body(1)
+		av := physics.AngularVelocityAt(hd.DynamicIndex, math32.Vec3(headsz, 0, 0), math32.Vec3(0, 1, 0))
+		em.VestibHRightEar += av.Z // shows up in Z
+	})
 
 	eyeoff := math32.Vec3(-headsz*.6, headsz*.1, -(headsz + eyesz*.3))
 	bd := obj.NewDynamicSkin(sc, name+"_eye-l", physics.Box, "green", mass*.001, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
@@ -422,7 +443,7 @@ func (ev *Env) MakeToolbar(p *tree.Plan) {
 		w.SetFunc(ev.InitState).SetText("Init").SetIcon(icons.Update)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
-		w.SetFunc(ev.GrabEyeImg).SetText("Grab Image").SetIcon(icons.Image)
+		w.SetFunc(ev.GrabEyeImage).SetText("Grab Image").SetIcon(icons.Image)
 	})
 	tree.Add(p, func(w *core.Separator) {})
 
