@@ -121,13 +121,13 @@ func ColSphereSphere(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, n
 
 func ColCapsulePlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, norm *math32.Vector3) float32 {
 	var pAw, pBw, diff math32.Vector3
-	hh := gdA.Size.Y
-	if cpi < 2 { // vertex
+	hh := gdA.Size.Y - gdA.Size.X
+	if cpi < 2 { // vertex. Note: radius is automatically subtracted!! so this is correct with hh
 		side := float32(cpi)*2 - 1
 		pAw = slmath.MulSpatialPoint(gdA.WbR, gdA.WbQ, math32.Vec3(0, side*hh, 0))
 		queryB := slmath.MulSpatialPoint(gdB.BwR, gdB.BwQ, pAw)
 		pBb := ClosestPointPlane(gdB.Size.X, gdB.Size.Z, queryB)
-		pBw = slmath.MulSpatialPoint(gdA.WbR, gdA.WbQ, pBb)
+		pBw = slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, pBb)
 		diff = pAw.Sub(pBw)
 		if gdB.Size.X > 0 {
 			*norm = slmath.Normal3(diff)
@@ -141,7 +141,7 @@ func ColCapsulePlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, n
 		edge1w := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, edge1)
 		edge0a := slmath.MulSpatialPoint(gdA.BwR, gdA.BwQ, edge0w)
 		edge1a := slmath.MulSpatialPoint(gdA.BwR, gdA.BwQ, edge1w)
-		u := ClosestEdgeCapsule(gdA.Size.X, gdA.Size.Y, edge0a, edge1a, maxIter)
+		u := ClosestEdgeCapsule(gdA.Size.X, hh, edge0a, edge1a, maxIter)
 		pBw = edge0w.MulScalar(1 - u).Add(edge1w.MulScalar(u))
 		// find closest point + contact normal on capsule A
 		p0Aw := slmath.MulSpatialPoint(gdA.WbR, gdA.WbQ, math32.Vec3(0, hh, 0))
@@ -158,8 +158,8 @@ func ColCapsulePlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, n
 // Handle collision between two capsules (gdA and gdB).
 func ColCapsuleCapsule(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, norm *math32.Vector3) float32 {
 	// find closest edge coordinate to capsule SDF B
-	hhA := gdA.Size.Y
-	hhB := gdB.Size.Y
+	hhA := gdA.Size.Y - gdA.Size.X
+	hhB := gdB.Size.Y - gdA.Size.X
 	// edge from capsule A
 	// depending on point id, we query an edge from 0 to 0.5 or 0.5 to 1
 	e0 := math32.Vec3(0, 0, hhA*float32(cpi%2))
@@ -168,7 +168,7 @@ func ColCapsuleCapsule(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB,
 	edge1w := slmath.MulSpatialPoint(gdA.WbR, gdA.WbQ, e1)
 	edge0b := slmath.MulSpatialPoint(gdA.BwR, gdA.BwQ, edge0w)
 	edge1b := slmath.MulSpatialPoint(gdA.BwR, gdA.BwQ, edge1w)
-	u := ClosestEdgeCapsule(gdB.Size.X, gdB.Size.Y, edge0b, edge1b, maxIter)
+	u := ClosestEdgeCapsule(gdB.Size.X, hhB, edge0b, edge1b, maxIter)
 	pAw := edge0w.MulScalar(1 - u).Add(edge1w.MulScalar(u))
 	p0Bw := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0, hhB, 0))
 	p1Bw := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0, -hhB, 0))
@@ -206,7 +206,7 @@ func ColBoxBox(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, norm *m
 
 // Handle collision between a box (gdA) and a capsule (gdB).
 func ColBoxCapsule(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, norm *math32.Vector3) float32 {
-	hhB := gdB.Size.Y
+	hhB := gdB.Size.Y - gdB.Size.X
 	// capsule B
 	// depending on point id, we query an edge from 0 to 0.5 or 0.5 to 1
 	e0 := math32.Vec3(0, -hhB*float32(cpi%2), 0)
@@ -310,7 +310,7 @@ func ColSphereBox(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, norm
 // Handle collision between a sphere (gdA) and a capsule (gdB).
 func ColSphereCapsule(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, norm *math32.Vector3) float32 {
 	pAw := gdA.WbR
-	hhB := gdB.Size.Y
+	hhB := gdB.Size.Y - gdB.Size.X
 	// capsule B
 	AB := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0, hhB, 0))
 	BB := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0, -hhB, 0))

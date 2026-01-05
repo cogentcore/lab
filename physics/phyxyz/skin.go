@@ -201,7 +201,7 @@ func (sk *Skin) CapsuleInit(sld *xyz.Solid) {
 		ms = xyz.NewCapsule(sld.Scene, mnm, 1, .2, 32, 1)
 	}
 	sld.SetMeshName(mnm)
-	sld.Pose.Scale.Set(sk.HSize.X/.2, 2*(sk.HSize.Y/1.4), sk.HSize.Z/.2)
+	sld.Pose.Scale.Set(sk.HSize.X/.2, (2.0*sk.HSize.Y)/1.4, sk.HSize.X/.2)
 	sk.UpdateColor(sk.Color, sld)
 	sld.Updater(func() {
 		sk.UpdatePose(sld)

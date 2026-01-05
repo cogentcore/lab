@@ -538,13 +538,13 @@ fn ColCapsulePlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<
 	var pAw: vec3<f32>;
 	var pBw: vec3<f32>;
 	var diff: vec3<f32>;
-	var hh = (*gdA).Size.y;
-	if (cpi < 2) { // vertex
+	var hh = (*gdA).Size.y - (*gdA).Size.x;
+	if (cpi < 2) { // vertex. Note: radius is automatically subtracted!! so this is correct with hh
 		var side = f32(cpi)*2 - 1;
 		pAw = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, vec3<f32>(0, side*hh, 0));
 		var queryB = MulSpatialPoint((*gdB).BwR, (*gdB).BwQ, pAw);
 		var pBb = ClosestPointPlane((*gdB).Size.x, (*gdB).Size.z, queryB);
-		pBw = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, pBb);
+		pBw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, pBb);
 		diff = pAw-(pBw);
 		if ((*gdB).Size.x > 0) {
 			*norm = Normal3(diff);
@@ -559,7 +559,7 @@ fn ColCapsulePlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<
 		var edge1w = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, edge1);
 		var edge0a = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge0w);
 		var edge1a = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge1w);
-		var u = ClosestEdgeCapsule((*gdA).Size.x, (*gdA).Size.y, edge0a, edge1a, maxIter);
+		var u = ClosestEdgeCapsule((*gdA).Size.x, hh, edge0a, edge1a, maxIter);
 		pBw = edge0w*(1 - u)+(edge1w*(u));
 		var p0Aw = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, vec3<f32>(0, hh, 0));
 		var p1Aw = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, vec3<f32>(0, -hh, 0));
@@ -572,15 +572,15 @@ fn ColCapsulePlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<
 return Dot3(diff, *norm);
 }
 fn ColCapsuleCapsule(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
-	var hhA = (*gdA).Size.y;
-	var hhB = (*gdB).Size.y;
+	var hhA = (*gdA).Size.y - (*gdA).Size.x;
+	var hhB = (*gdB).Size.y - (*gdA).Size.x;
 	var e0 = vec3<f32>(0, 0, hhA*f32(cpi%2));
 	var e1 = vec3<f32>(0, 0, -hhA*f32((cpi+1)%2));
 	var edge0w = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, e0);
 	var edge1w = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, e1);
 	var edge0b = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge0w);
 	var edge1b = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge1w);
-	var u = ClosestEdgeCapsule((*gdB).Size.x, (*gdB).Size.y, edge0b, edge1b, maxIter);
+	var u = ClosestEdgeCapsule((*gdB).Size.x, hhB, edge0b, edge1b, maxIter);
 	var pAw = edge0w*(1 - u)+(edge1w*(u));
 	var p0Bw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0, hhB, 0));
 	var p1Bw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0, -hhB, 0));
@@ -611,7 +611,7 @@ fn ColBoxBox(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<functi
 return Dot3(diff, *norm);
 }
 fn ColBoxCapsule(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
-	var hhB = (*gdB).Size.y;
+	var hhB = (*gdB).Size.y - (*gdB).Size.x;
 	var e0 = vec3<f32>(0, -hhB*f32(cpi%2), 0);
 	var e1 = vec3<f32>(0, hhB*f32((cpi+1)%2), 0);
 	var edge0w = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, e0);
@@ -693,7 +693,7 @@ return Dot3(diff, *norm);
 }
 fn ColSphereCapsule(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
 	var pAw = (*gdA).WbR;
-	var hhB = (*gdB).Size.y;
+	var hhB = (*gdB).Size.y - (*gdB).Size.x;
 	var AB = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0, hhB, 0));
 	var BB = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0, -hhB, 0));
 	var pBw = ClosestPointLineSegment(AB, BB, pAw);

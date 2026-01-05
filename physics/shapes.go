@@ -33,13 +33,17 @@ const (
 
 	// Capsule is a cylinder with half-spheres on the ends.
 	// Natively oriented vertically along the Y axis.
-	// SizeX = radius, SizeY = half-height.
+	// SizeX = radius of end caps, SizeY = _total_ half-height
+	// (i.e., SizeX + half-height of cylindrical portion, must
+	// be >= SizeX). This parameterization allows joint offsets
+	// to be SizeY, and direct swapping of shape across Box and
+	// Cylinder with same total extent.
 	Capsule
 
 	// todo: Ellipsoid goes here
 
 	// Cylinder, natively oriented vertically along the Y axis.
-	// SizeX = radius, SizeY = half-height in Y axis.
+	// SizeX = radius, SizeY = half-height of Y axis
 	// Cylinder can not collide with a Box.
 	Cylinder
 
@@ -123,8 +127,10 @@ func (sh Shapes) Radius(sz math32.Vector3) float32 {
 		return 1.0e6 // infinite
 	case Sphere:
 		return sz.X
-	case Capsule, Cylinder:
-		return max(sz.X, sz.Z) + sz.Y // over-estimate for cylinder
+	case Capsule:
+		return sz.Y // full half-height
+	case Cylinder:
+		return sz.X + sz.Y // over-estimate for cylinder
 	case Box:
 		return sz.Length()
 	}
@@ -138,9 +144,9 @@ func (sh Shapes) BBox(sz math32.Vector3) math32.Box3 {
 	case Sphere:
 		bb.SetMinMax(math32.Vec3(-sz.X, -sz.X, -sz.X), math32.Vec3(sz.X, sz.X, sz.X))
 	case Capsule:
-		bb.SetMinMax(math32.Vec3(-sz.X, -sz.Y-sz.X, -sz.X), math32.Vec3(sz.Z, sz.Y+sz.Z, sz.Z))
+		bb.SetMinMax(math32.Vec3(-sz.X, -sz.Y, -sz.X), math32.Vec3(sz.X, sz.Y, sz.X))
 	case Cylinder:
-		bb.SetMinMax(math32.Vec3(-sz.X, -sz.Y, -sz.X), math32.Vec3(sz.Z, sz.Y, sz.Z))
+		bb.SetMinMax(math32.Vec3(-sz.X, -sz.Y, -sz.X), math32.Vec3(sz.X, sz.Y, sz.X))
 	case Box:
 		bb.SetMinMax(sz.Negate(), sz)
 	}
@@ -160,7 +166,7 @@ func (sh Shapes) Inertia(sz math32.Vector3, mass float32) math32.Matrix3 {
 		inertia = math32.Mat3(ia, 0.0, 0.0, 0.0, ia, 0.0, 0.0, 0.0, ia)
 	case Capsule:
 		r := sz.X
-		h := sz.Y * 2
+		h := (sz.Y - sz.X) * 2
 		vs := (4.0 / 3.0) * math32.Pi * r * r * r
 		vc := math32.Pi * r * r * h
 		ms := mass * (vs / (vs + vc))

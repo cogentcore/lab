@@ -5,7 +5,7 @@
 package physics
 
 import (
-	"fmt"
+	// "fmt"
 	"math"
 	"sync/atomic"
 
@@ -310,7 +310,7 @@ func CollisionBroad(i uint32) { //gosl:kernel
 
 	nci := enci - (ncA + ncB) // starting index
 	if nci >= params.ContactsMax { // shouldn't happen!
-		fmt.Println("over max!", nci, params.ContactsMax)
+		// fmt.Println("over max!", nci, params.ContactsMax)
 		return
 	}
 	AddBroadContacts(biA, biB, nci, ncA, ncB)
@@ -815,7 +815,7 @@ func (ml *Model) SetMaxContacts() {
 		n = 4 * max(int32(math32.Sqrt(float32(n))), int32(Bodies.DimSize(0)))
 		// fmt.Println("> 1000", params.BodyCollidePairsN, n)
 	}
-	n = max(n, params.DynamicsN)
+	n = max(n, 4 * params.DynamicsN)
 	params.ContactsMax = n
 	ml.BroadContacts.SetShapeSizes(int(n), int(BroadContactVarsN))
 	ml.Contacts.SetShapeSizes(int(n), int(ContactVarsN))

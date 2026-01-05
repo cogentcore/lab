@@ -166,6 +166,9 @@ func (ml *Model) NewBody(shape Shapes, hsize, pos math32.Vector3, rot math32.Qua
 	ml.Params[0].BodiesN = idx + 1
 	SetBodyShape(idx, shape)
 	SetBodyDynamic(idx, -1)
+	if shape == Capsule {
+		hsize.Y = max(hsize.Y, hsize.X)
+	}
 	SetBodyHSize(idx, hsize)
 	SetBodyPos(idx, pos)
 	SetBodyQuat(idx, rot)
