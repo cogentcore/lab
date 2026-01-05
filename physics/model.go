@@ -24,6 +24,10 @@ type Model struct {
 	// GetContacts will download Contacts from the GPU, if processing them on the CPU.
 	GetContacts bool
 
+	// ReportTotalKE prints out the total computed kinetic energy in the system after
+	// every step.
+	ReportTotalKE bool
+
 	// CurrentWorld is the [BodyWorld] value to use when creating new bodies.
 	// Set to -1 to create global elements that interact with everything,
 	// while 0 and positive numbers only interact amongst themselves.

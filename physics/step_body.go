@@ -152,7 +152,8 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 // newton: solvers/xpbd/kernels.py: apply_body_deltas
 
 // StepBodyDeltas updates Next position with deltas from joints
-// or contacts (if contacts true).
+// or contacts (if contacts true). Also updates kinetics (velocity and acceleration)
+// based on position & orientation changes if contacts=true (usually just 1 iteration).
 func StepBodyDeltas(di, bi int32, contacts bool, cWt float32, linDel, angDel math32.Vector3) {
 	params := GetParams(0)
 
@@ -213,12 +214,48 @@ func StepBodyDeltas(di, bi int32, contacts bool, cWt float32, linDel, angDel mat
 		w1 = math32.Vec3(0, 0, 0)
 	}
 
-	// fmt.Println(params.Next, "delta:", v0, v1)
-
 	SetDynamicPos(di, params.Next, p1)
 	SetDynamicQuat(di, params.Next, q1)
 	SetDynamicDelta(di, params.Next, v1)
 	SetDynamicAngDelta(di, params.Next, w1)
+
+	if contacts {
+		StepBodyKinetics(di, bi)
+	}
+}
+
+// StepBodyKinetics computes the empirical velocities and
+// accelerations from the final changes in position and orientation
+// from Cur to Next.
+func StepBodyKinetics(di, bi int32) {
+	params := GetParams(0)
+	r0 := DynamicPos(di, params.Cur)
+	q0 := DynamicQuat(di, params.Cur)
+	v0 := DynamicVel(di, params.Cur)
+	w0 := DynamicAngVel(di, params.Cur)
+
+	r1 := DynamicPos(di, params.Next)
+	q1 := DynamicQuat(di, params.Next)
+
+	com := BodyCom(bi)
+	com0 := slmath.MulQuatVector(q0, com).Add(r0)
+	com1 := slmath.MulQuatVector(q1, com).Add(r1)
+
+	v1 := com1.Sub(com0).DivScalar(params.Dt)
+	dq := slmath.MulQuats(q1, slmath.QuatInverse(q0))
+
+	w1 := math32.Vec3(dq.X, dq.Y, dq.Z).MulScalar(2 / params.Dt)
+	if dq.W < 0 {
+		w1 = slmath.Negate3(w1)
+	}
+
+	SetDynamicVel(di, params.Next, v1)
+	SetDynamicAngVel(di, params.Next, w1)
+
+	a1 := v1.Sub(v0).DivScalar(params.Dt)
+	wa1 := w1.Sub(w0).DivScalar(params.Dt)
+	SetDynamicAcc(di, params.Next, a1)
+	SetDynamicAngAcc(di, params.Next, wa1)
 }
 
 // LimitDelta limits the magnitude of a delta vector

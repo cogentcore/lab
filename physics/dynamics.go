@@ -7,9 +7,11 @@
 package physics
 
 import (
+	// "fmt"
 	"math"
 
 	"cogentcore.org/core/math32"
+	"cogentcore.org/lab/gosl/slmath"
 )
 
 //gosl:start
@@ -206,4 +208,26 @@ func (ml *Model) SetMass(idx int32, shape Shapes, size math32.Vector3, mass floa
 	inertia := shape.Inertia(size, mass)
 	SetBodyInertia(idx, inertia)
 	SetBodyInvInertia(idx, inertia.Inverse())
+}
+
+// TotalKineticEnergy returns the total kinetic energy of the dynamic bodies,
+// as a function of the velocities.
+func (ml *Model) TotalKineticEnergy() float32 {
+	params := GetParams(0)
+	ke := float32(0)
+	n := int32(Dynamics.DimSize(0))
+	for di := range n {
+		bi := DynamicBody(di)
+		mass := Bodies.Value(int(bi), int(BodyMass))
+		inertia := BodyInertia(bi)
+
+		v := DynamicVel(di, params.Next)
+		mv := 0.5 * mass * slmath.LengthSquared3(v)
+
+		w := DynamicAngVel(di, params.Next)
+		iw := 0.5 * slmath.Dot3(w, inertia.MulVector3(w))
+
+		ke += mv + iw
+	}
+	return ke
 }

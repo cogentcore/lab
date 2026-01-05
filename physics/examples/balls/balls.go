@@ -76,6 +76,7 @@ func main() {
 		ml.Params[0].SubSteps = 100
 		ml.Params[0].Dt = 0.001
 		// ml.GPU = false
+		// ml.ReportTotalKE = true
 		sc := ed.Scene
 		rot := math32.NewQuatIdentity()
 		sc.NewBody(ml, "floor", physics.Plane, "#D0D0D080", math32.Vec3(0, 0, 0),

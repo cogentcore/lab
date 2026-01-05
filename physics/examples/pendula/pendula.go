@@ -93,6 +93,7 @@ func main() {
 
 		ml := ed.Model
 		ml.GPU = false
+		// ml.ReportTotalKE = true
 		sc := ed.Scene
 		rot := math32.NewQuatIdentity()
 		rleft := math32.NewQuatAxisAngle(math32.Vec3(0, 0, 1), -math32.Pi/2)

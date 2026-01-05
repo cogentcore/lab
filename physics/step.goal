@@ -50,7 +50,7 @@ func StepInit(i uint32) { //gosl:kernel read-write:Params
 	}
 }
 
-// step does the following:
+// newton step does the following:
 // if self.compute_body_velocity_from_position_delta or self.enable_restitution:
 // 	// save initial state:
 // 	body_q_init = wp.clone(state_in.body_q)
@@ -72,10 +72,10 @@ func StepInit(i uint32) { //gosl:kernel read-write:Params
 //		model, state_in, state_out, body_deltas, dt, rigid_contact_inv_weight
 //	)
 //	# update body velocities from position changes
-//      if self.compute_body_velocity_from_position_delta and model.body_count and not requires_grad:
-// 		kernel=update_body_velocities,
-// 		kernel=apply_rigid_restitution,
-//		kernel=apply_body_delta_velocities,
+// if self.compute_body_velocity_from_position_delta and model.body_count and not requires_grad:
+// 	kernel=update_body_velocities,
+// 	kernel=apply_rigid_restitution,
+//	kernel=apply_body_delta_velocities,
 
 //gosl:end
 
@@ -97,6 +97,10 @@ func (ml *Model) Step() {
 	ml.StepGet(vars...)
 	if ContactsN.Value(0) >= params.ContactsMax {
 		fmt.Println("Warning: over ContactsMax:", ContactsN.Value(0), "Max:", params.ContactsMax)
+	}
+	if ml.ReportTotalKE {
+		ke := ml.TotalKineticEnergy()
+		fmt.Println("Total KE:", ke)
 	}
 }
 
@@ -148,8 +152,8 @@ func (ml *Model) StepBodyContacts() {
 		cmax := int(ContactsN.Values[0])
 		if cmax > 0 {
 			RunStepBodyContacts(cmax)
-			RunStepBodyContactDeltas(int(params.DynamicsN))
 		}
+		RunStepBodyContactDeltas(int(params.DynamicsN))
 	} else {
 		RunStepBodyContacts(int(params.ContactsMax)) // just do max and let the routines bail
 		RunStepBodyContactDeltas(int(params.DynamicsN))

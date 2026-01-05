@@ -84,6 +84,7 @@ func main() {
 	ed.SetConfigFunc(func() {
 		ml := ed.Model
 		ml.GPU = false
+		// ml.ReportTotalKE = true
 		sc := ed.Scene
 		rot := math32.NewQuatIdentity()
 		fl := sc.NewBody(ml, "floor", physics.Plane, "#D0D0D080", math32.Vec3(0, 0, 0), math32.Vec3(0, 0, 0), rot)
