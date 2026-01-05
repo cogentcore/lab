@@ -159,7 +159,7 @@ func ColCapsulePlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, n
 func ColCapsuleCapsule(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, norm *math32.Vector3) float32 {
 	// find closest edge coordinate to capsule SDF B
 	hhA := gdA.Size.Y - gdA.Size.X
-	hhB := gdB.Size.Y - gdA.Size.X
+	hhB := gdB.Size.Y - gdB.Size.X
 	// edge from capsule A
 	// depending on point id, we query an edge from 0 to 0.5 or 0.5 to 1
 	e0 := math32.Vec3(0, 0, hhA*float32(cpi%2))
@@ -341,7 +341,7 @@ func ColCylinderPlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, 
 	plPos := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0, 0, 0))
 
 	// World-space cylinder params
-	cylCtr := slmath.MulSpatialPoint(gdA.WbR, gdA.WbQ, math32.Vec3(0, 0, 0))
+	cylCtr := gdA.WbR
 	cylAx := slmath.Normal3(slmath.MulQuatVector(gdA.WbQ, math32.Vec3(0, 1, 0)))
 	cylRad := gdA.Size.X
 	cylHh := gdA.Size.Y
@@ -364,16 +364,15 @@ func ColCylinderPlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, 
 
 	// Remove component of -normal along cylinder axis
 	vec := axis.MulScalar(prjaxis).Sub(n)
-	// len_sqr := slmath.Dot3(vec, vec)
+	lenSqr := slmath.Dot3(vec, vec)
 
 	// If vector is nondegenerate, normalize and scale by radius
 	// Otherwise use cylinder's x-axis scaled by radius
-	// todo:
-	//    vec = wp.where(
-	//        len_sqr >= 1e-12,
-	//        vec * safe_div(cylinder_radius, wp.sqrt(len_sqr)),
-	//        math32.Vec3(1, 0, 0).MuScalar(cylRad),  // Default x-axis when degenerate
-	//    )
+	if lenSqr >= 1e-12 {
+		vec = vec.MulScalar(cylRad / math32.Sqrt(lenSqr))
+	} else {
+		vec = math32.Vec3(1, 0, 0).MulScalar(cylRad) // Default x-axis when degenerate
+	}
 
 	// Project scaled vector on normal
 	prjvec := slmath.Dot3(vec, n)
@@ -406,6 +405,7 @@ func ColCylinderPlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, 
 	// Split midpoint into shape-plane endpoints
 	*pA = pos.Add(n.MulScalar(dist * 0.5))
 	*pB = pos.Sub(n.MulScalar(dist * 0.5))
+	*norm = n
 	return dist
 }
 

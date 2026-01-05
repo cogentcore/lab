@@ -573,7 +573,7 @@ return Dot3(diff, *norm);
 }
 fn ColCapsuleCapsule(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
 	var hhA = (*gdA).Size.y - (*gdA).Size.x;
-	var hhB = (*gdB).Size.y - (*gdA).Size.x;
+	var hhB = (*gdB).Size.y - (*gdB).Size.x;
 	var e0 = vec3<f32>(0, 0, hhA*f32(cpi%2));
 	var e1 = vec3<f32>(0, 0, -hhA*f32((cpi+1)%2));
 	var edge0w = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, e0);
@@ -716,7 +716,7 @@ return Dot3(diff, *norm);
 fn ColCylinderPlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
 	var plNorm = MulQuatVector((*gdB).WbQ, vec3<f32>(0, 1, 0));
 	var plPos = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0, 0, 0));
-	var cylCtr = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, vec3<f32>(0, 0, 0));
+	var cylCtr = (*gdA).WbR;
 	var cylAx = Normal3(MulQuatVector((*gdA).WbQ, vec3<f32>(0, 1, 0)));
 	var cylRad = (*gdA).Size.x;
 	var cylHh = (*gdA).Size.y;
@@ -731,6 +731,12 @@ fn ColCylinderPlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr
 	}
 	var dist0 = Dot3(cylCtr-(plPos), n);
 	var vec = axis*(prjaxis)-(n);
+	var lenSqr = Dot3(vec, vec);
+	if (lenSqr >= 1e-12) {
+		vec = vec*(cylRad / sqrt(lenSqr));
+	} else {
+		vec = vec3<f32>(1, 0, 0)*(cylRad); // Default x-axis when degenerate
+	}
 	var prjvec = Dot3(vec, n);
 	axis = axis*(cylHh);
 	prjaxis *= cylHh;
@@ -759,6 +765,7 @@ fn ColCylinderPlane(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr
 	}
 	*pA = pos+(n*(dist * 0.5));
 	*pB = pos-(n*(dist * 0.5));
+	*norm = n;
 return dist;
 }
 

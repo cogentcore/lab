@@ -5,6 +5,7 @@
 package phyxyz
 
 import (
+	"fmt"
 	"strconv"
 
 	"cogentcore.org/core/base/errors"
@@ -196,12 +197,14 @@ func (sk *Skin) CylinderInit(sld *xyz.Solid) {
 // Only updates Pose in Updater: if node will change size or color,
 // add updaters for that.
 func (sk *Skin) CapsuleInit(sld *xyz.Solid) {
-	mnm := "physics.Capsule"
+	rat := sk.HSize.Y / sk.HSize.X
+	mnm := fmt.Sprintf("physics.Capsule_%3g", rat)
 	if ms, _ := sld.Scene.MeshByName(mnm); ms == nil {
-		ms = xyz.NewCapsule(sld.Scene, mnm, 1, .2, 32, 1)
+		fmt.Println(rat, mnm, 2*(sk.HSize.Y-sk.HSize.X)/sk.HSize.X)
+		ms = xyz.NewCapsule(sld.Scene, mnm, 2*(sk.HSize.Y-sk.HSize.X)/sk.HSize.X, 1, 32, 1)
 	}
 	sld.SetMeshName(mnm)
-	sld.Pose.Scale.Set(sk.HSize.X/.2, (2.0*sk.HSize.Y)/1.4, sk.HSize.X/.2)
+	sld.Pose.Scale.Set(sk.HSize.X, sk.HSize.X, sk.HSize.X)
 	sk.UpdateColor(sk.Color, sld)
 	sld.Updater(func() {
 		sk.UpdatePose(sld)
