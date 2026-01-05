@@ -103,20 +103,14 @@ func (sc *Scene) UpdateFromPhysics() {
 }
 
 // RenderFrom does an offscreen render using given [Skin]
-// for the camera position and orientation, returning the render image.
+// for the camera position and orientation, returning the render image(s)
+// for each replicated world (1 if no replicas).
 // Current scene camera is saved and restored.
-// If ReplicasView is set, then the given replica will be used for rendering.
-func (sc *Scene) RenderFrom(sk *Skin, cam *Camera, replica int) image.Image {
+func (sc *Scene) RenderFrom(sk *Skin, cam *Camera) []image.Image {
 	xysc := sc.Scene
 	camnm := "scene-renderfrom-save"
 	xysc.SaveCamera(camnm)
 	rep := sc.ReplicasIndex
-	sc.ReplicasIndex = replica
-	defer func() {
-		sc.ReplicasIndex = rep
-		xysc.SetCamera(camnm)
-		xysc.UseMainFrame()
-	}()
 
 	xysc.Camera.FOV = cam.FOV
 	xysc.Camera.Near = cam.Near
@@ -126,7 +120,27 @@ func (sc *Scene) RenderFrom(sk *Skin, cam *Camera, replica int) image.Image {
 	xysc.Camera.Pose.Scale.Set(1, 1, 1)
 
 	xysc.UseAltFrame(cam.Size)
-	return xysc.RenderGrabImage()
+
+	ml := physics.CurModel
+	var imgs []image.Image
+	if sc.ReplicasView {
+		imgs = make([]image.Image, ml.ReplicasN)
+		for i := range ml.ReplicasN {
+			sc.ReplicasIndex = int(i)
+			sc.UpdateFromPhysics()
+			img := xysc.RenderGrabImage()
+			imgs[i] = img
+		}
+		sc.ReplicasIndex = rep
+		sc.UpdateFromPhysics()
+	} else {
+		img := xysc.RenderGrabImage()
+		imgs = []image.Image{img}
+	}
+
+	xysc.SetCamera(camnm)
+	xysc.UseMainFrame()
+	return imgs
 }
 
 // DepthImage returns the current rendered depth image

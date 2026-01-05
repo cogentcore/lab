@@ -276,7 +276,7 @@ func (pe *Editor) MakeToolbar(p *tree.Plan) {
 		w.Styler(func(s *styles.Style) {
 			replN := int32(0)
 			if physics.CurModel != nil && pe.Scene != nil {
-				replN = physics.CurModel.ReplicaWorldsN()
+				replN = physics.CurModel.ReplicasN
 				pe.Scene.ReplicasView = replN > 0
 			}
 			w.SetMax(float32(replN - 1))

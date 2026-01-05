@@ -89,7 +89,8 @@ func (bl *Builder) Build(ml *physics.Model, sc *phyxyz.Scene) {
 	}
 	if repN > 0 {
 		ml.ReplicasStart = repSt
-		ml.ReplicasN = repN
+		ml.ReplicasN = int32(bl.ReplicasN)
+		ml.ReplicaBodiesN = repN
 	}
 }
 

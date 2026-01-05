@@ -187,7 +187,7 @@ func (ev *Env) RenderEyeImg() image.Image {
 	if ev.Emer.EyeR == nil {
 		return nil
 	}
-	return ev.Physics.Scene.RenderFrom(ev.Emer.EyeR.Skin, &ev.Camera, 0)
+	return ev.Physics.Scene.RenderFrom(ev.Emer.EyeR.Skin, &ev.Camera)[0]
 }
 
 // GrabEyeImage takes a snapshot from the perspective of Emer's right eye
