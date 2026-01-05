@@ -7,7 +7,7 @@
 package physics
 
 import (
-	// "fmt"
+	"fmt"
 	"math"
 	"sync/atomic"
 
@@ -312,6 +312,7 @@ func CollisionBroad(i uint32) { //gosl:kernel
 
 	nci := enci - (ncA + ncB)      // starting index
 	if nci >= params.ContactsMax { // shouldn't happen!
+		fmt.Println("over max!", nci, params.ContactsMax)
 		return
 	}
 	AddBroadContacts(biA, biB, nci, ncA, ncB)
@@ -812,7 +813,8 @@ func (ml *Model) SetMaxContacts() {
 	// todo: this is a massive over-estimate, b/c there is no way everyone could be
 	// colliding at once. Except.. if it is a very small model.
 	if params.BodyCollidePairsN > 1000 {
-		n = int32(math32.Sqrt(float32(n)))
+		n = 4 * max(int32(math32.Sqrt(float32(n))), int32(Bodies.DimSize(0)))
+		// fmt.Println("> 1000", params.BodyCollidePairsN, n)
 	}
 	n = max(n, params.DynamicsN)
 	params.ContactsMax = n

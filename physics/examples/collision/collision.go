@@ -27,6 +27,8 @@ type Collide struct {
 
 	ZposA float32
 	ZposB float32
+
+	PushMass float32
 }
 
 func (cl *Collide) Defaults() {
@@ -36,6 +38,7 @@ func (cl *Collide) Defaults() {
 	cl.SizeB = 0.5
 	cl.MassA = 1
 	cl.MassB = 1
+	cl.PushMass = 1
 }
 
 func main() {
@@ -63,7 +66,7 @@ func main() {
 		sc.NewDynamic(ml, "A", cl.ShapeA, "blue", cl.MassA, math32.Vec3(cl.SizeA, cl.SizeA, cl.SizeA), math32.Vec3(-5, cl.SizeA, cl.ZposA), rot)
 		sc.NewDynamic(ml, "B", cl.ShapeB, "red", cl.MassB, math32.Vec3(cl.SizeB, cl.SizeB, cl.SizeB), math32.Vec3(5, cl.SizeB, cl.ZposB), rot)
 
-		push := sc.NewDynamic(ml, "push", physics.Box, "grey", 1.0, math32.Vec3(.1, 2, 2), math32.Vec3(-8, 2, 0), rot)
+		push := sc.NewDynamic(ml, "push", physics.Box, "grey", cl.PushMass, math32.Vec3(.1, 2, 2), math32.Vec3(-8, 2, 0), rot)
 		ml.NewObject()
 		sc.NewJointPrismatic(ml, nil, push, math32.Vec3(-8, 0, 0), math32.Vec3(0, -2, 0), math32.Vec3(1, 0, 0))
 	})

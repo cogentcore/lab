@@ -7,7 +7,11 @@
 
 package physics
 
-import "cogentcore.org/core/math32"
+import (
+	"fmt"
+
+	"cogentcore.org/core/math32"
+)
 
 //gosl:start
 //gosl:import "cogentcore.org/lab/gosl/slmath"
@@ -86,17 +90,19 @@ func (ml *Model) Step() {
 			ml.StepGet()
 		}
 	}
-	ml.StepGet(ParamsVar, DynamicsVar)
-	// wl.StepGet(ParamsVar, DynamicsVar, ContactsNVar)
-	// fmt.Println("contacts:", ContactsN.Value(0), "max:", params.ContactsMax)
+	vars := []GPUVars{ParamsVar, DynamicsVar, ContactsNVar}
+	if ml.GetContacts {
+		vars = append(vars, ContactsVar)
+	}
+	ml.StepGet(vars...)
+	if ContactsN.Value(0) >= params.ContactsMax {
+		fmt.Println("Warning: over ContactsMax:", ContactsN.Value(0), "Max:", params.ContactsMax)
+	}
 }
 
 // StepGet runs one physics step and gets the given vars back
 // from the GPU.
 func (ml *Model) StepGet(vars ...GPUVars) {
-	if ml.GetContacts {
-		vars = append(vars, ContactsVar, ContactsNVar)
-	}
 	params := GetParams(0)
 	RunStepInit(1)
 	ml.StepCollision()

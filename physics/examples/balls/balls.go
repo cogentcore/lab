@@ -67,12 +67,15 @@ func main() {
 
 	bs := &Balls{}
 	bs.Defaults()
+	ed.CameraPos = math32.Vec3(0, bs.Width, bs.Width)
 
 	ed.SetUserParams(bs)
 
 	ed.SetConfigFunc(func() {
 		ml := ed.Model
 		ml.Params[0].SubSteps = 100
+		ml.Params[0].Dt = 0.001
+		// ml.GPU = false
 		sc := ed.Scene
 		rot := math32.NewQuatIdentity()
 		sc.NewBody(ml, "floor", physics.Plane, "#D0D0D080", math32.Vec3(0, 0, 0),
