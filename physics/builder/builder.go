@@ -105,6 +105,13 @@ func (bl *Builder) InitState() {
 	}
 }
 
+// RunSensors runs the sensor functions for this Builder.
+func (bl *Builder) RunSensors() {
+	for _, wl := range bl.Worlds {
+		wl.RunSensors()
+	}
+}
+
 // ReplicateWorld makes copies of given world to form an X,Y grid of
 // worlds with given optional offsets (Y, X) added between world objects.
 // Note that worldIdx is the index in Worlds, not the world number.

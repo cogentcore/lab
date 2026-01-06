@@ -210,7 +210,7 @@ func (t *DoF) SetInit(v Controls) *DoF { t.Init = v; return t }
 // Current are the current control values (based on method calls).
 func (t *DoF) SetCurrent(v Controls) *DoF { t.Current = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Object", IDName: "object", Doc: "Object is an object within the [World].\nEach object is a coherent collection of bodies, typically\nconnected by joints. This is an organizational convenience\nfor positioning elements; has no physical implications.", Fields: []types.Field{{Name: "Bodies", Doc: "Bodies are the bodies in the object."}, {Name: "Joints", Doc: "Joints are joints connecting object bodies.\nJoint indexes here refer strictly within bodies."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Object", IDName: "object", Doc: "Object is an object within the [World].\nEach object is a coherent collection of bodies, typically\nconnected by joints. This is an organizational convenience\nfor positioning elements; has no physical implications.", Fields: []types.Field{{Name: "Bodies", Doc: "Bodies are the bodies in the object."}, {Name: "Joints", Doc: "Joints are joints connecting object bodies.\nJoint indexes here refer strictly within bodies."}, {Name: "Sensors", Doc: "Sensors are functions that can be configured to report arbitrary values\non given body element. The output must be stored directly somewhere via\nthe closure function: the utility of the sensor function is being able\nto capture all the configuration-time parameters needed to make it work,\nand to have it automatically called on replicated objects."}}})
 
 // SetBodies sets the [Object.Bodies]:
 // Bodies are the bodies in the object.
@@ -220,6 +220,14 @@ func (t *Object) SetBodies(v ...*Body) *Object { t.Bodies = v; return t }
 // Joints are joints connecting object bodies.
 // Joint indexes here refer strictly within bodies.
 func (t *Object) SetJoints(v ...*Joint) *Object { t.Joints = v; return t }
+
+// SetSensors sets the [Object.Sensors]:
+// Sensors are functions that can be configured to report arbitrary values
+// on given body element. The output must be stored directly somewhere via
+// the closure function: the utility of the sensor function is being able
+// to capture all the configuration-time parameters needed to make it work,
+// and to have it automatically called on replicated objects.
+func (t *Object) SetSensors(v ...func(obj *Object)) *Object { t.Sensors = v; return t }
 
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Physics", IDName: "physics", Doc: "Physics provides a container and manager for the main physics elements:\n[Builder], [physics.Model], and [phyxyz.Scene]. This is helpful for\nmodels used within other apps (e.g., an AI simulation), whereas\n[phyxyz.Editor] provides a standalone GUI interface for testing models.", Fields: []types.Field{{Name: "Model", Doc: "Model has the physics Model."}, {Name: "Builder", Doc: "Builder for configuring the Model."}, {Name: "Scene", Doc: "Scene for visualizing the Model"}}})
 

@@ -158,10 +158,14 @@ func (ob *Object) RotateOnAxisBody(body int, x, y, z, angle float32) {
 
 //////// Sensors
 
+// NewSensor adds a new sensor function for this object.
+// The closure function can capture local variables at the time
+// of configuration, and write results wherever and however it is useful.
 func (ob *Object) NewSensor(fun func(obj *Object)) {
 	ob.Sensors = append(ob.Sensors, fun)
 }
 
+// RunSensors runs the sensor functions for this object.
 func (ob *Object) RunSensors() {
 	for _, sf := range ob.Sensors {
 		sf(ob)

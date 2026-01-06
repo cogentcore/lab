@@ -65,3 +65,10 @@ func (wl *World) PoseToPhysics() {
 		ob.PoseToPhysics()
 	}
 }
+
+// RunSensors runs the sensor functions for this World.
+func (wl *World) RunSensors() {
+	for _, ob := range wl.Objects {
+		ob.RunSensors()
+	}
+}
