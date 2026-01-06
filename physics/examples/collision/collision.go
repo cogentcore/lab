@@ -106,7 +106,7 @@ func main() {
 		physics.SetBodyFrictionRolling(ba.BodyIndex, cl.FrictionRolling)
 		physics.SetBodyFrictionTortion(ba.BodyIndex, cl.FrictionTortion)
 
-		bb := sc.NewDynamic(ml, "B", cl.ShapeB, "red", cl.MassB, math32.Vec3(cl.SizeB, 2*cl.SizeB, cl.SizeB), math32.Vec3(5, hhB, cl.ZposB), rot)
+		bb := sc.NewDynamic(ml, "B", cl.ShapeB, "red", cl.MassB, math32.Vec3(cl.SizeB, 2*cl.SizeB, cl.SizeB), math32.Vec3(0, hhB, cl.ZposB), rot)
 		physics.SetBodyFriction(bb.BodyIndex, cl.Friction)
 		physics.SetBodyFrictionRolling(bb.BodyIndex, cl.FrictionRolling)
 		physics.SetBodyFrictionTortion(bb.BodyIndex, cl.FrictionTortion)
