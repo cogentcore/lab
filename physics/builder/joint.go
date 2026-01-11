@@ -12,6 +12,19 @@ import (
 
 // Joint describes a joint between two bodies.
 type Joint struct {
+	// World is the world number for physics: -1 = globals, else positive
+	// are distinct non-interacting worlds.
+	World int
+
+	// WorldIndex is the index of world within builder Worlds list.
+	WorldIndex int
+
+	// Object is the index within World's Objects list.
+	Object int
+
+	// ObjectJoint is the index within Object's Joints list.
+	ObjectJoint int
+
 	// Parent is index within an Object for parent body.
 	// -1 for world-anchored parent.
 	Parent int
@@ -130,10 +143,10 @@ func (df *DoF) Copy(sd *DoF) {
 func (ob *Object) newJoint(typ physics.JointTypes, parent, child *Body, ppos, cpos math32.Vector3, linDoF, angDoF int) *Joint {
 	pidx := -1
 	if parent != nil {
-		pidx = parent.ObjectIndex
+		pidx = parent.ObjectBody
 	}
 	idx := len(ob.Joints)
-	ob.Joints = append(ob.Joints, &Joint{Parent: pidx, Child: child.ObjectIndex, Type: typ, LinearDoFN: linDoF, AngularDoFN: angDoF})
+	ob.Joints = append(ob.Joints, &Joint{World: ob.World, WorldIndex: ob.WorldIndex, Object: ob.Object, ObjectJoint: idx, Parent: pidx, Child: child.ObjectBody, Type: typ, LinearDoFN: linDoF, AngularDoFN: angDoF})
 	jd := ob.Joint(idx)
 	jd.PPose.Pos = ppos
 	jd.PPose.Quat = math32.NewQuatIdentity()

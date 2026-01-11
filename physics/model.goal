@@ -39,19 +39,29 @@ type Model struct {
 	// to use when creating new joints.
 	CurrentObjectJoint int `edit:"-"`
 
-	// ReplicasStart is the starting body index for replicated world bodies,
-	// which is needed for viewers to efficiently select a specific world to view.
-	// This is the start of the World=0 first instance.
-	ReplicasStart int32 `edit:"-"`
-
 	// ReplicasN is the number of replicated worlds.
 	// Total bodies from ReplicasStart should be ReplicasN * ReplicaBodiesN.
 	ReplicasN int32 `edit:"-"`
 
+	// ReplicaBodiesStart is the starting body index for replicated world bodies,
+	// which is needed to efficiently select a body from a specific world.
+	// This is the start of the World=0 first instance.
+	ReplicaBodiesStart int32 `edit:"-"`
+
 	// ReplicaBodiesN is the number of body elements within each set of
-	// replicated world bodies, which is needed for viewers to efficiently select
-	// a specific world to view.
+	// replicated world bodies, which is needed to efficiently select
+	// a body from a specific world.
 	ReplicaBodiesN int32 `edit:"-"`
+
+	// ReplicaJointsStart is the starting joint index for replicated world joints,
+	// which is needed to efficiently select a joint from a specific world.
+	// This is the start of the World=0 first instance.
+	ReplicaJointsStart int32 `edit:"-"`
+
+	// ReplicaJointsN is the number of joint elements within each set of
+	// replicated world joints, which is needed to efficiently select
+	// a joint from a specific world.
+	ReplicaJointsN int32 `edit:"-"`
 
 	// Bodies are the rigid body elements (dynamic and static),
 	// specifying the constant, non-dynamic properties,
@@ -248,17 +258,25 @@ func (ml *Model) ToGPUInfra() {
 	ToGPU(ParamsVar, BodiesVar, ObjectsVar, JointsVar, JointDoFsVar, BodyJointsVar, BodyCollidePairsVar, DynamicsVar, BroadContactsNVar, BroadContactsVar, ContactsNVar, ContactsVar, JointControlsVar)
 }
 
-// ReplicasIndexes returns the body and dynamics (if dynamic) indexes
+// ReplicasBodyIndexes returns the body and dynamics (if dynamic) indexes
 // for given replica world and source body index, if ReplicasN is > 0.
 // Otherwise, returns bi and corresponding dynamic index.
-func (ml *Model) ReplicasIndexes(bi, replica int32) (bodyIdx, dynIdx int32) {
-	if ml.ReplicasN == 0 {
+func (ml *Model) ReplicasBodyIndexes(bi, replica int32) (bodyIdx, dynIdx int32) {
+	if ml.ReplicasN == 0 || bi < ml.ReplicaBodiesStart {
 		return bi, GetBodyDynamic(bi)
 	}
-	if bi < ml.ReplicasStart {
-		return bi, GetBodyDynamic(bi)
-	}
-	bodyIdx = (bi - ml.ReplicasStart) + ml.ReplicasStart + replica*ml.ReplicaBodiesN
+	bodyIdx = (bi - ml.ReplicaBodiesStart) + ml.ReplicaBodiesStart + replica*ml.ReplicaBodiesN
 	dynIdx = GetBodyDynamic(bodyIdx)
 	return
+}
+
+// ReplicasJointIndex returns the joint indexe for given replica
+// world and source body index, if ReplicasN is > 0.
+// Otherwise, returns bi and corresponding dynamic index.
+func (ml *Model) ReplicasJointIndex(ji, replica int32) int32 {
+	if ml.ReplicasN == 0 || ji < ml.ReplicaJointsStart {
+		return ji
+	}
+	nji := (ji - ml.ReplicaJointsStart) + ml.ReplicaJointsStart + replica*ml.ReplicaJointsN
+	return nji
 }

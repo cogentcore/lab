@@ -12,9 +12,18 @@ import (
 
 // Body is a rigid body.
 type Body struct {
-	// ObjectIndex is the index of body within parent [Object],
-	// which is used for id in [Builder] context.
-	ObjectIndex int
+	// World is the world number for physics: -1 = globals, else positive
+	// are distinct non-interacting worlds.
+	World int
+
+	// WorldIndex is the index of world within builder Worlds list.
+	WorldIndex int
+
+	// Object is the index within World's Objects list.
+	Object int
+
+	// ObjectBody is the index within the Object's Bodies list.
+	ObjectBody int
 
 	// Shape of the body.
 	Shape physics.Shapes
@@ -85,7 +94,7 @@ type Body struct {
 // Use this for Static elements; NewDynamic for dynamic elements.
 func (ob *Object) NewBody(shape physics.Shapes, hsize, pos math32.Vector3, rot math32.Quat) *Body {
 	idx := len(ob.Bodies)
-	bd := &Body{ObjectIndex: idx, Shape: shape, HSize: hsize}
+	bd := &Body{World: ob.World, WorldIndex: ob.WorldIndex, Object: ob.Object, ObjectBody: idx, Shape: shape, HSize: hsize}
 	bd.Pose.Pos = pos
 	bd.Pose.Quat = rot
 	bd.Group = -1 // default static

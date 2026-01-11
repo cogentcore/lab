@@ -11,9 +11,12 @@ import (
 
 // World is one world within the Builder.
 type World struct {
-	// World is the world index. -1 = globals, else positive.. are distinct
-	// non-interacting worlds.
+	// World is the world number for physics: -1 = globals, else positive
+	// are distinct non-interacting worlds.
 	World int
+
+	// WorldIndex is the index of world within builder Worlds list.
+	WorldIndex int `set:"-"`
 
 	// Objects are the objects within the [World].
 	// Each object is a coherent collection of bodies, typically
@@ -28,7 +31,7 @@ func (wl *World) Object(idx int) *Object {
 
 func (wl *World) NewObject() *Object {
 	idx := len(wl.Objects)
-	wl.Objects = append(wl.Objects, &Object{})
+	wl.Objects = append(wl.Objects, &Object{World: wl.World, WorldIndex: wl.WorldIndex, Object: idx})
 	return wl.Objects[idx]
 }
 
@@ -48,6 +51,20 @@ func (wl *World) Copy(ow *World) {
 func (wl *World) CopySkins(sc *phyxyz.Scene, ow *World) {
 	for i, ob := range wl.Objects {
 		ob.CopySkins(sc, ow.Object(i))
+	}
+}
+
+// SetWorldIndex sets the WorldIndex for this and all children.
+func (wl *World) SetWorldIndex(wi int) {
+	wl.WorldIndex = wi
+	for _, ob := range wl.Objects {
+		ob.WorldIndex = wi
+		for _, bd := range ob.Bodies {
+			bd.WorldIndex = wi
+		}
+		for _, jd := range ob.Joints {
+			jd.WorldIndex = wi
+		}
 	}
 }
 

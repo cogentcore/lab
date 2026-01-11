@@ -16,6 +16,16 @@ import (
 // connected by joints. This is an organizational convenience
 // for positioning elements; has no physical implications.
 type Object struct {
+	// World is the world number for physics: -1 = globals, else positive
+	// are distinct non-interacting worlds.
+	World int
+
+	// WorldIndex is the index of world within builder Worlds list.
+	WorldIndex int
+
+	// Object is the index within World's Objects list.
+	Object int
+
 	// Bodies are the bodies in the object.
 	Bodies []*Body
 
@@ -43,6 +53,8 @@ func (ob *Object) Joint(idx int) *Joint {
 // (The objects will be identical after, regardless of current starting
 // condition).
 func (ob *Object) Copy(so *Object) {
+	ob.World = so.World
+	ob.Object = so.Object
 	ob.Bodies = make([]*Body, len(so.Bodies))
 	ob.Joints = make([]*Joint, len(so.Joints))
 	ob.Sensors = make([]func(obj *Object), len(so.Sensors))

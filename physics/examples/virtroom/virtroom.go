@@ -47,6 +47,7 @@ func main() {
 	b.RunMainWindow()
 }
 
+// Emer is the robot agent in the environment.
 type Emer struct {
 	// if true, emer is angry: changes face color
 	Angry bool
@@ -55,14 +56,11 @@ type Emer struct {
 	// at the right ear, averaged over the steps.
 	VestibHRightEar float32
 
-	// height of emer
+	// full height of emer
 	Height float32
 
 	// emer object
 	Obj *builder.Object `display:"-"`
-
-	// Revolute joint controlling orientation.
-	Orient *builder.Joint
 
 	// PlaneXZ joint for controlling 2D position.
 	XZ *builder.Joint
@@ -145,7 +143,7 @@ func (ev *Env) Defaults() {
 	ev.Camera.FOV = 90
 }
 
-func (ev *Env) MakeWorld(sc *xyz.Scene) {
+func (ev *Env) MakeModel(sc *xyz.Scene) {
 	ev.Physics.Model = physics.NewModel()
 	ev.Physics.Builder = builder.NewBuilder()
 	ev.Physics.Model.GPU = false
@@ -161,7 +159,7 @@ func (ev *Env) MakeWorld(sc *xyz.Scene) {
 	ev.MakeRoom(wl, "room1", ev.Width, ev.Depth, ev.Height, ev.Thick)
 	ew := ev.Physics.Builder.NewWorld()
 	ev.MakeEmer(ew, &ev.Emer, "emer")
-	// ev.Physics.Builder.ReplicateWorld(1, 8, 2)
+	// vw.Physics.Builder.ReplicateWorld(vw.Physics.Scene, 1, 1, 8) // 1x8
 	ev.Physics.Build()
 	// params := physics.GetParams(0)
 	// params.ControlDt = 1
@@ -305,8 +303,8 @@ func (ev *Env) MakeRoom(wl *builder.World, name string, width, depth, height, th
 	ht := thick / 2
 	obj := wl.NewObject()
 	sc := ev.Physics.Scene
-	obj.NewBodySkin(sc, name+"_floor", physics.Box, "grey", math32.Vec3(hw, ht, hd),
-		math32.Vec3(0, -ht, 0), rot)
+	obj.NewBodySkin(sc, name+"_floor", physics.Plane, "grey", math32.Vec3(hw, 0, hd),
+		math32.Vec3(0, 0, 0), rot)
 	obj.NewBodySkin(sc, name+"_back-wall", physics.Box, "blue", math32.Vec3(hw, hh, ht),
 		math32.Vec3(0, hh, -hd), rot)
 	obj.NewBodySkin(sc, name+"_left-wall", physics.Box, "red", math32.Vec3(ht, hh, hd),
@@ -367,7 +365,7 @@ func (ev *Env) MakeEmer(wl *builder.World, em *Emer, name string) {
 	ej := obj.NewJointFixed(head, bd, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
 	ej.ParentFixed = true
 
-	eyeoff = math32.Vec3(headsz*.6, headsz*.1, -(headsz + eyesz*.3))
+	eyeoff.X = headsz * .6
 	em.EyeR = obj.NewDynamicSkin(sc, name+"_eye-r", physics.Box, "green", mass*.001, math32.Vec3(eyesz, eyesz*.5, eyesz*.2), headPos.Add(eyeoff), rot)
 	// em.EyeR.Group = 0
 	ej = obj.NewJointFixed(head, em.EyeR, eyeoff, math32.Vec3(0, 0, -eyesz*.3))
@@ -394,7 +392,7 @@ func (ev *Env) ConfigGUI() *core.Body {
 	ev.SceneEditor = xyzcore.NewSceneEditor(scfr)
 	ev.SceneEditor.UpdateWidget()
 	sc := ev.SceneEditor.SceneXYZ()
-	ev.MakeWorld(sc)
+	ev.MakeModel(sc)
 
 	// local toolbar for manipulating emer
 	// etb.Maker(phyxyz.MakeStateToolbar(&ev.Emer.Rel, func() {
@@ -506,7 +504,7 @@ func (ev *Env) NoGUIRun() {
 		panic(err)
 	}
 	sc := phyxyz.NoDisplayScene(gp, dev)
-	ev.MakeWorld(sc)
+	ev.MakeModel(sc)
 
 	img := ev.RenderEyeImg()
 	if img != nil {

@@ -56,25 +56,27 @@ func (bl *Builder) NewWorld() *World {
 	if idx > 0 {
 		wn = bl.Worlds[idx-1].World + 1
 	}
-	bl.Worlds = append(bl.Worlds, &World{World: wn})
+	bl.Worlds = append(bl.Worlds, &World{World: wn, WorldIndex: idx})
 	return bl.Worlds[idx]
 }
 
 // Build builds a physics model, with optional [phyxyz.Scene] for
 // visualization (using Skin elements created for bodies).
 func (bl *Builder) Build(ml *physics.Model, sc *phyxyz.Scene) {
-	repSt := int32(0)
-	repN := int32(0)
+	bSt := int32(-1)
+	bN := int32(0)
+	jSt := int32(-1)
+	jN := int32(0)
 	for wi, wl := range bl.Worlds {
 		// fmt.Println("\n######## World:", wl.World)
 		for _, ob := range wl.Objects {
 			// fmt.Println("\n\t#### Object")
-			for bbi, bd := range ob.Bodies {
+			for _, bd := range ob.Bodies {
 				bd.NewPhysicsBody(ml, wl.World)
 				if bl.ReplicasN > 0 && wi == bl.ReplicasStart {
-					repN++
-					if bbi == 0 {
-						repSt = bd.BodyIndex
+					bN++
+					if bSt < 0 {
+						bSt = bd.BodyIndex
 					}
 				}
 			}
@@ -84,13 +86,21 @@ func (bl *Builder) Build(ml *physics.Model, sc *phyxyz.Scene) {
 			ml.NewObject()
 			for _, jd := range ob.Joints {
 				jd.NewPhysicsJoint(ml, ob)
+				if bl.ReplicasN > 0 && wi == bl.ReplicasStart {
+					jN++
+					if jSt < 0 {
+						jSt = jd.JointIndex
+					}
+				}
 			}
 		}
 	}
-	if repN > 0 {
-		ml.ReplicasStart = repSt
+	if bN > 0 {
 		ml.ReplicasN = int32(bl.ReplicasN)
-		ml.ReplicaBodiesN = repN
+		ml.ReplicaBodiesStart = bSt
+		ml.ReplicaBodiesN = bN
+		ml.ReplicaJointsStart = jSt
+		ml.ReplicaJointsN = jN
 	}
 }
 
@@ -129,15 +139,16 @@ func (bl *Builder) ReplicateWorld(sc *phyxyz.Scene, worldIdx, nY, nX int, offs .
 	if len(offs) > 1 {
 		Xoff = offs[1]
 	}
+
 	for y := range nY {
 		for x := range nX {
 			if x == 0 && y == 0 {
 				continue
 			}
 			nw := bl.NewWorld()
-			wi := nw.World
+			wi := nw.WorldIndex
 			nw.Copy(src)
-			nw.World = wi
+			nw.SetWorldIndex(wi)
 			off := Yoff.MulScalar(float32(y)).Add(Xoff.MulScalar(float32(x)))
 			nw.Move(off)
 			if sc != nil {
@@ -145,8 +156,33 @@ func (bl *Builder) ReplicateWorld(sc *phyxyz.Scene, worldIdx, nY, nX int, offs .
 			}
 		}
 	}
-	if sc == nil {
-		bl.ReplicasStart = worldIdx
-		bl.ReplicasN = nY * nX
-	}
+	bl.ReplicasStart = worldIdx
+	bl.ReplicasN = nY * nX
+}
+
+// ReplicaWorld returns the replica World at given replica index,
+// Where replica is index into replicated worlds (0 = original).
+func (bl *Builder) ReplicaWorld(replica int) *World {
+	return bl.Worlds[bl.ReplicasStart+replica]
+}
+
+// ReplicaObject returns the replica corresponding to given [Object],
+// Where replica is index into replicated worlds (0 = original).
+func (bl *Builder) ReplicaObject(ob *Object, replica int) *Object {
+	wl := bl.ReplicaWorld(replica)
+	return wl.Object(ob.Object)
+}
+
+// ReplicaBody returns the replica corresponding to given [Body],
+// Where replica is index into replicated worlds (0 = original).
+func (bl *Builder) ReplicaBody(bd *Body, replica int) *Body {
+	wl := bl.ReplicaWorld(replica)
+	return wl.Object(bd.Object).Body(bd.ObjectBody)
+}
+
+// ReplicaJoint returns the replica corresponding to given [Joint],
+// Where replica is index into replicated worlds (0 = original).
+func (bl *Builder) ReplicaJoint(bd *Joint, replica int) *Joint {
+	wl := bl.ReplicaWorld(replica)
+	return wl.Object(bd.Object).Joint(bd.ObjectJoint)
 }

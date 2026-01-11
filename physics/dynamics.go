@@ -245,3 +245,17 @@ func AngularVelocityAt(di int32, point, axis math32.Vector3) math32.Vector3 {
 	wp := slmath.Cross3(w.Mul(axis), point)
 	return wp
 }
+
+// AngularAccelAt returns the angular acceleration vector of given dynamic body
+// index and Next index, relative to given rotation axis at given point
+// relative to the structural center of the given dynamic body.
+// For example, to get rotation around the XZ plane, axis = (0,1,0) and
+// the acceleration value will show up in the Z axis for an X-axis point,
+// and vice-versa (X for a Z-axis point).
+// This uses DynamicAngAcc which is computed after each step (into Next).
+func AngularAccelAt(di int32, point, axis math32.Vector3) math32.Vector3 {
+	params := GetParams(0)
+	w := DynamicAngAcc(di, params.Next)
+	wp := slmath.Cross3(w.Mul(axis), point)
+	return wp
+}

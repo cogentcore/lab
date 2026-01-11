@@ -10,12 +10,24 @@ import (
 	"cogentcore.org/lab/physics/phyxyz"
 )
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Body", IDName: "body", Doc: "Body is a rigid body.", Fields: []types.Field{{Name: "ObjectIndex", Doc: "ObjectIndex is the index of body within parent [Object],\nwhich is used for id in [Builder] context."}, {Name: "Shape", Doc: "Shape of the body."}, {Name: "Dynamic", Doc: "Dynamic makes this a dynamic body."}, {Name: "Group", Doc: "Group partitions bodies within worlds into different groups\nfor collision detection. 0 does not collide with anything.\nNegative numbers are global within a world, except they don't\ncollide amongst themselves (all non-dynamic bodies should go\nin -1 because they don't collide amongst each-other, but do\npotentially collide with dynamics).\nPositive numbers only collide amongst themselves, and with\nnegative groups, but not other positive groups. To avoid\nunwanted collisions, put bodies into separate groups.\nThere is an automatic constraint that the two objects\nwithin a single joint do not collide with each other, so this\ndoes not need to be handled here."}, {Name: "HSize", Doc: "HSize is the half-size (e.g., radius) of the body.\nValues depend on shape type: X is generally radius,\nY is half-height."}, {Name: "Thick", Doc: "Thick is the thickness of the body, as a hollow shape.\nIf 0, then it is a solid shape (default)."}, {Name: "Mass", Doc: "Mass of the object. Only relevant for Dynamic bodies."}, {Name: "Pose", Doc: "Pose has the position and rotation."}, {Name: "Com", Doc: "Com is the center-of-mass offset from the Pose.Pos."}, {Name: "Bounce", Doc: "Bounce specifies the COR or coefficient of restitution (0..1),\nwhich determines how elastic the collision is,\ni.e., final velocity / initial velocity."}, {Name: "Friction", Doc: "Friction is the standard coefficient for linear friction (mu)."}, {Name: "FrictionTortion", Doc: "FrictionTortion is resistance to spinning at the contact point."}, {Name: "FrictionRolling", Doc: "FrictionRolling is resistance to rolling motion at contact."}, {Name: "Skin", Doc: "Optional [phyxyz.Skin] for visualizing the body."}, {Name: "BodyIndex", Doc: "BodyIndex is the index of this body in the [physics.Model] Bodies list,\nonce built."}, {Name: "DynamicIndex", Doc: "DynamicIndex is the index of this dynamic body in the\n[physics.Model] Dynamics list, once built."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Body", IDName: "body", Doc: "Body is a rigid body.", Fields: []types.Field{{Name: "World", Doc: "World is the world number for physics: -1 = globals, else positive\nare distinct non-interacting worlds."}, {Name: "WorldIndex", Doc: "WorldIndex is the index of world within builder Worlds list."}, {Name: "Object", Doc: "Object is the index within World's Objects list."}, {Name: "ObjectBody", Doc: "ObjectBody is the index within the Object's Bodies list."}, {Name: "Shape", Doc: "Shape of the body."}, {Name: "Dynamic", Doc: "Dynamic makes this a dynamic body."}, {Name: "Group", Doc: "Group partitions bodies within worlds into different groups\nfor collision detection. 0 does not collide with anything.\nNegative numbers are global within a world, except they don't\ncollide amongst themselves (all non-dynamic bodies should go\nin -1 because they don't collide amongst each-other, but do\npotentially collide with dynamics).\nPositive numbers only collide amongst themselves, and with\nnegative groups, but not other positive groups. To avoid\nunwanted collisions, put bodies into separate groups.\nThere is an automatic constraint that the two objects\nwithin a single joint do not collide with each other, so this\ndoes not need to be handled here."}, {Name: "HSize", Doc: "HSize is the half-size (e.g., radius) of the body.\nValues depend on shape type: X is generally radius,\nY is half-height."}, {Name: "Thick", Doc: "Thick is the thickness of the body, as a hollow shape.\nIf 0, then it is a solid shape (default)."}, {Name: "Mass", Doc: "Mass of the object. Only relevant for Dynamic bodies."}, {Name: "Pose", Doc: "Pose has the position and rotation."}, {Name: "Com", Doc: "Com is the center-of-mass offset from the Pose.Pos."}, {Name: "Bounce", Doc: "Bounce specifies the COR or coefficient of restitution (0..1),\nwhich determines how elastic the collision is,\ni.e., final velocity / initial velocity."}, {Name: "Friction", Doc: "Friction is the standard coefficient for linear friction (mu)."}, {Name: "FrictionTortion", Doc: "FrictionTortion is resistance to spinning at the contact point."}, {Name: "FrictionRolling", Doc: "FrictionRolling is resistance to rolling motion at contact."}, {Name: "Skin", Doc: "Optional [phyxyz.Skin] for visualizing the body."}, {Name: "BodyIndex", Doc: "BodyIndex is the index of this body in the [physics.Model] Bodies list,\nonce built."}, {Name: "DynamicIndex", Doc: "DynamicIndex is the index of this dynamic body in the\n[physics.Model] Dynamics list, once built."}}})
 
-// SetObjectIndex sets the [Body.ObjectIndex]:
-// ObjectIndex is the index of body within parent [Object],
-// which is used for id in [Builder] context.
-func (t *Body) SetObjectIndex(v int) *Body { t.ObjectIndex = v; return t }
+// SetWorld sets the [Body.World]:
+// World is the world number for physics: -1 = globals, else positive
+// are distinct non-interacting worlds.
+func (t *Body) SetWorld(v int) *Body { t.World = v; return t }
+
+// SetWorldIndex sets the [Body.WorldIndex]:
+// WorldIndex is the index of world within builder Worlds list.
+func (t *Body) SetWorldIndex(v int) *Body { t.WorldIndex = v; return t }
+
+// SetObject sets the [Body.Object]:
+// Object is the index within World's Objects list.
+func (t *Body) SetObject(v int) *Body { t.Object = v; return t }
+
+// SetObjectBody sets the [Body.ObjectBody]:
+// ObjectBody is the index within the Object's Bodies list.
+func (t *Body) SetObjectBody(v int) *Body { t.ObjectBody = v; return t }
 
 // SetShape sets the [Body.Shape]:
 // Shape of the body.
@@ -111,7 +123,24 @@ func (t *Builder) SetReplicasStart(v int) *Builder { t.ReplicasStart = v; return
 // Set by ReplicateWorld, and used to set corresponding value in Model.
 func (t *Builder) SetReplicasN(v int) *Builder { t.ReplicasN = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Joint", IDName: "joint", Doc: "Joint describes a joint between two bodies.", Fields: []types.Field{{Name: "Parent", Doc: "Parent is index within an Object for parent body.\n-1 for world-anchored parent."}, {Name: "Child", Doc: "Parent is index within an Object for parent body."}, {Name: "Type", Doc: "Type is the type of the joint."}, {Name: "PPose", Doc: "PPose is the parent position and orientation of the joint\nin the parent's body-centered coordinates."}, {Name: "CPose", Doc: "CPose is the child position and orientation of the joint\nin the parent's body-centered coordinates."}, {Name: "ParentFixed", Doc: "ParentFixed does not update the parent side of the joint."}, {Name: "NoLinearRotation", Doc: "NoLinearRotation ignores the rotational (angular) effects of\nlinear joint position constraints (i.e., Coriolis and centrifugal forces)\nwhich can otherwise interfere with rotational position constraints in\njoints with both linear and angular DoFs\n(e.g., [PlaneXZ], for which this is on by default)."}, {Name: "LinearDoFN", Doc: "LinearDoFN is the number of linear degrees of freedom (3 max)."}, {Name: "AngularDoFN", Doc: "AngularDoFN is the number of linear degrees of freedom (3 max)."}, {Name: "DoFs", Doc: "DoFs are the degrees-of-freedom for this joint."}, {Name: "JointIndex", Doc: "JointIndex is the index of this joint in [physics.Joints] when built."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Joint", IDName: "joint", Doc: "Joint describes a joint between two bodies.", Fields: []types.Field{{Name: "World", Doc: "World is the world number for physics: -1 = globals, else positive\nare distinct non-interacting worlds."}, {Name: "WorldIndex", Doc: "WorldIndex is the index of world within builder Worlds list."}, {Name: "Object", Doc: "Object is the index within World's Objects list."}, {Name: "ObjectJoint", Doc: "ObjectJoint is the index within Object's Joints list."}, {Name: "Parent", Doc: "Parent is index within an Object for parent body.\n-1 for world-anchored parent."}, {Name: "Child", Doc: "Parent is index within an Object for parent body."}, {Name: "Type", Doc: "Type is the type of the joint."}, {Name: "PPose", Doc: "PPose is the parent position and orientation of the joint\nin the parent's body-centered coordinates."}, {Name: "CPose", Doc: "CPose is the child position and orientation of the joint\nin the parent's body-centered coordinates."}, {Name: "ParentFixed", Doc: "ParentFixed does not update the parent side of the joint."}, {Name: "NoLinearRotation", Doc: "NoLinearRotation ignores the rotational (angular) effects of\nlinear joint position constraints (i.e., Coriolis and centrifugal forces)\nwhich can otherwise interfere with rotational position constraints in\njoints with both linear and angular DoFs\n(e.g., [PlaneXZ], for which this is on by default)."}, {Name: "LinearDoFN", Doc: "LinearDoFN is the number of linear degrees of freedom (3 max)."}, {Name: "AngularDoFN", Doc: "AngularDoFN is the number of linear degrees of freedom (3 max)."}, {Name: "DoFs", Doc: "DoFs are the degrees-of-freedom for this joint."}, {Name: "JointIndex", Doc: "JointIndex is the index of this joint in [physics.Joints] when built."}}})
+
+// SetWorld sets the [Joint.World]:
+// World is the world number for physics: -1 = globals, else positive
+// are distinct non-interacting worlds.
+func (t *Joint) SetWorld(v int) *Joint { t.World = v; return t }
+
+// SetWorldIndex sets the [Joint.WorldIndex]:
+// WorldIndex is the index of world within builder Worlds list.
+func (t *Joint) SetWorldIndex(v int) *Joint { t.WorldIndex = v; return t }
+
+// SetObject sets the [Joint.Object]:
+// Object is the index within World's Objects list.
+func (t *Joint) SetObject(v int) *Joint { t.Object = v; return t }
+
+// SetObjectJoint sets the [Joint.ObjectJoint]:
+// ObjectJoint is the index within Object's Joints list.
+func (t *Joint) SetObjectJoint(v int) *Joint { t.ObjectJoint = v; return t }
 
 // SetParent sets the [Joint.Parent]:
 // Parent is index within an Object for parent body.
@@ -210,7 +239,20 @@ func (t *DoF) SetInit(v Controls) *DoF { t.Init = v; return t }
 // Current are the current control values (based on method calls).
 func (t *DoF) SetCurrent(v Controls) *DoF { t.Current = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Object", IDName: "object", Doc: "Object is an object within the [World].\nEach object is a coherent collection of bodies, typically\nconnected by joints. This is an organizational convenience\nfor positioning elements; has no physical implications.", Fields: []types.Field{{Name: "Bodies", Doc: "Bodies are the bodies in the object."}, {Name: "Joints", Doc: "Joints are joints connecting object bodies.\nJoint indexes here refer strictly within bodies."}, {Name: "Sensors", Doc: "Sensors are functions that can be configured to report arbitrary values\non given body element. The output must be stored directly somewhere via\nthe closure function: the utility of the sensor function is being able\nto capture all the configuration-time parameters needed to make it work,\nand to have it automatically called on replicated objects."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.Object", IDName: "object", Doc: "Object is an object within the [World].\nEach object is a coherent collection of bodies, typically\nconnected by joints. This is an organizational convenience\nfor positioning elements; has no physical implications.", Fields: []types.Field{{Name: "World", Doc: "World is the world number for physics: -1 = globals, else positive\nare distinct non-interacting worlds."}, {Name: "WorldIndex", Doc: "WorldIndex is the index of world within builder Worlds list."}, {Name: "Object", Doc: "Object is the index within World's Objects list."}, {Name: "Bodies", Doc: "Bodies are the bodies in the object."}, {Name: "Joints", Doc: "Joints are joints connecting object bodies.\nJoint indexes here refer strictly within bodies."}, {Name: "Sensors", Doc: "Sensors are functions that can be configured to report arbitrary values\non given body element. The output must be stored directly somewhere via\nthe closure function: the utility of the sensor function is being able\nto capture all the configuration-time parameters needed to make it work,\nand to have it automatically called on replicated objects."}}})
+
+// SetWorld sets the [Object.World]:
+// World is the world number for physics: -1 = globals, else positive
+// are distinct non-interacting worlds.
+func (t *Object) SetWorld(v int) *Object { t.World = v; return t }
+
+// SetWorldIndex sets the [Object.WorldIndex]:
+// WorldIndex is the index of world within builder Worlds list.
+func (t *Object) SetWorldIndex(v int) *Object { t.WorldIndex = v; return t }
+
+// SetObject sets the [Object.Object]:
+// Object is the index within World's Objects list.
+func (t *Object) SetObject(v int) *Object { t.Object = v; return t }
 
 // SetBodies sets the [Object.Bodies]:
 // Bodies are the bodies in the object.
@@ -253,11 +295,11 @@ func (t *Pose) SetPos(v math32.Vector3) *Pose { t.Pos = v; return t }
 // Quat is the rotation specified as a quaternion.
 func (t *Pose) SetQuat(v math32.Quat) *Pose { t.Quat = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.World", IDName: "world", Doc: "World is one world within the Builder.", Fields: []types.Field{{Name: "World", Doc: "World is the world index. -1 = globals, else positive.. are distinct\nnon-interacting worlds."}, {Name: "Objects", Doc: "Objects are the objects within the [World].\nEach object is a coherent collection of bodies, typically\nconnected by joints. This is an organizational convenience\nfor positioning elements; has no physical implications."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/physics/builder.World", IDName: "world", Doc: "World is one world within the Builder.", Fields: []types.Field{{Name: "World", Doc: "World is the world number for physics: -1 = globals, else positive\nare distinct non-interacting worlds."}, {Name: "WorldIndex", Doc: "WorldIndex is the index of world within builder Worlds list."}, {Name: "Objects", Doc: "Objects are the objects within the [World].\nEach object is a coherent collection of bodies, typically\nconnected by joints. This is an organizational convenience\nfor positioning elements; has no physical implications."}}})
 
 // SetWorld sets the [World.World]:
-// World is the world index. -1 = globals, else positive.. are distinct
-// non-interacting worlds.
+// World is the world number for physics: -1 = globals, else positive
+// are distinct non-interacting worlds.
 func (t *World) SetWorld(v int) *World { t.World = v; return t }
 
 // SetObjects sets the [World.Objects]:

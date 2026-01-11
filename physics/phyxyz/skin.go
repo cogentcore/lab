@@ -78,7 +78,7 @@ func (sk *Skin) UpdateFromPhysics(sc *Scene) {
 	di := int32(sk.DynamicIndex)
 	bi := int32(sk.BodyIndex)
 	if sc.ReplicasView {
-		bi, di = physics.CurModel.ReplicasIndexes(bi, int32(sc.ReplicasIndex))
+		bi, di = physics.CurModel.ReplicasBodyIndexes(bi, int32(sc.ReplicasIndex))
 	}
 	if di >= 0 {
 		sk.Pos = physics.DynamicPos(di, params.Cur)
