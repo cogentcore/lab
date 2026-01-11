@@ -254,7 +254,7 @@ To optimize the collision detection computation, it is important to organize bod
 
 There is also a special constraint where the parent and child on a same joint do not collide, as this often happens and would lead to weird behavior.
 
-There is also an `Object` index for each body, that is used for external manipulation and control purposes, but does not affect collision or physics.
+The `NewBody` and `NewDynamic` methods automatically use the `Model.CurrentWorld` index by default, or you can directly use `SetBodyWorld` to assign a specific world index.
 
 ## Shapes
 
@@ -301,8 +301,6 @@ A major advantage of using `builder` is to take advantage of the `ReplicateWorld
 ## Parallel worlds
 
 The compute efficiency of the GPU goes up with the more elements that are processed in parallel, amortizing the memory transfer overhead and leveraging the parallel cores. Furthermore, in AI applications for example, models can be trained in parallel on different instances of the same environment, with each instance having its own random initial starting point and trajectory over time. All of these instances can be simulated in one `physics.Model` by using the `World` index on the bodies, with the shared static environment living in World -1, and the elements of each instance (e.g., a simulated robot) living in its own separate world.
-
-The `NewBody` and `NewDynamic` methods automatically use the `Model.CurrentWorld` index by default, or you can directly use `SetBodyWorld` to assign a specific world index.
 
 The [[doc:physics/builder.Builder.ReplicateWorld]] method creates N replicas of an existing world, including all associated joints. This can only be called once, as it records the start and N-per-world of each such replicated world, which allows the `phyxyz` `Editor` to efficiently view a specific world. Thus, under this scenario, you create world 0 and then replicate it, then modify the initial positions and orientations accordingly, using the Object-based methods. 
 
