@@ -280,7 +280,7 @@ func (pe *Editor) MakeToolbar(p *tree.Plan) {
 				pe.Scene.ReplicasView = replN > 0
 			}
 			w.SetMax(float32(replN - 1))
-			s.SetEnabled(replN > 0)
+			s.SetEnabled(replN > 1)
 		})
 		w.OnChange(func(e events.Event) {
 			pe.Scene.ReplicasIndex = pe.Replica

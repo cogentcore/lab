@@ -127,7 +127,9 @@ func (sc *Scene) RenderFrom(sk *Skin, cam *Camera) []image.Image {
 		imgs = make([]image.Image, ml.ReplicasN)
 		for i := range ml.ReplicasN {
 			sc.ReplicasIndex = int(i)
-			sc.UpdateFromPhysics()
+			sc.Update() // full Update needed, beyond just UpdateFromPhysics.
+			xysc.Camera.Pose.Pos = sk.Pos
+			xysc.Camera.Pose.Quat = sk.Quat
 			img := xysc.RenderGrabImage()
 			imgs[i] = img
 		}
@@ -152,4 +154,11 @@ func (sc *Scene) NewSkin(shape physics.Shapes, name, clr string, hsize math32.Ve
 	sk := &Skin{Name: name, Shape: shape, Color: clr, HSize: hsize, DynamicIndex: -1, Pos: pos, Quat: rot}
 	sc.Skins = append(sc.Skins, sk)
 	return sk
+}
+
+// AddSkinClone adds a cloned version of given skin.
+func (sc *Scene) AddSkinClone(sk *Skin) {
+	nsk := &Skin{}
+	*nsk = *sk
+	sc.Skins = append(sc.Skins, sk)
 }

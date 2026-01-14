@@ -160,6 +160,21 @@ func (bl *Builder) ReplicateWorld(sc *phyxyz.Scene, worldIdx, nY, nX int, offs .
 	bl.ReplicasN = nY * nX
 }
 
+// CloneSkins copies existing Body skins into the given [phyxyz.Scene],
+// thereby configuring the given scene to view the physics model for this builder.
+func (bl *Builder) CloneSkins(sc *phyxyz.Scene) {
+	for _, wl := range bl.Worlds {
+		for _, ob := range wl.Objects {
+			for _, bd := range ob.Bodies {
+				if bd.Skin == nil {
+					continue
+				}
+				sc.AddSkinClone(bd.Skin)
+			}
+		}
+	}
+}
+
 // ReplicaWorld returns the replica World at given replica index,
 // Where replica is index into replicated worlds (0 = original).
 func (bl *Builder) ReplicaWorld(replica int) *World {

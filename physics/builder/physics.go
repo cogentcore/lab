@@ -49,7 +49,9 @@ func (ph *Physics) InitState() {
 func (ph *Physics) Step(n int) {
 	for range n {
 		ph.Model.Step()
-		ph.Scene.Update()
+		if ph.Scene != nil {
+			ph.Scene.Update()
+		}
 	}
 }
 

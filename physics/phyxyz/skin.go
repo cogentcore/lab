@@ -87,7 +87,6 @@ func (sk *Skin) UpdateFromPhysics(sc *Scene) {
 		sk.Pos = physics.BodyPos(bi)
 		sk.Quat = physics.BodyQuat(bi)
 	}
-	// fmt.Println("skin:", sk.BodyIndex, sk.DynamicIndex, sk.Name, sk.Pos, sk.Quat)
 }
 
 // UpdatePose updates the xyz node pose from skin.
