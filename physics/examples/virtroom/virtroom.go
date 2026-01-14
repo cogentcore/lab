@@ -162,7 +162,7 @@ func (ev *Env) MakeModel(sc *xyz.Scene) {
 	// vw.Physics.Builder.ReplicateWorld(vw.Physics.Scene, 1, 1, 8) // 1x8
 	ev.Physics.Build()
 	// params := physics.GetParams(0)
-	// params.ControlDt = 1
+	// params.ControlDt = 0.1
 	// params.Gravity.Y = 0
 	// params.MaxForce = 1.0e3
 	// params.AngularDamping = 0.5

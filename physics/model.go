@@ -264,10 +264,13 @@ func (ml *Model) ToGPUInfra() {
 // for given replica world and source body index, if ReplicasN is > 0.
 // Otherwise, returns bi and corresponding dynamic index.
 func (ml *Model) ReplicasBodyIndexes(bi, replica int32) (bodyIdx, dynIdx int32) {
-	if ml.ReplicasN == 0 || bi < ml.ReplicaBodiesStart {
+	start := ml.ReplicaBodiesStart
+	n := ml.ReplicaBodiesN
+	if ml.ReplicasN == 0 || bi < start {
 		return bi, GetBodyDynamic(bi)
 	}
-	bodyIdx = (bi - ml.ReplicaBodiesStart) + ml.ReplicaBodiesStart + replica*ml.ReplicaBodiesN
+	rbi := (bi - start) % n
+	bodyIdx = start + rbi + replica*n
 	dynIdx = GetBodyDynamic(bodyIdx)
 	return
 }
@@ -276,9 +279,12 @@ func (ml *Model) ReplicasBodyIndexes(bi, replica int32) (bodyIdx, dynIdx int32) 
 // world and source body index, if ReplicasN is > 0.
 // Otherwise, returns bi and corresponding dynamic index.
 func (ml *Model) ReplicasJointIndex(ji, replica int32) int32 {
-	if ml.ReplicasN == 0 || ji < ml.ReplicaJointsStart {
+	start := ml.ReplicaJointsStart
+	n := ml.ReplicaJointsN
+	if ml.ReplicasN == 0 || ji < start {
 		return ji
 	}
-	nji := (ji - ml.ReplicaJointsStart) + ml.ReplicaJointsStart + replica*ml.ReplicaJointsN
+	rji := (ji - start) % n
+	nji := start + rji + replica*n
 	return nji
 }
