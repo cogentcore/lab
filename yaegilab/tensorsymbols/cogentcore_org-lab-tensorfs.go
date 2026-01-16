@@ -39,5 +39,6 @@ func init() {
 		"DirFile": reflect.ValueOf((*tensorfs.DirFile)(nil)),
 		"File":    reflect.ValueOf((*tensorfs.File)(nil)),
 		"Node":    reflect.ValueOf((*tensorfs.Node)(nil)),
+		"Nodes":   reflect.ValueOf((*tensorfs.Nodes)(nil)),
 	}
 }

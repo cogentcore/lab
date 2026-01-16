@@ -13,6 +13,7 @@ func init() {
 	Symbols["cogentcore.org/lab/physics/physics"] = map[string]reflect.Value{
 		// function, constant and variable definitions
 		"AddBroadContacts":            reflect.ValueOf(physics.AddBroadContacts),
+		"AngularAccelAt":              reflect.ValueOf(physics.AngularAccelAt),
 		"AngularCorrection":           reflect.ValueOf(physics.AngularCorrection),
 		"AngularVelocityAt":           reflect.ValueOf(physics.AngularVelocityAt),
 		"Ball":                        reflect.ValueOf(physics.Ball),
