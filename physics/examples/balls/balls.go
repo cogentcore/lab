@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package balls
 
 //go:generate core generate -add-types
 
@@ -10,8 +10,8 @@ import (
 	"math/rand/v2"
 
 	"cogentcore.org/core/colors"
-	"cogentcore.org/core/core"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/tree"
 	_ "cogentcore.org/lab/gosl/slbool/slboolcore" // include to get gui views
 	"cogentcore.org/lab/physics"
 	"cogentcore.org/lab/physics/phyxyz"
@@ -61,8 +61,7 @@ func (b *Balls) Defaults() {
 	b.FrictionRolling = 0
 }
 
-func main() {
-	b := core.NewBody("test1").SetTitle("Physics Balls")
+func Config(b tree.Node) {
 	ed := phyxyz.NewEditor(b)
 
 	bs := &Balls{}
@@ -113,6 +112,4 @@ func main() {
 			bl.SetBodyFrictionRolling(bs.FrictionRolling)
 		}
 	})
-
-	b.RunMainWindow()
 }

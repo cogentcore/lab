@@ -2,15 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package virtroom
 
-//go:generate core generate
+//go:generate core generate -add-types
 
 import (
 	"fmt"
 	"image"
 	"math/rand/v2"
-	"os"
 
 	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/colors"
@@ -29,23 +28,6 @@ import (
 	"cogentcore.org/lab/physics/builder"
 	"cogentcore.org/lab/physics/phyxyz"
 )
-
-var NoGUI bool
-
-func main() {
-	if len(os.Args) > 1 && os.Args[1] == "-nogui" {
-		NoGUI = true
-	}
-	ev := &Env{}
-	ev.Defaults()
-	if NoGUI {
-		ev.NoGUIRun()
-		return
-	}
-	// core.RenderTrace = true
-	b := ev.ConfigGUI()
-	b.RunMainWindow()
-}
 
 // Emer is the robot agent in the environment.
 type Emer struct {
@@ -161,9 +143,10 @@ func (ev *Env) MakeModel(sc *xyz.Scene) {
 	ev.MakeEmer(ew, &ev.Emer, "emer")
 	// vw.Physics.Builder.ReplicateWorld(vw.Physics.Scene, 1, 1, 8) // 1x8
 	ev.Physics.Build()
-	// params := physics.GetParams(0)
+	params := physics.GetParams(0)
 	// params.ControlDt = 0.1
-	// params.Gravity.Y = 0
+	params.Dt = 0.001
+	params.SubSteps = 1
 	// params.MaxForce = 1.0e3
 	// params.AngularDamping = 0.5
 	// params.SubSteps = 1
@@ -226,10 +209,11 @@ func (ev *Env) UpdateView() {
 // ModelStep does one step of the physics model.
 func (ev *Env) ModelStep() { //types:add
 	ev.Emer.VestibHRightEar = 0
-	for range ev.ModelSteps {
-		ev.Physics.Step(1)
+	for range ev.ModelSteps { // we're computing average over sensor data
+		ev.Physics.StepQuiet(1)
 		ev.Sensors()
 	}
+	ev.Physics.Step(1)
 	ev.Emer.VestibHRightEar /= float32(ev.ModelSteps)
 	fmt.Println("vestibH right ear:", ev.Emer.VestibHRightEar)
 	ev.Emer.Angry = false
@@ -372,10 +356,10 @@ func (ev *Env) MakeEmer(wl *builder.World, em *Emer, name string) {
 	ej.ParentFixed = true
 }
 
-func (ev *Env) ConfigGUI() *core.Body {
+func (ev *Env) ConfigGUI(b tree.Node) {
 	// vgpu.Debug = true
-
-	b := core.NewBody("virtroom").SetTitle("Physics Virtual Room")
+	tb := core.NewToolbar(b)
+	tb.Maker(ev.MakeToolbar)
 	split := core.NewSplits(b)
 
 	core.NewForm(split).SetStruct(ev)
@@ -427,13 +411,6 @@ func (ev *Env) ConfigGUI() *core.Body {
 	ev.DepthImage = core.NewImage(imfr)
 	ev.DepthImage.SetName("depth-img")
 	ev.DepthImage.Image = image.NewRGBA(image.Rectangle{Max: ev.Camera.Size})
-
-	////////    Toolbar
-
-	b.AddTopBar(func(bar *core.Frame) {
-		core.NewToolbar(bar).Maker(ev.MakeToolbar)
-	})
-	return b
 }
 
 func (ev *Env) MakeToolbar(p *tree.Plan) {

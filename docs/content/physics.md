@@ -1,4 +1,5 @@
 +++
+Categories = ["Physics"]
 bibfile = "ccnlab.json"
 +++
 
@@ -331,4 +332,7 @@ The result is a fully _consistent_ updated set of positions for the objects that
 The XPBD solver that we implement ([[@MacklinMullerChentanez16]] and [[@MullerMacklinChentanezEtAl20]]) fixes a few important problems with the PBD approach, so that the same results are obtained regardless of the time step used, and physically accurate forces and velocities can be back-computed from the final integrated position updates, so applications that track these factors can now be used. Overall, it appears to be the most robust solver that can use relatively large step sizes and a fully parallel implementation for high performance. The main downside is a potential loss in precise physical accuracy, but in most situations this is minimal, and the advantages overall should strongly outweigh this disadvantage.
 
 Furthermore, the [newton-physics](https://github.com/newton-physics/newton) code for XPBD was very directly convertible to Go and GoSL (unlike the situation with bullet), so the overall process was relatively straightforward.
+
+## Physics examples
+
 

@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package collide
 
 //go:generate core generate -add-types
 
 import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/math32"
+	"cogentcore.org/core/tree"
 	_ "cogentcore.org/lab/gosl/slbool/slboolcore" // include to get gui views
 	"cogentcore.org/lab/physics"
 	"cogentcore.org/lab/physics/phyxyz"
@@ -66,8 +67,7 @@ func (cl *Collide) Defaults() {
 	cl.FrictionRolling = 0.01
 }
 
-func main() {
-	b := core.NewBody("collide").SetTitle("Physics Collide")
+func Config(b tree.Node) {
 	ed := phyxyz.NewEditor(b)
 	ed.CameraPos = math32.Vec3(0, 20, 20)
 
@@ -120,6 +120,4 @@ func main() {
 		physics.SetJointTargetPos(0, 0, pos, 100)
 		physics.SetJointTargetVel(0, 0, 0, 20)
 	})
-
-	b.RunMainWindow()
 }

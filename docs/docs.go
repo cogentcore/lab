@@ -14,6 +14,9 @@ import (
 	"cogentcore.org/core/text/csl"
 	_ "cogentcore.org/core/text/tex" // include this to get math
 	"cogentcore.org/core/tree"
+	"cogentcore.org/lab/physics/examples/balls"
+	"cogentcore.org/lab/physics/examples/collide"
+	"cogentcore.org/lab/physics/examples/virtroom"
 	_ "cogentcore.org/lab/yaegilab"
 )
 
@@ -49,19 +52,25 @@ func main() {
 				ctx.LinkButton(w, "https://youtube.com/@CogentCore")
 				w.SetText("Videos").SetIcon(icons.VideoLibrary)
 			})
-			tree.Add(p, func(w *core.Button) {
-				ctx.LinkButton(w, "https://cogentcore.org/blog")
-				w.SetText("Blog").SetIcon(icons.RssFeed)
-			})
-			tree.Add(p, func(w *core.Button) {
-				ctx.LinkButton(w, "https://cogentcore.org/community")
-				w.SetText("Community").SetIcon(icons.Forum)
-			})
-			tree.Add(p, func(w *core.Button) {
-				ctx.LinkButton(w, "https://github.com/sponsors/cogentcore")
-				w.SetText("Sponsor").SetIcon(icons.Favorite)
-			})
 		})
 	})
+
+	ctx.ElementHandlers["physics-balls"] = func(ctx *htmlcore.Context) bool {
+		balls.Config(ctx.BlockParent)
+		return true
+	}
+
+	ctx.ElementHandlers["physics-collide"] = func(ctx *htmlcore.Context) bool {
+		collide.Config(ctx.BlockParent)
+		return true
+	}
+
+	ctx.ElementHandlers["physics-virtroom"] = func(ctx *htmlcore.Context) bool {
+		ev := &virtroom.Env{}
+		ev.Defaults()
+		ev.ConfigGUI(ctx.BlockParent)
+		return true
+	}
+
 	b.RunMainWindow()
 }
