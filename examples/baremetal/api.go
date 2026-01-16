@@ -79,3 +79,11 @@ func (bm *BareMetal) UpdateJobs() (nrun, nfinished int, err error) {
 	bm.saveState()
 	return
 }
+
+// RecoverJob reinstates job information so files can be recovered etc.
+func (bm *BareMetal) RecoverJob(job *Job) (*Job, error) {
+	bm.Lock()
+	defer bm.Unlock()
+
+	return bm.recoverJob(job)
+}

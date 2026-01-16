@@ -197,7 +197,7 @@ func (tg *TensorGrid) SizeLabel(lbs []string, col bool) (minBlank, ngps int, sz 
 	if ts != nil {
 		sty, tsty := tg.Styles.NewRichText()
 		tx := rich.NewText(sty, []rune(lbs[mxi]))
-		lns := ts.WrapLines(tx, sty, tsty, &rich.DefaultSettings, math32.Vec2(10000, 1000))
+		lns := ts.WrapLines(tx, sty, tsty, math32.Vec2(10000, 1000))
 		sz = lns.Bounds.Size().Ceil()
 		if col {
 			sz.X, sz.Y = sz.Y, sz.X
@@ -314,7 +314,7 @@ func (tg *TensorGrid) Render() {
 			}
 			yex := float32(ygp) * dimEx
 			tx := rich.NewText(sty, []rune(lb))
-			lns := ts.WrapLines(tx, sty, tsty, &rich.DefaultSettings, math32.Vec2(10000, 1000))
+			lns := ts.WrapLines(tx, sty, tsty, math32.Vec2(10000, 1000))
 			cr := math32.Vec2(0, float32(y)+yex)
 			pr := epos.Add(cr.Mul(gsz))
 			pc.DrawText(lns, pr)
@@ -343,7 +343,7 @@ func (tg *TensorGrid) Render() {
 			}
 			xex := float32(xgp) * dimEx
 			tx := rich.NewText(sty, []rune(lb))
-			lns := ts.WrapLines(tx, sty, tsty, &rich.DefaultSettings, math32.Vec2(10000, 1000))
+			lns := ts.WrapLines(tx, sty, tsty, math32.Vec2(10000, 1000))
 			cr := math32.Vec2(float32(x)+xex, 0)
 			pr := epos.Add(cr.Mul(gsz))
 			rot := tg.GridStyle.ColumnRotation

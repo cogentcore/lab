@@ -234,7 +234,7 @@ func Range(vals Values) (min, max float64, minIndex, maxIndex int) {
 	maxIndex = -1
 	n := vals.Len()
 	for j := range n {
-		fv := vals.Float1D(n)
+		fv := vals.Float1D(j)
 		if math.IsNaN(fv) {
 			continue
 		}
@@ -306,4 +306,25 @@ func ContainsString(tsr, vals Tensor, opts StringMatch) bool {
 		}
 	}
 	return false
+}
+
+// CopyFromLargerShape copies values from another tensor of a larger
+// shape, using indexes in this shape. The other tensor must have at
+// least the same or greater shape values on each dimension as the target.
+// Uses float numbers to copy if not a string.
+func CopyFromLargerShape(tsr, from Tensor) {
+	n := tsr.Len()
+	if tsr.IsString() {
+		for i := range n {
+			idx := tsr.Shape().IndexFrom1D(i)
+			v := from.StringValue(idx...)
+			tsr.SetString(v, idx...)
+		}
+	} else {
+		for i := range n {
+			idx := tsr.Shape().IndexFrom1D(i)
+			v := from.Float(idx...)
+			tsr.SetFloat(v, idx...)
+		}
+	}
 }

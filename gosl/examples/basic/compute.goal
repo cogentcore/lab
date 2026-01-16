@@ -62,7 +62,9 @@ type ParamStruct struct {
 	// 1/Tau
 	Dt float32
 
-	pad  float32
+	// number of data items -- must have avail for GPU to exclude extra.
+	DataLen uint32
+
 	pad1 float32
 
 	Sub SubStruct
@@ -88,6 +90,9 @@ func (ps *ParamStruct) IntegFromRaw(idx int) {
 
 // Compute does the main computation.
 func Compute(i uint32) { //gosl:kernel
+	if i >= Params[0].DataLen { // note: essential to bounds check b/c i in 64 blocks
+		return
+	}
 	Params[0].IntegFromRaw(int(i))
 }
 

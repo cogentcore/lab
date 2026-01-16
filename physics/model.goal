@@ -1,0 +1,288 @@
+// Copyright (c) 2025, Cogent Core. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package physics
+
+import (
+	"cogentcore.org/core/math32"
+	"cogentcore.org/lab/tensor"
+)
+
+//go:generate core generate -add-types -gosl
+
+// Model contains and manages all of the physics elements.
+type Model struct {
+	// GPU determines whether to use GPU (else CPU).
+	GPU bool
+
+	// Params are global parameters.
+	Params []PhysicsParams
+
+	// GetContacts will download Contacts from the GPU, if processing them on the CPU.
+	GetContacts bool
+
+	// ReportTotalKE prints out the total computed kinetic energy in the system after
+	// every step.
+	ReportTotalKE bool
+
+	// CurrentWorld is the [BodyWorld] value to use when creating new bodies.
+	// Set to -1 to create global elements that interact with everything,
+	// while 0 and positive numbers only interact amongst themselves.
+	CurrentWorld int
+
+	// CurrentObject is the Object to use when creating new joints.
+	// Call NewObject to increment.
+	CurrentObject int `edit:"-"`
+
+	// CurrentObjectJoint is the Joint index in CurrentObject
+	// to use when creating new joints.
+	CurrentObjectJoint int `edit:"-"`
+
+	// ReplicasN is the number of replicated worlds.
+	// Total bodies from ReplicasStart should be ReplicasN * ReplicaBodiesN.
+	ReplicasN int32 `edit:"-"`
+
+	// ReplicaBodiesStart is the starting body index for replicated world bodies,
+	// which is needed to efficiently select a body from a specific world.
+	// This is the start of the World=0 first instance.
+	ReplicaBodiesStart int32 `edit:"-"`
+
+	// ReplicaBodiesN is the number of body elements within each set of
+	// replicated world bodies, which is needed to efficiently select
+	// a body from a specific world.
+	ReplicaBodiesN int32 `edit:"-"`
+
+	// ReplicaJointsStart is the starting joint index for replicated world joints,
+	// which is needed to efficiently select a joint from a specific world.
+	// This is the start of the World=0 first instance.
+	ReplicaJointsStart int32 `edit:"-"`
+
+	// ReplicaJointsN is the number of joint elements within each set of
+	// replicated world joints, which is needed to efficiently select
+	// a joint from a specific world.
+	ReplicaJointsN int32 `edit:"-"`
+
+	// Bodies are the rigid body elements (dynamic and static),
+	// specifying the constant, non-dynamic properties,
+	// which is initial state for dynamics.
+	// [body][BodyVarsN]
+	Bodies *tensor.Float32 `display:"no-inline"`
+
+	// Objects is a list of joint indexes for each object, where each object
+	// contains all the joints interconnecting an overlapping set of bodies.
+	// This is known as an articulation in other physics software.
+	// Joints must be added in parent -> child order within objects, as joints
+	// are updated in sequential order within object.
+	// [object][MaxObjectJoints+1]
+	Objects *tensor.Int32 `display:"no-inline"`
+
+	// BodyJoints is a list of joint indexes for each dynamic body, for aggregating.
+	// [dyn body][parent, child][Params.BodyJointsMax]
+	BodyJoints *tensor.Int32 `display:"no-inline"`
+
+	// Joints is a list of permanent joints connecting bodies,
+	// which do not change (no dynamic variables).
+	// [joint][JointVarsN]
+	Joints *tensor.Float32 `display:"no-inline"`
+
+	// JointDoFs is a list of joint DoF parameters, allocated per joint.
+	// [dof][JointDoFVars]
+	JointDoFs *tensor.Float32 `display:"no-inline"`
+
+	// BodyCollidePairs are pairs of Body indexes that could potentially collide
+	// based on precomputed collision logic, using World, Group, and Joint indexes.
+	// [BodyCollidePairsN][2]
+	BodyCollidePairs *tensor.Int32
+
+	// Dynamics are the dynamic rigid body elements: these actually move.
+	// The first set of variables are for initial values, and the second current.
+	// [body][cur/next][DynamicVarsN]
+	Dynamics *tensor.Float32 `display:"no-inline"`
+
+	// BroadContactsN has number of points of broad contact
+	// between bodies. [1]
+	BroadContactsN *tensor.Int32 `display:"no-inline"`
+
+	// BroadContacts are the results of broad-phase contact processing,
+	// establishing possible points of contact between bodies.
+	// [ContactsMax][BroadContactVarsN]
+	BroadContacts *tensor.Float32 `display:"no-inline"`
+
+	// ContactsN has number of points of narrow (final) contact
+	// between bodies. [1]
+	ContactsN *tensor.Int32 `display:"no-inline"`
+
+	// Contacts are the results of narrow-phase contact processing,
+	// where only actual contacts with fully-specified values are present.
+	// [ContactsMax][ContactVarsN]
+	Contacts *tensor.Float32 `display:"no-inline"`
+
+	// JointControls are dynamic joint control inputs, per joint DoF
+	// (in correspondence with [JointDoFs]). This can be uploaded to the
+	// GPU at every step.
+	// [dof][JointControlVarsN]
+	JointControls *tensor.Float32 `display:"no-inline"`
+}
+
+func NewModel() *Model {
+	ml := &Model{}
+	ml.Init()
+	return ml
+}
+
+// Init makes initial vars. Called in NewModel.
+// Must call Config once configured.
+func (ml *Model) Init() {
+	ml.GPU = true
+	ml.Params = make([]PhysicsParams, 1)
+	ml.Params[0].Defaults()
+	ml.Reset()
+}
+
+// Reset resets all data to empty: starting over.
+func (ml *Model) Reset() {
+	ml.CurrentWorld = 0
+	ml.CurrentObject = 0
+	ml.CurrentObjectJoint = 0
+	ml.Params[0].Reset()
+	ml.Bodies = tensor.NewFloat32(0, int(BodyVarsN))
+	ml.Objects = tensor.NewInt32(0, 1)
+	ml.Joints = tensor.NewFloat32(0, int(JointVarsN))
+	ml.JointDoFs = tensor.NewFloat32(0, int(JointDoFVarsN))
+	ml.BodyJoints = tensor.NewInt32(0, 2, 2)
+	ml.BodyCollidePairs = tensor.NewInt32(0, 2)
+	ml.Dynamics = tensor.NewFloat32(0, 2, int(DynamicVarsN))
+	ml.BroadContactsN = tensor.NewInt32(1)
+	ml.BroadContacts = tensor.NewFloat32(0, int(ContactVarsN))
+	ml.ContactsN = tensor.NewInt32(1)
+	ml.Contacts = tensor.NewFloat32(0, int(ContactVarsN))
+	ml.JointControls = tensor.NewFloat32(0, int(JointControlVarsN))
+	ml.SetAsCurrentVars()
+}
+
+// NewObject adds a new object. Returns the CurrentObject.
+func (ml *Model) NewObject() int32 {
+	params := &ml.Params[0]
+	sizes := ml.Objects.ShapeSizes()
+	idx := int32(sizes[0])
+	ml.Objects.SetShapeSizes(int(idx+1), int(params.MaxObjectJoints+1))
+	params.ObjectsN = idx + 1
+	ml.CurrentObject = int(idx)
+	ml.CurrentObjectJoint = 0
+	return idx
+}
+
+// NewBody adds a new body with given parameters. Returns the index.
+// Use this for Static elements; NewDynamic for dynamic elements.
+func (ml *Model) NewBody(shape Shapes, hsize, pos math32.Vector3, rot math32.Quat) int32 {
+	sizes := ml.Bodies.ShapeSizes()
+	idx := int32(sizes[0])
+	ml.Bodies.SetShapeSizes(int(idx+1), int(BodyVarsN))
+	ml.Params[0].BodiesN = idx + 1
+	SetBodyShape(idx, shape)
+	SetBodyDynamic(idx, -1)
+	if shape == Capsule {
+		hsize.Y = max(hsize.Y, hsize.X*1.01)
+	}
+	SetBodyHSize(idx, hsize)
+	SetBodyPos(idx, pos)
+	SetBodyQuat(idx, rot)
+	SetBodyGroup(idx, -1) // assume static
+	SetBodyWorld(idx, int32(ml.CurrentWorld))
+	ml.SetMass(idx, shape, hsize, 0) // assume static
+	return idx
+}
+
+// NewDynamic adds a new dynamic body with given parameters. Returns the index.
+// Shape cannot be [Plane].
+func (ml *Model) NewDynamic(shape Shapes, mass float32, hsize, pos math32.Vector3, rot math32.Quat) (bodyIdx, dynIdx int32) {
+	if shape == Plane {
+		panic("physics.NewDynamic: shape cannot be Plane")
+	}
+	bodyIdx = ml.NewBody(shape, hsize, pos, rot)
+	sizes := ml.Dynamics.ShapeSizes()
+	dynIdx = int32(sizes[0])
+	ml.Dynamics.SetShapeSizes(int(dynIdx+1), 2, int(DynamicVarsN))
+	ml.Params[0].DynamicsN = dynIdx + 1
+	SetDynamicBody(dynIdx, bodyIdx)
+	SetBodyDynamic(bodyIdx, dynIdx)
+	SetBodyGroup(bodyIdx, 1) // dynamic
+	ml.SetMass(bodyIdx, shape, hsize, mass)
+	return
+}
+
+// SetAsCurrent sets these as the current global values that are
+// processed in the code (on the GPU). If this was not the setter of
+// the current variables, then the parameter variables are copied up
+// to the GPU.
+func (ml *Model) SetAsCurrent() {
+	isCur := (Bodies == ml.Bodies)
+	CurModel = ml
+	ml.SetAsCurrentVars()
+	if GPUInitialized && !isCur {
+		ml.ToGPUInfra()
+	}
+}
+
+// SetAsCurrentVars sets these as the current global values that are
+// processed in the code (on the GPU).
+func (ml *Model) SetAsCurrentVars() {
+	Params = ml.Params
+	Bodies = ml.Bodies
+	Objects = ml.Objects
+	Joints = ml.Joints
+	JointDoFs = ml.JointDoFs
+	BodyJoints = ml.BodyJoints
+	BodyCollidePairs = ml.BodyCollidePairs
+	Dynamics = ml.Dynamics
+	BroadContactsN = ml.BroadContactsN
+	BroadContacts = ml.BroadContacts
+	ContactsN = ml.ContactsN
+	Contacts = ml.Contacts
+	JointControls = ml.JointControls
+}
+
+// GPUInit initializes the GPU and transfers Infra.
+// Should have already called SetAsCurrent (needed for CPU and GPU).
+func (ml *Model) GPUInit() {
+	GPUInit()
+	UseGPU = ml.GPU
+	ml.ToGPUInfra()
+}
+
+// ToGPUInfra copies all the infrastructure for these filters up to
+// the GPU. This is done in GPUInit, and if current switched.
+func (ml *Model) ToGPUInfra() {
+	ToGPUTensorStrides()
+	ToGPU(ParamsVar, BodiesVar, ObjectsVar, JointsVar, JointDoFsVar, BodyJointsVar, BodyCollidePairsVar, DynamicsVar, BroadContactsNVar, BroadContactsVar, ContactsNVar, ContactsVar, JointControlsVar)
+}
+
+// ReplicasBodyIndexes returns the body and dynamics (if dynamic) indexes
+// for given replica world and source body index, if ReplicasN is > 0.
+// Otherwise, returns bi and corresponding dynamic index.
+func (ml *Model) ReplicasBodyIndexes(bi, replica int32) (bodyIdx, dynIdx int32) {
+	start := ml.ReplicaBodiesStart
+	n := ml.ReplicaBodiesN
+	if ml.ReplicasN == 0 || bi < start {
+		return bi, GetBodyDynamic(bi)
+	}
+	rbi := (bi - start) % n
+	bodyIdx = start + rbi + replica*n
+	dynIdx = GetBodyDynamic(bodyIdx)
+	return
+}
+
+// ReplicasJointIndex returns the joint indexe for given replica
+// world and source body index, if ReplicasN is > 0.
+// Otherwise, returns bi and corresponding dynamic index.
+func (ml *Model) ReplicasJointIndex(ji, replica int32) int32 {
+	start := ml.ReplicaJointsStart
+	n := ml.ReplicaJointsN
+	if ml.ReplicasN == 0 || ji < start {
+		return ji
+	}
+	rji := (ji - start) % n
+	nji := start + rji + replica*n
+	return nji
+}

@@ -25,16 +25,18 @@ import (
 
 // Context for given package run
 type Context struct {
-	Sizes   types.Sizes              // from package
-	Structs map[*types.Struct]string // structs that have been processed already -- value is name
-	Stack   map[*types.Struct]string // structs to process in a second pass -- structs encountered during processing of other structs
-	Errs    []string                 // accumulating list of error strings -- empty if all good
+	Sizes       types.Sizes              // from package
+	Structs     map[*types.Struct]string // structs that have been processed already -- value is name
+	Stack       map[*types.Struct]string // structs to process in a second pass -- structs encountered during processing of other structs
+	StructTypes map[string]bool          // top level list of struct types to examine -- skip anything at a top-level that is not in this list.
+	Errs        []string                 // accumulating list of error strings -- empty if all good
 }
 
-func NewContext(sz types.Sizes) *Context {
+func NewContext(sz types.Sizes, structTypes map[string]bool) *Context {
 	cx := &Context{Sizes: sz}
 	cx.Structs = make(map[*types.Struct]string)
 	cx.Stack = make(map[*types.Struct]string)
+	cx.StructTypes = structTypes
 	return cx
 }
 
@@ -62,10 +64,20 @@ func TypeName(tp types.Type) string {
 	return tp.String()
 }
 
-// CheckStruct is the primary checker -- returns hasErr = true if there
+// CheckStruct is the top-level checker -- returns hasErr = true if there
 // are any mis-aligned fields or total size of struct is not an
-// even multiple of 16 bytes -- adds details to Errs
+// even multiple of 16 bytes -- adds details to Errs.
+// If struct is not on the cx.StructTypes list, it is skipped.
 func CheckStruct(cx *Context, st *types.Struct, stName string) bool {
+	if _, ok := cx.StructTypes[stName]; !ok {
+		return false
+	}
+	return CheckStructImpl(cx, st, stName)
+}
+
+// CheckStructImpl can be used for CheckStack -- doesn't check for
+// top-level StructTypes membership.
+func CheckStructImpl(cx *Context, st *types.Struct, stName string) bool {
 	if !cx.IsNewStruct(st) {
 		return false
 	}
@@ -82,8 +94,11 @@ func CheckStruct(cx *Context, st *types.Struct, stName string) bool {
 		ut := ft.Underlying()
 		if bt, isBasic := ut.(*types.Basic); isBasic {
 			kind := bt.Kind()
-			if !(kind == types.Uint32 || kind == types.Int32 || kind == types.Float32 || kind == types.Uint64) {
+			if kind == types.Invalid {
+				hasErr = cx.AddError(fmt.Sprintf(`    %s:  %s: add //gosl:import "package"`, fl.Name(), bt.String()), hasErr, stName)
+			} else if !(kind == types.Uint32 || kind == types.Int32 || kind == types.Float32 || kind == types.Uint64) {
 				hasErr = cx.AddError(fmt.Sprintf("    %s:  basic type != [U]Int32 or Float32: %s", fl.Name(), bt.String()), hasErr, stName)
+				fmt.Println("kind:", kind, "ft:", ft.String())
 			}
 		} else {
 			if sst, is := ut.(*types.Struct); is {
@@ -121,8 +136,11 @@ func CheckStruct(cx *Context, st *types.Struct, stName string) bool {
 
 // CheckPackage is main entry point for checking a package
 // returns error string if any errors found.
-func CheckPackage(pkg *packages.Package) error {
-	cx := NewContext(pkg.TypesSizes)
+// structTypes is a map of struct type names to check for alignment.
+// any other struct types are purely internal not used for variables, so
+// they don't need to be checked.
+func CheckPackage(pkg *packages.Package, structTypes map[string]bool) error {
+	cx := NewContext(pkg.TypesSizes, structTypes)
 	sc := pkg.Types.Scope()
 	hasErr := CheckScope(cx, sc, 0)
 	er := CheckStack(cx)
@@ -133,6 +151,7 @@ WARNING: in struct type alignment checking:
     and fields are 32 bit types: [U]Int32, Float32 or other struct,
     and that fields that are other struct types are aligned at even 16 byte multiples.
     List of errors found follow below, by struct type name:
+	
 ` + strings.Join(cx.Errs, "\n")
 		return errors.New(str)
 	}
@@ -148,7 +167,7 @@ func CheckStack(cx *Context) bool {
 		st := cx.Stack
 		cx.Stack = make(map[*types.Struct]string) // new stack
 		for st, nm := range st {
-			er := CheckStruct(cx, st, nm)
+			er := CheckStructImpl(cx, st, nm)
 			if er {
 				hasErr = true
 			}

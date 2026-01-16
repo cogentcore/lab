@@ -15,9 +15,19 @@ import (
 var shaders embed.FS
 
 var (
-	// ComputeGPU is the compute gpu device
+	// GPUInitialized is true once the GPU system has been initialized.
+	// Prevents multiple initializations.
+	GPUInitialized bool
+	
+	// ComputeGPU is the compute gpu device.
+	// Set this prior to calling GPUInit() to use an existing device.
 	ComputeGPU *gpu.GPU
 
+	// BorrowedGPU is true if our ComputeGPU is set externally,
+	// versus created specifically for this system. If external,
+	// we don't release it.
+	BorrowedGPU bool
+	
 	// UseGPU indicates whether to use GPU vs. CPU.
 	UseGPU bool
 )
@@ -41,11 +51,17 @@ var TensorStrides tensor.Uint32
 // configuring system(s), variables and kernels.
 // It is safe to call multiple times: detects if already run.
 func GPUInit() {
-	if ComputeGPU != nil {
+	if GPUInitialized {
 		return
 	}
-	gp := gpu.NewComputeGPU()
-	ComputeGPU = gp
+	GPUInitialized = true
+	if ComputeGPU == nil { // set prior to this call to use an external
+		ComputeGPU = gpu.NewComputeGPU()
+	} else {
+		BorrowedGPU = true
+	}
+	gp := ComputeGPU
+	
 	_ = fmt.Sprintf("%g",math.NaN()) // keep imports happy
 	{
 		sy := gpu.NewComputeSystem(gp, "Default")
@@ -103,10 +119,11 @@ func GPURelease() {
 		GPUSystem = nil
 	}
 
-	if ComputeGPU != nil {
+	if !BorrowedGPU && ComputeGPU != nil {
 		ComputeGPU.Release()
-		ComputeGPU = nil
+	
 	}
+	ComputeGPU = nil
 }
 
 // RunAtomic runs the Atomic kernel with given number of elements,
@@ -222,7 +239,7 @@ func ToGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(0, "Params", 0)
 			gpu.SetValueFrom(v, Params)
 		case DataVar:
-			bsz := 536870912
+			bsz := 536870904
 			n := Data.Len()
 			nb := int(math.Ceil(float64(n) / float64(bsz)))
 			for bi := range nb {
@@ -274,7 +291,7 @@ func ReadFromGPU(vars ...GPUVars) {
 			v, _ := syVars.ValueByIndex(0, "Params", 0)
 			v.GPUToRead(sy.CommandEncoder)
 		case DataVar:
-			bsz := 536870912
+			bsz := 536870904
 			n := Data.Len()
 			nb := int(math.Ceil(float64(n) / float64(bsz)))
 			for bi := range nb {
@@ -299,7 +316,7 @@ func SyncFromGPU(vars ...GPUVars) {
 			v.ReadSync()
 			gpu.ReadToBytes(v, Params)
 		case DataVar:
-			bsz := 536870912
+			bsz := 536870904
 			n := Data.Len()
 			nb := int(math.Ceil(float64(n) / float64(bsz)))
 			for bi := range nb {

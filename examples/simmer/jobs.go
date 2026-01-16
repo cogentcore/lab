@@ -424,3 +424,22 @@ func (sr *Simmer) Archive() { //types:add
 		sr.UpdateSims()
 	})
 }
+
+// Recover recovers the jobs selected in the Jobs table,
+// with a confirmation prompt.
+func (sr *Simmer) Recover() { //types:add
+	tv := sr.JobsTableView
+	jobs := tv.SelectedColumnStrings("JobID")
+	if len(jobs) == 0 {
+		core.MessageSnackbar(sr, "No jobs selected for cancel")
+		return
+	}
+	lab.PromptOKCancel(sr, "Ok to recover these jobs: "+strings.Join(jobs, " "), func() {
+		//	if sr.IsSlurm() {
+		//		sr.CancelJobsSlurm(jobs)
+		//	} else {
+		sr.RecoverJobsBare(jobs)
+		// }
+		sr.UpdateSims()
+	})
+}

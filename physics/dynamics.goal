@@ -1,0 +1,260 @@
+// Copyright (c) 2025, Cogent Core. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package physics
+
+import (
+	// "fmt"
+	"math"
+
+	"cogentcore.org/core/math32"
+	"cogentcore.org/lab/gosl/slmath"
+)
+
+//gosl:start
+
+// DynamicVars are dynamic body variables stored in tensor.Float32.
+type DynamicVars int32 //enums:enum
+
+const (
+	// Index of body in list of bodies.
+	DynBody DynamicVars = iota
+
+	// 3D position of structural center.
+	DynPosX
+	DynPosY
+	DynPosZ
+
+	// Quaternion rotation.
+	DynQuatX
+	DynQuatY
+	DynQuatZ
+	DynQuatW
+
+	// Linear velocity.
+	DynVelX
+	DynVelY
+	DynVelZ
+
+	// Angular velocity.
+	DynAngVelX
+	DynAngVelY
+	DynAngVelZ
+
+	// Linear acceleration.
+	DynAccX
+	DynAccY
+	DynAccZ
+
+	// Angular acceleration due to applied torques.
+	DynAngAccX
+	DynAngAccY
+	DynAngAccZ
+
+	// Linear force driving linear acceleration (from joints, etc).
+	DynForceX
+	DynForceY
+	DynForceZ
+
+	// Torque driving angular acceleration (from joints, etc).
+	DynTorqueX
+	DynTorqueY
+	DynTorqueZ
+
+	// Linear deltas. These accumulate over time via StepBodyDeltas.
+	DynDeltaX
+	DynDeltaY
+	DynDeltaZ
+
+	// Angular deltas. These accumulate over time via StepBodyDeltas.
+	DynAngDeltaX
+	DynAngDeltaY
+	DynAngDeltaZ
+	
+	// integrated weight of all contacts
+	DynContactWeight
+)
+
+// cni = current / next index
+
+func SetDynamicBody(idx, bodyIdx int32) {
+	bi := math.Float32frombits(uint32(bodyIdx))
+	Dynamics[idx, 0, DynBody] = bi
+	Dynamics[idx, 1, DynBody] = bi
+}
+
+func DynamicBody(idx int32) int32 {
+	return int32(math.Float32bits(Dynamics[idx, 0, DynBody]))
+}
+
+func DynamicPos(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynPosX], Dynamics[idx, cni, DynPosY], Dynamics[idx, cni, DynPosZ])
+}
+
+func SetDynamicPos(idx, cni int32, pos math32.Vector3) {
+	Dynamics[idx, cni, DynPosX] = pos.X
+	Dynamics[idx, cni, DynPosY] = pos.Y
+	Dynamics[idx, cni, DynPosZ] = pos.Z
+}
+
+func DynamicQuat(idx, cni int32) math32.Quat {
+	return math32.NewQuat(Dynamics[idx, cni, DynQuatX], Dynamics[idx, cni, DynQuatY], Dynamics[idx, cni, DynQuatZ], Dynamics[idx, cni, DynQuatW])
+}
+
+func SetDynamicQuat(idx, cni int32, rot math32.Quat) {
+	Dynamics[idx, cni, DynQuatX] = rot.X
+	Dynamics[idx, cni, DynQuatY] = rot.Y
+	Dynamics[idx, cni, DynQuatZ] = rot.Z
+	Dynamics[idx, cni, DynQuatW] = rot.W
+}
+
+func DynamicVel(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynVelX], Dynamics[idx, cni, DynVelY], Dynamics[idx, cni, DynVelZ])
+}
+
+func SetDynamicVel(idx, cni int32, vel math32.Vector3) {
+	Dynamics[idx, cni, DynVelX] = vel.X
+	Dynamics[idx, cni, DynVelY] = vel.Y
+	Dynamics[idx, cni, DynVelZ] = vel.Z
+}
+
+func DynamicAcc(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynAccX], Dynamics[idx, cni, DynAccY], Dynamics[idx, cni, DynAccZ])
+}
+
+func SetDynamicAcc(idx, cni int32, acc math32.Vector3) {
+	Dynamics[idx, cni, DynAccX] = acc.X
+	Dynamics[idx, cni, DynAccY] = acc.Y
+	Dynamics[idx, cni, DynAccZ] = acc.Z
+}
+
+func DynamicForce(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynForceX], Dynamics[idx, cni, DynForceY], Dynamics[idx, cni, DynForceZ])
+}
+
+func SetDynamicForce(idx, cni int32, force math32.Vector3) {
+	Dynamics[idx, cni, DynForceX] = force.X
+	Dynamics[idx, cni, DynForceY] = force.Y
+	Dynamics[idx, cni, DynForceZ] = force.Z
+}
+
+func DynamicTorque(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynTorqueX], Dynamics[idx, cni, DynTorqueY], Dynamics[idx, cni, DynTorqueZ])
+}
+
+func SetDynamicTorque(idx, cni int32, torque math32.Vector3) {
+	Dynamics[idx, cni, DynTorqueX] = torque.X
+	Dynamics[idx, cni, DynTorqueY] = torque.Y
+	Dynamics[idx, cni, DynTorqueZ] = torque.Z
+}
+
+func DynamicAngVel(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynAngVelX], Dynamics[idx, cni, DynAngVelY], Dynamics[idx, cni, DynAngVelZ])
+}
+
+func SetDynamicAngVel(idx, cni int32, angVel math32.Vector3) {
+	Dynamics[idx, cni, DynAngVelX] = angVel.X
+	Dynamics[idx, cni, DynAngVelY] = angVel.Y
+	Dynamics[idx, cni, DynAngVelZ] = angVel.Z
+}
+
+func DynamicAngAcc(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynAngAccX], Dynamics[idx, cni, DynAngAccY], Dynamics[idx, cni, DynAngAccZ])
+}
+
+func SetDynamicAngAcc(idx, cni int32, angAcc math32.Vector3) {
+	Dynamics[idx, cni, DynAngAccX] = angAcc.X
+	Dynamics[idx, cni, DynAngAccY] = angAcc.Y
+	Dynamics[idx, cni, DynAngAccZ] = angAcc.Z
+}
+
+//////// Accumulating deltas
+
+func DynamicDelta(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynDeltaX], Dynamics[idx, cni, DynDeltaY], Dynamics[idx, cni, DynDeltaZ])
+}
+
+func SetDynamicDelta(idx, cni int32, delta math32.Vector3) {
+	Dynamics[idx, cni, DynDeltaX] = delta.X
+	Dynamics[idx, cni, DynDeltaY] = delta.Y
+	Dynamics[idx, cni, DynDeltaZ] = delta.Z
+}
+
+func DynamicAngDelta(idx, cni int32) math32.Vector3 {
+	return math32.Vec3(Dynamics[idx, cni, DynAngDeltaX], Dynamics[idx, cni, DynAngDeltaY], Dynamics[idx, cni, DynAngDeltaZ])
+}
+
+func SetDynamicAngDelta(idx, cni int32, angDelta math32.Vector3) {
+	Dynamics[idx, cni, DynAngDeltaX] = angDelta.X
+	Dynamics[idx, cni, DynAngDeltaY] = angDelta.Y
+	Dynamics[idx, cni, DynAngDeltaZ] = angDelta.Z
+}
+
+//gosl:end
+
+// SetMass sets the mass of given body object (only relevant for dynamics),
+// including a default inertia tensor based on solid shape of given size.
+func (ml *Model) SetMass(idx int32, shape Shapes, size math32.Vector3, mass float32) {
+	Bodies[idx, BodyRadius] = shape.Radius(size)
+	Bodies[idx, BodyMass] = mass
+	invm := mass
+	if mass > 0 {
+		invm = 1.0 / mass
+	}
+	Bodies[idx, BodyInvMass] = invm
+	inertia := shape.Inertia(size, mass)
+	SetBodyInertia(idx, inertia)
+	SetBodyInvInertia(idx, inertia.Inverse())
+}
+
+// TotalKineticEnergy returns the total kinetic energy of the dynamic bodies,
+// as a function of the velocities.
+func (ml *Model) TotalKineticEnergy() float32 {
+	params := GetParams(0)
+	ke := float32(0)
+	n := int32(Dynamics.DimSize(0))
+	for di := range n {
+		bi := DynamicBody(di)
+		mass := Bodies[bi, BodyMass]
+		inertia := BodyInertia(bi)
+
+		v := DynamicVel(di, params.Next)
+		mv := 0.5 * mass * slmath.LengthSquared3(v)
+
+		w := DynamicAngVel(di, params.Next)
+		iw := 0.5 * slmath.Dot3(w, inertia.MulVector3(w))
+
+		ke += mv + iw
+	}
+	return ke
+}
+
+// AngularVelocityAt returns the angular velocity vector of given dynamic body 
+// index and Next index, relative to given rotation axis at given point
+// relative to the structural center of the given dynamic body.
+// For example, to get rotation around the XZ plane, axis = (0,1,0) and 
+// the velocity value will show up in the Z axis for an X-axis point,
+// and vice-versa (X for a Z-axis point).
+// This uses DynamicAngVel which is computed after each step (into Next).
+func AngularVelocityAt(di int32, point, axis math32.Vector3) math32.Vector3 {
+	params := GetParams(0)
+	w := DynamicAngVel(di, params.Next)
+	wp := slmath.Cross3(w.Mul(axis), point)
+	return wp
+}
+
+// AngularAccelAt returns the angular acceleration vector of given dynamic body 
+// index and Next index, relative to given rotation axis at given point
+// relative to the structural center of the given dynamic body.
+// For example, to get rotation around the XZ plane, axis = (0,1,0) and 
+// the acceleration value will show up in the Z axis for an X-axis point,
+// and vice-versa (X for a Z-axis point).
+// This uses DynamicAngAcc which is computed after each step (into Next).
+func AngularAccelAt(di int32, point, axis math32.Vector3) math32.Vector3 {
+	params := GetParams(0)
+	w := DynamicAngAcc(di, params.Next)
+	wp := slmath.Cross3(w.Mul(axis), point)
+	return wp
+}
+

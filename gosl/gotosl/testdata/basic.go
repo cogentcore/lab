@@ -8,10 +8,13 @@ import (
 
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/gosl/slbool"
+	"cogentcore.org/lab/gosl/slmath"
+	"cogentcore.org/lab/gosl/slvec"
 	"cogentcore.org/lab/tensor"
 )
 
 //gosl:start
+//gosl:import "cogentcore.org/lab/gosl/slmath"
 
 //gosl:vars
 var (
@@ -60,6 +63,21 @@ func FastExp(x float32) float32 {
 	m := i >> 7 & 0xFFFF // copy mantissa
 	i += (((((((((((3537 * m) >> 16) + 13668) * m) >> 18) + 15817) * m) >> 14) - 80470) * m) >> 11)
 	return math.Float32frombits(uint32(i))
+}
+
+// TransformPoint applies quat-based transform to given point
+func TransformPoint(xP math32.Vector3, xQ math32.Quat, p math32.Vector3) math32.Vector3 {
+	dp := slmath.MulQuatVector(xQ, p)
+	return dp.Add(xP)
+}
+
+// MulTransforms computes the equivalent of matrix multiplication for
+// two quat-based transforms, o = a * b
+func MulTransforms(aP math32.Vector3, aQ math32.Quat, bP math32.Vector3, bQ math32.Quat, oP *math32.Vector3, oQ *math32.Quat) {
+	// rotate b by a and add a
+	br := slmath.MulQuatVector(aQ, bP)
+	*oP = br.Add(aP)
+	*oQ = slmath.MulQuats(aQ, bQ)
 }
 
 // NeuronFlags are bit-flags encoding relevant binary state for neurons
@@ -126,6 +144,11 @@ type ParamStruct struct {
 
 	pad float32 // comment this out to trigger alignment warning
 
+	VXYf slvec.Vector2  // translates to vec4<f32>
+	VXYi slvec.Vector2i // translates to vec4<i32>
+	Pos  slvec.Vector3
+	Rot  math32.Quat
+
 	// extra parameters
 	Subs SubParamStruct
 }
@@ -140,11 +163,25 @@ func (ps *ParamStruct) IntegFromRaw(idx int) float32 {
 	integ += newVal
 	Data.Set(integ, int(idx), int(Integ))
 	Data.Set(math32.Exp(-integ), int(idx), int(Exp))
-	var a float32
+	Data.Values[idx*2] = 55.0
+
+	a := ps.VXYf.X
+	b := ps.VXYf.V()
+	c := b.Mul(b.Add(b)) // converted to direct ops
+
+	var op math32.Vector3
+	var oq math32.Quat
+	MulTransforms(ps.Pos.V(), ps.Rot, ps.Pos.V(), ps.Rot, &op, &oq)
+	d := slmath.MulQuatVector(oq, op)
+	d = TransformPoint(op, oq, d)
+
 	ctx := GetCtx(0)
 	ps.AnotherMeth(ctx, idx, &a)
 	bv := Big.Value(int(idx), int(Integ))
-	Big.Set(bv*2, int(idx), int(Exp))
+	//gosl:wgsl
+	// bv *= 2 // will be uncommented in wgsl
+	//gosl:end
+	Big.Set(bv*2+c.Y+d.Z, int(idx), int(Exp))
 	return Data.Value(int(idx), int(Exp))
 }
 

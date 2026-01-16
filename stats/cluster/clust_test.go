@@ -14,10 +14,10 @@ import (
 	"cogentcore.org/lab/stats/metric"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
-	"github.com/alecthomas/assert/v2"
+	"github.com/stretchr/testify/assert"
 )
 
-var clustres = `
+var clusters = `
 0: 
 	9.181170003996987: 
 		5.534356399283666: 

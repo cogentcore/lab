@@ -5,12 +5,10 @@
 package transpile
 
 import (
-	"fmt"
 	"testing"
 
 	_ "cogentcore.org/lab/stats/metric"
 	_ "cogentcore.org/lab/stats/stats"
-	"cogentcore.org/lab/tensor"
 	_ "cogentcore.org/lab/tensor/tmath"
 	"github.com/stretchr/testify/assert"
 )
@@ -255,10 +253,14 @@ func TestCur(t *testing.T) {
 func TestCurCode(t *testing.T) {
 	// logx.UserLevel = slog.LevelDebug
 	tests := []exIn{
-		{`## totalTime := 100
-driver := zeros(totalTime)`,
-			`totalTime := tensor.Tensor(tensor.NewIntScalar(100))
-driver := tensor.Tensor(tensor.NewFloat64(tensor.AsIntSlice(totalTime) ...))`},
+		{`	b := 5
+		//gosl:wgsl
+	// a := 2
+	//gosl:end`,
+			`b := 5
+//gosl:wgsl
+// a := 2
+//gosl:end`},
 	}
 	for _, test := range tests {
 		st := NewState()
@@ -267,9 +269,6 @@ driver := tensor.Tensor(tensor.NewFloat64(tensor.AsIntSlice(totalTime) ...))`},
 		o := st.Code()
 		assert.Equal(t, test.e, o)
 	}
-	totalTime := tensor.Tensor(tensor.NewIntScalar(100))
-	driver := tensor.Tensor(tensor.NewFloat64(tensor.AsIntSlice(totalTime)...))
-	fmt.Println(driver)
 }
 
 func TestMath(t *testing.T) {

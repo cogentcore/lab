@@ -42,12 +42,6 @@ func (st *State) TranslateDir(pf string) error {
 	// return nil, err
 	files := pkg.GoFiles
 
-	serr := alignsl.CheckPackage(pkg)
-
-	if serr != nil {
-		fmt.Println(serr)
-	}
-
 	st.FuncGraph = make(map[string]*Function)
 	st.GetFuncGraph = true
 
@@ -84,9 +78,22 @@ func (st *State) TranslateDir(pf string) error {
 		var buf bytes.Buffer
 		doFile(fn, &buf)
 	}
+
+	st.GenGPU(true) // generate an initial gosl.go in imports, so Go doesn't get confused
+
+	pkgs, err = packages.Load(&packages.Config{Mode: packages.NeedName | packages.NeedFiles | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesSizes | packages.NeedTypesInfo}, pf)
+	pkg = pkgs[0]
+	files = pkg.GoFiles
+
 	for _, gofp := range files {
 		_, gofn := filepath.Split(gofp)
 		if _, ok := st.GoVarsFiles[gofn]; ok {
+			continue
+		}
+		if gofn == "gosl.go" {
+			if !st.Config.Keep {
+				os.Remove(gofp)
+			}
 			continue
 		}
 		var buf bytes.Buffer
@@ -150,6 +157,9 @@ func (st *State) TranslateDir(pf string) error {
 				if _, ok := st.GoVarsFiles[gofn]; ok {
 					continue
 				}
+				if gofn == "gosl.go" {
+					continue
+				}
 				lines, hasR, hasT = doKernelFile(gofp, lines)
 				if hasR {
 					hasSlrand = true
@@ -166,6 +176,9 @@ func (st *State) TranslateDir(pf string) error {
 				st.CopyPackageFile("sltype.wgsl", "cogentcore.org/lab/gosl/sltype")
 			}
 			for _, im := range st.SLImportFiles {
+				if im.Name == "gosl.go" {
+					continue
+				}
 				lines = append(lines, []byte(""))
 				lines = append(lines, []byte(fmt.Sprintf("//////// import: %q", im.Name)))
 				lines = append(lines, im.Lines...)
@@ -181,6 +194,18 @@ func (st *State) TranslateDir(pf string) error {
 	fmt.Println("\n###################################\nMaximum number of variables used per shader:", maxVarsUsed)
 	if nOverBase > 0 {
 		fmt.Printf("WARNING: %d shaders exceed maxStorageBuffersPerShaderStage min of 10\n", nOverBase)
+	}
+
+	//////// check types
+
+	structTypes := make(map[string]bool)
+	for nm := range st.VarStructTypes {
+		structTypes[nm] = true
+	}
+
+	serr := alignsl.CheckPackage(pkg, structTypes)
+	if serr != nil {
+		fmt.Println(serr)
 	}
 	return nil
 }

@@ -232,6 +232,9 @@ type State struct {
 	// GetFuncs is a map of GetVar, SetVar function names for global vars.
 	GetFuncs map[string]*Var
 
+	// VarStructTypes is a map of struct type names to vars that use them.
+	VarStructTypes map[string]*Var
+
 	// SLImportFiles are all the extracted and translated WGSL files in shaders/imports,
 	// which are copied into the generated shader kernel files.
 	SLImportFiles []*File
@@ -295,7 +298,7 @@ func (st *State) Run() error {
 	st.ExtractImports() // get .go from imports
 	st.TranslateDir("./" + st.ImportsDir)
 
-	st.GenGPU()
+	st.GenGPU(false)
 
 	return nil
 }
@@ -365,6 +368,7 @@ func (st *State) GetTempVar(vrnm string) *GetGlobalVar {
 // VarsAdded is called when a set of vars has been added; update relevant maps etc.
 func (st *State) VarsAdded() {
 	st.GetFuncs = make(map[string]*Var)
+	st.VarStructTypes = make(map[string]*Var)
 	for _, sy := range st.Systems {
 		tensorIdx := 0
 		for gi, gp := range sy.Groups {
@@ -386,6 +390,8 @@ func (st *State) VarsAdded() {
 					continue
 				}
 				st.GetFuncs["Get"+vr.Name] = vr
+				jtyp := strings.TrimPrefix(vr.Type, "[]")
+				st.VarStructTypes[jtyp] = vr
 				vn++
 			}
 		}

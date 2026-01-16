@@ -23,7 +23,7 @@ import (
 // todo: move into statplot and test everything
 
 func TestTable(t *testing.T) {
-	rand.Seed(1)
+	rng := rand.New(rand.NewSource(1))
 	n := 21
 	tx, ty := tensor.NewFloat64(n), tensor.NewFloat64(n)
 	tl, th := tensor.NewFloat64(n), tensor.NewFloat64(n)
@@ -32,9 +32,9 @@ func TestTable(t *testing.T) {
 	for i := range n {
 		tx.SetFloat1D(float64(i*5), i)
 		ty.SetFloat1D(50.0+40*math.Sin((float64(i)/8)*math.Pi), i)
-		tl.SetFloat1D(5*rand.Float64(), i)
-		th.SetFloat1D(5*rand.Float64(), i)
-		ts.SetFloat1D(1+5*rand.Float64(), i)
+		tl.SetFloat1D(5*rng.Float64(), i)
+		th.SetFloat1D(5*rng.Float64(), i)
+		ts.SetFloat1D(1+5*rng.Float64(), i)
 		lbls.SetString1D(strconv.Itoa(i), i)
 	}
 	ptyps := maps.Keys(plot.Plotters)

@@ -1,0 +1,107 @@
+// Copyright (c) 2025, Cogent Core. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package physics
+
+import (
+	// "fmt"
+
+	"cogentcore.org/lab/tensor"
+)
+
+// Config does final configuration prior to running
+// after everything has been added. Does SetAsCurrent, GPUInit.
+func (ml *Model) Config() {
+	ml.ConfigJoints()
+	ml.ConfigBodyCollidePairs()
+	ml.SetMaxContacts()
+	ml.SetAsCurrent()
+	ml.ConfigBodies()
+	ml.GPUInit()
+	ml.InitState()
+}
+
+// ConfigJoints does all of the initialization associated with joints.
+func (ml *Model) ConfigJoints() {
+	// accumulate parent and child joints per dynamic
+	params := &ml.Params[0]
+	nj := params.JointsN
+	nd := params.DynamicsN
+	
+	bjp := make([][]int32, nd)
+	bjc := make([][]int32, nd)
+	maxi := 0
+	for ji := range nj {
+		jpi := JointParentIndex(ji)
+		jci := JointChildIndex(ji)
+		// bpi := DynamicBody(jpi)
+		// bci := DynamicBody(jci)
+		// todo: could ensure that all elements are in same world, but not really needed
+		if jpi >= 0 {
+			bjp[jpi] = append(bjp[jpi], ji)
+			maxi = max(maxi, len(bjp[jpi]))
+		}
+		bjc[jci] = append(bjc[jci], ji)
+		maxi = max(maxi, len(bjc[jci]))
+	}
+	params.BodyJointsMax = int32(maxi)
+	if nd == 0 {
+		nd = 1
+	}
+	if maxi == 0 {
+		maxi = 1
+	}
+	ml.BodyJoints.SetShapeSizes(int(nd), 2, maxi+1)
+	for di := range nd {
+		np := int32(len(bjp[di]))
+		ml.BodyJoints[di, 0, 0] = np
+		for i, ji := range bjp[di] {
+			ml.BodyJoints[di, 0, 1+i] = ji
+		}
+		nc := int32(len(bjc[di]))
+		ml.BodyJoints[di, 1, 0] = nc
+		for i, ji := range bjc[di] {
+			ml.BodyJoints[di, 1, 1+i] = ji
+		}
+	}
+	if nj == 0 {
+		ml.Objects = tensor.NewInt32(1, 1)
+		ml.Joints = tensor.NewFloat32(1, int(JointVarsN))
+		ml.JointDoFs = tensor.NewFloat32(1, int(JointDoFVarsN))
+		ml.JointControls = tensor.NewFloat32(1, int(JointControlVarsN))
+	}
+}
+
+// ConfigBodies updates computed body values from current values.
+// Call if body params (mass, size) change.
+func (ml *Model) ConfigBodies() {
+	params := &ml.Params[0]
+	nb := params.BodiesN
+	for bi := range nb {
+		shape := GetBodyShape(bi)
+		size := BodyHSize(bi)
+		mass := Bodies[bi, BodyMass]
+		ml.SetMass(bi, shape, size, mass)
+	}
+}
+
+// InitControlState initializes the JointTargetPosCur values to 0.
+// This is done on the CPU prior to copying up to GPU, in InitState.
+func (ml *Model) InitControlState() {
+	params := GetParams(0)
+	for j := range params.JointDoFsN {
+		JointControls[j, JointTargetPosCur] = 0
+	}
+}
+
+
+// InitState initializes the simulation state.
+func (ml *Model) InitState() {
+	params := GetParams(0)
+	ml.InitControlState()
+	ml.ToGPUInfra()
+	RunInitDynamics(int(params.DynamicsN))
+	RunDone(DynamicsVar)
+}
+

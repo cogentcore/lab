@@ -6,5 +6,5 @@ command extract {
     }
 }
 
-extract plot plot/plots plotcore tensorcore lab
+extract physics physics/phyxyz physics/builder plot plot/plots plotcore tensorcore lab
 

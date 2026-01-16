@@ -12,6 +12,7 @@ service BareMetal {
   rpc CancelJobs (JobIDList) returns (Error);
   rpc FetchResults (JobIDList) returns (JobList);
   rpc UpdateJobs (google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc RecoverJob (Job) returns (Job);
 }
 
 // Submission is a job submission.

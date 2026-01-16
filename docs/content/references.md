@@ -1,0 +1,12 @@
+<p id="Baraff96">Baraff, D. (1996). <i>Linear-time dynamics using Lagrange multipliers. </i>In Proceedings of the 23rd annual conference on Computer graphics and interactive techniques (pp. 137–146). ACM. <a href="https://dl.acm.org/doi/10.1145/237170.237226">https://dl.acm.org/doi/10.1145/237170.237226</a><a href="http://doi.org/10.1145/237170.237226"> http://doi.org/10.1145/237170.237226</a></p>
+
+<p id="Featherstone83">Featherstone, R. (1983). The Calculation of Robot Dynamics Using Articulated-Body Inertias. <i>The International Journal of Robotics Research, 2</i>, 13–30. <a href="https://doi.org/10.1177/027836498300200102">https://doi.org/10.1177/027836498300200102</a><a href="http://doi.org/10.1177/027836498300200102"> http://doi.org/10.1177/027836498300200102</a></p>
+
+<p id="MacklinMullerChentanez16">Macklin, M., Müller, M., & Chentanez, N. (2016). <i>XPBD: position-based simulation of compliant constrained dynamics. </i>In Proceedings of the 9th International Conference on Motion in Games (pp. 49–54). Association for Computing Machinery. <a href="https://doi.org/10.1145/2994258.2994272">https://doi.org/10.1145/2994258.2994272</a><a href="http://doi.org/10.1145/2994258.2994272"> http://doi.org/10.1145/2994258.2994272</a></p>
+
+<p id="Mirtich96">Mirtich, B.V. (1996). <i>Impulse-based Dynamic Simulation of Rigid Body Systems. </i>[unpublished Ph.D. Thesis, University of California Berkeley]. <a href="https://people.eecs.berkeley.edu/~jfc/mirtich/thesis/mirtichThesis.pdf">https://people.eecs.berkeley.edu/~jfc/mirtich/thesis/mirtichThesis.pdf</a></p>
+
+<p id="MullerMacklinChentanezEtAl20">Müller, M., Macklin, M., Chentanez, N., Jeschke, S., & Kim, T. (2020). Detailed Rigid Body Simulation with Extended Position Based Dynamics. <i>Computer Graphics Forum, 39</i>, 101–112. <a href="https://onlinelibrary.wiley.com/doi/abs/10.1111/cgf.14105">https://onlinelibrary.wiley.com/doi/abs/10.1111/cgf.14105</a><a href="http://doi.org/10.1111/cgf.14105"> http://doi.org/10.1111/cgf.14105</a></p>
+
+<p id="NealenMullerKeiserEtAl06">Nealen, A., Müller, M., Keiser, R., Boxerman, E., & Carlson, M. (2006). Physically Based Deformable Models in Computer Graphics. <i>Computer Graphics Forum, 25</i>, 809–836. <a href="https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1467-8659.2006.01000.x">https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1467-8659.2006.01000.x</a><a href="http://doi.org/10.1111/j.1467-8659.2006.01000.x"> http://doi.org/10.1111/j.1467-8659.2006.01000.x</a></p>
+

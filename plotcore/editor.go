@@ -169,7 +169,7 @@ func (pl *Editor) SetSlice(sl any, stylers ...func(s *plot.Style)) *Editor {
 	return pl.SetTable(dt)
 }
 
-// SaveSVG saves the plot to an svg -- first updates to ensure that plot is current
+// SaveSVG saves the plot to an SVG file.
 func (pl *Editor) SaveSVG(fname core.Filename) { //types:add
 	plt := pl.plotWidget.Plot
 	mp := plt.PaintBox.Min
@@ -183,6 +183,21 @@ func (pl *Editor) SaveSVG(fname core.Filename) { //types:add
 		core.ErrorSnackbar(pl, err)
 	}
 	pl.svgFile = fname
+}
+
+// SavePDF saves the plot to a PDF file.
+func (pl *Editor) SavePDF(fname core.Filename) { //types:add
+	plt := pl.plotWidget.Plot
+	mp := plt.PaintBox.Min
+	plt.PaintBox = plt.PaintBox.Sub(mp)
+	ptr := paint.NewPainter(math32.FromPoint(plt.PaintBox.Size()))
+	ptr.Paint.UnitContext = pl.Styles.UnitContext // preserve DPI from current
+	pd := paint.RenderToPDF(plt.Draw(ptr))
+	err := os.WriteFile(string(fname), pd, 0666)
+	plt.PaintBox = plt.PaintBox.Add(mp)
+	if err != nil {
+		core.ErrorSnackbar(pl, err)
+	}
 }
 
 // SaveImage saves the current plot as an image (e.g., png).
@@ -211,6 +226,7 @@ func (pl *Editor) SaveAll(fname core.Filename) { //types:add
 	pl.SaveCSV(core.Filename(fn+".tsv"), tensor.Tab)
 	pl.SaveImage(core.Filename(fn + ".png"))
 	pl.SaveSVG(core.Filename(fn + ".svg"))
+	pl.SavePDF(core.Filename(fn + ".pdf"))
 }
 
 // OpenCSV opens the Table data from a csv (comma-separated values) file (or any delim)
@@ -624,6 +640,7 @@ func (pl *Editor) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.Button) {
 		w.SetText("Save").SetIcon(icons.Save).SetMenu(func(m *core.Scene) {
 			core.NewFuncButton(m).SetFunc(pl.SaveSVG).SetIcon(icons.Save)
+			core.NewFuncButton(m).SetFunc(pl.SavePDF).SetIcon(icons.Save)
 			core.NewFuncButton(m).SetFunc(pl.SaveImage).SetIcon(icons.Save)
 			core.NewFuncButton(m).SetFunc(pl.SaveCSV).SetIcon(icons.Save)
 			core.NewSeparator(m)

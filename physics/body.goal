@@ -1,0 +1,282 @@
+// Copyright (c) 2025, Cogent Core. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package physics
+
+import (
+	"math"
+
+	"cogentcore.org/core/math32"
+)
+
+//gosl:start
+
+// BodyVars are body state variables stored in tensor.Float32
+type BodyVars int32 //enums:enum
+
+const (
+	// BodyShape is the shape type of the object, as a Shapes type.
+	BodyShape BodyVars = iota
+
+	// BodyDynamic is the index into Dynamics for this body,
+	// which is -1 for static bodies. Use this to get current
+	// Pos and Quat values for a dynamic body.
+	BodyDynamic
+
+	// BodyWorld partitions bodies into different worlds for
+	// collision detection: Global bodies = -1 can collide with
+	// everything; otherwise only items within the same world collide.
+	// NewBody uses [World.CurrentWorld] to initialize.
+	BodyWorld
+
+	// BodyGroup partitions bodies within worlds into different groups
+	// for collision detection. 0 does not collide with anything.
+	// Negative numbers are global within a world, except they don't
+	// collide amongst themselves (all non-dynamic bodies should go
+	// in -1 because they don't collide amongst each-other, but do
+	// potentially collide with dynamics).
+	// Positive numbers only collide amongst themselves, and with
+	// negative groups, but not other positive groups. To avoid
+	// unwanted collisions, put bodies into separate groups.
+	// There is an automatic constraint that the two objects
+	// within a single joint do not collide with each other, so this
+	// does not need to be handled here.
+	BodyGroup
+
+	// BodyHSize is the half-size (e.g., radius) of the body.
+	// Values depend on shape type: X is generally radius,
+	// Y is half-height.
+	BodyHSizeX
+	BodyHSizeY
+	BodyHSizeZ
+
+	// BodyThick is the thickness of the body, as a hollow shape.
+	// If 0, then it is a solid shape (default).
+	BodyThick
+	
+	// physical properties
+
+	// BodyMass is the mass of the object.
+	BodyMass
+
+	// BodyInvMass is 1/mass of the object or 0 if no mass.
+	BodyInvMass
+
+	// BodyBounce specifies the COR or coefficient of restitution (0..1),
+	// which determines how elastic the collision is,
+	// i.e., final velocity / initial velocity.
+	BodyBounce
+
+	// BodyFriction is the standard coefficient for linear friction (mu).
+	BodyFriction
+	
+	// BodyFrictionTortion is resistance to spinning at the contact point.
+	BodyFrictionTortion
+
+	// BodyFrictionRolling is resistance to rolling motion at contact.
+	BodyFrictionRolling
+
+	// 3D position of body (structural center).
+	BodyPosX
+	BodyPosY
+	BodyPosZ
+
+	// Quaternion rotation of body.
+	BodyQuatX
+	BodyQuatY
+	BodyQuatZ
+	BodyQuatW
+
+	// Relative center-of-mass offset from 3D position of body.
+	BodyComX
+	BodyComY
+	BodyComZ
+
+	// Inertia 3x3 matrix (column matrix organization, r,c labels).
+	BodyInertiaXX
+	BodyInertiaYX
+	BodyInertiaZX
+	BodyInertiaXY
+	BodyInertiaYY
+	BodyInertiaZY
+	BodyInertiaXZ
+	BodyInertiaYZ
+	BodyInertiaZZ
+
+	// InvInertia inverse inertia 3x3 matrix (column matrix organization, r,c labels).
+	BodyInvInertiaXX
+	BodyInvInertiaYX
+	BodyInvInertiaZX
+	BodyInvInertiaXY
+	BodyInvInertiaYY
+	BodyInvInertiaZY
+	BodyInvInertiaXZ
+	BodyInvInertiaYZ
+	BodyInvInertiaZZ
+
+	// radius for broadphase collision
+	BodyRadius
+)
+
+func GetBodyShape(idx int32) Shapes {
+	return Shapes(math.Float32bits(Bodies[idx, BodyShape]))
+}
+
+func SetBodyShape(idx int32, shape Shapes) {
+	Bodies[idx, BodyShape] = math.Float32frombits(uint32(shape))
+}
+
+func SetBodyDynamic(idx, dynIdx int32) {
+	Bodies[idx, BodyDynamic] = math.Float32frombits(uint32(dynIdx))
+}
+
+func GetBodyDynamic(idx int32) int32 {
+	return int32(math.Float32bits(Bodies[idx, BodyDynamic]))
+}
+
+// SetBodyWorld partitions bodies into different worlds for
+// collision detection: Global bodies = -1 can collide with
+// everything; otherwise only items within the same world collide.
+func SetBodyWorld(idx, w int32) {
+	Bodies[idx, BodyWorld] = math.Float32frombits(uint32(w))
+}
+
+func GetBodyWorld(idx int32) int32 {
+	return int32(math.Float32bits(Bodies[idx, BodyWorld]))
+}
+
+// SetBodyGroup partitions bodies within worlds into different groups
+// for collision detection. 0 does not collide with anything.
+// Negative numbers are global within a world, except they don't
+// collide amongst themselves (all non-dynamic bodies should go
+// in -1 because they don't collide amongst each-other, but do
+// potentially collide with dynamics).
+// Positive numbers only collide amongst themselves, and with
+// negative groups, but not other positive groups. To avoid
+// unwanted collisions, put bodies into separate groups.
+// There is an automatic constraint that the two objects
+// within a single joint do not collide with each other, so this
+// does not need to be handled here.
+func SetBodyGroup(idx, w int32) {
+	Bodies[idx, BodyGroup] = math.Float32frombits(uint32(w))
+}
+
+func GetBodyGroup(idx int32) int32 {
+	return int32(math.Float32bits(Bodies[idx, BodyGroup]))
+}
+
+func BodyHSize(idx int32) math32.Vector3 {
+	return math32.Vec3(Bodies[idx, BodyHSizeX], Bodies[idx, BodyHSizeY], Bodies[idx, BodyHSizeZ])
+}
+
+func SetBodyHSize(idx int32, size math32.Vector3) {
+	Bodies[idx, BodyHSizeX] = size.X
+	Bodies[idx, BodyHSizeY] = size.Y
+	Bodies[idx, BodyHSizeZ] = size.Z
+}
+
+func BodyPos(idx int32) math32.Vector3 {
+	return math32.Vec3(Bodies[idx, BodyPosX], Bodies[idx, BodyPosY], Bodies[idx, BodyPosZ])
+}
+
+func SetBodyPos(idx int32, pos math32.Vector3) {
+	Bodies[idx, BodyPosX] = pos.X
+	Bodies[idx, BodyPosY] = pos.Y
+	Bodies[idx, BodyPosZ] = pos.Z
+}
+
+func BodyQuat(idx int32) math32.Quat {
+	return math32.NewQuat(Bodies[idx, BodyQuatX], Bodies[idx, BodyQuatY], Bodies[idx, BodyQuatZ], Bodies[idx, BodyQuatW])
+}
+
+func SetBodyQuat(idx int32, rot math32.Quat) {
+	Bodies[idx, BodyQuatX] = rot.X
+	Bodies[idx, BodyQuatY] = rot.Y
+	Bodies[idx, BodyQuatZ] = rot.Z
+	Bodies[idx, BodyQuatW] = rot.W
+}
+
+// BodyDynamicPos gets the position for dynamic bodies or
+// static position if not dynamic. cni is the current / next index.
+func BodyDynamicPos(idx, cni int32) math32.Vector3 {
+	didx := GetBodyDynamic(idx)
+	if didx < 0 {
+		return BodyPos(idx)
+	}
+	return DynamicPos(didx, cni)
+}
+
+// BodyDynamicQuat gets the quat rotation for dynamic bodies or
+// static rotation if not dynamic. cni is the current / next index.
+func BodyDynamicQuat(idx, cni int32) math32.Quat {
+	didx := GetBodyDynamic(idx)
+	if didx < 0 {
+		return BodyQuat(idx)
+	}
+	return DynamicQuat(didx, cni)
+}
+
+func BodyCom(idx int32) math32.Vector3 {
+	return math32.Vec3(Bodies[idx, BodyComX], Bodies[idx, BodyComY], Bodies[idx, BodyComZ])
+}
+
+func SetBodyCom(idx int32, pos math32.Vector3) {
+	Bodies[idx, BodyComX] = pos.X
+	Bodies[idx, BodyComY] = pos.Y
+	Bodies[idx, BodyComZ] = pos.Z
+}
+
+func BodyInertia(idx int32) math32.Matrix3 {
+	return math32.Mat3(Bodies[idx, BodyInertiaXX], Bodies[idx, BodyInertiaYX], Bodies[idx, BodyInertiaZX],
+		Bodies[idx, BodyInertiaXY], Bodies[idx, BodyInertiaYY], Bodies[idx, BodyInertiaZY],
+		Bodies[idx, BodyInertiaXZ], Bodies[idx, BodyInertiaYZ], Bodies[idx, BodyInertiaZZ])
+}
+
+func BodyInvInertia(idx int32) math32.Matrix3 {
+	return math32.Mat3(Bodies[idx, BodyInvInertiaXX], Bodies[idx, BodyInvInertiaYX], Bodies[idx, BodyInvInertiaZX],
+		Bodies[idx, BodyInvInertiaXY], Bodies[idx, BodyInvInertiaYY], Bodies[idx, BodyInvInertiaZY],
+		Bodies[idx, BodyInvInertiaXZ], Bodies[idx, BodyInvInertiaYZ], Bodies[idx, BodyInvInertiaZZ])
+}
+
+func SetBodyInertia(idx int32, inertia math32.Matrix3) {
+	for i := range 9 {
+		Bodies[idx, int(BodyInertiaXX)+i] = inertia[i]
+	}
+}
+
+func SetBodyInvInertia(idx int32, invInertia math32.Matrix3) {
+	for i := range 9 {
+		Bodies[idx, int(BodyInvInertiaXX)+i] = invInertia[i]
+	}
+}
+
+// SetBodyThick specifies the thickness of the body, as a hollow shape.
+// if 0, then it is solid.
+func SetBodyThick(idx int32, val float32) {
+	Bodies[idx, BodyThick] = val
+}
+
+// SetBodyBounce specifies the COR or coefficient of restitution (0..1),
+// which determines how elastic the collision is,
+// i.e., final velocity / initial velocity.
+func SetBodyBounce(idx int32, val float32) {
+	Bodies[idx, BodyBounce] = val
+}
+
+// SetBodyFriction is the standard coefficient for linear friction (mu).
+func SetBodyFriction(idx int32, val float32) {
+	Bodies[idx, BodyFriction] = val
+}
+
+// SetBodyFrictionTortion is resistance to spinning at the contact point.
+func SetBodyFrictionTortion(idx int32, val float32) {
+	Bodies[idx, BodyFrictionTortion] = val
+}
+
+// SetBodyFrictionRolling is resistance to rolling motion at contact.
+func SetBodyFrictionRolling(idx int32, val float32) {
+	Bodies[idx, BodyFrictionRolling] = val
+}
+
+//gosl:end

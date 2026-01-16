@@ -56,6 +56,7 @@ func init() {
 		"ContainsFloat":           reflect.ValueOf(tensor.ContainsFloat),
 		"ContainsInt":             reflect.ValueOf(tensor.ContainsInt),
 		"ContainsString":          reflect.ValueOf(tensor.ContainsString),
+		"CopyFromLargerShape":     reflect.ValueOf(tensor.CopyFromLargerShape),
 		"DefaultNumThreads":       reflect.ValueOf(tensor.DefaultNumThreads),
 		"DelimsN":                 reflect.ValueOf(tensor.DelimsN),
 		"DelimsValues":            reflect.ValueOf(tensor.DelimsValues),
@@ -179,10 +180,15 @@ func init() {
 		// type definitions
 		"Arg":         reflect.ValueOf((*tensor.Arg)(nil)),
 		"Bool":        reflect.ValueOf((*tensor.Bool)(nil)),
+		"Byte":        reflect.ValueOf((*tensor.Byte)(nil)),
 		"Delims":      reflect.ValueOf((*tensor.Delims)(nil)),
 		"FilterFunc":  reflect.ValueOf((*tensor.FilterFunc)(nil)),
+		"Float32":     reflect.ValueOf((*tensor.Float32)(nil)),
+		"Float64":     reflect.ValueOf((*tensor.Float64)(nil)),
 		"Func":        reflect.ValueOf((*tensor.Func)(nil)),
 		"Indexed":     reflect.ValueOf((*tensor.Indexed)(nil)),
+		"Int":         reflect.ValueOf((*tensor.Int)(nil)),
+		"Int32":       reflect.ValueOf((*tensor.Int32)(nil)),
 		"Masked":      reflect.ValueOf((*tensor.Masked)(nil)),
 		"Reshaped":    reflect.ValueOf((*tensor.Reshaped)(nil)),
 		"RowMajor":    reflect.ValueOf((*tensor.RowMajor)(nil)),
@@ -194,6 +200,7 @@ func init() {
 		"String":      reflect.ValueOf((*tensor.String)(nil)),
 		"StringMatch": reflect.ValueOf((*tensor.StringMatch)(nil)),
 		"Tensor":      reflect.ValueOf((*tensor.Tensor)(nil)),
+		"Uint32":      reflect.ValueOf((*tensor.Uint32)(nil)),
 		"Values":      reflect.ValueOf((*tensor.Values)(nil)),
 
 		// interface wrapper definitions

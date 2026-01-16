@@ -33,181 +33,181 @@ fn main(@builtin(workgroup_id) wgid: vec3<u32>, @builtin(num_workgroups) nwg: ve
 }
 
 fn DataGet(ix: u32) -> f32 {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		return Data0[ix];
 	}
 	case u32(1): {
-		return Data1[ix - 536870912];
+		return Data1[ix - 536870904];
 	}
 	case u32(2): {
-		return Data2[ix - 1073741824];
+		return Data2[ix - 1073741808];
 	}
 	case u32(3): {
-		return Data3[ix - 1610612736];
+		return Data3[ix - 1610612712];
 	}
 	case u32(4): {
-		return Data4[ix - 2147483648];
+		return Data4[ix - 2147483616];
 	}
 	case u32(5): {
-		return Data5[ix - 2684354560];
+		return Data5[ix - 2684354520];
 	}
 	case u32(6): {
-		return Data6[ix - 3221225472];
+		return Data6[ix - 3221225424];
 	}
 	default: {
-		return Data7[ix - 3758096384];
+		return Data7[ix - 3758096328];
 	}
 	}
 }
 
 fn DataSet(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		Data0[ix] = vl;
 	}
 	case u32(1): {
-		Data1[ix - 536870912] = vl;
+		Data1[ix - 536870904] = vl;
 	}
 	case u32(2): {
-		Data2[ix - 1073741824] = vl;
+		Data2[ix - 1073741808] = vl;
 	}
 	case u32(3): {
-		Data3[ix - 1610612736] = vl;
+		Data3[ix - 1610612712] = vl;
 	}
 	case u32(4): {
-		Data4[ix - 2147483648] = vl;
+		Data4[ix - 2147483616] = vl;
 	}
 	case u32(5): {
-		Data5[ix - 2684354560] = vl;
+		Data5[ix - 2684354520] = vl;
 	}
 	case u32(6): {
-		Data6[ix - 3221225472] = vl;
+		Data6[ix - 3221225424] = vl;
 	}
 	default: {
-		Data7[ix - 3758096384] = vl;
+		Data7[ix - 3758096328] = vl;
 	}
 	}
 }
 
 fn DataSetAdd(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		Data0[ix] += vl;
 	}
 	case u32(1): {
-		Data1[ix - 536870912] += vl;
+		Data1[ix - 536870904] += vl;
 	}
 	case u32(2): {
-		Data2[ix - 1073741824] += vl;
+		Data2[ix - 1073741808] += vl;
 	}
 	case u32(3): {
-		Data3[ix - 1610612736] += vl;
+		Data3[ix - 1610612712] += vl;
 	}
 	case u32(4): {
-		Data4[ix - 2147483648] += vl;
+		Data4[ix - 2147483616] += vl;
 	}
 	case u32(5): {
-		Data5[ix - 2684354560] += vl;
+		Data5[ix - 2684354520] += vl;
 	}
 	case u32(6): {
-		Data6[ix - 3221225472] += vl;
+		Data6[ix - 3221225424] += vl;
 	}
 	default: {
-		Data7[ix - 3758096384] += vl;
+		Data7[ix - 3758096328] += vl;
 	}
 	}
 }
 
 fn DataSetSub(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		Data0[ix] -= vl;
 	}
 	case u32(1): {
-		Data1[ix - 536870912] -= vl;
+		Data1[ix - 536870904] -= vl;
 	}
 	case u32(2): {
-		Data2[ix - 1073741824] -= vl;
+		Data2[ix - 1073741808] -= vl;
 	}
 	case u32(3): {
-		Data3[ix - 1610612736] -= vl;
+		Data3[ix - 1610612712] -= vl;
 	}
 	case u32(4): {
-		Data4[ix - 2147483648] -= vl;
+		Data4[ix - 2147483616] -= vl;
 	}
 	case u32(5): {
-		Data5[ix - 2684354560] -= vl;
+		Data5[ix - 2684354520] -= vl;
 	}
 	case u32(6): {
-		Data6[ix - 3221225472] -= vl;
+		Data6[ix - 3221225424] -= vl;
 	}
 	default: {
-		Data7[ix - 3758096384] -= vl;
+		Data7[ix - 3758096328] -= vl;
 	}
 	}
 }
 
 fn DataSetMul(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		Data0[ix] *= vl;
 	}
 	case u32(1): {
-		Data1[ix - 536870912] *= vl;
+		Data1[ix - 536870904] *= vl;
 	}
 	case u32(2): {
-		Data2[ix - 1073741824] *= vl;
+		Data2[ix - 1073741808] *= vl;
 	}
 	case u32(3): {
-		Data3[ix - 1610612736] *= vl;
+		Data3[ix - 1610612712] *= vl;
 	}
 	case u32(4): {
-		Data4[ix - 2147483648] *= vl;
+		Data4[ix - 2147483616] *= vl;
 	}
 	case u32(5): {
-		Data5[ix - 2684354560] *= vl;
+		Data5[ix - 2684354520] *= vl;
 	}
 	case u32(6): {
-		Data6[ix - 3221225472] *= vl;
+		Data6[ix - 3221225424] *= vl;
 	}
 	default: {
-		Data7[ix - 3758096384] *= vl;
+		Data7[ix - 3758096328] *= vl;
 	}
 	}
 }
 
 fn DataSetDiv(vl: f32, ix: u32) {
-	let ii = ix / 536870912;
+	let ii = ix / 536870904;
 	switch ii {
 	case u32(0): {
 		Data0[ix] /= vl;
 	}
 	case u32(1): {
-		Data1[ix - 536870912] /= vl;
+		Data1[ix - 536870904] /= vl;
 	}
 	case u32(2): {
-		Data2[ix - 1073741824] /= vl;
+		Data2[ix - 1073741808] /= vl;
 	}
 	case u32(3): {
-		Data3[ix - 1610612736] /= vl;
+		Data3[ix - 1610612712] /= vl;
 	}
 	case u32(4): {
-		Data4[ix - 2147483648] /= vl;
+		Data4[ix - 2147483616] /= vl;
 	}
 	case u32(5): {
-		Data5[ix - 2684354560] /= vl;
+		Data5[ix - 2684354520] /= vl;
 	}
 	case u32(6): {
-		Data6[ix - 3221225472] /= vl;
+		Data6[ix - 3221225424] /= vl;
 	}
 	default: {
-		Data7[ix - 3758096384] /= vl;
+		Data7[ix - 3758096328] /= vl;
 	}
 	}
 }
@@ -231,7 +231,7 @@ struct SubStruct {
 struct ParamStruct {
 	Tau: f32,
 	Dt: f32,
-	pad:  f32,
+	DataLen: u32,
 	pad1: f32,
 	Sub: SubStruct,
 }
@@ -250,6 +250,9 @@ fn ParamStruct_IntegFromRaw(ps: ParamStruct, idx: i32) {
 	SubStruct_IntegFromRaw(ps.Sub, idx);
 }
 fn Compute(i: u32) { //gosl:kernel
+	if (i >= Params[0].DataLen) { // note: essential to bounds check b/c i in 64 blocks
+		return;
+	}
 	let params=Params[0]; ParamStruct_IntegFromRaw(params, i32(i));
 }
 

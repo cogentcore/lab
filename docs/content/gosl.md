@@ -1,6 +1,12 @@
-**Gosl** allows you to write Go programs that run on [[GPU]] hardware, by transpiling Go into the WGSL shader language used by [WebGPU](https://www.w3.org/TR/webgpu/), thereby establishing the _Go shader language_.
++++
+Name = "GoSL"
++++
 
-Gosl uses the [core gpu](https://github.com/cogentcore/core/tree/main/gpu) compute shader system, and operates within the overall [[Goal]] framework of an augmented version of the Go language.
+**GoSL** (via the `gosl` executable) allows you to write Go programs that run on [[GPU]] hardware, by transpiling Go into the WGSL shader language used by [WebGPU](https://www.w3.org/TR/webgpu/), thereby establishing the _Go shader language_.
+
+GoSL uses the [core gpu](https://cogentcore.org/core/gpu) compute shader system, and can take advantage of the [[Goal]] transpiler to provide a more natural tensor indexing syntax.
+
+Functionally, GoSL is similar to [NVIDIA warp](https://github.com/NVIDIA/warp) --  [docs](https://nvidia.github.io/warp/basics.html), which uses Python as the original source and converts it to either C++ or CUDA code. In GoSL, the original code is directly Go, so we just need to do the WGSL part. Unlike warp, WGSL runs on all GPU platforms, including the web (warp only runs on NVIDIA GPUs, on desktop / servers).
 
 The relevant regions of Go code to be run on the GPU are tagged using the `//gosl:start` and `//gosl:end` comment directives, and this code must only use basic expressions and concrete types that will compile correctly in a GPU shader (see [[#Restrictions]] below). Method functions and pass-by-reference pointer arguments to `struct` types are supported and incur no additional compute cost due to inlining (see notes below for more detail).
 
@@ -23,23 +29,32 @@ It is also strongly recommended to install the `naga` WGSL compiler from [wgpu](
 
 There are two key elements for GPU-enabled code:
 
-1. One or more [[#Kernels]] compute functions that take an _index_ argument and perform computations for that specific index of data, _in parallel_. **GPU computation is effectively just a parallel `for` loop**. On the GPU, each such kernel is implemented by its own separate compute shader code, and one of the main functions of `gosl` is to generate this code from the Go sources, in the automatically created `shaders/` directory.
+1. One or more [[#Kernel]] compute functions that take an _index_ argument and perform computations for that specific index of data, _in parallel_. **GPU computation is effectively just a parallel `for` loop**. On the GPU, each such kernel is implemented by its own separate compute shader code, and one of the main functions of `gosl` is to generate this code from the Go sources, in the automatically created `shaders/` directory.
 
 2. [[#Global variables]] on which the kernel functions _exclusively_ operate: all relevant data must be specifically copied from the CPU to the GPU and back. As explained in the [[GPU]] docs, each GPU compute shader is effectively a _standalone_ program operating on these global variables. To replicate this environment on the CPU, so the code works in both contexts, we need to make these variables global in the CPU (Go) environment as well.
 
-`gosl` generates a file named `gosl.go` in your package directory that initializes the GPU with all of the global variables, and functions for running the kernels and syncing the gobal variable data back and forth between the CPu and GPU.
+**IMPORTANT:** All tensor variables must be sent to the GPU at least once before running, because the generated code does not know the size of the tensor until this is done! This is true even if a variable is just a results variable that does not logically need to be uploaded to the GPU -- the overhead at startup for a single such transfer is not worth the extra complexity of creating the necessary alternative init code.
 
-## Kernels
+`gosl` generates a file named `gosl.go` in your package directory that initializes the GPU with all of the global variables, and functions for running the kernels and syncing the gobal variable data back and forth between the CPU and GPU.
+
+## Kernel
 
 Each distinct compute kernel must be tagged with a `//gosl:kernel` comment directive, as in this example (from `examples/basic`):
 ```go
 // Compute does the main computation.
 func Compute(i uint32) { //gosl:kernel
+	if i >= Params[0].DataLen { // note: essential to bounds check b/c i in 64 blocks
+		return
+	}
 	Params[0].IntegFromRaw(int(i))
 }
 ```
 
-The kernel functions receive a `uint32` index argument, and use this to index into the global variables containing the relevant data. Typically the kernel code itself just calls other relevant function(s) using the index, as in the above example. Critically, _all_ of the data that a kernel function ultimately depends on must be contained with the global variables, and these variables must have been sync'd up to the GPU from the CPU prior to running the kernel (more on this below).
+The kernel functions receive a `uint32` index argument, and use this to index into the global variables containing the relevant data. 
+
+**IMPORTANT:** the dispatch of kernels on the GPU is in blocks of 64 processors, so `i` will exceed the number that you pass into the `Run` function! It is essential to check bounds in every kernel.
+
+Typically the kernel code itself just calls other relevant function(s) using the index, as in the above example. Critically, _all_ of the data that a kernel function ultimately depends on must be contained with the global variables, and these variables must have been sync'd up to the GPU from the CPU prior to running the kernel (more on this below).
 
 In the CPU mode, the kernel is effectively run in a `for` loop like this:
 ```go
@@ -68,8 +83,8 @@ var (
 ```
 
 All such variables must be either:
-1. A `slice` of GPU-alignment compatible `struct` types, such as `ParamStruct` in the above example. In general such structs should be marked as `//gosl:read-only` due to various challenges associated with writing to structs, detailed below.
-2. A `tensor` of a GPU-compatible elemental data type (`float32`, `uint32`, or `int32`), with the number of dimensions indicated by the `//gosl:dims <n>` tag as shown above. This is the preferred type for writable data.
+1. A `slice` of GPU-alignment compatible `struct` types, such as `ParamStruct` in the above example. In general such structs should be marked as `//gosl:read-only` due to various challenges associated with writing to structs, detailed below. Due to lack of package-relative naming in the final WGSL file, any struct type defined in a sub package will show up unqualified in the generated `gosl.go` file, so a type alias is required to allow the resulting Go file to build properly.
+2. A [[tensor]] of a GPU-compatible elemental data type (`float32`, `uint32`, or `int32`), with the number of dimensions indicated by the `//gosl:dims <n>` tag as shown above. This is the preferred type for writable data.
 
 You can also just declare a slice of elemental GPU-compatible data values such as `float32`, but it is generally preferable to use the tensor instead, because it has built-in support for higher-dimensional indexing in a way that is transparent between CPU and GPU.
 
@@ -92,14 +107,14 @@ TODO: this could be encoded in the TensorStrides. It will always be the outer-mo
 
 Each kernel belongs to a `gpu.ComputeSystem`, and each such system has one specific configuration of memory variables. In general, it is best to use a single set of global variables, and perform as much of the computation as possible on this set of variables, to minimize the number of memory transfers. However, if necessary, multiple systems can be defined, using an optional additional system name argument for the `args` and `kernel` tags.
 
-In addition, the vars can be organized into _groups_, which generally should have similar memory syncing behavior, as documented in the [core gpu](https://github.com/cogentcore/core/tree/main/gpu) system.
+In addition, the vars can be organized into _groups_, which generally should have similar memory syncing behavior, as documented in the [core gpu](https://cogentcore.org/core/gpu) system.
 
 Here's an example with multiple groups:
 ```go
 //gosl:vars [system name]
 var (
     // Layer-level parameters
-    //gosl:group -uniform Params
+    //gosl:group Params
     Layers   []LayerParam // note: struct with appropriate memory alignment
 
     // Path-level parameters
@@ -142,6 +157,7 @@ It is absolutely essential to understand that _all data must already be on the G
 ## GPU relevant code taggng
 
 In a large GPU-based application, you should organize your code as you normally would in any standard Go application, distributing it across different files and packages. The GPU-relevant parts of each of those files can be tagged with the gosl tags:
+
 ```
 //gosl:start
 
@@ -149,15 +165,24 @@ In a large GPU-based application, you should organize your code as you normally 
 
 //gosl:end
 ```
+
 to make this code available to all of the shaders that are generated.
 
 Use the `//gosl:import "package/path"` directive to import GPU-relevant code from other packages, similar to the standard Go import directive. It is assumed that many other Go imports are not GPU relevant, so this separate directive is required.
 
 If any `enums` variables are defined, pass the `-gosl` flag to the `core generate` command to ensure that the `N` value is tagged with `//gosl:start` and `//gosl:end` tags.
 
-**IMPORTANT:** all `.go` and `.wgsl` files are removed from the `shaders` directory prior to processing to ensure everything there is current -- always specify a different source location for any custom `.wgsl` files that are included.
+It is also possible to include code that is _exclusively_ run on the GPU, by enclosing a commented-out section of code surrounded by these comment directives:
 
-# Command line usage
+```
+	//gosl:wgsl
+	// nci += ncA + ncB // wgsl returns orig, Go returns new
+	//gosl:end
+```
+
+So the Go code just sees this as a comment, but `gosl` uncomments the code and processes it (as Go code, but can also just be raw WGSL). In general this should not be necessary, but one key place where it is needed is in the return values of atomic functions as described below.
+
+## Command line usage
 
 ```
 gosl [flags] 
@@ -177,29 +202,31 @@ The flags are:
 
 `gosl` always operates on the current directory, looking for all files with `//gosl:` tags, and accumulating all the `import` files that they include, etc.
   
-Any `struct` types encountered will be checked for 16-byte alignment of sub-types and overall sizes as an even multiple of 16 bytes (4 `float32` or `int32` values), which is the alignment used in WGSL and glsl shader languages, and the underlying GPU hardware presumably.  Look for error messages on the output from the gosl run.  This ensures that direct byte-wise copies of data between CPU and GPU will be successful.  The fact that `gosl` operates directly on the original CPU-side Go code uniquely enables it to perform these alignment checks, which are otherwise a major source of difficult-to-diagnose bugs.
+Any `struct` types encountered will be checked for 16-byte alignment of sub-types and overall sizes as an even multiple of 16 bytes (4 `float32` or `int32` values), which is the alignment used in WGSL and glsl shader languages, and the underlying GPU hardware presumably. Look for error messages on the output from the gosl run. This ensures that direct byte-wise copies of data between CPU and GPU will be successful. The fact that `gosl` operates directly on the original CPU-side Go code uniquely enables it to perform these alignment checks, which are otherwise a major source of difficult-to-diagnose bugs.
 
-# Restrictions    
+## Restrictions    
 
-In general shader code should be simple mathematical expressions and data types, with minimal control logic via `if`, `for` statements, and only using the subset of Go that is consistent with C.  Here are specific restrictions:
+In general shader code should be simple mathematical expressions and data types, with minimal control logic via `if`, `for` statements, and only using the subset of Go that is consistent with C. Here are specific restrictions:
 
-* Can only use `float32`, `[u]int32` for basic types (`int` is converted to `int32` automatically), and `struct` types composed of these same types -- no other Go types (i.e., `map`, slices, `string`, etc) are compatible.  There are strict alignment restrictions on 16 byte (e.g., 4 `float32`'s) intervals that are enforced via the `alignsl` sub-package.
+* Can only use `float32`, `[u]int32` for basic types (`int` is converted to `int32` automatically), and `struct` types composed of these same types -- no other Go types (i.e., `map`, slices, `string`, etc) are compatible. There are strict alignment restrictions on 16 byte (e.g., 4 `float32`'s) intervals that are enforced via the `alignsl` sub-package.
 
 * WGSL does _not_ support 64 bit float or int.
 
 * Use `slbool.Bool` instead of `bool` -- it defines a Go-friendly interface based on a `int32` basic type.
 
-* Alignment and padding of `struct` fields is key -- this is automatically checked by `gosl`.
+* Alignment and padding of `struct` fields is key -- this is automatically checked by `gosl`. Any purely internally-used struct that is not used for variables passed between CPU and GPU is not checked and can use non-auto-aligned types, because we don't care about bit-wise identity between CPU and GPU.
 
-* WGSL does not support enum types, but standard go `const` declarations will be converted.  Use an `int32` or `uint32` data type.  It will automatically deal with the simple incrementing `iota` values, but not more complex cases.  Also, for bitflags, define explicitly, not using `bitflags` package, and use `0x01`, `0x02`, `0x04` etc instead of `1<<2` -- in theory the latter should be ok but in practice it complains.
+* Cannot use a pointer type for the first argument to any function. This is because all methods with pointer method receivers are automatically converted into functions where the receiver is the first argument, which cannot be a pointer. It is too hard to distinguish all of these cases.
+
+* WGSL does not support enum types, but standard go `const` declarations will be converted. Use an `int32` or `uint32` data type. It will automatically deal with the simple incrementing `iota` values, but not more complex cases. Also, for bitflags, define explicitly, not using `bitflags` package, and use `0x01`, `0x02`, `0x04` etc instead of `1<<2` -- in theory the latter should be ok but in practice it complains.
 
 * Cannot use multiple return values, or multiple assignment of variables in a single `=` expression.
 
 * *Can* use multiple variable names with the same type (e.g., `min, max float32`) -- this will be properly converted to the more redundant form with the type repeated, for WGSL.
 
-* `switch` `case` statements are _purely_ self-contained -- no `fallthrough` allowed!  does support multiple items per `case` however. Every `switch` _must_ have a `default` case.
+* `switch` `case` statements are _purely_ self-contained -- no `fallthrough` allowed! Does support multiple items per `case` however. Every `switch` _must_ have a `default` case.
 
-* WGSL does specify that new variables are initialized to 0, like Go, but also somehow discourages that use-case.  It is safer to initialize directly:
+* WGSL does specify that new variables are initialized to 0, like Go, but also somehow discourages that use-case. It is safer to initialize directly:
 ```go
     val := float32(0) // guaranteed 0 value
     var val float32 // ok but generally avoid
@@ -218,7 +245,7 @@ This automatically does the right thing on GPU while returning a pointer to the 
 * [tour-of-wgsl](https://google.github.io/tour-of-wgsl/types/pointers/passing_pointers/) is a good reference to explain things more directly than the spec.
 
 * `ptr<function,MyStruct>` provides a pointer arg
-* `private` scope = within the shader code "module", i.e., one thread.  
+* `private` scope = within the shader code "module", i.e., one thread. 
 * `function` = within the function, not outside it.
 * `workgroup` = shared across workgroup -- coudl be powerful (but slow!) -- need to learn more.
 
@@ -232,21 +259,35 @@ var<storage, read_write> PathGBuf: array<atomic<i32>>;
 atomicAdd(&PathGBuf[idx], val);
 ```
 
-This also unfortunately has the side-effect that you cannot do _non-atomic_ operations on atomic variables, as discussed extensively here: https://github.com/gpuweb/gpuweb/issues/2377  Gosl automatically detects the use of atomic functions on GPU variables, and tags them as atomic. 
+This also unfortunately has the side-effect that you cannot do _non-atomic_ operations on atomic variables, as discussed extensively on [gpuweb](https://github.com/gpuweb/gpuweb/issues/2377). GoSL automatically detects the use of atomic functions on GPU variables, and tags them as atomic.
+
+Currently, only atomic `int32` and `uint32` are supported. See this [gpuweb issue](https://github.com/gpuweb/gpuweb/issues/4894), which also has a workaround by translating `float32`  back and forth from `uint32`. Managing this transparently with the Go version which does directly support float32 should be possible, but managing the shadow variable etc is a bit of overhead and complexity.
+
+If you need the return value from an atomic operation, then unfortunately Go and WGSL have different semantics for the Add etc operations: Go returns the value _after_ the addition, while WGSL returns the value _before_ the addition. Thus, a wgsl-specific code section is needed:
+
+```
+	nci := atomic.AddInt32(&ContactCount.Values[int(params.Cur)], ncA + ncB)
+	// Go returns post-added value, while WGSL returns pre-added value
+
+	//gosl:wgsl
+	// nci += ncA + ncB // wgsl now matches Go
+	//gosl:end
+```
 
 ## Random numbers: slrand
 
-See [[doc:gosl/slrand]] for a shader-optimized random number generation package, which is supported by `gosl` -- it will convert `slrand` calls into appropriate WGSL named function calls.  `gosl` will also copy the `slrand.wgsl` file, which contains the full source code for the RNG, into the destination `shaders` directory, so it can be included with a simple local path:
+See [[doc:gosl/slrand]] for a shader-optimized random number generation package, which is supported by `gosl`. e.g., `slrand.Float32` returns a random 0-1 `float32` value.
 
-```go
-//gosl:wgsl mycode
-// #include "slrand.wgsl"
-//gosl:end mycode
-```
+
+## WGSL vector variables from math32.Vector* etc
+
+WGSL supports variables like `vec4<f32>` which is equivalent to `math32.Vector4`. All such vector, matrix, and quaternion types are automatically converted, and basic math operations via methods like `.Add`, `.Mul` etc are automatically converted into corresponding `+` and `*` operations in WGSL.
+
+The [[doc:gosl/slmath]] package contains definitions of many other `math32` package methods as standalone functions that are compatible with WGSL translation (the existing `math32` methods are generally not). Thus, while it does require use of this separate library, it is possible to support all the major math32 vector, matrix, and quaternion functionality.
+
+To include the `math32.Vector2` and `math32.Vector3` types in a struct, use the [[doc:gosl/slvec]] equivalent types, which adds the necessary padding so that they align on the required 4x32 bit size for any struct field that is another struct. Call the `V()` and `SetV()` methods to get / set the actual corresponding `math32.Vector*` type -- that is handled correctly for the WGSL case.
 
 ## Performance
 
-With sufficiently large N, and ignoring the data copying setup time, around ~80x speedup is typical on a Macbook Pro with M1 processor.  The `rand` example produces a 175x speedup!
-
-## Gosl pages
+With sufficiently large N, and ignoring the data copying setup time, dramatic many-factor speedups of ~10x up to ~100x or more are definitely possible. In general for naturally parallelizable code, it has been absolutely worth the effort to implement via GoSL.
 

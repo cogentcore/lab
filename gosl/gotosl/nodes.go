@@ -439,6 +439,7 @@ func (p *printer) parameters(fields *ast.FieldList, mode paramMode) {
 					p.expr(atyp)
 					if isPtr {
 						p.print(">")
+						p.curPtrArgs = append(p.curPtrArgs, par.Names[0])
 					}
 				} else {
 					atyp, isPtr := p.ptrParamType(stripParensAlways(par.Type))
@@ -525,6 +526,7 @@ func (p *printer) goslFixArgs(args []ast.Expr, params *types.Tuple) ([]ast.Expr,
 			if gvar := p.GoToSL.GetTempVar(x.Name); gvar != nil {
 				if !(gvar.Var.ReadOnly && !gvar.ReadWrite) {
 					x.Name = "&" + x.Name
+					fmt.Println("fix amper", x.Name)
 					ags[i] = x
 				}
 			}
@@ -695,14 +697,34 @@ func (p *printer) derefPtrArgs(x ast.Expr, prec, depth int) {
 // gosl: mark pointer param types (only for non-struct), returns true if pointer
 func (p *printer) ptrParamType(x ast.Expr) (ast.Expr, bool) {
 	if u, ok := x.(*ast.StarExpr); ok {
-		typ := p.getIdType(u.X.(*ast.Ident))
-		if typ != nil {
-			if _, ok := typ.Underlying().(*types.Struct); ok {
-				return u.X, false
+		switch pt := u.X.(type) {
+		case *ast.Ident:
+			typ := p.getIdType(pt)
+			if typ != nil {
+				if _, ok := typ.Underlying().(*types.Struct); ok {
+					tn := getLocalTypeName(typ)
+					pi := strings.Index(tn, ".")
+					if pi > 0 {
+						tn = tn[pi+1:]
+					}
+					// fmt.Printf("struct typ: %s\n", tn)
+					if _, ok := p.GoToSL.VarStructTypes[tn]; ok {
+						return u.X, false // no pointer, else ok
+					}
+				}
 			}
+			p.print("ptr<function", token.COMMA)
+			return u.X, true
+		case *ast.SelectorExpr:
+			if id, ok := pt.X.(*ast.Ident); ok {
+				if id.Name == "math32" {
+					p.print("ptr<function", token.COMMA)
+					return u.X, true
+				}
+			}
+		default:
+			fmt.Println("ERROR: unrecognized pointer type -- can only have pointers to structs and vector types", pt)
 		}
-		p.print("ptr<function", token.COMMA)
-		return u.X, true
 	}
 	return x, false
 }
@@ -1365,6 +1387,7 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 		args := x.Args
 		var rwargs []rwArg
 		if isid {
+			// fmt.Println("start call:", fid.Name, p.curFunc)
 			if p.curFunc != nil {
 				p.curFunc.Funcs[fid.Name] = p.GoToSL.RecycleFunc(fid.Name)
 			}
@@ -1394,6 +1417,7 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 		p.setPos(x.Rparen)
 		p.print(token.RPAREN)
 		p.assignRwArgs(rwargs)
+		// fmt.Println("call:", x.Fun, p.curFunc)
 
 	case *ast.CompositeLit:
 		// composite literal elements that are composite literals themselves may have the type omitted
@@ -1578,14 +1602,16 @@ func (p *printer) selectorPath(x *ast.SelectorExpr) (recvPath, recvType string, 
 	}
 	recvPath = baseRecv.Name
 	var idt types.Type
-	if gvar := p.GoToSL.GetTempVar(baseRecv.Name); gvar != nil {
+	gvar := p.GoToSL.GetTempVar(baseRecv.Name)
+	if gvar != nil {
 		idt = p.getTypeNameType(gvar.Var.SLType())
 	} else {
 		idt = p.getIdType(baseRecv)
 	}
-	if idt == nil {
-		err = fmt.Errorf("gosl methodPath ERROR: cannot find type for name: %q", baseRecv.Name)
-		p.userError(err)
+	if idt == nil || typeIsInvalid(idt) {
+		err = fmt.Errorf("gosl methodPath ERROR: cannot find type for name: %q, gvar: %v", baseRecv.Name, gvar)
+		panic(err)
+		// p.userError(err)
 		return
 	}
 	bt, err = p.getStructType(idt)
@@ -1658,25 +1684,30 @@ func getLocalTypeName(typ types.Type) string {
 	return nm
 }
 
+func typeIsInvalid(typ types.Type) bool {
+	if b, ok := typ.(*types.Basic); ok {
+		if b.Kind() == types.Invalid {
+			return true
+		}
+	}
+	return false
+}
+
 func (p *printer) getStructType(typ types.Type) (*types.Struct, error) {
-	typ = typ.Underlying()
-	if st, ok := typ.(*types.Struct); ok {
-		return st, nil
+	utyp := typ.Underlying()
+	switch x := utyp.(type) {
+	case *types.Struct:
+		return x, nil
+	case *types.Pointer:
+		return p.getStructType(x.Elem())
+	case *types.Slice:
+		return p.getStructType(x.Elem())
+	case *types.Basic:
+		fmt.Println("basic kind:", x.String())
 	}
-	if ptr, ok := typ.(*types.Pointer); ok {
-		typ = ptr.Elem().Underlying()
-		if st, ok := typ.(*types.Struct); ok {
-			return st, nil
-		}
-	}
-	if sl, ok := typ.(*types.Slice); ok {
-		typ = sl.Elem().Underlying()
-		if st, ok := typ.(*types.Struct); ok {
-			return st, nil
-		}
-	}
-	err := fmt.Errorf("gosl ERROR: type is not a struct and it should be: %q %+t", typ.String(), typ)
-	p.userError(err)
+	err := fmt.Errorf("gosl ERROR: type is not a struct and it should be: %q %+T %+T", typ.String(), typ, utyp)
+	panic(err)
+	// p.userError(err)
 	return nil, err
 }
 
@@ -1705,7 +1736,18 @@ func (p *printer) getNamedType(typ types.Type) (*types.Named, error) {
 func (p *printer) globalVarBasic(idx *ast.IndexExpr) {
 	id, ok := idx.X.(*ast.Ident)
 	if !ok {
-		return
+		if sel, ok := idx.X.(*ast.SelectorExpr); ok {
+			if sel.Sel.Name != "Values" {
+				return
+			}
+			id, ok = sel.X.(*ast.Ident)
+			if !ok {
+				return
+			}
+			// fall through with this..
+		} else {
+			return
+		}
 	}
 	st := p.GoToSL
 	gvr := st.GlobalVar(id.Name)
@@ -1714,6 +1756,9 @@ func (p *printer) globalVarBasic(idx *ast.IndexExpr) {
 	}
 	if p.curFunc != nil {
 		p.curFunc.AddVarUsed(gvr)
+		if p.curMethIsAtomic {
+			p.curFunc.AddAtomic(gvr)
+		}
 	}
 }
 
@@ -1780,8 +1825,10 @@ func (p *printer) getGlobalVar(ae *ast.AssignStmt, gvr *Var) {
 	p.expr(cf.Args[0])
 	p.print(token.RBRACK, token.SEMICOLON)
 	gvars := p.GoToSL.GetVarStack.Peek()
-	gvars[tmpVar] = &GetGlobalVar{Var: gvr, TmpVar: tmpVar, IdxExpr: cf.Args[0], ReadWrite: rwoverride}
-	p.GoToSL.GetVarStack[len(p.GoToSL.GetVarStack)-1] = gvars
+	if gvars != nil {
+		gvars[tmpVar] = &GetGlobalVar{Var: gvr, TmpVar: tmpVar, IdxExpr: cf.Args[0], ReadWrite: rwoverride}
+		p.GoToSL.GetVarStack[len(p.GoToSL.GetVarStack)-1] = gvars
+	}
 }
 
 // gosl: set non-read-only global vars back from temp var
@@ -1931,8 +1978,16 @@ func (p *printer) methodExpr(x *ast.CallExpr, depth int) {
 					recvType = id.Name // is a package path
 				}
 			} else {
-				pathType = typ
-				recvPath = recvPath
+				if gvar := p.GoToSL.GetTempVar(id.Name); gvar != nil {
+					recvType = gvar.Var.SLType()
+					if !(gvar.Var.ReadOnly && !gvar.ReadWrite) {
+						recvPath = "&" + recvPath
+					}
+					pathType = p.getTypeNameType(gvar.Var.SLType())
+				} else {
+					pathType = typ
+					recvPath = recvPath
+				}
 			}
 		} else {
 			pathIsPackage = true
@@ -1948,9 +2003,10 @@ func (p *printer) methodExpr(x *ast.CallExpr, depth int) {
 			rwargs = append(rwargs, rwArg{idx: idx, tmpVar: recvPath})
 		}
 	} else {
-		err := fmt.Errorf("gosl methodExpr ERROR: path expression for method call must be simple list of fields, not %#v:", path.X)
-		p.userError(err)
-		return
+		// fmt.Println("arg issue with:", methName)
+		// err := fmt.Errorf("gosl methodExpr ERROR: path expression for method call must be simple list of fields, not %#v:", path.X)
+		// p.userError(err)
+		// return
 	}
 	args := x.Args
 	if pathType != nil {
@@ -1968,6 +2024,9 @@ func (p *printer) methodExpr(x *ast.CallExpr, depth int) {
 		}
 	}
 	// fmt.Println(pathIsPackage, recvType, methName, recvPath)
+	if p.mathMeth(x, depth, methName, recvPath, recvType) {
+		return
+	}
 	if pathIsPackage {
 		if recvType == "atomic" || recvType == "atomicx" {
 			p.curMethIsAtomic = true
@@ -2014,6 +2073,51 @@ func (p *printer) methodExpr(x *ast.CallExpr, depth int) {
 	p.curMethIsAtomic = false
 
 	p.assignRwArgs(rwargs) // gosl: assign temp var back to global var
+}
+
+// gosl: process math methods into expressions: .Add() -> + and V() to get slvec type
+func (p *printer) mathMeth(x *ast.CallExpr, depth int, methName, recvPath, recvType string) bool {
+	if strings.HasPrefix(recvType, "slvec.") && methName == "V" {
+		btyp := strings.TrimPrefix(recvType, "slvec.")
+		rtyp := "math32." + btyp
+		p.print(rtyp)
+		p.setPos(x.Lparen)
+		p.print(token.LPAREN)
+		switch btyp {
+		case "Vector2", "Vector2i":
+			p.print(recvPath+".x", token.COMMA, recvPath+".y")
+		case "Vector3":
+			p.print(recvPath+".x", token.COMMA, recvPath+".y", token.COMMA, recvPath+".z")
+		}
+		p.setPos(x.Rparen)
+		p.print(token.RPAREN)
+		p.curMethIsAtomic = false
+		return true
+	}
+	opr := token.ILLEGAL
+	switch methName {
+	case "Add":
+		opr = token.ADD
+	case "Sub":
+		opr = token.SUB
+	case "Mul", "MulVector", "MulVector3", "MulScalar":
+		opr = token.MUL
+	case "Div", "DivScalar":
+		opr = token.QUO
+	}
+	if opr == token.ILLEGAL {
+		return false
+	}
+	path := x.Fun.(*ast.SelectorExpr) // we know fun is selector
+	p.expr(path.X)
+	p.print(opr)
+	p.setPos(x.Lparen)
+	p.print(token.LPAREN)
+	p.exprList(x.Lparen, x.Args, depth, commaTerm, x.Rparen, false)
+	p.setPos(x.Rparen)
+	p.print(token.RPAREN)
+	p.curMethIsAtomic = false
+	return true
 }
 
 func (p *printer) expr0(x ast.Expr, depth int) {
@@ -2308,6 +2412,7 @@ func (p *printer) stmt(stmt ast.Stmt, nextIsRBrace bool, nosemi bool) {
 		if !nosemi {
 			p.print(token.SEMICOLON)
 		}
+		p.print(newline)
 
 	case *ast.GoStmt:
 		p.print(token.GO, blank)
@@ -2453,6 +2558,16 @@ func (p *printer) stmt(stmt ast.Stmt, nextIsRBrace bool, nosemi bool) {
 			// p.print(blank)
 			// p.setPos(s.TokPos)
 			// p.print(s.Tok, blank)
+		} else {
+			p.print(token.LPAREN, "var", blank)
+			p.print("i")
+			p.print(token.ASSIGN, "0", token.SEMICOLON, blank)
+			p.print("i")
+			p.print(token.LSS)
+			p.expr(stripParens(s.X))
+			p.print(token.SEMICOLON, blank)
+			p.print("i")
+			p.print(token.INC, token.RPAREN)
 		}
 		// p.print(token.RANGE, blank)
 		// p.expr(stripParens(s.X))
@@ -2766,6 +2881,13 @@ func (p *printer) systemVars(d *ast.GenDecl, sysname string) {
 				p.userError(err)
 				continue
 			}
+			// by the time this happens, all types have been moved to imports and show up there
+			// so we've lost the original origin. And we'd have to make up an incompatible type name
+			// anyway, so bottom line is: all var types need to be defined locally.
+			// tt := p.getIdType(id)
+			// if tt != nil {
+			// 	fmt.Println("idtyp:", tt.String())
+			// }
 			typ = "[]" + id.Name
 		} else {
 			sel, ok := vs.Type.(*ast.SelectorExpr)
@@ -3105,8 +3227,8 @@ func (p *printer) funcDecl(d *ast.FuncDecl) {
 	p.curMethRecv = nil
 	if p.GoToSL.GetFuncGraph {
 		p.GoToSL.FuncGraph[fname] = p.curFunc
-		p.curFunc = nil
 	}
+	p.curFunc = nil
 }
 
 func (p *printer) decl(decl ast.Decl) {
