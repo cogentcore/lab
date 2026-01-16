@@ -6,6 +6,7 @@ package phyxyz
 
 import (
 	"fmt"
+	"time"
 
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/core"
@@ -199,6 +200,10 @@ func (pe *Editor) Step(n int) {
 		pe.editor.AsyncLock()
 		pe.editor.NeedsRender()
 		pe.editor.AsyncUnlock()
+		if !pe.Model.GPU {
+			time.Sleep(time.Nanosecond) // this is essential for web (wasm) running to actually update
+			// if running in GPU mode, it works, but otherwise the thread never yields and it never updates.
+		}
 		if pe.stop {
 			pe.stop = false
 			break
