@@ -29,7 +29,7 @@ jobs:
       run: go test -v ./... -coverprofile cover.out -timeout 30s
 
     - name: Update coverage report
-      uses: cogentcore/go-coverage-report/action.yml@2b680fa9886932868a2340ebe92645111a4830b8
+      uses: cogentcore/go-coverage-report/.github/workflows/action.yml@193eab6a82347be01cfdc7fe7da7c5d9f8bbd5d1
       with:
         coverage-file: cover.out
       if: github.event_name == 'push'
