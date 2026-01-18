@@ -16,7 +16,8 @@ if [ -z "$INPUT" ]; then
 	go test ./... -coverpkg "$(go list || go list -m | head -1)/..." -coverprofile "$INPUT"
 fi
 
-echo "input: $INPUT"
+echo "input:"
+cat "$INPUT"
 
 # Create an HTML report.
 if [[ "${INPUT_REPORT-true}" == "true" ]]; then
