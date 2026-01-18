@@ -32,4 +32,4 @@ jobs:
       uses: cogentcore/go-coverage-report/.github/workflows/action.yml@f6d9b75ae7c0c8d2a2d252d5a36ff371dfe0bb12
       with:
         coverage-file: cover.out
-      if: github.event_name == 'push'
+
