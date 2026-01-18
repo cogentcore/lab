@@ -16,3 +16,4 @@
 Cogent Lab is a free and open source data science and visualization framework for Go, built on top of the [Cogent Core](https://cogentcore.org/core) app framework, so that the same code runs on macOS, Windows, Linux, iOS, Android, and web.
 
 See the [Cogent Lab Website](https://cogentcore.org/lab) for more information, including extensive documentation and editable interactive running examples. 
+
