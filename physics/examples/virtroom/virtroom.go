@@ -147,6 +147,9 @@ func (ev *Env) MakeModel(sc *xyz.Scene) {
 	// params.ControlDt = 0.1
 	params.Dt = 0.001
 	params.SubSteps = 1
+	params.Gravity.Y = 0 // note: critical to not have gravity for full rotation
+	// https://github.com/cogentcore/lab/issues/47
+
 	// params.MaxForce = 1.0e3
 	// params.AngularDamping = 0.5
 	// params.SubSteps = 1
@@ -311,13 +314,15 @@ func (ev *Env) MakeEmer(wl *builder.World, em *Emer, name string) {
 	obj := wl.NewObject()
 	em.Obj = obj
 	sc := ev.Physics.Scene
-	emr := obj.NewDynamicSkin(sc, name+"_body", physics.Box, "purple", mass, math32.Vec3(hw, hh, hd), math32.Vec3(0, hh, 0), rot)
+	off := float32(0.01) // note: critical to float slightly off the plane!
+	// otherwise, this is where the problems in rotation come in.
+	emr := obj.NewDynamicSkin(sc, name+"_body", physics.Box, "purple", mass, math32.Vec3(hw, hh, hd), math32.Vec3(0, hh+off, 0), rot)
 	// body := physics.NewCapsule(emr, "body", math32.Vec3(0, hh, 0), hh, hw)
 	// body := physics.NewCylinder(emr, "body", math32.Vec3(0, hh, 0), hh, hw)
 	em.XZ = obj.NewJointPlaneXZ(nil, emr, math32.Vec3(0, 0, 0), math32.Vec3(0, -hh, 0))
 	// emr.Group = 0 // no collide (temporary)
 
-	headPos := math32.Vec3(0, 2*hh+headsz, 0)
+	headPos := math32.Vec3(0, 2*hh+headsz+off, 0)
 	head := obj.NewDynamicSkin(sc, name+"_head", physics.Box, "tan", mass*.1, math32.Vec3(headsz, headsz, headsz), headPos, rot)
 	// head.Group = 0
 	hdsk := head.Skin
