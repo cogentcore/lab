@@ -19,6 +19,7 @@ import (
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/styles/states"
 	"cogentcore.org/core/styles/units"
+	"cogentcore.org/core/text/textpos"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/tensor"
 )
@@ -135,18 +136,21 @@ func (tb *TensorEditor) UpdateMaxWidths() {
 		return
 	}
 	_, isstr := tb.Tensor.(*tensor.String)
-	for fli := 0; fli < tb.NCols; fli++ {
+	for fli := range tb.NCols {
 		tb.colMaxWidths[fli] = 0
 		if !isstr {
 			continue
 		}
 		mxw := 0
-		// for _, ixi := range tb.Tensor.Indexes {
-		// 	if ixi >= 0 {
-		// 		sval := stsr.Values[ixi]
-		// 		mxw = max(mxw, len(sval))
-		// 	}
-		// }
+		for si := range tb.SliceSize {
+			if isstr {
+				str := tensor.Projection2DString(tb.Tensor, tb.Layout.OddRow, si, fli)
+				mxw = max(mxw, len(str))
+			} else {
+				fval := tensor.Projection2DValue(tb.Tensor, tb.Layout.OddRow, si, fli)
+				mxw = max(mxw, len(fmt.Sprintf("%g", fval)))
+			}
+		}
 		tb.colMaxWidths[fli] = mxw
 	}
 }
@@ -169,7 +173,7 @@ func (tb *TensorEditor) MakeHeader(p *tree.Plan) {
 					w.SetText("Index")
 				})
 			}
-			for fli := 0; fli < tb.NCols; fli++ {
+			for fli := range tb.NCols {
 				hdr := tb.ColumnHeader(fli)
 				tree.AddAt(p, "head-"+hdr, func(w *core.Button) {
 					w.SetType(core.ButtonAction)
@@ -225,7 +229,7 @@ func (tb *TensorEditor) MakeRow(p *tree.Plan, i int) {
 	}
 
 	_, isstr := tb.Tensor.(*tensor.String)
-	for fli := 0; fli < tb.NCols; fli++ {
+	for fli := range tb.NCols {
 		valnm := fmt.Sprintf("value-%v.%v", fli, itxt)
 
 		fval := float64(0)
@@ -301,7 +305,7 @@ func (tb *TensorEditor) RowFirstVisWidget(row int) (*core.WidgetBase, bool) {
 		return w, true
 	}
 	ridx := nWidgPerRow * row
-	for fli := 0; fli < tb.NCols; fli++ {
+	for fli := range tb.NCols {
 		w := lg.Child(ridx + idxOff + fli).(core.Widget).AsWidget()
 		if w.Geom.TotalBBox != (image.Rectangle{}) {
 			return w, true
@@ -321,7 +325,7 @@ func (tb *TensorEditor) RowGrabFocus(row int) *core.WidgetBase {
 	ridx := nWidgPerRow * row
 	lg := tb.ListGrid
 	// first check if we already have focus
-	for fli := 0; fli < tb.NCols; fli++ {
+	for fli := range tb.NCols {
 		w := lg.Child(ridx + idxOff + fli).(core.Widget).AsWidget()
 		if w.StateIs(states.Focused) || w.ContainsFocus() {
 			return w
@@ -329,7 +333,7 @@ func (tb *TensorEditor) RowGrabFocus(row int) *core.WidgetBase {
 	}
 	tb.InFocusGrab = true
 	defer func() { tb.InFocusGrab = false }()
-	for fli := 0; fli < tb.NCols; fli++ {
+	for fli := range tb.NCols {
 		w := lg.Child(ridx + idxOff + fli).(core.Widget).AsWidget()
 		if w.CanFocus() {
 			w.SetFocus()
@@ -464,4 +468,103 @@ func (tb *TensorEditor) PasteAtIndex(md mimedata.Mimes, idx int) {
 	// tb.SendChange()
 	// tb.SelectIndexEvent(idx, events.SelectOne)
 	// tb.Update()
+}
+
+//////// Search interface
+
+// TextRunes returns any text content associated with the widget, to be used
+// for Search for example. If this is nil, then it is excluded from search.
+func (tb *TensorEditor) TextRunes() []rune {
+	return nil
+}
+
+// Search returns text search results for this widget, searching for
+// the find string with given case sensitivity. It is up to each widget
+// to define the meaning of the Region line, char values for the matches.
+// The bool return value indicates whether this widget handled the search,
+// thereby excluding further searching within the elements under it.
+func (tb *TensorEditor) Search(find string, useCase bool) ([]textpos.Match, bool) {
+	var results []textpos.Match
+	_, isstr := tb.Tensor.(*tensor.String)
+	for rw := range tb.SliceSize {
+		for fli := range tb.NCols {
+			var str string
+			if isstr {
+				str = tensor.Projection2DString(tb.Tensor, tb.Layout.OddRow, rw, fli)
+			} else {
+				fval := tensor.Projection2DValue(tb.Tensor, tb.Layout.OddRow, rw, fli)
+				str = fmt.Sprintf("%g", fval)
+			}
+			m := core.SearchRunes([]rune(str), find, useCase)
+			if len(m) == 0 {
+				continue
+			}
+			ln := rw*tb.NCols + fli
+			for i := range m {
+				m[i].Region.Start.Line = ln
+				m[i].Region.End.Line = ln
+			}
+			results = append(results, m...)
+		}
+	}
+	return results, true
+}
+
+// HighlightMatches does highlighting of the given matches within this widget,
+// where the matches are as returned from the Search method.
+// Passing a nil causes matches to be reset.
+// Any existing highlighting should always be reset first regardless.
+// The bool return value indicates whether this widget handled the search,
+// thereby excluding further searching within the elements under it.
+func (tb *TensorEditor) HighlightMatches(matches []textpos.Match) bool {
+	nWidgPerRow, idxOff := tb.RowWidgetNs()
+	lg := tb.ListGrid
+	for i := range tb.VisibleRows {
+		ridx := nWidgPerRow * i
+		for fli := range tb.NCols {
+			w := lg.Child(ridx + idxOff + fli).(core.Widget)
+			w.SelectMatch(matches, 0, core.SelectNoScroll, core.SelectReset)
+			w.HighlightMatches(nil) // reset
+		}
+	}
+	if matches == nil {
+		return true
+	}
+	for _, m := range matches {
+		ln := m.Region.Start.Line
+		rw := ln / tb.NCols
+		if rw < tb.StartIndex || rw >= tb.StartIndex+tb.VisibleRows {
+			continue
+		}
+		ridx := nWidgPerRow * (rw - tb.StartIndex)
+		fli := ln % tb.NCols
+		w := lg.Child(ridx + idxOff + fli).(core.Widget)
+		w.HighlightMatches([]textpos.Match{m})
+	}
+	return true
+}
+
+// SelectMatch selects match at given index from among those returned
+// from the Search method. scroll = scroll widget into view.
+// reset = clear selection instead of selecting.
+func (tb *TensorEditor) SelectMatch(matches []textpos.Match, index int, scroll, reset bool) {
+	nWidgPerRow, idxOff := tb.RowWidgetNs()
+	match := matches[index]
+	lg := tb.ListGrid
+	ln := match.Region.Start.Line
+	rw := ln / tb.NCols
+	if rw < tb.StartIndex || rw >= tb.StartIndex+tb.VisibleRows {
+		if reset || !scroll {
+			return
+		}
+		tb.ScrollToIndex(rw)
+		tb.HighlightMatches(matches)
+	}
+	if rw < tb.StartIndex || rw >= tb.StartIndex+tb.VisibleRows { // shouldn't happen
+		return
+	}
+	ridx := nWidgPerRow * (rw - tb.StartIndex)
+	fli := ln % tb.NCols
+	w := lg.Child(ridx + idxOff + fli).(core.Widget)
+	w.SelectMatch(matches, index, core.SelectNoScroll, reset)
 }
