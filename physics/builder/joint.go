@@ -384,6 +384,7 @@ func (jd *Joint) AddTargetPos(dof int32, pos, stiff float32) {
 // stiffness levels.
 func (jd *Joint) SetTargetAngle(dof int32, angDeg, stiff float32) {
 	pos := math32.WrapPi(math32.DegToRad(angDeg))
+	// pos := math32.DegToRad(angDeg)
 	d := jd.DoF(int(dof))
 	d.Current.Pos = pos
 	d.Current.Stiff = stiff
@@ -400,6 +401,7 @@ func (jd *Joint) SetTargetAngle(dof int32, angDeg, stiff float32) {
 func (jd *Joint) AddTargetAngle(dof int32, angDeg, stiff float32) {
 	d := jd.DoF(int(dof))
 	d.Current.Pos = math32.WrapPi(d.Current.Pos + math32.DegToRad(angDeg))
+	// d.Current.Pos = d.Current.Pos + math32.DegToRad(angDeg)
 	d.Current.Stiff = stiff
 	physics.SetJointTargetPos(jd.JointIndex, dof, d.Current.Pos, stiff)
 }

@@ -388,8 +388,8 @@ func StepSolveJoint(ji int32) {
 		relQ.W*invs,
 		relQ.X*(relQ.Z*relQ.X-relQ.W*relQ.Y)*invscube)
 	grad0 = slmath.QuatMulScalar(grad0, 2.0/math32.Abs(qtwist.W))
-	//         # grad0 *= 2.0 / wp.sqrt(1.0-qtwist[0]*qtwist[0])	# derivative of asin(x) = 1/sqrt(1-x^2)
-
+	// grad0 *= 2.0 / wp.sqrt(1.0-qtwist[0]*qtwist[0])	// derivative of asin(x) = 1/sqrt(1-x^2)
+	
 	// rescale swing
 	swing_sq := qswing.W * qswing.W
 	//  if swing axis magnitude close to zero vector, just treat in quaternion space
@@ -483,9 +483,6 @@ func StepSolveJoint(ji int32) {
 				compliance = 1.0 / kd
 				damping = kd
 			}
-			// if ji == 0 && dim == 1 {
-			// 	fmt.Println(targetPos, e, err)
-			// }
 		}
 		// lambdaIn := slmath.Dim3(lambdaPrev, dim)
 		lambdaIn := float32(0)
