@@ -224,14 +224,14 @@ func (sr *Simmer) Submit() { //types:add
 	})
 }
 
-// Search runs parameter search jobs, one for each parameter.
+// ParamSearch runs parameter search jobs, one for each parameter.
 // The number of parameters is obtained by running the currently built
 // simulation executable locally with the -search-n argument, which 
 // returns the total number of parameter searches to run.
 // THUS, YOU MUST BUILD THE LOCAL SIM WITH THE PARAM SEARCH CONFIGURED.
 // Then, it launches that number of jobs with -search-at values from 1..n.
 // The jobs should write a job.label file for the searched parameter.
-func (sr *Simmer) Search() { //types:add
+func (sr *Simmer) ParamSearch() { //types:add
 	lab.PromptStruct(sr, &sr.Config.Submit, "Submit a new param search: make sure local sim has been built with search configured!", func() {
 		{go sr.NewSearch(sr.Config.Submit)}
 	})

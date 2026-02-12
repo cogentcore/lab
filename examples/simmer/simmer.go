@@ -235,7 +235,7 @@ func (sr *Simmer) MakeToolbar(p *tree.Plan) {
 		w.SetFunc(sr.Submit).SetIcon(icons.Add)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
-		w.SetFunc(sr.Search).SetIcon(icons.Search)
+		w.SetFunc(sr.ParamSearch).SetIcon(icons.Search)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(sr.Results).SetIcon(icons.Open)
