@@ -129,9 +129,13 @@ func (sr *Simmer) Diff() { //types:add
 func (sr *Simmer) Plot() { //types:add
 	ts := sr.Tabs.AsLab()
 	tv := sr.ResultsTableView
+	if tv == nil {
+		core.MessageSnackbar(sr, "Plot: no results available to plot")
+		return
+	}
 	jis := tv.SelectedIndexesList(false)
 	if len(jis) == 0 {
-		fmt.Println("No Results rows selected")
+		core.MessageSnackbar(sr, "Plot: No Results rows selected")
 		return
 	}
 	var AggTable *table.Table
@@ -159,9 +163,13 @@ func (sr *Simmer) Plot() { //types:add
 func (sr *Simmer) PlotMean() { //types:add
 	ts := sr.Tabs.AsLab()
 	tv := sr.ResultsTableView
+	if tv == nil {
+		core.MessageSnackbar(sr, "PlotMean: no results available to plot")
+		return
+	}
 	jis := tv.SelectedIndexesList(false)
 	if len(jis) == 0 {
-		fmt.Println("No Results rows selected")
+		core.MessageSnackbar(sr, "PlotMean: No Results rows selected")
 		return
 	}
 	nc := len(sr.Config.GroupColumns)

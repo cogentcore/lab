@@ -8,7 +8,7 @@ go 1.25.6
 // https://github.com/googleapis/go-genproto/issues/1015
 
 require (
-	cogentcore.org/core v0.3.18
+	cogentcore.org/core v0.3.21
 	github.com/cogentcore/readline v0.1.3
 	github.com/cogentcore/yaegi v0.0.0-20260116172027-700fbf8949f3
 	github.com/mitchellh/go-homedir v1.1.0
@@ -67,8 +67,8 @@ require (
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
-	google.golang.org/genproto v0.0.0-20260209200024-4cfbd4190f57 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260203192932-546029d2fa20 // indirect
+	google.golang.org/genproto v0.0.0-20260226221140-a57be14db171 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260217215200-42d3e9bedb6d // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/knuth v0.5.4 // indirect
 	modernc.org/token v1.1.0 // indirect
