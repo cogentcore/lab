@@ -157,7 +157,7 @@ addSlider(&dampStr, &damp, 1000)
 
 This simulation allows interactive control over the parameters of a `Prismatic` joint, which sets the linear position of a body along a given axis, in this case along the horizontal (`X`) axis.
 
-Click the `Step 10000` button and then start moving the sliders to see the effects interactively. Here's what you should observe:
+Click the `Run` button and then start moving the sliders to see the effects interactively (press `Stop` to stop when done). Here's what you should observe:
 
 * `Stiff` (stiffness) determines how quickly the joint responds to the position changes. You can make this variable even stronger in practice (e.g., 10,000).
 

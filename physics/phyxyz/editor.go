@@ -215,6 +215,41 @@ func (pe *Editor) Step(n int) {
 	pe.AsyncUnlock()
 }
 
+// Run runs the physics until stopped
+func (pe *Editor) Run() {
+	if pe.isRunning {
+		return
+	}
+	pe.isRunning = true
+	pe.Model.SetAsCurrent()
+	pe.toolbar.AsyncLock()
+	pe.toolbar.UpdateRender()
+	pe.toolbar.AsyncUnlock()
+	for {
+		if pe.ControlFunc != nil {
+			pe.ControlFunc(physics.StepsToMsec(pe.TimeStep))
+		}
+		pe.Model.Step()
+		pe.TimeStep++
+		pe.Scene.Update()
+		pe.editor.AsyncLock()
+		pe.editor.NeedsRender()
+		pe.editor.AsyncUnlock()
+		if !pe.Model.GPU {
+			time.Sleep(time.Nanosecond) // this is essential for web (wasm) running to actually update
+			// if running in GPU mode, it works, but otherwise the thread never yields and it never updates.
+		}
+		if pe.stop {
+			pe.stop = false
+			break
+		}
+	}
+	pe.isRunning = false
+	pe.AsyncLock()
+	pe.Update()
+	pe.AsyncUnlock()
+}
+
 func (pe *Editor) MakeToolbar(p *tree.Plan) {
 	stepNButton := func(n int) {
 		nm := fmt.Sprintf("Step %d", n)
@@ -253,6 +288,14 @@ func (pe *Editor) MakeToolbar(p *tree.Plan) {
 	})
 	tree.Add(p, func(w *core.Separator) {})
 
+	tree.Add(p, func(w *core.Button) {
+		w.SetText("Run").SetIcon(icons.PlayArrow).
+			SetTooltip("Run physics until Stop is pressed.").
+			OnClick(func(e events.Event) {
+				go pe.Run()
+			})
+		w.FirstStyler(func(s *styles.Style) { s.SetEnabled(!pe.isRunning) })
+	})
 	stepNButton(1)
 	stepNButton(10)
 	stepNButton(100)

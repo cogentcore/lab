@@ -76,10 +76,14 @@ func StepJointForces(i uint32) { //gosl:kernel
 	// child world transform
 	poseCR := DynamicPos(jCi, params.Cur)
 	poseCQ := DynamicQuat(jCi, params.Cur)
-	// note: NOT doing this: slmath.MulSpatialTransforms(poseCR, poseCQ, jCR, jCQ, &xwCR, &xwCQ)
+	jCR := JointCPos(ji)
+	jCQ := JointCQuat(ji)
+	xwCR := jCR
+	xwCQ := jCQ
+	slmath.MulSpatialTransforms(poseCR, poseCQ, jCR, jCQ, &xwCR, &xwCQ)
 	// https://github.com/newton-physics/newton/issues/1261
 	comC := BodyCom(jCbi)
-	dC := poseCR.Sub(slmath.MulSpatialPoint(poseCR, poseCQ, comC)) // child moment arm
+	dC := xwCR.Sub(slmath.MulSpatialPoint(poseCR, poseCQ, comC)) // child moment arm
 
 	var f, t math32.Vector3
 	switch jt {
