@@ -102,6 +102,17 @@ func NewSysRand(seed int64) *SysRand {
 	return r
 }
 
+// Init initializes this random source with given seed, ensuring
+// that there is a Rand object in place if not already, and
+// then calling Seed with given value.
+func (r *SysRand) Init(seed int64) {
+	if r.Rand == nil {
+		r.NewRand(seed)
+		return
+	}
+	r.Rand.Seed(seed)
+}
+
 // NewRand sets Rand to a new rand.Rand source using given seed.
 func (r *SysRand) NewRand(seed int64) {
 	r.Rand = rand.New(rand.NewSource(seed))

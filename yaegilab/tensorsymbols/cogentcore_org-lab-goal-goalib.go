@@ -11,6 +11,7 @@ func init() {
 	Symbols["cogentcore.org/lab/goal/goalib/goalib"] = map[string]reflect.Value{
 		// function, constant and variable definitions
 		"AllFiles":      reflect.ValueOf(goalib.AllFiles),
+		"DirExists":     reflect.ValueOf(goalib.DirExists),
 		"FileExists":    reflect.ValueOf(goalib.FileExists),
 		"ReadFile":      reflect.ValueOf(goalib.ReadFile),
 		"ReplaceInFile": reflect.ValueOf(goalib.ReplaceInFile),
