@@ -34,6 +34,12 @@ func FileExists(path string) bool {
 	return ex
 }
 
+// DirExists returns true if given directory exists
+func DirExists(path string) bool {
+	ex := errors.Log1(fsx.DirExists(path))
+	return ex
+}
+
 // WriteFile writes string to given file with standard permissions,
 // logging any errors.
 func WriteFile(filename, str string) error {
