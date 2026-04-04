@@ -12,6 +12,11 @@ import "math/rand"
 // rand.Rand methods, to support the use of either the
 // global rand generator or a separate Rand source.
 type Rand interface {
+	// Init initializes this random source with given seed, ensuring
+	// that there is a Rand object in place if not already, and
+	// then calling Seed with given value.
+	Init(seed int64)
+
 	// Seed uses the provided seed value to initialize the generator to a deterministic state.
 	// Seed should not be called concurrently with any other Rand method.
 	Seed(seed int64)
@@ -100,6 +105,17 @@ func NewSysRand(seed int64) *SysRand {
 	r := &SysRand{}
 	r.NewRand(seed)
 	return r
+}
+
+// InitSysRand initializes the given pointer to a [randx.Rand]
+// source to a new SysRand if it is nil, and otherwise calls
+// Init on the existing one, all with given initial seed.
+func InitSysRand(r *Rand, seed int64) {
+	if *r == nil {
+		*r = NewSysRand(seed)
+	} else {
+		(*r).Init(seed)
+	}
 }
 
 // Init initializes this random source with given seed, ensuring

@@ -13,10 +13,10 @@ var (
 	// random numbers will be generated for all calls, and the seed is saved as
 	// RandSeed. It can be reinstated by calling RestoreSeed.
 	// Can also set RandSource to another existing randx.Rand source to use it.
-	RandSource = &randx.SysRand{}
+	RandSource randx.Rand = randx.NewSysRand(5711)
 
-	// Random seed last set by NewRand or SetRandSeed.
-	RandSeed int64
+	// Random seed last set by NewRand or SetRandSeed (5711 by default).
+	RandSeed int64 = 5711
 )
 
 // NewRand sets RandSource to a new separate random number stream
