@@ -8,16 +8,16 @@ go 1.25.6
 // https://github.com/googleapis/go-genproto/issues/1015
 
 require (
-	cogentcore.org/core v0.3.23-0.20260410073637-95bf7e63f784
+	cogentcore.org/core v0.3.23-0.20260417145953-4e0b144b49c0
 	github.com/cogentcore/readline v0.1.3
 	github.com/cogentcore/yaegi v0.0.0-20260116172027-700fbf8949f3
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/nsf/termbox-go v1.1.1
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20260112195511-716be5621a96
-	golang.org/x/tools v0.42.0
+	golang.org/x/tools v0.43.0
 	gonum.org/v1/gonum v0.17.0
-	google.golang.org/grpc v1.79.3
+	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
 )
 
@@ -61,14 +61,14 @@ require (
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/tdewolff/parse/v2 v2.8.5 // indirect
 	golang.org/x/crypto v0.49.0 // indirect
-	golang.org/x/image v0.35.0 // indirect
-	golang.org/x/mod v0.33.0 // indirect
+	golang.org/x/image v0.39.0 // indirect
+	golang.org/x/mod v0.34.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
-	google.golang.org/genproto v0.0.0-20260406210006-6f92a3bedf2d // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9 // indirect
+	golang.org/x/text v0.36.0 // indirect
+	google.golang.org/genproto v0.0.0-20260414002931-afd174a4e478 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260406210006-6f92a3bedf2d // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/knuth v0.5.4 // indirect
 	modernc.org/token v1.1.0 // indirect
