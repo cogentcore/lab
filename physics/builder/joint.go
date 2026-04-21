@@ -352,7 +352,7 @@ func (jd *Joint) PoseFromPhysics() {
 // this joint in the physics model. Records into [DoF.Current].
 func (jd *Joint) SetTargetVel(dof int32, vel, damp float32) {
 	d := jd.DoF(int(dof))
-	d.Current.Vel = vel
+	d.Current.Vel = d.Limit.ClampValue(vel)
 	d.Current.Damp = damp
 	physics.SetJointTargetVel(jd.JointIndex, dof, vel, damp)
 }
@@ -361,7 +361,7 @@ func (jd *Joint) SetTargetVel(dof int32, vel, damp float32) {
 // this joint in the physics model. Records into [DoF.Current].
 func (jd *Joint) SetTargetPos(dof int32, pos, stiff float32) {
 	d := jd.DoF(int(dof))
-	d.Current.Pos = pos
+	d.Current.Pos = d.Limit.ClampValue(pos)
 	d.Current.Stiff = stiff
 	physics.SetJointTargetPos(jd.JointIndex, dof, pos, stiff)
 }
@@ -370,7 +370,7 @@ func (jd *Joint) SetTargetPos(dof int32, pos, stiff float32) {
 // this joint in the physics model, setting stiffness.
 func (jd *Joint) AddTargetPos(dof int32, pos, stiff float32) {
 	d := jd.DoF(int(dof))
-	d.Current.Pos += pos
+	d.Current.Pos = d.Limit.ClampValue(d.Current.Pos + pos)
 	d.Current.Stiff = stiff
 	physics.SetJointTargetPos(jd.JointIndex, dof, d.Current.Pos, stiff)
 }
@@ -383,12 +383,10 @@ func (jd *Joint) AddTargetPos(dof int32, pos, stiff float32) {
 // which is enforced, and values near the edge can be unstable at higher
 // stiffness levels.
 func (jd *Joint) SetTargetAngle(dof int32, angDeg, stiff float32) {
-	pos := math32.WrapPi(math32.DegToRad(angDeg))
-	// pos := math32.DegToRad(angDeg)
 	d := jd.DoF(int(dof))
-	d.Current.Pos = pos
+	d.Current.Pos = math32.WrapPi(d.Limit.ClampValue(math32.DegToRad(angDeg)))
 	d.Current.Stiff = stiff
-	physics.SetJointTargetPos(jd.JointIndex, dof, pos, stiff)
+	physics.SetJointTargetPos(jd.JointIndex, dof, d.Current.Pos, stiff)
 }
 
 // AddTargetAngle adds to the Current target angular position,
@@ -400,8 +398,7 @@ func (jd *Joint) SetTargetAngle(dof int32, angDeg, stiff float32) {
 // stiffness levels.
 func (jd *Joint) AddTargetAngle(dof int32, angDeg, stiff float32) {
 	d := jd.DoF(int(dof))
-	d.Current.Pos = math32.WrapPi(d.Current.Pos + math32.DegToRad(angDeg))
-	// d.Current.Pos = d.Current.Pos + math32.DegToRad(angDeg)
+	d.Current.Pos = math32.WrapPi(d.Limit.ClampValue(d.Current.Pos + math32.DegToRad(angDeg)))
 	d.Current.Stiff = stiff
 	physics.SetJointTargetPos(jd.JointIndex, dof, d.Current.Pos, stiff)
 }
