@@ -112,12 +112,11 @@ const (
 )
 
 // CheckFloats returns an error if any of the arguments are Infinity.
-// or if there are no non-NaN data points available for plotting.
+// or if there are no data points available for plotting.
 func CheckFloats(fs ...float64) error {
 	n := 0
 	for _, f := range fs {
 		switch {
-		case math.IsNaN(f):
 		case math.IsInf(f, 0):
 			return ErrInfinity
 		default:
@@ -212,9 +211,6 @@ func CopyValues(data Valuer) (Values, error) {
 	cpy := make(Values, 0, data.Len())
 	for i := 0; i < data.Len(); i++ {
 		v := data.Float1D(i)
-		if math.IsNaN(v) {
-			continue
-		}
 		if err := CheckFloats(v); err != nil {
 			return nil, err
 		}

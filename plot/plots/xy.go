@@ -13,6 +13,7 @@ package plots
 
 import (
 	"fmt"
+	"math"
 
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
@@ -176,6 +177,9 @@ func (ln *XY) Plot(plt *plot.Plot) {
 		pc.MoveTo(prevX, prevY)
 		for i, ptx := range ln.PX {
 			pty := ln.PY[i]
+			if math32.IsNaN(pty) { // todo: likely needs more to deal with diff cases
+				continue
+			}
 			switch ln.Style.Line.Step {
 			case plot.NoStep:
 				if ptx < prevX {
@@ -229,11 +233,18 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			pc.Stroke.Width.Dots *= 2
 		}
 		prevX, prevY := ln.PX[0], ln.PY[0]
-		pc.MoveTo(prevX, prevY)
+		hasPrev := false
+		if !math32.IsNaN(prevX) && !math32.IsNaN(prevY) {
+			pc.MoveTo(prevX, prevY)
+			hasPrev = true
+		}
 		for i := 1; i < np; i++ {
 			ptx, pty := ln.PX[i], ln.PY[i]
+			if math32.IsNaN(ptx) || math32.IsNaN(pty) {
+				continue
+			}
 			if ln.Style.Line.Step != plot.NoStep {
-				if ptx >= prevX {
+				if hasPrev && ptx >= prevX {
 					switch ln.Style.Line.Step {
 					case plot.PreStep:
 						pc.LineTo(prevX, pty)
@@ -245,9 +256,11 @@ func (ln *XY) Plot(plt *plot.Plot) {
 					}
 				} else {
 					pc.MoveTo(ptx, pty)
+					hasPrev = true
 				}
 			}
-			if !ln.Style.Line.NegativeX && ptx < prevX {
+			if !hasPrev || (!ln.Style.Line.NegativeX && ptx < prevX) {
+				hasPrev = true
 				pc.MoveTo(ptx, pty)
 			} else {
 				pc.LineTo(ptx, pty)
@@ -261,6 +274,9 @@ func (ln *XY) Plot(plt *plot.Plot) {
 		origSize := ln.Style.Point.Size
 		for i, ptx := range ln.PX {
 			pty := ln.PY[i]
+			if math32.IsNaN(pty) {
+				continue
+			}
 			pc.Stroke.Width = origWidth
 			ln.Style.Point.Size = origSize
 			if plt.HighlightPlotter == ln {
@@ -270,7 +286,11 @@ func (ln *XY) Plot(plt *plot.Plot) {
 				}
 			}
 			if ln.Size != nil {
-				ln.Style.Point.Size.Dots = 1 + ln.Style.Point.Size.Dots*float32(plt.SizeAxis.Norm(ln.Size.Float1D(i)))
+				sz := ln.Size.Float1D(i)
+				if math.IsNaN(sz) {
+					continue
+				}
+				ln.Style.Point.Size.Dots = 1 + ln.Style.Point.Size.Dots*float32(plt.SizeAxis.Norm(sz))
 			}
 			ln.Style.Point.SetColorIndex(pc, i)
 			ln.Style.Point.DrawShape(pc, math32.Vec2(ptx, pty))
