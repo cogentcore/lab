@@ -17,6 +17,7 @@ import (
 	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/colors/cam/hct"
+	"cogentcore.org/lab/base/randx"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
@@ -188,38 +189,52 @@ func cosDataXY() plot.Data {
 }
 
 func TestLine(t *testing.T) {
-	data := sinCosWrapData()
+	rnd := randx.NewSysRand(23)
+	for i := range 2 {
+		suffix := ""
+		data := sinCosWrapData()
 
-	plt := plot.New()
-	plt.Title.Text = "Test Line"
-	plt.X.Label.Text = "X Axis"
-	plt.Y.Label.Text = "Y Axis"
+		if i == 1 {
+			suffix = "-missing"
+			yd := data[plot.Y].(plot.Values)
+			for i := range yd {
+				if i == 0 || randx.BoolP(.25, rnd) {
+					yd[i] = math.NaN()
+				}
+			}
+		}
 
-	l1 := NewLine(plt, data)
-	if l1 == nil {
-		t.Fatal("bad data")
+		plt := plot.New()
+		plt.Title.Text = "Test Line"
+		plt.X.Label.Text = "X Axis"
+		plt.Y.Label.Text = "Y Axis"
+
+		l1 := NewLine(plt, data)
+		if l1 == nil {
+			t.Fatal("bad data")
+		}
+		plt.Legend.Add("Sine", l1)
+		plt.Legend.Add("Cos", l1)
+
+		imagex.Assert(t, plt.RenderImage(), "line"+suffix)
+
+		l1.Style.Line.Fill = colors.Uniform(colors.Yellow)
+		imagex.Assert(t, plt.RenderImage(), "line-fill"+suffix)
+
+		l1.Style.Line.Step = plot.PreStep
+		imagex.Assert(t, plt.RenderImage(), "line-prestep"+suffix)
+
+		l1.Style.Line.Step = plot.MidStep
+		imagex.Assert(t, plt.RenderImage(), "line-midstep"+suffix)
+
+		l1.Style.Line.Step = plot.PostStep
+		imagex.Assert(t, plt.RenderImage(), "line-poststep"+suffix)
+
+		l1.Style.Line.Step = plot.NoStep
+		l1.Style.Line.Fill = nil
+		l1.Style.Line.NegativeX = true
+		imagex.Assert(t, plt.RenderImage(), "line-negx"+suffix)
 	}
-	plt.Legend.Add("Sine", l1)
-	plt.Legend.Add("Cos", l1)
-
-	imagex.Assert(t, plt.RenderImage(), "line")
-
-	l1.Style.Line.Fill = colors.Uniform(colors.Yellow)
-	imagex.Assert(t, plt.RenderImage(), "line-fill")
-
-	l1.Style.Line.Step = plot.PreStep
-	imagex.Assert(t, plt.RenderImage(), "line-prestep")
-
-	l1.Style.Line.Step = plot.MidStep
-	imagex.Assert(t, plt.RenderImage(), "line-midstep")
-
-	l1.Style.Line.Step = plot.PostStep
-	imagex.Assert(t, plt.RenderImage(), "line-poststep")
-
-	l1.Style.Line.Step = plot.NoStep
-	l1.Style.Line.Fill = nil
-	l1.Style.Line.NegativeX = true
-	imagex.Assert(t, plt.RenderImage(), "line-negx")
 }
 
 func TestLineYRight(t *testing.T) {

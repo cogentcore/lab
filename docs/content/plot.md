@@ -1,4 +1,4 @@
-You can graphically **Plot** data using the [[doc:plots]] package. See [[plot editor]] for interactive customization of plots.
+You can graphically **Plot** data using the [[doc:plot]] package ([[doc:plot/Data]], [[doc:plot/PlotStyle]]). See [[plot editor]] for interactive customization of plots.
 
 You can plot a [[vector]]:
 

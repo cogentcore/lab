@@ -172,13 +172,19 @@ func (ln *XY) Plot(plt *plot.Plot) {
 	pc := plt.Painter
 	if ln.Style.Line.HasFill() {
 		pc.Fill.Color = ln.Style.Line.Fill
+		pc.Stroke.Color = nil
 		prevX := ln.PX[0]
 		prevY := minY
-		pc.MoveTo(prevX, prevY)
+		hasPrev := false
 		for i, ptx := range ln.PX {
 			pty := ln.PY[i]
 			if math32.IsNaN(pty) { // todo: likely needs more to deal with diff cases
 				continue
+			}
+			if !hasPrev && !math32.IsNaN(ptx) && !math32.IsNaN(pty) {
+				pc.MoveTo(ptx, minY)
+				prevX = ptx
+				hasPrev = true
 			}
 			switch ln.Style.Line.Step {
 			case plot.NoStep:
