@@ -45,10 +45,3 @@ Here is the copyright notice for that package:
 // license that can be found in the LICENSE file.
 ```
 
-# TODO
-
-* Min / Max not just for extending but also _limiting_ the range -- currently doesn't do
-
-* tensor index
-* Grid? in styling.
-
