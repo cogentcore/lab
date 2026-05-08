@@ -65,6 +65,23 @@ plt := lab.NewPlot(b)
 plots.NewLine(plt, plot.Data{plot.X: tx, plot.Y: ty})
 ```
 
+## Missing data: NaN
+
+Consistent with the [[tensor]] convention, missing data points are marked by a `NaN` value (i.e., `math.NaN()`), and are processed appropriately by all plot types.
+
+<!--- TODO: need a goal-defined NaN value.. -->
+
+```Goal
+data := #rand(10)#
+data.Set(math.NaN(), 0)
+data.Set(math.NaN(), 4)
+plot.SetStyler(data, func(s *plot.Style) {
+	s.Plot.SetPointsOn(plot.On)
+})
+plt := lab.NewPlot(b)
+plots.NewLine(plt, data)
+```
+
 ## Plot Types
 
 The following are the builtin standard plot types, in the `plots` package:

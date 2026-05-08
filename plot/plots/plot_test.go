@@ -296,24 +296,45 @@ func TestScatter(t *testing.T) {
 }
 
 func TestBubble(t *testing.T) {
-	data := sinDataXY()
-	data[plot.Size] = data[plot.Y]
+	rnd := randx.NewSysRand(23)
+	for i := range 2 {
+		suffix := ""
+		data := sinDataXY()
+		size := sinDataXY()
+		data[plot.Size] = size[plot.Y]
 
-	plt := plot.New()
-	plt.Title.Text = "Test Bubble"
-	plt.X.Range.Min = 0
-	plt.X.Range.Max = 100
-	plt.X.Label.Text = "X Axis"
-	plt.Y.Range.Min = 0
-	plt.Y.Range.Max = 100
-	plt.Y.Label.Text = "Y Axis"
-	plt.Style.PointSize.Px(10)
+		if i == 1 {
+			suffix = "-missing"
+			sd := data[plot.Y].(plot.Values)
+			cd := size[plot.Y].(plot.Values)
+			for i := range sd {
+				if i == 0 || randx.BoolP(.25, rnd) {
+					sd[i] = math.NaN()
+				}
+			}
+			for i := range cd {
+				if randx.BoolP(.25, rnd) {
+					cd[i] = math.NaN()
+				}
+			}
+		}
 
-	l1 := NewScatter(plt, data)
-	if l1 == nil {
-		t.Fatal("bad data")
+		plt := plot.New()
+		plt.Title.Text = "Test Bubble"
+		plt.X.Range.Min = 0
+		plt.X.Range.Max = 100
+		plt.X.Label.Text = "X Axis"
+		plt.Y.Range.Min = 0
+		plt.Y.Range.Max = 100
+		plt.Y.Label.Text = "Y Axis"
+		plt.Style.PointSize.Px(10)
+
+		l1 := NewScatter(plt, data)
+		if l1 == nil {
+			t.Fatal("bad data")
+		}
+		imagex.Assert(t, plt.RenderImage(), "bubble"+suffix)
 	}
-	imagex.Assert(t, plt.RenderImage(), "bubble")
 }
 
 func TestScatterColor(t *testing.T) {
@@ -349,130 +370,205 @@ func TestScatterColor(t *testing.T) {
 }
 
 func TestLabels(t *testing.T) {
-	plt := plot.New()
-	plt.Title.Text = "Test Labels"
-	plt.X.Label.Text = "X Axis"
-	plt.Y.Label.Text = "Y Axis"
+	rnd := randx.NewSysRand(23)
+	for i := range 2 {
+		suffix := ""
+		plt := plot.New()
+		plt.Title.Text = "Test Labels"
+		plt.X.Label.Text = "X Axis"
+		plt.Y.Label.Text = "Y Axis"
 
-	xd, yd := make(plot.Values, 12), make(plot.Values, 12)
-	labels := make(plot.Labels, 12)
-	for i := range xd {
-		x := float64(i % 21)
-		xd[i] = x * 5
-		yd[i] = float64(50) + 40*math.Sin((x/8)*math.Pi)
-		labels[i] = fmt.Sprintf("%7.4g", yd[i])
+		xd, yd := make(plot.Values, 12), make(plot.Values, 12)
+		labels := make(plot.Labels, 12)
+		for i := range xd {
+			x := float64(i % 21)
+			xd[i] = x * 5
+			yd[i] = float64(50) + 40*math.Sin((x/8)*math.Pi)
+			labels[i] = fmt.Sprintf("%7.4g", yd[i])
+		}
+		data := plot.Data{}
+		data[plot.X] = xd
+		data[plot.Y] = yd
+		data[plot.Label] = labels
+
+		if i == 1 {
+			suffix = "-missing"
+			yd := data[plot.Y].(plot.Values)
+			for i := range yd {
+				if i == 0 || randx.BoolP(.25, rnd) {
+					yd[i] = math.NaN()
+				}
+			}
+		}
+
+		l1 := NewLine(plt, data)
+		if l1 == nil {
+			t.Fatal("bad data")
+		}
+		l1.Style.Point.On = plot.On
+		plt.Legend.Add("Sine", l1)
+
+		l2 := NewLabels(plt, data)
+		if l2 == nil {
+			t.Fatal("bad data")
+		}
+		l2.Style.Text.Offset.X.Dp(6)
+		l2.Style.Text.Offset.Y.Dp(-6)
+
+		imagex.Assert(t, plt.RenderImage(), "labels"+suffix)
 	}
-	data := plot.Data{}
-	data[plot.X] = xd
-	data[plot.Y] = yd
-	data[plot.Label] = labels
-
-	l1 := NewLine(plt, data)
-	if l1 == nil {
-		t.Fatal("bad data")
-	}
-	l1.Style.Point.On = plot.On
-	plt.Legend.Add("Sine", l1)
-
-	l2 := NewLabels(plt, data)
-	if l2 == nil {
-		t.Fatal("bad data")
-	}
-	l2.Style.Text.Offset.X.Dp(6)
-	l2.Style.Text.Offset.Y.Dp(-6)
-
-	imagex.Assert(t, plt.RenderImage(), "labels")
 }
 
 func TestBar(t *testing.T) {
-	plt := plot.New()
-	plt.Title.Text = "Test Bar Chart"
-	plt.X.Label.Text = "X Axis"
-	plt.Y.Range.Min = 0
-	plt.Y.Range.Max = 100
-	plt.Y.Label.Text = "Y Axis"
+	rnd := randx.NewSysRand(23)
+	for i := range 2 {
+		suffix := ""
 
-	data := sinData()
-	cos := cosData()
+		data := sinData()
+		cos := cosData()
 
-	l1 := NewBar(plt, data)
-	if l1 == nil {
-		t.Fatal("bad data")
+		if i == 1 {
+			suffix = "-missing"
+			sd := data[plot.Y].(plot.Values)
+			cd := cos[plot.Y].(plot.Values)
+			for i := range sd {
+				if i == 0 || randx.BoolP(.25, rnd) {
+					sd[i] = math.NaN()
+				}
+			}
+			for i := range cd {
+				if randx.BoolP(.25, rnd) {
+					cd[i] = math.NaN()
+				}
+			}
+		}
+
+		plt := plot.New()
+		plt.Title.Text = "Test Bar Chart"
+		plt.X.Label.Text = "X Axis"
+		plt.Y.Range.Min = 0
+		plt.Y.Range.Max = 100
+		plt.Y.Label.Text = "Y Axis"
+
+		l1 := NewBar(plt, data)
+		if l1 == nil {
+			t.Fatal("bad data")
+		}
+		l1.Style.Line.Fill = colors.Uniform(colors.Red)
+		plt.Legend.Add("Sine", l1)
+
+		imagex.Assert(t, plt.RenderImage(), "bar"+suffix)
+
+		l2 := NewBar(plt, cos)
+		if l2 == nil {
+			t.Fatal("bad data")
+		}
+		l2.Style.Line.Fill = colors.Uniform(colors.Blue)
+		plt.Legend.Add("Cosine", l2)
+
+		l1.Style.Width.Stride = 2
+		l2.Style.Width.Stride = 2
+		l2.Style.Width.Offset = 2
+
+		imagex.Assert(t, plt.RenderImage(), "bar-cos"+suffix)
 	}
-	l1.Style.Line.Fill = colors.Uniform(colors.Red)
-	plt.Legend.Add("Sine", l1)
-
-	imagex.Assert(t, plt.RenderImage(), "bar")
-
-	l2 := NewBar(plt, cos)
-	if l2 == nil {
-		t.Fatal("bad data")
-	}
-	l2.Style.Line.Fill = colors.Uniform(colors.Blue)
-	plt.Legend.Add("Cosine", l2)
-
-	l1.Style.Width.Stride = 2
-	l2.Style.Width.Stride = 2
-	l2.Style.Width.Offset = 2
-
-	imagex.Assert(t, plt.RenderImage(), "bar-cos")
 }
 
 func TestBarErr(t *testing.T) {
-	plt := plot.New()
-	plt.Title.Text = "Test Bar Chart Errors"
-	plt.X.Label.Text = "X Axis"
-	plt.Y.Range.Min = 0
-	plt.Y.Range.Max = 100
-	plt.Y.Label.Text = "Y Axis"
+	rnd := randx.NewSysRand(23)
+	for i := range 2 {
+		suffix := ""
+		plt := plot.New()
+		plt.Title.Text = "Test Bar Chart Errors"
+		plt.X.Label.Text = "X Axis"
+		plt.Y.Range.Min = 0
+		plt.Y.Range.Max = 100
+		plt.Y.Label.Text = "Y Axis"
 
-	data := sinData()
-	cos := cosData()
-	data[plot.High] = cos[plot.Y]
+		data := sinData()
+		cos := cosData()
+		data[plot.High] = cos[plot.Y]
 
-	l1 := NewBar(plt, data)
-	if l1 == nil {
-		t.Fatal("bad data")
+		if i == 1 {
+			suffix = "-missing"
+			sd := data[plot.Y].(plot.Values)
+			cd := cos[plot.Y].(plot.Values)
+			for i := range sd {
+				if i == 0 || randx.BoolP(.25, rnd) {
+					sd[i] = math.NaN()
+				}
+			}
+			for i := range cd {
+				if randx.BoolP(.25, rnd) {
+					cd[i] = math.NaN()
+				}
+			}
+		}
+
+		l1 := NewBar(plt, data)
+		if l1 == nil {
+			t.Fatal("bad data")
+		}
+		l1.Style.Line.Fill = colors.Uniform(colors.Red)
+		plt.Legend.Add("Sine", l1)
+
+		imagex.Assert(t, plt.RenderImage(), "bar-err"+suffix)
+
+		l1.Horizontal = true
+		plt.UpdateRange()
+		plt.X.Range.Min = 0
+		plt.X.Range.Max = 100
+		imagex.Assert(t, plt.RenderImage(), "bar-err-horiz"+suffix)
 	}
-	l1.Style.Line.Fill = colors.Uniform(colors.Red)
-	plt.Legend.Add("Sine", l1)
-
-	imagex.Assert(t, plt.RenderImage(), "bar-err")
-
-	l1.Horizontal = true
-	plt.UpdateRange()
-	plt.X.Range.Min = 0
-	plt.X.Range.Max = 100
-	imagex.Assert(t, plt.RenderImage(), "bar-err-horiz")
 }
 
 func TestBarStack(t *testing.T) {
-	plt := plot.New()
-	plt.Title.Text = "Test Bar Chart Stacked"
-	plt.X.Label.Text = "X Axis"
-	plt.Y.Range.Min = 0
-	plt.Y.Range.Max = 100
-	plt.Y.Label.Text = "Y Axis"
+	rnd := randx.NewSysRand(23)
+	for i := range 2 {
+		suffix := ""
+		data := sinData()
+		cos := cosData()
 
-	data := sinData()
-	cos := cosData()
+		if i == 1 {
+			suffix = "-missing"
+			sd := data[plot.Y].(plot.Values)
+			cd := cos[plot.Y].(plot.Values)
+			for i := range sd {
+				if i == 0 || randx.BoolP(.25, rnd) {
+					sd[i] = math.NaN()
+				}
+			}
+			for i := range cd {
+				if randx.BoolP(.25, rnd) {
+					cd[i] = math.NaN()
+				}
+			}
+		}
 
-	l1 := NewBar(plt, data)
-	if l1 == nil {
-		t.Fatal("bad data")
+		plt := plot.New()
+		plt.Title.Text = "Test Bar Chart Stacked"
+		plt.X.Label.Text = "X Axis"
+		plt.Y.Range.Min = 0
+		plt.Y.Range.Max = 100
+		plt.Y.Label.Text = "Y Axis"
+
+		l1 := NewBar(plt, data)
+		if l1 == nil {
+			t.Fatal("bad data")
+		}
+		l1.Style.Line.Fill = colors.Uniform(colors.Red)
+		plt.Legend.Add("Sine", l1)
+
+		l2 := NewBar(plt, cos)
+		if l2 == nil {
+			t.Fatal("bad data")
+		}
+		l2.Style.Line.Fill = colors.Uniform(colors.Blue)
+		l2.StackedOn = l1
+		plt.Legend.Add("Cos", l2)
+
+		imagex.Assert(t, plt.RenderImage(), "bar-stacked"+suffix)
 	}
-	l1.Style.Line.Fill = colors.Uniform(colors.Red)
-	plt.Legend.Add("Sine", l1)
-
-	l2 := NewBar(plt, cos)
-	if l2 == nil {
-		t.Fatal("bad data")
-	}
-	l2.Style.Line.Fill = colors.Uniform(colors.Blue)
-	l2.StackedOn = l1
-	plt.Legend.Add("Cos", l2)
-
-	imagex.Assert(t, plt.RenderImage(), "bar-stacked")
 }
 
 func TestErrBar(t *testing.T) {
@@ -514,43 +610,57 @@ func TestErrBar(t *testing.T) {
 }
 
 func TestStyle(t *testing.T) {
-	data := sinCosWrapData()
+	rnd := randx.NewSysRand(23)
+	for i := range 2 {
+		suffix := ""
+		data := sinCosWrapData()
 
-	stf := func(s *plot.Style) {
-		s.Plot.Title = "Test Line"
-		s.Plot.XAxis.Label = "X Axis"
-		s.Plot.YAxisLabel = "Y Axis"
-		s.Plot.XAxis.Range.SetMax(105)
-		s.Plot.LineWidth.Pt(2)
-		s.Plot.SetLinesOn(plot.On).SetPointsOn(plot.On)
-		s.Plot.TitleStyle.Size.Dp(48)
-		s.Plot.Legend.Position.Left = true
-		s.Plot.Legend.Text.Size.Dp(24)
-		s.Plot.Axis.Text.Size.Dp(32)
-		s.Plot.Axis.TickText.Size.Dp(24)
-		s.Plot.XAxis.Rotation = -45
-		// s.Line.On = plot.Off
-		s.Line.Color = colors.Uniform(colors.Red)
-		s.Point.Color = colors.Uniform(colors.Blue)
-		s.Range.SetMax(100)
+		if i == 1 {
+			suffix = "-missing"
+			yd := data[plot.Y].(plot.Values)
+			for i := range yd {
+				if i == 0 || randx.BoolP(.25, rnd) {
+					yd[i] = math.NaN()
+				}
+			}
+		}
+
+		stf := func(s *plot.Style) {
+			s.Plot.Title = "Test Line"
+			s.Plot.XAxis.Label = "X Axis"
+			s.Plot.YAxisLabel = "Y Axis"
+			s.Plot.XAxis.Range.SetMax(105)
+			s.Plot.LineWidth.Pt(2)
+			s.Plot.SetLinesOn(plot.On).SetPointsOn(plot.On)
+			s.Plot.TitleStyle.Size.Dp(48)
+			s.Plot.Legend.Position.Left = true
+			s.Plot.Legend.Text.Size.Dp(24)
+			s.Plot.Axis.Text.Size.Dp(32)
+			s.Plot.Axis.TickText.Size.Dp(24)
+			s.Plot.XAxis.Rotation = -45
+			// s.Line.On = plot.Off
+			s.Line.Color = colors.Uniform(colors.Red)
+			s.Point.Color = colors.Uniform(colors.Blue)
+			s.Range.SetMax(100)
+		}
+
+		plt := plot.New()
+		l1 := NewLine(plt, data).Styler(stf)
+		plt.Legend.Add("Sine", l1) // todo: auto-add!
+		plt.Legend.Add("Cos", l1)
+
+		imagex.Assert(t, plt.RenderImage(), "style-line-point"+suffix)
+
+		plt = plot.New()
+		tdy := tensor.NewFloat64FromValues(data[plot.Y].(plot.Values)...)
+		plot.SetStyler(tdy, stf) // set metadata for tensor
+		tdx := tensor.NewFloat64FromValues(data[plot.X].(plot.Values)...)
+		// NewLine auto-grabs from Y metadata
+		l1 = NewLine(plt, plot.Data{plot.X: tdx, plot.Y: tdy})
+		plt.Legend.Add("Sine", l1) // todo: auto-add!
+		plt.Legend.Add("Cos", l1)
+		imagex.Assert(t, plt.RenderImage(), "style-line-point-auto"+suffix)
 	}
-
-	plt := plot.New()
-	l1 := NewLine(plt, data).Styler(stf)
-	plt.Legend.Add("Sine", l1) // todo: auto-add!
-	plt.Legend.Add("Cos", l1)
-
-	imagex.Assert(t, plt.RenderImage(), "style_line_point")
-
-	plt = plot.New()
-	tdy := tensor.NewFloat64FromValues(data[plot.Y].(plot.Values)...)
-	plot.SetStyler(tdy, stf) // set metadata for tensor
-	tdx := tensor.NewFloat64FromValues(data[plot.X].(plot.Values)...)
-	// NewLine auto-grabs from Y metadata
-	l1 = NewLine(plt, plot.Data{plot.X: tdx, plot.Y: tdy})
-	plt.Legend.Add("Sine", l1) // todo: auto-add!
-	plt.Legend.Add("Cos", l1)
-	imagex.Assert(t, plt.RenderImage(), "style_line_point_auto")
 }
 
 func TestTicks(t *testing.T) {
@@ -564,7 +674,7 @@ func TestTicks(t *testing.T) {
 	plt.Legend.Add("Sine", l1)
 	plt.Legend.Add("Cos", l1)
 
-	imagex.Assert(t, plt.RenderImage(), "style_noticks")
+	imagex.Assert(t, plt.RenderImage(), "style-noticks")
 }
 
 func TestBarXLabels(t *testing.T) {
