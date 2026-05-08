@@ -154,6 +154,7 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 	bc.Style.Line.SetStroke(plt)
 	pc.Fill.Color = bc.Style.Line.Fill
 	bw := bc.Style.Width
+	oor := plt.Style.OutOfRange
 
 	nv := len(bc.Y)
 	bc.X = make(plot.Values, nv)
@@ -161,24 +162,43 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 	bc.PX = make([]float32, nv)
 	bc.PY = make([]float32, nv)
 
+	var minY, maxY float64
+	if bc.Horizontal {
+		minY, maxY = plt.X.DataRange.Min, plt.X.DataRange.Max
+	} else {
+		if bc.Style.RightY {
+			minY, maxY = plt.YR.DataRange.Min, plt.YR.DataRange.Max
+		} else {
+			minY, maxY = plt.Y.DataRange.Min, plt.Y.DataRange.Max
+		}
+	}
+
 	hw := 0.5 * bw.Width
 	ew := bw.Width / 3
+	hasOORMarks := false
 	for i, ht := range bc.Y {
 		if math.IsNaN(ht) {
 			continue
 		}
 		cat := bw.Offset + float64(i)*bw.Stride
-		var bottom float64
+		bottom := bc.StackedOn.BarHeight(i) // nil safe
+		val := bottom + ht
+		if val < minY || val > maxY {
+			if oor.HasMark() {
+				hasOORMarks = true
+			}
+			continue
+		}
+
 		var catVal, catMin, catMax, valMin, valMax float32
 		var box math32.Box2
 		if bc.Horizontal {
 			catVal = plt.PY(cat)
 			catMin = plt.PY(cat - hw)
 			catMax = plt.PY(cat + hw)
-			bottom = bc.StackedOn.BarHeight(i) // nil safe
 			valMin = plt.PX(bottom)
-			valMax = plt.PX(bottom + ht)
-			bc.X[i] = bottom + ht
+			valMax = plt.PX(val)
+			bc.X[i] = val
 			bc.Yp[i] = cat
 			bc.PX[i] = valMax
 			bc.PY[i] = catVal
@@ -188,11 +208,10 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 			catVal = plt.PX(cat)
 			catMin = plt.PX(cat - hw)
 			catMax = plt.PX(cat + hw)
-			bottom = bc.StackedOn.BarHeight(i) // nil safe
 			valMin = plt.PY(bottom)
-			valMax = plt.PY(bottom + ht)
+			valMax = plt.PY(val)
 			bc.X[i] = cat
-			bc.Yp[i] = bottom + ht
+			bc.Yp[i] = val
 			bc.PX[i] = catVal
 			bc.PY[i] = valMax
 			box.Min.Set(catMin, valMin)
@@ -224,7 +243,34 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 			pc.Draw()
 		}
 	}
+
 	pc.Fill.Color = nil
+	if hasOORMarks {
+		bc.Style.OutOfRangeMark.SetStroke(plt)
+		for i, ht := range bc.Y {
+			if math.IsNaN(ht) {
+				continue
+			}
+			bottom := bc.StackedOn.BarHeight(i) // nil safe
+			val := bottom + ht
+			if val >= minY && val <= maxY {
+				continue
+			}
+			val = max(val, minY)
+			val = min(val, maxY)
+
+			cat := bw.Offset + float64(i)*bw.Stride
+			var ptx, pty float32
+			if bc.Horizontal {
+				ptx = plt.PX(val)
+				pty = plt.PY(cat)
+			} else {
+				ptx = plt.PX(cat)
+				pty = plt.PY(val)
+			}
+			bc.Style.OutOfRangeMark.DrawShape(pc, math32.Vec2(ptx, pty))
+		}
+	}
 }
 
 // UpdateRange updates the given ranges.
@@ -232,24 +278,14 @@ func (bc *Bar) UpdateRange(plt *plot.Plot) {
 	bw := bc.Style.Width
 	catMin := bw.Offset - bw.Pad
 	catMax := bw.Offset + float64(len(bc.Y)-1)*bw.Stride + bw.Pad
-
 	yax := &plt.Y
 	if bc.Style.RightY {
 		yax = &plt.YR
 	}
-	if bc.Horizontal {
-		plot.RangeLogic(plt.Style.OutOfRange, bc.Y, &plt.X.Range, &bc.Style.Range)
-		plot.RangeLogic(plt.Style.OutOfRange, bc.X, &yax.Range, &plt.Style.XAxis.Range)
-	} else {
-		plot.RangeLogic(plt.Style.OutOfRange, bc.X, &plt.X.Range, &plt.Style.XAxis.Range)
-		plot.RangeLogic(plt.Style.OutOfRange, bc.Y, &yax.Range, &bc.Style.Range)
-	}
-
 	var ticks plot.ConstantTicks
 	if bc.XLabels != nil {
 		ticks = make(plot.ConstantTicks, len(bc.Y))
 	}
-
 	for i, val := range bc.Y {
 		valBot := bc.StackedOn.BarHeight(i)
 		valTop := valBot + val
@@ -284,8 +320,41 @@ func (bc *Bar) UpdateRange(plt *plot.Plot) {
 			plt.X.Ticker = ticks
 		}
 	}
+
+	yFits := true
+	if bc.Horizontal {
+		if plt.Style.OutOfRange == plot.Stretch {
+			plot.RangeClamp(&plt.X.Range, &bc.Style.Range)
+			plot.RangeClamp(&yax.Range, &plt.Style.XAxis.Range)
+		} else {
+			yFits = plot.RangeSet(&plt.X.Range, &bc.Style.Range)
+			plot.RangeSet(&yax.Range, &plt.Style.XAxis.Range)
+		}
+	} else {
+		if plt.Style.OutOfRange == plot.Stretch {
+			plot.RangeClamp(&plt.X.Range, &plt.Style.XAxis.Range)
+			plot.RangeClamp(&yax.Range, &bc.Style.Range)
+		} else {
+			plot.RangeSet(&plt.X.Range, &plt.Style.XAxis.Range)
+			yFits = plot.RangeSet(&yax.Range, &bc.Style.Range)
+		}
+	}
+
 	plt.X.DataRange = plt.X.Range
 	yax.DataRange = yax.Range
+
+	bc.Style.OutOfRangeMark.IsOn(plt) // does dots
+	if !plt.Style.OutOfRange.HasMark() || yFits {
+		return
+	}
+	psz := bc.Style.OutOfRangeMark.Size.Dots
+	bsz := plt.DataBox()
+	dy := (float64(psz) / float64(bsz.Y)) * yax.Range.Range()
+	yax.Range.Min -= dy
+	yax.Range.Max += dy
+	dx := (float64(psz) / float64(bsz.X)) * plt.X.Range.Range()
+	plt.X.Range.Min -= dx
+	plt.X.Range.Max += dx
 }
 
 // Thumbnail fulfills the plot.Thumbnailer interface.

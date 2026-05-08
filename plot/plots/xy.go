@@ -160,12 +160,11 @@ func (ln *XY) Plot(plt *plot.Plot) {
 	var minY, maxY float32
 	if ln.Style.RightY {
 		ln.PY = plot.PlotYR(plt, ln.Y)
-		minY = plt.PYR(plt.YR.DataRange.Max) // flipped due to Y flip
-		maxY = plt.PYR(plt.YR.DataRange.Min)
+		// flipped due to Y flip
+		minY, maxY = plt.PYR(plt.YR.DataRange.Max), plt.PYR(plt.YR.DataRange.Min)
 	} else {
 		ln.PY = plot.PlotY(plt, ln.Y)
-		minY = plt.PY(plt.Y.DataRange.Max)
-		maxY = plt.PY(plt.Y.DataRange.Min)
+		minY, maxY = plt.PY(plt.Y.DataRange.Max), plt.PY(plt.Y.DataRange.Min)
 	}
 	np := min(len(ln.PX), len(ln.PY))
 	if np == 0 {
@@ -310,11 +309,12 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			if ptx < minX || ptx > maxX {
 				continue
 			}
-			if pty < minY || pty > maxY {
-				pty = min(pty, maxY)
-				pty = max(pty, minY)
-				ln.Style.OutOfRangeMark.DrawShape(pc, math32.Vec2(ptx, pty))
+			if pty >= minY && pty <= maxY {
+				continue
 			}
+			pty = min(pty, maxY)
+			pty = max(pty, minY)
+			ln.Style.OutOfRangeMark.DrawShape(pc, math32.Vec2(ptx, pty))
 		}
 	}
 
