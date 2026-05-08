@@ -3,7 +3,6 @@
 package labsymbols
 
 import (
-	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/lab/plot"
 	"reflect"
 )
@@ -15,6 +14,8 @@ func init() {
 		"AxisScalesValues":   reflect.ValueOf(plot.AxisScalesValues),
 		"BasicStylers":       reflect.ValueOf(plot.BasicStylers),
 		"Box":                reflect.ValueOf(plot.Box),
+		"Break":              reflect.ValueOf(plot.Break),
+		"BreakMark":          reflect.ValueOf(plot.BreakMark),
 		"CheckFloats":        reflect.ValueOf(plot.CheckFloats),
 		"CheckNaNs":          reflect.ValueOf(plot.CheckNaNs),
 		"Circle":             reflect.ValueOf(plot.Circle),
@@ -46,6 +47,7 @@ func init() {
 		"Linear":             reflect.ValueOf(plot.Linear),
 		"Log":                reflect.ValueOf(plot.Log),
 		"Low":                reflect.ValueOf(plot.Low),
+		"Mark":               reflect.ValueOf(plot.Mark),
 		"MidStep":            reflect.ValueOf(plot.MidStep),
 		"MustCopyRole":       reflect.ValueOf(plot.MustCopyRole),
 		"New":                reflect.ValueOf(plot.New),
@@ -58,6 +60,8 @@ func init() {
 		"NoStep":             reflect.ValueOf(plot.NoStep),
 		"Off":                reflect.ValueOf(plot.Off),
 		"On":                 reflect.ValueOf(plot.On),
+		"OutOfRangeN":        reflect.ValueOf(plot.OutOfRangeN),
+		"OutOfRangeValues":   reflect.ValueOf(plot.OutOfRangeValues),
 		"PlotX":              reflect.ValueOf(plot.PlotX),
 		"PlotY":              reflect.ValueOf(plot.PlotY),
 		"PlotYR":             reflect.ValueOf(plot.PlotYR),
@@ -69,6 +73,8 @@ func init() {
 		"Pyramid":            reflect.ValueOf(plot.Pyramid),
 		"Range":              reflect.ValueOf(plot.Range),
 		"RangeClamp":         reflect.ValueOf(plot.RangeClamp),
+		"RangeLogic":         reflect.ValueOf(plot.RangeLogic),
+		"RangeSet":           reflect.ValueOf(plot.RangeSet),
 		"RegisterPlotter":    reflect.ValueOf(plot.RegisterPlotter),
 		"Ring":               reflect.ValueOf(plot.Ring),
 		"RolesN":             reflect.ValueOf(plot.RolesN),
@@ -83,6 +89,7 @@ func init() {
 		"Square":             reflect.ValueOf(plot.Square),
 		"StepKindN":          reflect.ValueOf(plot.StepKindN),
 		"StepKindValues":     reflect.ValueOf(plot.StepKindValues),
+		"Stretch":            reflect.ValueOf(plot.Stretch),
 		"Styler":             reflect.ValueOf(plot.Styler),
 		"Triangle":           reflect.ValueOf(plot.Triangle),
 		"U":                  reflect.ValueOf(plot.U),
@@ -113,6 +120,7 @@ func init() {
 		"LogScale":         reflect.ValueOf((*plot.LogScale)(nil)),
 		"LogTicks":         reflect.ValueOf((*plot.LogTicks)(nil)),
 		"Normalizer":       reflect.ValueOf((*plot.Normalizer)(nil)),
+		"OutOfRange":       reflect.ValueOf((*plot.OutOfRange)(nil)),
 		"PanZoom":          reflect.ValueOf((*plot.PanZoom)(nil)),
 		"Plot":             reflect.ValueOf((*plot.Plot)(nil)),
 		"PlotStyle":        reflect.ValueOf((*plot.PlotStyle)(nil)),
@@ -164,7 +172,7 @@ type _cogentcore_org_lab_plot_Plotter struct {
 	WData        func() (data plot.Data, pixX []float32, pixY []float32)
 	WPlot        func(pt *plot.Plot)
 	WStylers     func() *plot.Stylers
-	WUpdateRange func(plt *plot.Plot, x *minmax.F64, y *minmax.F64, yr *minmax.F64, z *minmax.F64, size *minmax.F64)
+	WUpdateRange func(plt *plot.Plot)
 }
 
 func (W _cogentcore_org_lab_plot_Plotter) ApplyStyle(plotStyle *plot.PlotStyle, idx int) {
@@ -173,11 +181,9 @@ func (W _cogentcore_org_lab_plot_Plotter) ApplyStyle(plotStyle *plot.PlotStyle, 
 func (W _cogentcore_org_lab_plot_Plotter) Data() (data plot.Data, pixX []float32, pixY []float32) {
 	return W.WData()
 }
-func (W _cogentcore_org_lab_plot_Plotter) Plot(pt *plot.Plot)     { W.WPlot(pt) }
-func (W _cogentcore_org_lab_plot_Plotter) Stylers() *plot.Stylers { return W.WStylers() }
-func (W _cogentcore_org_lab_plot_Plotter) UpdateRange(plt *plot.Plot, x *minmax.F64, y *minmax.F64, yr *minmax.F64, z *minmax.F64, size *minmax.F64) {
-	W.WUpdateRange(plt, x, y, yr, z, size)
-}
+func (W _cogentcore_org_lab_plot_Plotter) Plot(pt *plot.Plot)         { W.WPlot(pt) }
+func (W _cogentcore_org_lab_plot_Plotter) Stylers() *plot.Stylers     { return W.WStylers() }
+func (W _cogentcore_org_lab_plot_Plotter) UpdateRange(plt *plot.Plot) { W.WUpdateRange(plt) }
 
 // _cogentcore_org_lab_plot_Thumbnailer is an interface wrapper for Thumbnailer type
 type _cogentcore_org_lab_plot_Thumbnailer struct {

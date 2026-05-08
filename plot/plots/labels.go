@@ -134,16 +134,20 @@ func (lb *Labels) Plot(plt *plot.Plot) {
 }
 
 // UpdateRange updates the given ranges.
-func (lb *Labels) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
+func (lb *Labels) UpdateRange(plt *plot.Plot) {
+	yax := &plt.Y
 	if lb.Style.RightY {
-		y = yr
+		yax = &plt.YR
 	}
-	// todo: include point sizes!
-	plot.Range(lb.X, x)
-	plot.RangeClamp(lb.Y, y, &lb.Style.Range)
-	pxToData := math32.FromPoint(plt.PaintBox.Size())
-	pxToData.X = float32(x.Range()) / pxToData.X
-	pxToData.Y = float32(y.Range()) / pxToData.Y
+	plot.RangeLogic(plt.Style.OutOfRange, lb.X, &plt.X.Range, &plt.Style.XAxis.Range)
+	plt.X.DataRange = plt.X.Range
+	plot.RangeLogic(plt.Style.OutOfRange, lb.Y, &yax.Range, &lb.Style.Range)
+	yax.DataRange = yax.Range
+
+	var pxToData math32.Vector2
+	bsz := plt.DataBox()
+	pxToData.X = float32(plt.X.Range.Range()) / float32(bsz.X)
+	pxToData.Y = float32(yax.Range.Range()) / float32(bsz.Y)
 	st := &lb.Style.Text
 	var ltxt plot.Text
 	ltxt.Style = *st
@@ -159,7 +163,7 @@ func (lb *Labels) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
 		yv := lb.Y[i]
 		maxx := xv + float64(pxToData.X*st.Offset.X.Dots+twd)
 		maxy := yv + float64(pxToData.Y*st.Offset.Y.Dots+tht) // y is up here
-		x.FitInRange(minmax.F64{xv, maxx})
-		y.FitInRange(minmax.F64{yv, maxy})
+		plt.X.Range.FitInRange(minmax.F64{xv, maxx})
+		yax.Range.FitInRange(minmax.F64{yv, maxy})
 	}
 }

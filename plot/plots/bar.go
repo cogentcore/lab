@@ -228,12 +228,21 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 }
 
 // UpdateRange updates the given ranges.
-func (bc *Bar) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
+func (bc *Bar) UpdateRange(plt *plot.Plot) {
 	bw := bc.Style.Width
 	catMin := bw.Offset - bw.Pad
 	catMax := bw.Offset + float64(len(bc.Y)-1)*bw.Stride + bw.Pad
+
+	yax := &plt.Y
 	if bc.Style.RightY {
-		y = yr
+		yax = &plt.YR
+	}
+	if bc.Horizontal {
+		plot.RangeLogic(plt.Style.OutOfRange, bc.Y, &plt.X.Range, &bc.Style.Range)
+		plot.RangeLogic(plt.Style.OutOfRange, bc.X, &yax.Range, &plt.Style.XAxis.Range)
+	} else {
+		plot.RangeLogic(plt.Style.OutOfRange, bc.X, &plt.X.Range, &plt.Style.XAxis.Range)
+		plot.RangeLogic(plt.Style.OutOfRange, bc.Y, &yax.Range, &bc.Style.Range)
 	}
 
 	var ticks plot.ConstantTicks
@@ -248,11 +257,11 @@ func (bc *Bar) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
 			valTop += math.Abs(bc.Err[i])
 		}
 		if bc.Horizontal {
-			x.FitValInRange(valBot)
-			x.FitValInRange(valTop)
+			plt.X.Range.FitValInRange(valBot)
+			plt.X.Range.FitValInRange(valTop)
 		} else {
-			y.FitValInRange(valBot)
-			y.FitValInRange(valTop)
+			yax.Range.FitValInRange(valBot)
+			yax.Range.FitValInRange(valTop)
 		}
 		if bc.XLabels != nil {
 			cat := bw.Offset + float64(i)*bw.Stride
@@ -265,18 +274,18 @@ func (bc *Bar) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
 		}
 	}
 	if bc.Horizontal {
-		x.Min, x.Max = bc.Style.Range.Clamp(x.Min, x.Max)
-		y.FitInRange(minmax.F64{catMin, catMax})
+		yax.Range.FitInRange(minmax.F64{catMin, catMax})
 		if ticks != nil {
 			plt.Y.Ticker = ticks
 		}
 	} else {
-		y.Min, y.Max = bc.Style.Range.Clamp(y.Min, y.Max)
-		x.FitInRange(minmax.F64{catMin, catMax})
+		plt.X.Range.FitInRange(minmax.F64{catMin, catMax})
 		if ticks != nil {
 			plt.X.Ticker = ticks
 		}
 	}
+	plt.X.DataRange = plt.X.Range
+	yax.DataRange = yax.Range
 }
 
 // Thumbnail fulfills the plot.Thumbnailer interface.

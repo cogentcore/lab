@@ -6,6 +6,7 @@ package plot
 
 import (
 	"cogentcore.org/core/base/metadata"
+	"cogentcore.org/core/colors"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/core/styles/units"
 	"cogentcore.org/lab/table"
@@ -38,6 +39,7 @@ type Style struct { //types:add -setters
 	Group string
 
 	// Range is the effective range of data to plot, where either end can be fixed.
+	// See [OutofRange] for plotting behavior for data outside of fixed range.
 	Range minmax.Range64 `display:"inline"`
 
 	// Label provides an alternative label to use for axis, if set.
@@ -69,6 +71,9 @@ type Style struct { //types:add -setters
 
 	// Width has various plot width properties.
 	Width WidthStyle `display:"inline"`
+
+	// OutOfRangeMark has style properties for drawing points when out of range.
+	OutOfRangeMark PointStyle `display:"add-fields"`
 }
 
 // NewStyle returns a new Style object with defaults applied.
@@ -84,6 +89,9 @@ func (st *Style) Defaults() {
 	st.Point.Defaults()
 	st.Text.Defaults()
 	st.Width.Defaults()
+	st.OutOfRangeMark.Defaults()
+	st.OutOfRangeMark.Color = colors.Scheme.Error.Base
+	st.OutOfRangeMark.Shape = Cross
 }
 
 // WidthStyle contains various plot width properties relevant across
@@ -237,3 +245,32 @@ const (
 	// On means to override the default and turn On.
 	On
 )
+
+// OutOfRange specifies how to plot out-of-range values.
+type OutOfRange int32 //enums:enum
+
+const (
+	// BreakMark breaks any continuous line elements and renders a marker
+	// for out-of-range values
+	BreakMark OutOfRange = iota
+
+	// Mark renders a marker for out-of-range values, but does not break
+	// continuous line elements.
+	Mark
+
+	// Break breaks any continuous line elements, but does not render
+	// a marker, for out-of-range values.
+	Break
+
+	// Stretch stretches the range to include all values,
+	// avoiding the problem of out-of-range values entirely.
+	Stretch
+)
+
+func (or OutOfRange) HasMark() bool {
+	return or == BreakMark || or == Mark
+}
+
+func (or OutOfRange) HasBreak() bool {
+	return or == BreakMark || or == Break
+}

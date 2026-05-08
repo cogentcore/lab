@@ -237,6 +237,27 @@ func TestLine(t *testing.T) {
 	}
 }
 
+func TestOutOfRange(t *testing.T) {
+	data := sinDataXY()
+	for oor := range plot.OutOfRangeN {
+		plt := plot.New()
+		plt.Title.Text = "Test Line"
+		plt.X.Label.Text = "X Axis"
+		plt.Y.Label.Text = "Y Axis"
+		plt.Style.OutOfRange = oor
+
+		l1 := NewLine(plt, data).Styler(func(s *plot.Style) {
+			s.Range.SetMin(20)
+			s.Range.SetMax(80)
+		})
+		if l1 == nil {
+			t.Fatal("bad data")
+		}
+
+		imagex.Assert(t, plt.RenderImage(), "out-of-range-"+oor.String())
+	}
+}
+
 func TestLineYRight(t *testing.T) {
 	sin := sinDataXY()
 	cos := cosDataXY()

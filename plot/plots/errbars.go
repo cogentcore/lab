@@ -142,16 +142,20 @@ func (eb *YErrorBars) Plot(plt *plot.Plot) {
 }
 
 // UpdateRange updates the given ranges.
-func (eb *YErrorBars) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
+func (eb *YErrorBars) UpdateRange(plt *plot.Plot) {
+	yax := &plt.Y
 	if eb.Style.RightY {
-		y = yr
+		yax = &plt.YR
 	}
-	plot.Range(eb.X, x)
-	plot.RangeClamp(eb.Y, y, &eb.Style.Range)
+	plot.RangeLogic(plt.Style.OutOfRange, eb.X, &plt.X.Range, &plt.Style.XAxis.Range)
+	plt.X.DataRange = plt.X.Range
+	plot.RangeLogic(plt.Style.OutOfRange, eb.Y, &yax.Range, &eb.Style.Range)
+	yax.DataRange = yax.Range
+
 	for i, yv := range eb.Y {
 		ylow := yv - math.Abs(eb.Low[i])
 		yhigh := yv + math.Abs(eb.High[i])
-		y.FitInRange(minmax.F64{ylow, yhigh})
+		yax.Range.FitInRange(minmax.F64{ylow, yhigh})
 	}
 	return
 }
@@ -265,16 +269,20 @@ func (eb *XErrorBars) Plot(plt *plot.Plot) {
 }
 
 // UpdateRange updates the given ranges.
-func (eb *XErrorBars) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
+func (eb *XErrorBars) UpdateRange(plt *plot.Plot) {
+	yax := &plt.Y
 	if eb.Style.RightY {
-		y = yr
+		yax = &plt.YR
 	}
-	plot.RangeClamp(eb.X, x, &eb.Style.Range)
-	plot.RangeClamp(eb.Y, y, &eb.yrange)
+	plot.RangeLogic(plt.Style.OutOfRange, eb.X, &plt.X.Range, &plt.Style.XAxis.Range)
+	plt.X.DataRange = plt.X.Range
+	plot.RangeLogic(plt.Style.OutOfRange, eb.Y, &yax.Range, &eb.Style.Range)
+	yax.DataRange = yax.Range
+
 	for i, xv := range eb.X {
 		xlow := xv - math.Abs(eb.Low[i])
 		xhigh := xv + math.Abs(eb.High[i])
-		x.FitInRange(minmax.F64{xlow, xhigh})
+		plt.X.Range.FitInRange(minmax.F64{xlow, xhigh})
 	}
 	return
 }
