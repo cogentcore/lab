@@ -167,3 +167,75 @@ func TestTableBarXLabels(t *testing.T) {
 	fnm := "table_bar_x_labels.png"
 	imagex.Assert(t, plt.RenderImage(), fnm)
 }
+
+func TestTableMissing(t *testing.T) {
+	rng := rand.New(rand.NewSource(1))
+	n := 21
+	tx, ty := tensor.NewFloat64(n), tensor.NewFloat64(n)
+	tl, th := tensor.NewFloat64(n), tensor.NewFloat64(n)
+	ts := tensor.NewFloat64(n)
+	lbls := tensor.NewString(n)
+	for i := range n {
+		tx.SetFloat1D(float64(i*5), i)
+		if i < 10 {
+			ty.SetFloat1D(math.NaN(), i)
+		} else {
+			ty.SetFloat1D(50.0+40*math.Sin((float64(i)/8)*math.Pi), i)
+		}
+		tl.SetFloat1D(5*rng.Float64(), i)
+		th.SetFloat1D(5*rng.Float64(), i)
+		ts.SetFloat1D(1+5*rng.Float64(), i)
+		lbls.SetString1D(strconv.Itoa(i), i)
+	}
+	// attach stylers to the Y axis data: that is where plotter looks for it
+	genst := func(s *plot.Style) {
+		s.Plot.Title = "Test Table Missing"
+		s.Plot.XAxis.Label = "X Axis"
+		s.Plot.YAxisLabel = "Y Axis"
+		// s.Plot.SetLinesOn(plot.On).SetPointsOn(plot.Off)
+		s.Plot.SetLinesOn(plot.On).SetPointsOn(plot.On)
+		// s.Line.Color = colors.Uniform(colors.Red)
+		// s.Point.Color = colors.Uniform(colors.Blue)
+		// s.Range.SetMin(0).SetMax(100)
+	}
+	plot.SetStyler(ty, genst, func(s *plot.Style) {
+		s.On = true
+		s.Role = plot.Y
+		// s.Group = "Y"
+	})
+	// others get basic styling
+	plot.SetStyler(tx, func(s *plot.Style) {
+		s.Role = plot.X
+		// s.Group = "Y"
+	})
+	plot.SetStyler(tl, func(s *plot.Style) {
+		// s.Role = plot.Low
+		// s.Group = "Y"
+	})
+	// plot.SetStyler(th, genst, func(s *plot.Style) {
+	// 	s.On = true
+	// 	s.Role = plot.High
+	// 	s.Group = "Y"
+	// })
+	// plot.SetStyler(ts, func(s *plot.Style) {
+	// 	s.Role = plot.Size
+	// 	s.Group = "Y"
+	// })
+	// plot.SetStyler(lbls, genst, func(s *plot.Style) {
+	// 	s.On = true
+	// 	s.Role = plot.Label
+	// 	s.Group = "Y"
+	// })
+	dt := table.New("Test Table") // todo: use Name by default for plot.
+	dt.AddColumn("X", tx)
+	dt.AddColumn("Y", ty)
+	dt.AddColumn("Low", tl)
+	// dt.AddColumn("High", th)
+	// dt.AddColumn("Size", ts)
+	// dt.AddColumn("Labels", lbls)
+
+	plt, err := plot.NewTablePlot(dt)
+	assert.NoError(t, err)
+	fnm := "table_missing.png"
+	imagex.Assert(t, plt.RenderImage(), fnm)
+}

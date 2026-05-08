@@ -36,7 +36,7 @@ The `ApplyStyle` functions have the logic for distributing Style source style in
 
 # History
 
-The code is adapted from the [gonum plot](https://github.com/gonum/plot) package (which in turn was adapted from google's [plotinum](https://code.google.com/archive/p/plotinum/), to use the Cogent Core [styles](../styles) and [paint](../paint) rendering framework, which also supports SVG output of the rendering.
+The code is adapted from the [gonum plot](https://github.com/gonum/plot) package (which in turn was adapted from google's [plotinum](https://code.google.com/archive/p/plotinum/)), to use the [Cogent Core](https://cogentcore.org/core) rendering framework, which also supports SVG and PDF output of the rendering.
 
 Here is the copyright notice for that package:
 ```go

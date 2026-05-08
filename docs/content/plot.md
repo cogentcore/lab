@@ -1,4 +1,4 @@
-You can graphically **Plot** data using the [[doc:plots]] package. See [[plot editor]] for interactive customization of plots.
+You can graphically **Plot** data using the [[doc:plot]] package ([[doc:plot.Data]], [[doc:plot.PlotStyle]]). See [[plot editor]] for interactive customization of plots.
 
 You can plot a [[vector]]:
 
@@ -63,6 +63,23 @@ plot.SetStyler(ty, func(s *plot.Style) {
 plt := lab.NewPlot(b)
 // NewLine automatically gets stylers from ty tensor metadata
 plots.NewLine(plt, plot.Data{plot.X: tx, plot.Y: ty})
+```
+
+## Missing data: NaN
+
+Consistent with the [[tensor]] convention, missing data points are marked by a `NaN` value (i.e., `math.NaN()`), and are processed appropriately by all plot types.
+
+<!--- TODO: need a goal-defined NaN value.. -->
+
+```Goal
+data := #rand(10)#
+data.Set(math.NaN(), 0)
+data.Set(math.NaN(), 4)
+plot.SetStyler(data, func(s *plot.Style) {
+	s.Plot.SetPointsOn(plot.On)
+})
+plt := lab.NewPlot(b)
+plots.NewLine(plt, data)
 ```
 
 ## Plot Types

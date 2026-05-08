@@ -164,6 +164,9 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 	hw := 0.5 * bw.Width
 	ew := bw.Width / 3
 	for i, ht := range bc.Y {
+		if math.IsNaN(ht) {
+			continue
+		}
 		cat := bw.Offset + float64(i)*bw.Stride
 		var bottom float64
 		var catVal, catMin, catMax, valMin, valMax float32
@@ -200,7 +203,11 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 		pc.Draw()
 
 		if i < len(bc.Err) {
-			errval := math.Abs(bc.Err[i])
+			errval := bc.Err[i]
+			if math.IsNaN(errval) {
+				continue
+			}
+			errval = math.Abs(errval)
 			if bc.Horizontal {
 				eVal := plt.PX(bottom + ht + math.Abs(errval))
 				pc.MoveTo(valMax, catVal)

@@ -122,10 +122,14 @@ func (lb *Labels) Plot(plt *plot.Plot) {
 			continue
 		}
 		skip = 0
+		ptx, pty := lb.PX[i], lb.PY[i]
+		if math32.IsNaN(ptx) || math32.IsNaN(pty) {
+			continue
+		}
 		ltxt.Text = label
 		ltxt.Config(plt)
 		tht := ltxt.Size().Y
-		ltxt.Draw(plt, math32.Vec2(lb.PX[i]+st.Offset.X.Dots, lb.PY[i]+st.Offset.Y.Dots-tht))
+		ltxt.Draw(plt, math32.Vec2(ptx+st.Offset.X.Dots, pty+st.Offset.Y.Dots-tht))
 	}
 }
 

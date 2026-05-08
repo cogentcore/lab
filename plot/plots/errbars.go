@@ -7,6 +7,7 @@ package plots
 import (
 	"math"
 
+	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/lab/plot"
 )
@@ -114,8 +115,16 @@ func (eb *YErrorBars) Plot(plt *plot.Plot) {
 	eb.Style.Line.SetStroke(plt)
 	for i, y := range eb.Y {
 		x := plt.PX(eb.X.Float1D(i))
-		ylow := plt.PY(y - math.Abs(eb.Low[i]))
-		yhigh := plt.PY(y + math.Abs(eb.High[i]))
+		if math32.IsNaN(x) || math.IsNaN(y) {
+			continue
+		}
+		ylow := float32(eb.Low[i])
+		yhigh := float32(eb.High[i])
+		if math32.IsNaN(ylow) || math32.IsNaN(yhigh) {
+			continue
+		}
+		ylow = plt.PY(y - float64(math32.Abs(ylow)))
+		yhigh = plt.PY(y + float64(math32.Abs(yhigh)))
 
 		eb.PX[i] = x
 		eb.PY[i] = yhigh
