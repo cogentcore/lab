@@ -289,6 +289,9 @@ func (bc *Bar) UpdateRange(plt *plot.Plot) {
 	for i, val := range bc.Y {
 		valBot := bc.StackedOn.BarHeight(i)
 		valTop := valBot + val
+		if math.IsNaN(valBot) || math.IsNaN(valTop) {
+			continue
+		}
 		if i < len(bc.Err) {
 			valTop += math.Abs(bc.Err[i])
 		}
@@ -321,25 +324,14 @@ func (bc *Bar) UpdateRange(plt *plot.Plot) {
 		}
 	}
 
-	yFits := true
+	yFits := false
 	if bc.Horizontal {
-		if plt.Style.OutOfRange == plot.Stretch {
-			plot.RangeClamp(&plt.X.Range, &bc.Style.Range)
-			plot.RangeClamp(&yax.Range, &plt.Style.XAxis.Range)
-		} else {
-			yFits = plot.RangeSet(&plt.X.Range, &bc.Style.Range)
-			plot.RangeSet(&yax.Range, &plt.Style.XAxis.Range)
-		}
+		yFits = plot.RangeLogic(plt.Style.OutOfRange, &plt.X.Range, &bc.Style.Range)
+		plot.RangeLogic(plt.Style.OutOfRange, &yax.Range, &plt.Style.XAxis.Range)
 	} else {
-		if plt.Style.OutOfRange == plot.Stretch {
-			plot.RangeClamp(&plt.X.Range, &plt.Style.XAxis.Range)
-			plot.RangeClamp(&yax.Range, &bc.Style.Range)
-		} else {
-			plot.RangeSet(&plt.X.Range, &plt.Style.XAxis.Range)
-			yFits = plot.RangeSet(&yax.Range, &bc.Style.Range)
-		}
+		plot.RangeLogic(plt.Style.OutOfRange, &plt.X.Range, &plt.Style.XAxis.Range)
+		yFits = plot.RangeLogic(plt.Style.OutOfRange, &yax.Range, &bc.Style.Range)
 	}
-
 	plt.X.DataRange = plt.X.Range
 	yax.DataRange = yax.Range
 

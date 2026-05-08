@@ -185,6 +185,13 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			if math32.IsNaN(pty) {
 				continue
 			}
+			if ptx > maxX {
+				continue // could wrap around
+			}
+			if ptx < minX {
+				hasPrev = false
+				continue
+			}
 			if !hasPrev && !math32.IsNaN(ptx) && !math32.IsNaN(pty) {
 				pc.MoveTo(ptx, botY)
 				prevX = ptx
@@ -326,6 +333,9 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			if math32.IsNaN(ptx) || math32.IsNaN(pty) {
 				continue
 			}
+			if ptx < minX || ptx > maxX || pty < minY || pty > maxY {
+				continue
+			}
 			pc.Stroke.Width = origWidth
 			ln.Style.Point.Size = origSize
 			if plt.HighlightPlotter == ln {
@@ -367,9 +377,12 @@ func (ln *XY) UpdateRange(plt *plot.Plot) {
 	if ln.Style.RightY {
 		yax = &plt.YR
 	}
-	plot.RangeLogic(plt.Style.OutOfRange, ln.X, &plt.X.Range, &plt.Style.XAxis.Range)
+	plot.Range(ln.X, &plt.X.Range)
+	plot.Range(ln.Y, &yax.Range)
+
+	plot.RangeLogic(plt.Style.OutOfRange, &plt.X.Range, &plt.Style.XAxis.Range)
 	plt.X.DataRange = plt.X.Range
-	yFits := plot.RangeLogic(plt.Style.OutOfRange, ln.Y, &yax.Range, &ln.Style.Range)
+	yFits := plot.RangeLogic(plt.Style.OutOfRange, &yax.Range, &ln.Style.Range)
 	yax.DataRange = yax.Range
 
 	ln.Style.OutOfRangeMark.IsOn(plt) // does dots
