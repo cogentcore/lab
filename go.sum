@@ -1,7 +1,7 @@
 codeberg.org/go-pdf/fpdf v0.11.0 h1:n3I8WISQ1cr0S2rvx9DOlE/GypbcimMWqLpel3slHmY=
 codeberg.org/go-pdf/fpdf v0.11.0/go.mod h1:Y0DGRAdZ0OmnZPvjbMp/1bYxmIPxm0ws4tfoPOc4LjU=
-cogentcore.org/core v0.3.26-0.20260510231010-7a87368671eb h1:VOuJQEOc9XKhmnu33bL90WWujasVbLUxGjf5bTimoDs=
-cogentcore.org/core v0.3.26-0.20260510231010-7a87368671eb/go.mod h1:6h+YTWqpJSbewcM17zvj2FijuvkA+Yr55SNQbFIoGGM=
+cogentcore.org/core v0.3.26 h1:KaMYB39EAe5rrzmOUQcSVRg0GXPo20cVOL30OgYW5Ow=
+cogentcore.org/core v0.3.26/go.mod h1:WSfT4hTHjRHHVkaht8Xix1JRbzvojBfU6kGu9eplZXw=
 git.sr.ht/~sbinet/cmpimg v0.1.0 h1:E0zPRk2muWuCqSKSVZIWsgtU9pjsw3eKHi8VmQeScxo=
 git.sr.ht/~sbinet/cmpimg v0.1.0/go.mod h1:FU12psLbF4TfNXkKH2ZZQ29crIqoiqTZmeQ7dkp/pxE=
 github.com/Bios-Marcel/wastebasket/v2 v2.0.3 h1:TkoDPcSqluhLGE+EssHu7UGmLgUEkWg7kNyHyyJ3Q9g=
@@ -101,8 +101,8 @@ github.com/muesli/termenv v0.16.0 h1:S5AlUN9dENB57rsbnkPyfdGuWIlkmzJjbFf0Tf5FWUc
 github.com/muesli/termenv v0.16.0/go.mod h1:ZRfOIKPFDYQoDFF4Olj7/QJbW60Ol/kL1pU3VfY/Cnk=
 github.com/nsf/termbox-go v1.1.1 h1:nksUPLCb73Q++DwbYUBEglYBRPZyoXJdrj5L+TkjyZY=
 github.com/nsf/termbox-go v1.1.1/go.mod h1:T0cTdVuOwf7pHQNtfhnEbzHbcNyCEcVU4YPpouCbVxo=
-github.com/oliverbestmann/webgpu v1.33.0 h1:Nr0IYIApoELWwDrF42nlEmgnuI0F517J4kbWPK9ZNIM=
-github.com/oliverbestmann/webgpu v1.33.0/go.mod h1:0UEcoJ8VnwnAqo3JfzdFptplxtjhaQasc3n/nYZOrPA=
+github.com/oliverbestmann/webgpu v1.33.2 h1:uDs3Fx4uAiUs8E4QytblofDpLtqBRGX3pfnLZzlhWGY=
+github.com/oliverbestmann/webgpu v1.33.2/go.mod h1:0UEcoJ8VnwnAqo3JfzdFptplxtjhaQasc3n/nYZOrPA=
 github.com/oliverbestmann/webgpu/libs-android v0.0.0-20260509160813-48db59792a15 h1:HPxVSV8C8JaxGfa9hjDhzNmryoqPF3EwESBTFWpxNBo=
 github.com/oliverbestmann/webgpu/libs-android v0.0.0-20260509160813-48db59792a15/go.mod h1:tczQXCdsoFy+FTJVsZSve/vF8cmWEkxhvjcyY2Rujp8=
 github.com/oliverbestmann/webgpu/libs-darwin v0.0.0-20260509160802-b09403b07cd3 h1:NbBG2+pwqKcNfKUKtjWOj+02RkXSUWVkxY3hqzgyjSA=
@@ -177,8 +177,12 @@ golang.org/x/tools v0.43.0/go.mod h1:uHkMso649BX2cZK6+RpuIPXS3ho2hZo4FVwfoy1vIk0
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 gonum.org/v1/gonum v0.17.0 h1:VbpOemQlsSMrYmn7T2OUvQ4dqxQXU+ouZFQsZOx50z4=
 gonum.org/v1/gonum v0.17.0/go.mod h1:El3tOrEuMpv2UdMrbNlKEh9vd86bmQ6vqIcDwxEOc1E=
+google.golang.org/genproto v0.0.0-20260511170946-3700d4141b60 h1:rhBdfmsOlOZIvz3Y5/BdUzPg2CkO8L7QQPKj96B8554=
+google.golang.org/genproto v0.0.0-20260511170946-3700d4141b60/go.mod h1:8xo2Pj1b20ZOCpzlU3B9qieMwVIAXx1QVZWLMlPL6sM=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 h1:RmoJA1ujG+/lRGNfUnOMfhCy5EipVMyvUE+KNbPbTlw=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478/go.mod h1:4Hqkh8ycfw05ld/3BWL7rJOSfebL2Q+DVDeRgYgxUU8=
+google.golang.org/genproto/googleapis/rpc v0.0.0-20260504160031-60b97b32f348 h1:pfIbyB44sWzHiCpRqIen67ZQnVXSfIxWrqUMk1qwODE=
+google.golang.org/genproto/googleapis/rpc v0.0.0-20260504160031-60b97b32f348/go.mod h1:4Hqkh8ycfw05ld/3BWL7rJOSfebL2Q+DVDeRgYgxUU8=
 google.golang.org/grpc v1.80.0 h1:Xr6m2WmWZLETvUNvIUmeD5OAagMw3FiKmMlTdViWsHM=
 google.golang.org/grpc v1.80.0/go.mod h1:ho/dLnxwi3EDJA4Zghp7k2Ec1+c2jqup0bFkw07bwF4=
 google.golang.org/protobuf v1.36.11 h1:fV6ZwhNocDyBLK0dj+fg8ektcVegBBuEolpbTQyBNVE=
