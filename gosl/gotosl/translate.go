@@ -137,8 +137,8 @@ func (st *State) TranslateDir(pf string) error {
 			kn.Atomics, kn.VarsUsed, nvars = st.VarsUsed(st.KernelFuncs)
 			maxVarsUsed = max(maxVarsUsed, nvars)
 			fmt.Printf("###################################\nTranslating Kernel file: %s  NVars: %d (atomic: %d)\n", kn.Name, nvars, len(kn.Atomics))
-			if nvars > 10 { // todo: change when limit is raised to 16
-				fmt.Println("WARNING: NVars exceeds maxStorageBuffersPerShaderStage min of 10")
+			if nvars > st.Config.MaxStorageBuffersPerShaderStage {
+				fmt.Println("WARNING: NVars exceeds maxStorageBuffersPerShaderStage min of:", st.Config.MaxStorageBuffersPerShaderStage)
 				nOverBase++
 			}
 			hdr := st.GenKernelHeader(sy, kn)
@@ -193,7 +193,7 @@ func (st *State) TranslateDir(pf string) error {
 	}
 	fmt.Println("\n###################################\nMaximum number of variables used per shader:", maxVarsUsed)
 	if nOverBase > 0 {
-		fmt.Printf("WARNING: %d shaders exceed maxStorageBuffersPerShaderStage min of 10\n", nOverBase)
+		fmt.Printf("WARNING: %d shaders exceed maxStorageBuffersPerShaderStage min of: %d\n", nOverBase, st.Config.MaxStorageBuffersPerShaderStage)
 	}
 
 	//////// check types
