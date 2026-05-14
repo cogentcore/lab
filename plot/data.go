@@ -150,11 +150,47 @@ func Range(data Valuer, rng *minmax.F64) {
 	}
 }
 
+// RangeLogic processes the OutOfRange setting to set the given axis range
+// based on style range settings (i.e., dealing with Stretch vs. other cases).
+// Returns true if the range of the data fits entirely within the styleRng
+// min / max values (according to axisRng which must already be updated from data).
+func RangeLogic(oor OutOfRange, axisRng *minmax.F64, styleRng *minmax.Range64) bool {
+	if oor == Stretch {
+		RangeClamp(axisRng, styleRng)
+		return true // by definition
+	}
+	return RangeSet(axisRng, styleRng)
+}
+
 // RangeClamp updates the given axis Min, Max range values based
-// on the range of values in the given [Data], and the given style range.
-func RangeClamp(data Valuer, axisRng *minmax.F64, styleRng *minmax.Range64) {
-	Range(data, axisRng)
+// on the axis range (from data values), and the given style range.
+// The style can only stretch the range, not shrink it.
+func RangeClamp(axisRng *minmax.F64, styleRng *minmax.Range64) {
 	axisRng.Min, axisRng.Max = styleRng.Clamp(axisRng.Min, axisRng.Max)
+}
+
+// RangeSet sets the axis range based on the given style range,
+// where styleRng flags for Min or Max are set, and otherwise gets the range
+// from the axis range (based on actual data).
+// This is for the case where the flags indicate a hard,
+// non-stretchable extreme, whereas RangeClamp is the stretch case.
+// Returns true if the range of the data fits entirely within the styleRng
+// min / max values.
+func RangeSet(axisRng *minmax.F64, styleRng *minmax.Range64) bool {
+	fits := true
+	if styleRng.FixMin {
+		if axisRng.Min < styleRng.Min {
+			fits = false
+		}
+		axisRng.Min = styleRng.Min
+	}
+	if styleRng.FixMax {
+		if axisRng.Max > styleRng.Max {
+			fits = false
+		}
+		axisRng.Max = styleRng.Max
+	}
+	return fits
 }
 
 // CheckLengths checks that all the data elements have the same length.

@@ -237,6 +237,50 @@ func TestLine(t *testing.T) {
 	}
 }
 
+func TestOutOfRange(t *testing.T) {
+	data := sinDataXY()
+	for oor := range plot.OutOfRangeN {
+		plt := plot.New()
+		plt.Title.Text = "Test Line"
+		plt.X.Label.Text = "X Axis"
+		plt.Y.Label.Text = "Y Axis"
+		plt.Style.OutOfRange = oor
+
+		l1 := NewLine(plt, data).Styler(func(s *plot.Style) {
+			s.Range.SetMin(20)
+			s.Range.SetMax(80)
+		})
+		if l1 == nil {
+			t.Fatal("bad data")
+		}
+
+		imagex.Assert(t, plt.RenderImage(), "out-of-range-line-"+oor.String())
+	}
+	for i := range 2 {
+		for oor := range plot.OutOfRangeN {
+			plt := plot.New()
+			plt.Title.Text = "Test Bar"
+			plt.X.Label.Text = "X Axis"
+			plt.Y.Label.Text = "Y Axis"
+			plt.Style.OutOfRange = oor
+
+			l1 := NewBar(plt, data).Styler(func(s *plot.Style) {
+				s.Range.SetMin(20)
+				s.Range.SetMax(80)
+			})
+			if l1 == nil {
+				t.Fatal("bad data")
+			}
+			if i == 0 {
+				imagex.Assert(t, plt.RenderImage(), "out-of-range-bar-"+oor.String())
+			} else {
+				l1.Horizontal = true
+				imagex.Assert(t, plt.RenderImage(), "out-of-range-bar-horiz-"+oor.String())
+			}
+		}
+	}
+}
+
 func TestLineYRight(t *testing.T) {
 	sin := sinDataXY()
 	cos := cosDataXY()

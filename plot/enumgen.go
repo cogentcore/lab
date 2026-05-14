@@ -210,3 +210,46 @@ func (i DefaultOffOn) MarshalText() ([]byte, error) { return []byte(i.String()),
 func (i *DefaultOffOn) UnmarshalText(text []byte) error {
 	return enums.UnmarshalText(i, text, "DefaultOffOn")
 }
+
+var _OutOfRangeValues = []OutOfRange{0, 1, 2, 3}
+
+// OutOfRangeN is the highest valid value for type OutOfRange, plus one.
+const OutOfRangeN OutOfRange = 4
+
+var _OutOfRangeValueMap = map[string]OutOfRange{`Stretch`: 0, `Mark`: 1, `Break`: 2, `BreakMark`: 3}
+
+var _OutOfRangeDescMap = map[OutOfRange]string{0: `Stretch stretches the range to include all values, avoiding the problem of out-of-range values entirely.`, 1: `Mark renders a marker for out-of-range values, but does not break continuous line elements.`, 2: `Break breaks any continuous line elements, but does not render a marker, for out-of-range values.`, 3: `BreakMark breaks any continuous line elements and renders a marker for out-of-range values`}
+
+var _OutOfRangeMap = map[OutOfRange]string{0: `Stretch`, 1: `Mark`, 2: `Break`, 3: `BreakMark`}
+
+// String returns the string representation of this OutOfRange value.
+func (i OutOfRange) String() string { return enums.String(i, _OutOfRangeMap) }
+
+// SetString sets the OutOfRange value from its string representation,
+// and returns an error if the string is invalid.
+func (i *OutOfRange) SetString(s string) error {
+	return enums.SetString(i, s, _OutOfRangeValueMap, "OutOfRange")
+}
+
+// Int64 returns the OutOfRange value as an int64.
+func (i OutOfRange) Int64() int64 { return int64(i) }
+
+// SetInt64 sets the OutOfRange value from an int64.
+func (i *OutOfRange) SetInt64(in int64) { *i = OutOfRange(in) }
+
+// Desc returns the description of the OutOfRange value.
+func (i OutOfRange) Desc() string { return enums.Desc(i, _OutOfRangeDescMap) }
+
+// OutOfRangeValues returns all possible values for the type OutOfRange.
+func OutOfRangeValues() []OutOfRange { return _OutOfRangeValues }
+
+// Values returns all possible values for the type OutOfRange.
+func (i OutOfRange) Values() []enums.Enum { return enums.Values(_OutOfRangeValues) }
+
+// MarshalText implements the [encoding.TextMarshaler] interface.
+func (i OutOfRange) MarshalText() ([]byte, error) { return []byte(i.String()), nil }
+
+// UnmarshalText implements the [encoding.TextUnmarshaler] interface.
+func (i *OutOfRange) UnmarshalText(text []byte) error {
+	return enums.UnmarshalText(i, text, "OutOfRange")
+}

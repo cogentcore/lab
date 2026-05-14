@@ -6,6 +6,7 @@ package plots
 
 import (
 	"image"
+	"math"
 
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
@@ -104,7 +105,16 @@ func (lb *Labels) Plot(plt *plot.Plot) {
 	pc := plt.Painter
 	uc := &pc.UnitContext
 	lb.PX = plot.PlotX(plt, lb.X)
-	lb.PY = plot.PlotY(plt, lb.Y)
+	minX, maxX := plt.PX(plt.X.DataRange.Min), plt.PX(plt.X.DataRange.Max)
+	var minY, maxY float32
+	if lb.Style.RightY {
+		lb.PY = plot.PlotYR(plt, lb.Y)
+		// flipped due to Y flip
+		minY, maxY = plt.PYR(plt.YR.DataRange.Max), plt.PYR(plt.YR.DataRange.Min)
+	} else {
+		lb.PY = plot.PlotY(plt, lb.Y)
+		minY, maxY = plt.PY(plt.Y.DataRange.Max), plt.PY(plt.Y.DataRange.Min)
+	}
 	st := &lb.Style.Text
 	st.Offset.ToDots(uc)
 	var ltxt plot.Text
@@ -126,6 +136,9 @@ func (lb *Labels) Plot(plt *plot.Plot) {
 		if math32.IsNaN(ptx) || math32.IsNaN(pty) {
 			continue
 		}
+		if ptx < minX || ptx > maxX || pty < minY || pty > maxY {
+			continue
+		}
 		ltxt.Text = label
 		ltxt.Config(plt)
 		tht := ltxt.Size().Y
@@ -134,16 +147,18 @@ func (lb *Labels) Plot(plt *plot.Plot) {
 }
 
 // UpdateRange updates the given ranges.
-func (lb *Labels) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
+func (lb *Labels) UpdateRange(plt *plot.Plot) {
+	yax := &plt.Y
 	if lb.Style.RightY {
-		y = yr
+		yax = &plt.YR
 	}
-	// todo: include point sizes!
-	plot.Range(lb.X, x)
-	plot.RangeClamp(lb.Y, y, &lb.Style.Range)
-	pxToData := math32.FromPoint(plt.PaintBox.Size())
-	pxToData.X = float32(x.Range()) / pxToData.X
-	pxToData.Y = float32(y.Range()) / pxToData.Y
+	plot.Range(lb.X, &plt.X.Range)
+	plot.Range(lb.Y, &yax.Range)
+
+	var pxToData math32.Vector2
+	bsz := plt.DataBox()
+	pxToData.X = float32(plt.X.Range.Range()) / float32(bsz.X)
+	pxToData.Y = float32(yax.Range.Range()) / float32(bsz.Y)
 	st := &lb.Style.Text
 	var ltxt plot.Text
 	ltxt.Style = *st
@@ -151,15 +166,24 @@ func (lb *Labels) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
 		if label == "" {
 			continue
 		}
+		xv := lb.X[i]
+		yv := lb.Y[i]
+		if math.IsNaN(xv) || math.IsNaN(yv) {
+			continue
+		}
 		ltxt.Text = label
 		ltxt.Config(plt)
 		tht := pxToData.Y * ltxt.Size().Y
 		twd := 1.1 * pxToData.X * ltxt.Size().X
-		xv := lb.X[i]
-		yv := lb.Y[i]
 		maxx := xv + float64(pxToData.X*st.Offset.X.Dots+twd)
 		maxy := yv + float64(pxToData.Y*st.Offset.Y.Dots+tht) // y is up here
-		x.FitInRange(minmax.F64{xv, maxx})
-		y.FitInRange(minmax.F64{yv, maxy})
+		plt.X.Range.FitInRange(minmax.F64{xv, maxx})
+		yax.Range.FitInRange(minmax.F64{yv, maxy})
 	}
+
+	plot.RangeLogic(plt.Style.OutOfRange, &plt.X.Range, &plt.Style.XAxis.Range)
+	plt.X.DataRange = plt.X.Range
+
+	plot.RangeLogic(plt.Style.OutOfRange, &yax.Range, &lb.Style.Range)
+	yax.DataRange = yax.Range
 }

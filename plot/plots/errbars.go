@@ -112,19 +112,32 @@ func (eb *YErrorBars) Plot(plt *plot.Plot) {
 	nv := len(eb.X)
 	eb.PX = make([]float32, nv)
 	eb.PY = make([]float32, nv)
+
+	minX, maxX := plt.PX(plt.X.DataRange.Min), plt.PX(plt.X.DataRange.Max)
+	var minY, maxY float32
+	if eb.Style.RightY {
+		minY, maxY = plt.PYR(plt.YR.DataRange.Max), plt.PYR(plt.YR.DataRange.Min)
+	} else {
+		minY, maxY = plt.PY(plt.Y.DataRange.Max), plt.PY(plt.Y.DataRange.Min)
+	}
+
 	eb.Style.Line.SetStroke(plt)
 	for i, y := range eb.Y {
 		x := plt.PX(eb.X.Float1D(i))
 		if math32.IsNaN(x) || math.IsNaN(y) {
 			continue
 		}
-		ylow := float32(eb.Low[i])
-		yhigh := float32(eb.High[i])
+		if x < minX || x > maxX {
+			continue
+		}
+		ylow := plt.PY(y - math.Abs(eb.Low[i]))
+		yhigh := plt.PY(y + math.Abs(eb.High[i]))
 		if math32.IsNaN(ylow) || math32.IsNaN(yhigh) {
 			continue
 		}
-		ylow = plt.PY(y - float64(math32.Abs(ylow)))
-		yhigh = plt.PY(y + float64(math32.Abs(yhigh)))
+		if ylow < minY || yhigh > maxY {
+			continue
+		}
 
 		eb.PX[i] = x
 		eb.PY[i] = yhigh
@@ -142,18 +155,27 @@ func (eb *YErrorBars) Plot(plt *plot.Plot) {
 }
 
 // UpdateRange updates the given ranges.
-func (eb *YErrorBars) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
+func (eb *YErrorBars) UpdateRange(plt *plot.Plot) {
+	yax := &plt.Y
 	if eb.Style.RightY {
-		y = yr
+		yax = &plt.YR
 	}
-	plot.Range(eb.X, x)
-	plot.RangeClamp(eb.Y, y, &eb.Style.Range)
+	plot.Range(eb.X, &plt.X.Range)
+	plot.Range(eb.Y, &yax.Range)
+
 	for i, yv := range eb.Y {
 		ylow := yv - math.Abs(eb.Low[i])
 		yhigh := yv + math.Abs(eb.High[i])
-		y.FitInRange(minmax.F64{ylow, yhigh})
+		if math.IsNaN(ylow) || math.IsNaN(yhigh) {
+			continue
+		}
+		yax.Range.FitInRange(minmax.F64{ylow, yhigh})
 	}
-	return
+
+	plot.RangeLogic(plt.Style.OutOfRange, &plt.X.Range, &plt.Style.XAxis.Range)
+	plt.X.DataRange = plt.X.Range
+	plot.RangeLogic(plt.Style.OutOfRange, &yax.Range, &eb.Style.Range)
+	yax.DataRange = yax.Range
 }
 
 //////// XErrorBars
@@ -243,11 +265,32 @@ func (eb *XErrorBars) Plot(plt *plot.Plot) {
 	nv := len(eb.X)
 	eb.PX = make([]float32, nv)
 	eb.PY = make([]float32, nv)
+
+	minX, maxX := plt.PX(plt.X.DataRange.Min), plt.PX(plt.X.DataRange.Max)
+	var minY, maxY float32
+	if eb.Style.RightY {
+		minY, maxY = plt.PYR(plt.YR.DataRange.Max), plt.PYR(plt.YR.DataRange.Min)
+	} else {
+		minY, maxY = plt.PY(plt.Y.DataRange.Max), plt.PY(plt.Y.DataRange.Min)
+	}
+
 	eb.Style.Line.SetStroke(plt)
 	for i, x := range eb.X {
 		y := plt.PY(eb.Y.Float1D(i))
+		if math32.IsNaN(y) || math.IsNaN(x) {
+			continue
+		}
+		if y < minY || y > maxY {
+			continue
+		}
 		xlow := plt.PX(x - math.Abs(eb.Low[i]))
 		xhigh := plt.PX(x + math.Abs(eb.High[i]))
+		if math32.IsNaN(xlow) || math32.IsNaN(xhigh) {
+			continue
+		}
+		if xlow < minX || xhigh > maxX {
+			continue
+		}
 
 		eb.PX[i] = xhigh
 		eb.PY[i] = y
@@ -265,16 +308,25 @@ func (eb *XErrorBars) Plot(plt *plot.Plot) {
 }
 
 // UpdateRange updates the given ranges.
-func (eb *XErrorBars) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
+func (eb *XErrorBars) UpdateRange(plt *plot.Plot) {
+	yax := &plt.Y
 	if eb.Style.RightY {
-		y = yr
+		yax = &plt.YR
 	}
-	plot.RangeClamp(eb.X, x, &eb.Style.Range)
-	plot.RangeClamp(eb.Y, y, &eb.yrange)
+	plot.Range(eb.X, &plt.X.Range)
+	plot.Range(eb.Y, &yax.Range)
 	for i, xv := range eb.X {
 		xlow := xv - math.Abs(eb.Low[i])
 		xhigh := xv + math.Abs(eb.High[i])
-		x.FitInRange(minmax.F64{xlow, xhigh})
+		if math.IsNaN(xlow) || math.IsNaN(xhigh) {
+			continue
+		}
+		plt.X.Range.FitInRange(minmax.F64{xlow, xhigh})
 	}
-	return
+
+	plot.RangeLogic(plt.Style.OutOfRange, &plt.X.Range, &plt.Style.XAxis.Range)
+	plt.X.DataRange = plt.X.Range
+
+	plot.RangeLogic(plt.Style.OutOfRange, &yax.Range, &eb.Style.Range)
+	yax.DataRange = yax.Range
 }

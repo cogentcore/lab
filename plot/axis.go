@@ -104,8 +104,14 @@ func (ax *AxisStyle) Defaults() {
 // This is the "internal" data structure and should not be used for styling.
 type Axis struct {
 
-	// Range has the Min, Max range of values for the axis (in raw data units.)
+	// Range has the full Min, Max range of values for the axis
+	// (in raw data units). This includes extra space needed for plotting.
 	Range minmax.F64
+
+	// DataRange has the Min, Max range for the actual data values
+	// for the axis (in raw data units), *exclusive* of extra plotting space.
+	// This is used for OutOfRange clipping.
+	DataRange minmax.F64
 
 	// specifies which axis this is: X, Y or Z.
 	Axis math32.Dims

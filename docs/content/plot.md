@@ -82,6 +82,21 @@ plt := lab.NewPlot(b)
 plots.NewLine(plt, data)
 ```
 
+## Out-of-Range data
+
+You can set fixed Min / Max ranges to plot, for either axis. By default, the out-of-range data will show up as a break in the plot line, with red X's marking the out-of-range points. This behavior can be adjusted by changing the `OutOfRange` property in the [[doc:plot.PlotStyle]].
+
+```Goal
+data := #rand(10)#
+plot.SetStyler(data, func(s *plot.Style) {
+	s.Range.SetMin(0.2) // sets a FixMin flag to indicate a fixed min has been set.
+	s.Range.SetMax(0.8)
+	s.Plot.OutOfRange = plot.BreakMark // default
+})
+plt := lab.NewPlot(b)
+plots.NewLine(plt, data)
+```
+
 ## Plot Types
 
 The following are the builtin standard plot types, in the `plots` package:

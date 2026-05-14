@@ -41,6 +41,12 @@ type Config struct {
 	// and must fit in a uint32 number.
 	// The default is 32 byte aligned down version of 2147483647 max for nvidia
 	MaxBufferSize uint32 `default:"2147483616"`
+
+	// MaxStorageBuffersPerShaderStage is used to flag shaders that use more
+	// than this maximum number, which is the default max for web-based apps
+	// based on all the various backends. Specific backends may have more
+	// but using more will affect portability.
+	MaxStorageBuffersPerShaderStage int `default:"16"`
 }
 
 //cli:cmd -root

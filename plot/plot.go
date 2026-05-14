@@ -107,6 +107,11 @@ type PlotStyle struct { //types:add -setters
 	// overall Plot level, for elements that plot points (e.g., plots.XY).
 	PointsOn DefaultOffOn
 
+	// OutOfRange specifies how to handle out-of-range values, when a
+	// range has been set with fixed Min or Max values that exclude some
+	// data points.
+	OutOfRange OutOfRange
+
 	// PointSize sets the default point size at the overall Plot level.
 	PointSize units.Value
 
@@ -130,6 +135,7 @@ func (ps *PlotStyle) Defaults() {
 	ps.TitleStyle.Size.Dp(24)
 	ps.Background = colors.Scheme.Surface
 	ps.Scale = 1
+	ps.OutOfRange = Stretch
 	ps.Legend.Defaults()
 	ps.Axis.Defaults()
 	ps.LineWidth.Pt(1)
@@ -353,6 +359,18 @@ func (pt *Plot) PushBounds(tb image.Rectangle) {
 	pt.Painter.PushContext(nil, render.NewBoundsRect(tb, sides.Floats{}))
 }
 
+// DataBox returns a conservative (errs on side of smaller) estimate
+// of the size of the data plotting region of the plot, based on the
+// overall PaintBox size. This is used for extending the range for
+// extra plot elements beyond those accounted for by the data.
+func (pt *Plot) DataBox() image.Point {
+	// todo: could improve estimate by looking at title, axes, etc.
+	bsz := pt.PaintBox.Size()
+	bsz.Y = int(0.75 * float64(bsz.Y))
+	bsz.X = int(0.75 * float64(bsz.X))
+	return bsz
+}
+
 // NominalX configures the plot to have a nominal X
 // axis—an X axis with names instead of numbers.  The
 // X location corresponding to each name are the integers,
@@ -422,7 +440,6 @@ func (pt *Plot) UpdateRange() {
 	pt.YR.Range.SetInfinity()
 	pt.Z.Range.SetInfinity()
 	pt.SizeAxis.Range.SetInfinity()
-	// note: putting this after allows it to override
 	if pt.Style.XAxis.Range.FixMin {
 		pt.X.Range.Min = pt.Style.XAxis.Range.Min
 	}
@@ -430,7 +447,8 @@ func (pt *Plot) UpdateRange() {
 		pt.X.Range.Max = pt.Style.XAxis.Range.Max
 	}
 	for _, pl := range pt.Plotters {
-		pl.UpdateRange(pt, &pt.X.Range, &pt.Y.Range, &pt.YR.Range, &pt.Z.Range, &pt.SizeAxis.Range)
+		pl.UpdateRange(pt)
+		// pl.UpdateRange(pt, &pt.X.Range, &pt.Y.Range, &pt.YR.Range, &pt.Z.Range, &pt.SizeAxis.Range)
 	}
 	pt.X.Range.Sanitize()
 	pt.Y.Range.Sanitize()

@@ -16,7 +16,6 @@ import (
 	"math"
 
 	"cogentcore.org/core/math32"
-	"cogentcore.org/core/math32/minmax"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/tensor"
 )
@@ -157,41 +156,53 @@ func (ln *XY) Data() (data plot.Data, pixX, pixY []float32) {
 // Plot does the drawing, implementing the plot.Plotter interface.
 func (ln *XY) Plot(plt *plot.Plot) {
 	ln.PX = plot.PlotX(plt, ln.X)
-	var minY float32
+	minX, maxX := plt.PX(plt.X.DataRange.Min), plt.PX(plt.X.DataRange.Max)
+	var minY, maxY float32
 	if ln.Style.RightY {
 		ln.PY = plot.PlotYR(plt, ln.Y)
-		minY = plt.PYR(plt.YR.Range.Min)
+		// flipped due to Y flip
+		minY, maxY = plt.PYR(plt.YR.DataRange.Max), plt.PYR(plt.YR.DataRange.Min)
 	} else {
 		ln.PY = plot.PlotY(plt, ln.Y)
-		minY = plt.PY(plt.Y.Range.Min)
+		minY, maxY = plt.PY(plt.Y.DataRange.Max), plt.PY(plt.Y.DataRange.Min)
 	}
 	np := min(len(ln.PX), len(ln.PY))
 	if np == 0 {
 		return
 	}
 	pc := plt.Painter
+	oor := plt.Style.OutOfRange
+
 	if ln.Style.Line.HasFill() {
+		botY := maxY // note: min and max are now in pixel coords, not data coords -- y flip!
 		pc.Fill.Color = ln.Style.Line.Fill
 		pc.Stroke.Color = nil
 		prevX := ln.PX[0]
-		prevY := minY
+		prevY := botY
 		hasPrev := false
 		for i, ptx := range ln.PX {
 			pty := ln.PY[i]
-			if math32.IsNaN(pty) { // todo: likely needs more to deal with diff cases
+			if math32.IsNaN(pty) {
+				continue
+			}
+			if ptx > maxX {
+				continue // could wrap around
+			}
+			if ptx < minX {
+				hasPrev = false
 				continue
 			}
 			if !hasPrev && !math32.IsNaN(ptx) && !math32.IsNaN(pty) {
-				pc.MoveTo(ptx, minY)
+				pc.MoveTo(ptx, botY)
 				prevX = ptx
 				hasPrev = true
 			}
 			switch ln.Style.Line.Step {
 			case plot.NoStep:
 				if ptx < prevX {
-					pc.LineTo(prevX, minY)
+					pc.LineTo(prevX, botY)
 					pc.Close()
-					pc.MoveTo(ptx, minY)
+					pc.MoveTo(ptx, botY)
 				}
 				pc.LineTo(ptx, pty)
 			case plot.PreStep:
@@ -199,18 +210,18 @@ func (ln *XY) Plot(plt *plot.Plot) {
 					continue
 				}
 				if ptx < prevX {
-					pc.LineTo(prevX, minY)
+					pc.LineTo(prevX, botY)
 					pc.Close()
-					pc.MoveTo(ptx, minY)
+					pc.MoveTo(ptx, botY)
 				} else {
 					pc.LineTo(prevX, pty)
 				}
 				pc.LineTo(ptx, pty)
 			case plot.MidStep:
 				if ptx < prevX {
-					pc.LineTo(prevX, minY)
+					pc.LineTo(prevX, botY)
 					pc.Close()
-					pc.MoveTo(ptx, minY)
+					pc.MoveTo(ptx, botY)
 				} else {
 					pc.LineTo(0.5*(prevX+ptx), prevY)
 					pc.LineTo(0.5*(prevX+ptx), pty)
@@ -218,9 +229,9 @@ func (ln *XY) Plot(plt *plot.Plot) {
 				pc.LineTo(ptx, pty)
 			case plot.PostStep:
 				if ptx < prevX {
-					pc.LineTo(prevX, minY)
+					pc.LineTo(prevX, botY)
 					pc.Close()
-					pc.MoveTo(ptx, minY)
+					pc.MoveTo(ptx, botY)
 				} else {
 					pc.LineTo(ptx, prevY)
 				}
@@ -228,12 +239,13 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			}
 			prevX, prevY = ptx, pty
 		}
-		pc.LineTo(prevX, minY)
+		pc.LineTo(prevX, botY)
 		pc.Close()
 		pc.Draw()
 	}
 	pc.Fill.Color = nil
 
+	hasOORMarks := false
 	if ln.Style.Line.SetStroke(plt) {
 		if plt.HighlightPlotter == ln {
 			pc.Stroke.Width.Dots *= 2
@@ -248,6 +260,24 @@ func (ln *XY) Plot(plt *plot.Plot) {
 			ptx, pty := ln.PX[i], ln.PY[i]
 			if math32.IsNaN(ptx) || math32.IsNaN(pty) {
 				continue
+			}
+			if ptx > maxX {
+				continue // could wrap around
+			}
+			if ptx < minX {
+				hasPrev = false
+				continue
+			}
+			if pty < minY || pty > maxY {
+				pty = min(pty, maxY)
+				pty = max(pty, minY)
+				if oor.HasMark() {
+					hasOORMarks = true
+				}
+				if oor.HasBreak() {
+					hasPrev = false
+					continue
+				}
 			}
 			if ln.Style.Line.Step != plot.NoStep {
 				if hasPrev && ptx >= prevX {
@@ -275,12 +305,35 @@ func (ln *XY) Plot(plt *plot.Plot) {
 		}
 		pc.Draw()
 	}
+
+	if hasOORMarks {
+		ln.Style.OutOfRangeMark.SetStroke(plt)
+		for i, ptx := range ln.PX {
+			pty := ln.PY[i]
+			if math32.IsNaN(ptx) || math32.IsNaN(pty) {
+				continue
+			}
+			if ptx < minX || ptx > maxX {
+				continue
+			}
+			if pty >= minY && pty <= maxY {
+				continue
+			}
+			pty = min(pty, maxY)
+			pty = max(pty, minY)
+			ln.Style.OutOfRangeMark.DrawShape(pc, math32.Vec2(ptx, pty))
+		}
+	}
+
 	if ln.Style.Point.SetStroke(plt) {
 		origWidth := ln.Style.Point.Width
 		origSize := ln.Style.Point.Size
 		for i, ptx := range ln.PX {
 			pty := ln.PY[i]
-			if math32.IsNaN(pty) {
+			if math32.IsNaN(ptx) || math32.IsNaN(pty) {
+				continue
+			}
+			if ptx < minX || ptx > maxX || pty < minY || pty > maxY {
 				continue
 			}
 			pc.Stroke.Width = origWidth
@@ -319,26 +372,32 @@ func (ln *XY) Plot(plt *plot.Plot) {
 }
 
 // UpdateRange updates the given ranges.
-func (ln *XY) UpdateRange(plt *plot.Plot, x, y, yr, z, size *minmax.F64) {
+func (ln *XY) UpdateRange(plt *plot.Plot) {
+	yax := &plt.Y
 	if ln.Style.RightY {
-		y = yr
+		yax = &plt.YR
 	}
-	plot.Range(ln.X, x)
-	if !ln.Style.Point.IsOn(plt) {
-		plot.RangeClamp(ln.Y, y, &ln.Style.Range)
+	plot.Range(ln.X, &plt.X.Range)
+	plot.Range(ln.Y, &yax.Range)
+
+	plot.RangeLogic(plt.Style.OutOfRange, &plt.X.Range, &plt.Style.XAxis.Range)
+	plt.X.DataRange = plt.X.Range
+	yFits := plot.RangeLogic(plt.Style.OutOfRange, &yax.Range, &ln.Style.Range)
+	yax.DataRange = yax.Range
+
+	ln.Style.OutOfRangeMark.IsOn(plt) // does dots
+	if !ln.Style.Point.IsOn(plt) && (!plt.Style.OutOfRange.HasMark() || yFits) {
 		return
 	}
-	plot.Range(ln.Y, y)
-	psz := ln.Style.Point.Size.Dots
-	ptb := plt.PaintBox
-	dy := (float64(psz) / float64(ptb.Size().Y)) * y.Range()
-	y.Min -= dy
-	y.Max += dy
-	y.Min, y.Max = ln.Style.Range.Clamp(y.Min, y.Max)
-	dx := (float64(psz) / float64(ptb.Size().X)) * x.Range()
-	x.Min -= dx
-	x.Max += dx
-	plot.Range(ln.Size, size)
+	psz := max(ln.Style.Point.Size.Dots, ln.Style.OutOfRangeMark.Size.Dots)
+	bsz := plt.DataBox()
+	dy := (float64(psz) / float64(bsz.Y)) * yax.Range.Range()
+	yax.Range.Min -= dy
+	yax.Range.Max += dy
+	dx := (float64(psz) / float64(bsz.X)) * plt.X.Range.Range()
+	plt.X.Range.Min -= dx
+	plt.X.Range.Max += dx
+	plot.Range(ln.Size, &plt.SizeAxis.Range)
 }
 
 // Thumbnail returns the thumbnail, implementing the plot.Thumbnailer interface.
