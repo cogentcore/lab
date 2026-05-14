@@ -8,7 +8,7 @@ go 1.25.6
 // https://github.com/googleapis/go-genproto/issues/1015
 
 require (
-	cogentcore.org/core v0.3.26
+	cogentcore.org/core v0.3.28
 	github.com/cogentcore/readline v0.1.3
 	github.com/cogentcore/yaegi v0.0.0-20260116172027-700fbf8949f3
 	github.com/mitchellh/go-homedir v1.1.0
@@ -32,6 +32,7 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/bramvdbogaerde/go-scp v1.6.0 // indirect
 	github.com/chewxy/math32 v1.11.1 // indirect
+	github.com/cogentcore/webgpu v0.23.1-0.20260410073005-a2ae7d757168 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/ericchiang/css v1.4.0 // indirect
@@ -54,12 +55,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
 	github.com/muesli/termenv v0.16.0 // indirect
-	github.com/oliverbestmann/webgpu v1.33.2 // indirect
-	github.com/oliverbestmann/webgpu/libs-android v0.0.0-20260509160813-48db59792a15 // indirect
-	github.com/oliverbestmann/webgpu/libs-darwin v0.0.0-20260509160802-b09403b07cd3 // indirect
-	github.com/oliverbestmann/webgpu/libs-ios v0.0.0-20260509160803-765e39d2a48b // indirect
-	github.com/oliverbestmann/webgpu/libs-linux v0.0.0-20260509160809-2fefaf7c9ead // indirect
-	github.com/oliverbestmann/webgpu/libs-windows v0.0.0-20260509160807-0bc32b12c7bc // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
