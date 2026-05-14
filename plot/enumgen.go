@@ -216,11 +216,11 @@ var _OutOfRangeValues = []OutOfRange{0, 1, 2, 3}
 // OutOfRangeN is the highest valid value for type OutOfRange, plus one.
 const OutOfRangeN OutOfRange = 4
 
-var _OutOfRangeValueMap = map[string]OutOfRange{`BreakMark`: 0, `Mark`: 1, `Break`: 2, `Stretch`: 3}
+var _OutOfRangeValueMap = map[string]OutOfRange{`Stretch`: 0, `Mark`: 1, `Break`: 2, `BreakMark`: 3}
 
-var _OutOfRangeDescMap = map[OutOfRange]string{0: `BreakMark breaks any continuous line elements and renders a marker for out-of-range values`, 1: `Mark renders a marker for out-of-range values, but does not break continuous line elements.`, 2: `Break breaks any continuous line elements, but does not render a marker, for out-of-range values.`, 3: `Stretch stretches the range to include all values, avoiding the problem of out-of-range values entirely.`}
+var _OutOfRangeDescMap = map[OutOfRange]string{0: `Stretch stretches the range to include all values, avoiding the problem of out-of-range values entirely.`, 1: `Mark renders a marker for out-of-range values, but does not break continuous line elements.`, 2: `Break breaks any continuous line elements, but does not render a marker, for out-of-range values.`, 3: `BreakMark breaks any continuous line elements and renders a marker for out-of-range values`}
 
-var _OutOfRangeMap = map[OutOfRange]string{0: `BreakMark`, 1: `Mark`, 2: `Break`, 3: `Stretch`}
+var _OutOfRangeMap = map[OutOfRange]string{0: `Stretch`, 1: `Mark`, 2: `Break`, 3: `BreakMark`}
 
 // String returns the string representation of this OutOfRange value.
 func (i OutOfRange) String() string { return enums.String(i, _OutOfRangeMap) }

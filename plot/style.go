@@ -250,9 +250,9 @@ const (
 type OutOfRange int32 //enums:enum
 
 const (
-	// BreakMark breaks any continuous line elements and renders a marker
-	// for out-of-range values
-	BreakMark OutOfRange = iota
+	// Stretch stretches the range to include all values,
+	// avoiding the problem of out-of-range values entirely.
+	Stretch OutOfRange = iota
 
 	// Mark renders a marker for out-of-range values, but does not break
 	// continuous line elements.
@@ -262,9 +262,9 @@ const (
 	// a marker, for out-of-range values.
 	Break
 
-	// Stretch stretches the range to include all values,
-	// avoiding the problem of out-of-range values entirely.
-	Stretch
+	// BreakMark breaks any continuous line elements and renders a marker
+	// for out-of-range values
+	BreakMark
 )
 
 func (or OutOfRange) HasMark() bool {

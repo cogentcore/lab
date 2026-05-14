@@ -135,7 +135,7 @@ func (ps *PlotStyle) Defaults() {
 	ps.TitleStyle.Size.Dp(24)
 	ps.Background = colors.Scheme.Surface
 	ps.Scale = 1
-	ps.OutOfRange = BreakMark
+	ps.OutOfRange = Stretch
 	ps.Legend.Defaults()
 	ps.Axis.Defaults()
 	ps.LineWidth.Pt(1)
