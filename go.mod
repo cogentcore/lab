@@ -8,7 +8,7 @@ go 1.25.6
 // https://github.com/googleapis/go-genproto/issues/1015
 
 require (
-	cogentcore.org/core v0.3.30
+	cogentcore.org/core v0.3.31
 	github.com/cogentcore/readline v0.1.3
 	github.com/cogentcore/yaegi v0.0.0-20260116172027-700fbf8949f3
 	github.com/mitchellh/go-homedir v1.1.0
@@ -54,7 +54,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
 	github.com/muesli/termenv v0.16.0 // indirect
-	github.com/oliverbestmann/webgpu v1.33.4 // indirect
+	github.com/oliverbestmann/webgpu v1.33.5-0.20260523154840-fa113c1fb662 // indirect
 	github.com/oliverbestmann/webgpu/libs-android v0.0.0-20260509160813-48db59792a15 // indirect
 	github.com/oliverbestmann/webgpu/libs-darwin v0.0.0-20260509160802-b09403b07cd3 // indirect
 	github.com/oliverbestmann/webgpu/libs-ios v0.0.0-20260509160803-765e39d2a48b // indirect
