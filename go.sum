@@ -1,7 +1,7 @@
 codeberg.org/go-pdf/fpdf v0.11.0 h1:n3I8WISQ1cr0S2rvx9DOlE/GypbcimMWqLpel3slHmY=
 codeberg.org/go-pdf/fpdf v0.11.0/go.mod h1:Y0DGRAdZ0OmnZPvjbMp/1bYxmIPxm0ws4tfoPOc4LjU=
-cogentcore.org/core v0.3.30 h1:wKf7PINwdWfToJzZURkn8uVXv28Lqpd7wxEzqnL9Sug=
-cogentcore.org/core v0.3.30/go.mod h1:745/U+TkgASl0mDIapWfqsVRP+m6M0iuDsmglgA/nhc=
+cogentcore.org/core v0.3.31 h1:f3wkFCG3IHeglIY5wJwmQYnFzhVejUUrsIOYlW9RM+Y=
+cogentcore.org/core v0.3.31/go.mod h1:bq1W15L76MTl+Gd+SB2xxdte1hG9HI9rNyAi+Xgv+Wo=
 git.sr.ht/~sbinet/cmpimg v0.1.0 h1:E0zPRk2muWuCqSKSVZIWsgtU9pjsw3eKHi8VmQeScxo=
 git.sr.ht/~sbinet/cmpimg v0.1.0/go.mod h1:FU12psLbF4TfNXkKH2ZZQ29crIqoiqTZmeQ7dkp/pxE=
 github.com/Bios-Marcel/wastebasket/v2 v2.0.3 h1:TkoDPcSqluhLGE+EssHu7UGmLgUEkWg7kNyHyyJ3Q9g=
@@ -101,8 +101,8 @@ github.com/muesli/termenv v0.16.0 h1:S5AlUN9dENB57rsbnkPyfdGuWIlkmzJjbFf0Tf5FWUc
 github.com/muesli/termenv v0.16.0/go.mod h1:ZRfOIKPFDYQoDFF4Olj7/QJbW60Ol/kL1pU3VfY/Cnk=
 github.com/nsf/termbox-go v1.1.1 h1:nksUPLCb73Q++DwbYUBEglYBRPZyoXJdrj5L+TkjyZY=
 github.com/nsf/termbox-go v1.1.1/go.mod h1:T0cTdVuOwf7pHQNtfhnEbzHbcNyCEcVU4YPpouCbVxo=
-github.com/oliverbestmann/webgpu v1.33.4 h1:+r4wFXfVFRo2U1NFlQlHgHKZqZrEUQZw4IHOhDRIGoI=
-github.com/oliverbestmann/webgpu v1.33.4/go.mod h1:vtdJTC9gIdqmU42NDGfsq70dco6K+dCYC2vkvE4RD2I=
+github.com/oliverbestmann/webgpu v1.33.5-0.20260523154840-fa113c1fb662 h1:5p8ACK7mXsdgyRjASbRd6kgVf9mctHDgF8Fn4MfFvBg=
+github.com/oliverbestmann/webgpu v1.33.5-0.20260523154840-fa113c1fb662/go.mod h1:vtdJTC9gIdqmU42NDGfsq70dco6K+dCYC2vkvE4RD2I=
 github.com/oliverbestmann/webgpu/libs-android v0.0.0-20260509160813-48db59792a15 h1:HPxVSV8C8JaxGfa9hjDhzNmryoqPF3EwESBTFWpxNBo=
 github.com/oliverbestmann/webgpu/libs-android v0.0.0-20260509160813-48db59792a15/go.mod h1:tczQXCdsoFy+FTJVsZSve/vF8cmWEkxhvjcyY2Rujp8=
 github.com/oliverbestmann/webgpu/libs-darwin v0.0.0-20260509160802-b09403b07cd3 h1:NbBG2+pwqKcNfKUKtjWOj+02RkXSUWVkxY3hqzgyjSA=
