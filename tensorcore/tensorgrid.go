@@ -5,6 +5,7 @@
 package tensorcore
 
 import (
+	"image"
 	"image/color"
 	"log"
 
@@ -81,7 +82,7 @@ func (tg *TensorGrid) Init() {
 	tg.OnDoubleClick(func(e events.Event) {
 		tg.TensorEditor()
 	})
-	tg.AddContextMenu(func(m *core.Scene) {
+	tg.AddContextMenu(func(m *core.Scene, pos image.Point) {
 		core.NewFuncButton(m).SetFunc(tg.TensorEditor).SetIcon(icons.Edit)
 		core.NewFuncButton(m).SetFunc(tg.EditStyle).SetIcon(icons.Edit)
 	})
