@@ -638,7 +638,7 @@ func (pl *Editor) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.Separator) {})
 
 	tree.Add(p, func(w *core.Button) {
-		w.SetText("Save").SetIcon(icons.Save).SetMenu(func(m *core.Scene) {
+		w.SetText("Save").SetIcon(icons.Save).SetMenu(func(m *core.Scene, pos image.Point) {
 			core.NewFuncButton(m).SetFunc(pl.SaveSVG).SetIcon(icons.Save)
 			core.NewFuncButton(m).SetFunc(pl.SavePDF).SetIcon(icons.Save)
 			core.NewFuncButton(m).SetFunc(pl.SaveImage).SetIcon(icons.Save)

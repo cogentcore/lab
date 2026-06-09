@@ -340,7 +340,7 @@ func IsTableFile(fname string) bool {
 	return strings.HasSuffix(fname, ".tsv") || strings.HasSuffix(fname, ".csv")
 }
 
-func (fn *FileNode) ContextMenu(m *core.Scene) {
+func (fn *FileNode) ContextMenu(m *core.Scene, pos image.Point) {
 	core.NewFuncButton(m).SetFunc(fn.EditFiles).SetText("Edit").SetIcon(icons.Edit).
 		Styler(func(s *styles.Style) {
 			s.SetState(!fn.HasSelection(), states.Disabled)

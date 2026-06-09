@@ -230,7 +230,7 @@ func (tb *Table) MakeHeader(p *tree.Plan) {
 						tb.SortColumn(fli)
 					})
 					if tb.Table.Columns.Values[fli].NumDims() > 1 {
-						w.AddContextMenu(func(m *core.Scene) {
+						w.AddContextMenu(func(m *core.Scene, pos image.Point) {
 							core.NewButton(m).SetText("Edit grid style").SetIcon(icons.Edit).
 								OnClick(func(e events.Event) {
 									tb.EditGridStyle(fli)
