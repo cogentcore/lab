@@ -5,6 +5,7 @@
 package plots
 
 import (
+	"fmt"
 	"math"
 
 	"cogentcore.org/core/math32"
@@ -54,25 +55,38 @@ func (eb *YErrorBars) Defaults() {
 // using Low, High data roles for error deviations around X, Y coordinates.
 // Styler functions are obtained from the High data if present.
 func NewYErrorBars(plt *plot.Plot, data plot.Data) *YErrorBars {
-	if data.CheckLengths() != nil {
+	eb := &YErrorBars{}
+	err := eb.SetData(data)
+	if err != nil {
 		return nil
 	}
-	eb := &YErrorBars{}
-	eb.X = plot.MustCopyRole(data, plot.X)
-	eb.Y = plot.MustCopyRole(data, plot.Y)
-	eb.Low = plot.CopyRole(data, plot.Low)
-	eb.High = plot.CopyRole(data, plot.High)
+	eb.Defaults()
+	plt.Add(eb)
+	return eb
+}
+
+// SetData sets the plot data.
+func (eb *YErrorBars) SetData(data any) error {
+	dt, err := plot.DataOrValuer(data, plot.Y)
+	if err != nil {
+		return err
+	}
+	if err := dt.CheckLengths(); err != nil {
+		return err
+	}
+	eb.X = plot.MustCopyRole(dt, plot.X)
+	eb.Y = plot.MustCopyRole(dt, plot.Y)
+	eb.Low = plot.CopyRole(dt, plot.Low)
+	eb.High = plot.CopyRole(dt, plot.High)
 	if eb.Low == nil && eb.High != nil {
 		eb.Low = eb.High
 	}
 	if eb.X == nil || eb.Y == nil || eb.Low == nil || eb.High == nil {
-		return nil
+		return fmt.Errorf("X or Y or Low or High is nil")
 	}
-	eb.stylers = plot.GetStylersFromData(data, plot.High)
-	eb.ystylers = plot.GetStylersFromData(data, plot.Y)
-	eb.Defaults()
-	plt.Add(eb)
-	return eb
+	eb.stylers = plot.GetStylersFromData(dt, plot.X, plot.Low, plot.High)
+	eb.ystylers = plot.GetStylersFromData(dt, plot.Y)
+	return nil
 }
 
 // Styler adds a style function to set style parameters.
@@ -205,27 +219,40 @@ func (eb *XErrorBars) Defaults() {
 // NewXErrorBars adds a new XErrorBars plotter to given plot,
 // using Low, High data roles for error deviations around X, Y coordinates.
 func NewXErrorBars(plt *plot.Plot, data plot.Data) *XErrorBars {
-	if data.CheckLengths() != nil {
+	eb := &XErrorBars{}
+	err := eb.SetData(data)
+	if err != nil {
 		return nil
 	}
-	eb := &XErrorBars{}
-	eb.X = plot.MustCopyRole(data, plot.X)
-	eb.Y = plot.MustCopyRole(data, plot.Y)
-	eb.Low = plot.MustCopyRole(data, plot.Low)
-	eb.High = plot.MustCopyRole(data, plot.High)
-	eb.Low = plot.CopyRole(data, plot.Low)
-	eb.High = plot.CopyRole(data, plot.High)
+	eb.Defaults()
+	plt.Add(eb)
+	return eb
+}
+
+// SetData sets the plot data.
+func (eb *XErrorBars) SetData(data any) error {
+	dt, err := plot.DataOrValuer(data, plot.Y)
+	if err != nil {
+		return err
+	}
+	if err := dt.CheckLengths(); err != nil {
+		return err
+	}
+	eb.X = plot.MustCopyRole(dt, plot.X)
+	eb.Y = plot.MustCopyRole(dt, plot.Y)
+	eb.Low = plot.MustCopyRole(dt, plot.Low)
+	eb.High = plot.MustCopyRole(dt, plot.High)
+	eb.Low = plot.CopyRole(dt, plot.Low)
+	eb.High = plot.CopyRole(dt, plot.High)
 	if eb.Low == nil && eb.High != nil {
 		eb.Low = eb.High
 	}
 	if eb.X == nil || eb.Y == nil || eb.Low == nil || eb.High == nil {
 		return nil
 	}
-	eb.stylers = plot.GetStylersFromData(data, plot.High)
-	eb.ystylers = plot.GetStylersFromData(data, plot.Y)
-	eb.Defaults()
-	plt.Add(eb)
-	return eb
+	eb.stylers = plot.GetStylersFromData(dt, plot.High)
+	eb.ystylers = plot.GetStylersFromData(dt, plot.Y)
+	return nil
 }
 
 // Styler adds a style function to set style parameters.

@@ -81,7 +81,7 @@ func (ln *XY) SetData(data any) error {
 	if ln.X == nil || ln.Y == nil {
 		return fmt.Errorf("X or Y is nil")
 	}
-	ln.stylers = plot.GetStylersFromData(dt, plot.Y)
+	ln.stylers = plot.GetStylersFromData(dt, plot.X, plot.Y)
 	ln.Size = plot.CopyRole(dt, plot.Size)
 	return nil
 }

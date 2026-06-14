@@ -198,12 +198,19 @@ func Styler(obj any, f func(s *Style)) {
 // GetStylersFromData returns [Stylers] from given role
 // in given [Data]. nil if not present. Mostly used internally
 // for Plotters implementations.
-func GetStylersFromData(data Data, role Roles) Stylers {
-	vr, ok := data[role]
-	if !ok {
-		return nil
+func GetStylersFromData(data Data, role ...Roles) Stylers {
+	var st Stylers
+	for _, rl := range role {
+		vr, ok := data[rl]
+		if !ok {
+			continue
+		}
+		s := GetStylers(vr)
+		if s != nil {
+			st = append(st, s...)
+		}
 	}
-	return GetStylers(vr)
+	return st
 }
 
 // BasicStylers returns a basic set of [Stylers] that can be used with
