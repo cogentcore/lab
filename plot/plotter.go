@@ -20,6 +20,11 @@ type Plotter interface {
 	// UpdateRange updates the given ranges.
 	UpdateRange(plt *Plot)
 
+	// SetData sets the plot data, which can be of type [Data],
+	// or a [Valuer]. This is needed to update the plot data if already
+	// set previously.
+	SetData(data any) error
+
 	// Data returns the data by roles for this plot, for both the original
 	// data and the pixel-transformed X,Y coordinates for that data.
 	// This allows a GUI interface to inspect data etc.

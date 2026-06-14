@@ -5,6 +5,7 @@
 package plots
 
 import (
+	"fmt"
 	"image"
 	"math"
 
@@ -44,29 +45,39 @@ type Labels struct {
 // which must specify X, Y and Label roles.
 // Styler functions are obtained from the Label metadata if present.
 func NewLabels(plt *plot.Plot, data plot.Data) *Labels {
-	if data.CheckLengths() != nil {
-		return nil
-	}
 	lb := &Labels{}
-	lb.X = plot.MustCopyRole(data, plot.X)
-	lb.Y = plot.MustCopyRole(data, plot.Y)
-	if lb.X == nil || lb.Y == nil {
+	err := lb.SetData(data)
+	if err != nil {
 		return nil
 	}
-	ld := data[plot.Label]
-	if ld == nil {
-		return nil
+	lb.Defaults()
+	plt.Add(lb)
+	return lb
+}
+
+// SetData sets the plot data.
+func (lb *Labels) SetData(data any) error {
+	dt, err := plot.DataOrValuer(data, plot.Y)
+	if err != nil {
+		return err
+	}
+	if err := dt.CheckLengths(); err != nil {
+		return err
+	}
+	lb.X = plot.MustCopyRole(dt, plot.X)
+	lb.Y = plot.MustCopyRole(dt, plot.Y)
+	ld := dt[plot.Label]
+	if ld == nil || lb.X == nil || lb.Y == nil {
+		return fmt.Errorf("Label or X or Y is nil")
 	}
 	lb.Labels = make(plot.Labels, lb.X.Len())
 	for i := range ld.Len() {
 		lb.Labels[i] = ld.String1D(i)
 	}
 
-	lb.stylers = plot.GetStylersFromData(data, plot.Label)
-	lb.ystylers = plot.GetStylersFromData(data, plot.Y)
-	lb.Defaults()
-	plt.Add(lb)
-	return lb
+	lb.stylers = plot.GetStylersFromData(dt, plot.Label)
+	lb.ystylers = plot.GetStylersFromData(dt, plot.Y)
+	return nil
 }
 
 func (lb *Labels) Defaults() {
