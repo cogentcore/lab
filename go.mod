@@ -1,6 +1,6 @@
 module cogentcore.org/lab
 
-go 1.25.8
+go 1.25.6
 
 // after go mod tidy, you need to run:
 // go get google.golang.org/genproto@latest
