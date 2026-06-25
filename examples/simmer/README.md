@@ -1,5 +1,7 @@
 # Simmer: simulation running and monitoring infrastructure
 
+TODO: plot mean function on consat is losing the TrainEpoch fields
+
 "Watch your sims simmer on the GPU burners.."
 
 Simmer provides a Cogent Lab based GUI for running simulation jobs, and managing and analyzing the resulting data, using the plotcore Editor. It supports both slurm and [baremetal](../baremetal) job management systems.

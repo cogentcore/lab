@@ -1,6 +1,6 @@
 module cogentcore.org/lab
 
-go 1.25.6
+go 1.25.8
 
 // after go mod tidy, you need to run:
 // go get google.golang.org/genproto@latest
@@ -8,7 +8,7 @@ go 1.25.6
 // https://github.com/googleapis/go-genproto/issues/1015
 
 require (
-	cogentcore.org/core v0.3.36-0.20260612144634-1bad52409d9d
+	cogentcore.org/core v0.3.36
 	github.com/cogentcore/readline v0.1.3
 	github.com/cogentcore/yaegi v0.0.0-20260116172027-700fbf8949f3
 	github.com/mitchellh/go-homedir v1.1.0
@@ -22,7 +22,8 @@ require (
 )
 
 require (
-	codeberg.org/go-pdf/fpdf v0.11.0 // indirect
+	codeberg.org/go-pdf/fpdf v0.11.1 // indirect
+	git.sr.ht/~sbinet/overlayfs v0.1.1 // indirect
 	github.com/Bios-Marcel/wastebasket/v2 v2.0.3 // indirect
 	github.com/Masterminds/vcs v1.13.3 // indirect
 	github.com/adrg/strutil v0.3.1 // indirect
@@ -32,6 +33,7 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/bramvdbogaerde/go-scp v1.6.0 // indirect
 	github.com/chewxy/math32 v1.11.2 // indirect
+	github.com/cogentcore/star-tex v0.7.2-0.20260625151004-a16970c7d698 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/ericchiang/css v1.4.0 // indirect
@@ -71,10 +73,9 @@ require (
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
-	google.golang.org/genproto v0.0.0-20260610212136-7ab31c22f7ad // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
+	google.golang.org/genproto v0.0.0-20260622175928-b703f567277d // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260618152121-87f3d3e198d3 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/knuth v0.5.4 // indirect
+	modernc.org/knuth v0.5.5 // indirect
 	modernc.org/token v1.1.0 // indirect
-	star-tex.org/x/tex v0.7.1 // indirect
 )
