@@ -3,6 +3,7 @@ module cogentcore.org/lab
 go 1.25.6
 
 // after go mod tidy, you need to run:
+// go get google.golang.org/genproto@v0.0.0-20260610212136-7ab31c22f7ad
 // go get google.golang.org/genproto@latest
 // otherwise there will be an ambiguous import warning when building baremetal
 // https://github.com/googleapis/go-genproto/issues/1015
@@ -73,7 +74,7 @@ require (
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
-	google.golang.org/genproto v0.0.0-20260622175928-b703f567277d // indirect
+	google.golang.org/genproto v0.0.0-20260610212136-7ab31c22f7ad // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260618152121-87f3d3e198d3 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/knuth v0.5.5 // indirect
