@@ -1576,6 +1576,12 @@ func (p *printer) selectorExpr(x *ast.SelectorExpr, depth int) (wasIndented bool
 	}
 	p.setPos(x.Sel.Pos())
 	if x.Sel.Name == "X" || x.Sel.Name == "Y" || x.Sel.Name == "Z" || x.Sel.Name == "W" {
+		if id, ok := x.X.(*ast.Ident); ok {
+			if id.Name == "math32" {
+				p.print(x.Sel)
+				return false
+			}
+		}
 		p.print(strings.ToLower(x.Sel.Name))
 	} else {
 		p.print(x.Sel)
@@ -2086,7 +2092,7 @@ func (p *printer) mathMeth(x *ast.CallExpr, depth int, methName, recvPath, recvT
 		switch btyp {
 		case "Vector2", "Vector2i":
 			p.print(recvPath+".x", token.COMMA, recvPath+".y")
-		case "Vector3":
+		case "Vector3", "Vector3i":
 			p.print(recvPath+".x", token.COMMA, recvPath+".y", token.COMMA, recvPath+".z")
 		}
 		p.setPos(x.Rparen)

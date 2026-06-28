@@ -8,7 +8,7 @@ import "cogentcore.org/core/math32"
 
 //gosl:start
 
-// Vector2 is a 2D vector/point with X and Y components,
+// Vector2 is a 2D vector/point with X and Y float32 components,
 // with padding values so it works in a GPU struct. Use the
 // V() method to get a math32.Vector2 that supports standard
 // math operations, which are converted to direct ops in WGSL.
@@ -59,7 +59,7 @@ func (v *Vector2i) SetV(mv math32.Vector2i) {
 	v.Y = mv.Y
 }
 
-// Vector3 is a 3DD vector/point with X, Y, Z components,
+// Vector3 is a 3D vector/point with X, Y, Z float32 components,
 // with padding values so it works in a GPU struct. Use the
 // V() method to get a math32.Vector3 that supports standard
 // math operations, which are converted to direct ops in WGSL.
@@ -82,6 +82,34 @@ func (v *Vector3) Set(x, y, z float32) {
 }
 
 func (v *Vector3) SetV(mv math32.Vector3) {
+	v.X = mv.X
+	v.Y = mv.Y
+	v.Z = mv.Z
+}
+
+// Vector3i is a 3D vector/point with X, Y, Z components,
+// with padding values so it works in a GPU struct. Use the
+// V() method to get a math32.Vector3i that supports standard
+// math operations, which are converted to direct ops in WGSL.
+type Vector3i struct {
+	X int32
+	Y int32
+	Z int32
+
+	pad int32
+}
+
+func (v *Vector3i) V() math32.Vector3i {
+	return math32.Vec3i(v.X, v.Y, v.Z)
+}
+
+func (v *Vector3i) Set(x, y, z int32) {
+	v.X = x
+	v.Y = y
+	v.Z = z
+}
+
+func (v *Vector3i) SetV(mv math32.Vector3i) {
 	v.X = mv.X
 	v.Y = mv.Y
 	v.Z = mv.Z
