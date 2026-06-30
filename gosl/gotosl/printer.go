@@ -116,11 +116,9 @@ type printer struct {
 }
 
 func (p *printer) internalError(msg ...any) {
-	if debug {
-		fmt.Print(p.pos.String() + ": ")
-		fmt.Println(msg...)
-		panic("go/printer")
-	}
+	fmt.Print(p.pos.String() + ": ")
+	fmt.Println(msg...)
+	panic("go/printer")
 }
 
 func (p *printer) userError(err error) {

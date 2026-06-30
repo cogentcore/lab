@@ -1616,7 +1616,7 @@ func (p *printer) selectorPath(x *ast.SelectorExpr) (recvPath, recvType string, 
 	}
 	if idt == nil || typeIsInvalid(idt) {
 		err = fmt.Errorf("gosl methodPath ERROR: cannot find type for name: %q, gvar: %v", baseRecv.Name, gvar)
-		panic(err)
+		p.internalError(err)
 		// p.userError(err)
 		return
 	}
