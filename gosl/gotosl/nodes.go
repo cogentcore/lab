@@ -18,6 +18,7 @@ package gotosl
 import (
 	"fmt"
 	"go/ast"
+	"go/constant"
 	"go/token"
 	"go/types"
 	"math"
@@ -2982,10 +2983,17 @@ func (p *printer) genDecl(d *ast.GenDecl) {
 				keepType := keepTypeColumn(d.Specs)
 				firstSpec := d.Specs[0].(*ast.ValueSpec)
 				isIota := false
+				startVal := 0
 				if d.Tok == token.CONST {
 					if id, isId := firstSpec.Values[0].(*ast.Ident); isId {
 						if id.Name == "iota" {
 							isIota = true
+						}
+					} else {
+						ee := p.extendedEnum(firstSpec)
+						if ee >= 0 {
+							isIota = true
+							startVal = ee
 						}
 					}
 				}
@@ -2996,7 +3004,7 @@ func (p *printer) genDecl(d *ast.GenDecl) {
 						p.linebreak(p.lineFor(s.Pos()), 1, ignore, p.linesFrom(line) > 0)
 					}
 					p.recordLine(&line)
-					p.valueSpec(vs, keepType[i], d.Tok, firstSpec, isIota, i)
+					p.valueSpec(vs, keepType[i], d.Tok, firstSpec, isIota, startVal+i)
 				}
 			} else {
 				tok := d.Tok
@@ -3026,6 +3034,54 @@ func (p *printer) genDecl(d *ast.GenDecl) {
 		// single declaration
 		p.spec(d.Specs[0], 1, true, tok)
 	}
+}
+
+// extendedEnum parses a const iota enum expression of the form:
+// newtype(oldtypeN) + iota
+// which is used to extend enums based on other enums.
+// if return value is -1, then it isn't of this type, otherwise it is
+// the starting value in the sequence.
+func (p *printer) extendedEnum(firstSpec *ast.ValueSpec) int {
+	pl, ok := firstSpec.Values[0].(*ast.BinaryExpr)
+	if !ok {
+		return -1
+	}
+	// note: this value is incorrect in tests! weird. should be right.
+	// obj, ok := p.pkg.TypesInfo.Types[pl]
+	// if ok {
+	// 	if obj.Value != nil {
+	// 		fmt.Println(firstSpec.Names[0].Name, "value:", obj.Value.ExactString())
+	// 	}
+	// }
+
+	id, isId := pl.Y.(*ast.Ident)
+	if !isId {
+		return -1
+	}
+	if id.Name != "iota" {
+		return -1
+	}
+	cl, ok := pl.X.(*ast.CallExpr)
+	if !ok {
+		return -1
+	}
+	if len(cl.Args) != 1 {
+		return -1
+	}
+	nid, isId := cl.Args[0].(*ast.Ident)
+	if !isId {
+		return -1
+	}
+	obj, ok := p.pkg.TypesInfo.Types[nid]
+	if !ok {
+		return -1
+	}
+	if obj.Value == nil || obj.Value.Kind() != constant.Int {
+		return -1
+	}
+	// fmt.Println(nid.Name, "value:", obj.Value.ExactString())
+	val, _ := strconv.Atoi(obj.Value.ExactString())
+	return val
 }
 
 // sizeCounter is an io.Writer which counts the number of bytes written,
