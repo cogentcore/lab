@@ -419,14 +419,14 @@ const  Box: Shapes = 4;
 const  Cone: Shapes = 5;
 
 //////// import: "slmath-math.go"
-const Pi = 3.141592653589793;
+const SLPi = 3.141592653589793;
 fn MinAngleDiff(a: f32,b: f32) -> f32 {
 	var d = a - b;
-	if (d > Pi) {
-		d -= 2 * Pi;
+	if (d > SLPi) {
+		d -= 2 * SLPi;
 	}
-	if (d < -Pi) {
-		d += 2 * Pi;
+	if (d < -SLPi) {
+		d += 2 * SLPi;
 	}return d;
 }
 
