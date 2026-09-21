@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -45,7 +44,7 @@ func (st *State) TranslateDir(pf string) error {
 	st.FuncGraph = make(map[string]*Function)
 	st.GetFuncGraph = true
 
-	doFile := func(gofp string, buf *bytes.Buffer) {
+	doFile := func(gofp string, buf *bytes.Buffer) error {
 		_, gofn := filepath.Split(gofp)
 		if st.Config.Debug {
 			fmt.Printf("###################################\nTranslating Go file: %s\n", gofn)
@@ -62,26 +61,40 @@ func (st *State) TranslateDir(pf string) error {
 			}
 		}
 		if afile == nil {
-			fmt.Printf("Warning: File named: %s not found in Loaded package\n", gofn)
-			return
+			return errors.Log(fmt.Errorf("file named: %s not found in loaded package", gofn))
 		}
 
 		pcfg := PrintConfig{GoToSL: st, Mode: printerMode, Tabwidth: tabWidth, ExcludeFunctions: st.ExcludeMap}
-		pcfg.Fprint(buf, pkg, afile)
+		perr := pcfg.Fprint(buf, pkg, afile)
 		if !st.GetFuncGraph && !st.Config.Keep {
 			os.Remove(fpos.Filename)
 		}
+		return perr
 	}
+
+	var errs []error
 
 	// first pass is just to get the call graph:
 	for fn := range st.GoVarsFiles { // do varsFiles first!!
 		var buf bytes.Buffer
-		doFile(fn, &buf)
+		err := doFile(fn, &buf)
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
 
-	st.GenGPU(true) // generate an initial gosl.go in imports, so Go doesn't get confused
+	// generate an initial gosl.go in imports, so Go doesn't get confused
+	if err := st.GenGPU(true); err != nil {
+		errs = append(errs, err)
+	}
 
 	pkgs, err = packages.Load(&packages.Config{Mode: packages.NeedName | packages.NeedFiles | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesSizes | packages.NeedTypesInfo}, pf)
+	if err != nil {
+		return errors.Join(append(errs, errors.Log(err))...)
+	}
+	if len(pkgs) == 0 {
+		return errors.Join(append(errs, errors.Log(fmt.Errorf("no package found for path: %v", pf)))...)
+	}
 	pkg = pkgs[0]
 	files = pkg.GoFiles
 
@@ -97,7 +110,10 @@ func (st *State) TranslateDir(pf string) error {
 			continue
 		}
 		var buf bytes.Buffer
-		doFile(gofp, &buf)
+		err := doFile(gofp, &buf)
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	// st.PrintFuncGraph()
@@ -105,7 +121,9 @@ func (st *State) TranslateDir(pf string) error {
 	doKernelFile := func(fname string, lines [][]byte) ([][]byte, bool, bool) {
 		_, gofn := filepath.Split(fname)
 		var buf bytes.Buffer
-		doFile(fname, &buf)
+		if err := doFile(fname, &buf); err != nil {
+			errs = append(errs, err)
+		}
 		slfix, hasSlrand, hasSltype := SlEdits(buf.Bytes())
 		slfix = SlRemoveComments(slfix)
 		exsl := st.ExtractWGSL(slfix)
@@ -169,11 +187,15 @@ func (st *State) TranslateDir(pf string) error {
 				}
 			}
 			if hasSlrand {
-				st.CopyPackageFile("slrand.wgsl", "cogentcore.org/lab/gosl/slrand")
+				if err := st.CopyPackageFile("slrand.wgsl", "cogentcore.org/lab/gosl/slrand"); err != nil {
+					errs = append(errs, err)
+				}
 				hasSltype = true
 			}
 			if hasSltype {
-				st.CopyPackageFile("sltype.wgsl", "cogentcore.org/lab/gosl/sltype")
+				if err := st.CopyPackageFile("sltype.wgsl", "cogentcore.org/lab/gosl/sltype"); err != nil {
+					errs = append(errs, err)
+				}
 			}
 			for _, im := range st.SLImportFiles {
 				if im.Name == "gosl.go" {
@@ -187,8 +209,12 @@ func (st *State) TranslateDir(pf string) error {
 			kfn := kn.Name + ".wgsl"
 			fn := filepath.Join(st.Config.Output, kfn)
 			kn.Filename = fn
-			WriteFileLines(fn, lines)
-			st.CompileFile(kfn)
+			if err := WriteFileLines(fn, lines); err != nil {
+				errs = append(errs, errors.Log(err))
+			}
+			if err := st.CompileFile(kfn); err != nil {
+				errs = append(errs, err)
+			}
 		}
 	}
 	fmt.Println("\n###################################\nMaximum number of variables used per shader:", maxVarsUsed)
@@ -205,9 +231,30 @@ func (st *State) TranslateDir(pf string) error {
 
 	serr := alignsl.CheckPackage(pkg, structTypes)
 	if serr != nil {
-		fmt.Println(serr)
+		errs = append(errs, errors.Log(serr))
 	}
-	return nil
+	return errors.Join(uniqueErrors(errs)...)
+}
+
+// uniqueErrors returns the errors with duplicate messages removed,
+// preserving the original order. Each source file is translated once per
+// pass and again for every kernel, so the same underlying error is
+// typically recorded many times.
+func uniqueErrors(errs []error) []error {
+	has := make(map[string]bool, len(errs))
+	unq := make([]error, 0, len(errs))
+	for _, err := range errs {
+		if err == nil {
+			continue
+		}
+		msg := err.Error()
+		if has[msg] {
+			continue
+		}
+		has[msg] = true
+		unq = append(unq, err)
+	}
+	return unq
 }
 
 var (
@@ -217,6 +264,7 @@ var (
 
 func (st *State) CompileFile(fn string) error {
 	dir, _ := filepath.Abs(st.Config.Output)
+	var errs []error
 	if _, err := exec.LookPath("naga"); err == nil {
 		// cmd := exec.Command("naga", "--compact", fn, fn) // produces some pretty weird code actually
 		cmd := exec.Command("naga", fn)
@@ -224,8 +272,8 @@ func (st *State) CompileFile(fn string) error {
 		out, err := cmd.CombinedOutput()
 		fmt.Printf("\n-----------------------------------------------------\nnaga output for: %s\n%s", fn, out)
 		if err != nil {
-			log.Println(err)
-			return err
+			errors.Log(err)
+			errs = append(errs, err)
 		}
 	} else {
 		if !nagaWarned {
@@ -239,8 +287,8 @@ func (st *State) CompileFile(fn string) error {
 		out, err := cmd.CombinedOutput()
 		fmt.Printf("\n-----------------------------------------------------\ntint output for: %s\n%s", fn, out)
 		if err != nil {
-			log.Println(err)
-			return err
+			errors.Log(err)
+			errs = append(errs, err)
 		}
 	} else {
 		if !tintWarned {
@@ -249,5 +297,5 @@ func (st *State) CompileFile(fn string) error {
 		}
 	}
 
-	return nil
+	return errors.Join(errs...)
 }

@@ -11,11 +11,14 @@ import (
 	"strings"
 
 	"slices"
+
+	"cogentcore.org/core/base/errors"
 )
 
 // ExtractFiles processes all the package files and saves the corresponding
 // .go files with simple go header.
-func (st *State) ExtractFiles() {
+func (st *State) ExtractFiles() error {
+	var errs []error
 	st.ImportPackages = make(map[string]bool)
 	for impath := range st.GoImports {
 		_, pkg := filepath.Split(impath)
@@ -31,23 +34,30 @@ func (st *State) ExtractFiles() {
 			st.GoVarsFiles[fn] = fl
 			delete(st.GoFiles, fn)
 		}
-		WriteFileLines(filepath.Join(st.ImportsDir, fn), st.AppendGoHeader(fl.Lines))
+		if err := WriteFileLines(filepath.Join(st.ImportsDir, fn), st.AppendGoHeader(fl.Lines)); err != nil {
+			errs = append(errs, errors.Log(err))
+		}
 	}
+	return errors.Join(errs...)
 }
 
 // ExtractImports processes all the imported files and saves the corresponding
 // .go files with simple go header.
-func (st *State) ExtractImports() {
+func (st *State) ExtractImports() error {
 	if len(st.GoImports) == 0 {
-		return
+		return nil
 	}
+	var errs []error
 	for impath, im := range st.GoImports {
 		_, pkg := filepath.Split(impath)
 		for fn, fl := range im {
 			fl.Lines, _ = st.ExtractGosl(fl.Lines)
-			WriteFileLines(filepath.Join(st.ImportsDir, pkg+"-"+fn), st.AppendGoHeader(fl.Lines))
+			if err := WriteFileLines(filepath.Join(st.ImportsDir, pkg+"-"+fn), st.AppendGoHeader(fl.Lines)); err != nil {
+				errs = append(errs, errors.Log(err))
+			}
 		}
 	}
+	return errors.Join(errs...)
 }
 
 // ExtractGosl gosl comment-directive tagged regions from given file.

@@ -273,6 +273,12 @@ fn JointPPos(idx: i32) -> vec3<f32> {
 fn JointPQuat(idx: i32) -> vec4<f32> {
 	return vec4<f32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointPQuatX))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointPQuatY))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointPQuatZ))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointPQuatW))]);
 }
+fn JointCPos(idx: i32) -> vec3<f32> {
+	return vec3<f32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCPosX))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCPosY))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCPosZ))]);
+}
+fn JointCQuat(idx: i32) -> vec4<f32> {
+	return vec4<f32>(Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCQuatX))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCQuatY))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCQuatZ))], Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointCQuatW))]);
+}
 fn SetJointPForce(idx: i32, f: vec3<f32>) {
 	Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointPForceX))] = f.x;
 	Joints[Index2D(TensorStrides[30], TensorStrides[31], u32(idx), u32(JointPForceY))] = f.y;
@@ -369,7 +375,7 @@ const  Box: Shapes = 4;
 const  Cone: Shapes = 5;
 
 //////// import: "slmath-math.go"
-const Pi = 3.141592653589793;
+const SLPi = 3.141592653589793;
 
 //////// import: "slmath-matrix3.go"
 
@@ -451,8 +457,13 @@ fn StepJointForces(i: u32) { //gosl:kernel
 	var dP = xwPR-(MulSpatialPoint(posePR, posePQ, comP)); // parent moment arm
 	var poseCR = DynamicPos(jCi, params.Cur);
 	var poseCQ = DynamicQuat(jCi, params.Cur);
+	var jCR = JointCPos(ji);
+	var jCQ = JointCQuat(ji);
+	var xwCR = jCR;
+	var xwCQ = jCQ;
+	MulSpatialTransforms(poseCR, poseCQ, jCR, jCQ, &xwCR, &xwCQ);
 	var comC = BodyCom(jCbi);
-	var dC = poseCR-(MulSpatialPoint(poseCR, poseCQ, comC)); // child moment arm
+	var dC = xwCR-(MulSpatialPoint(poseCR, poseCQ, comC)); // child moment arm
 	var f: vec3<f32>;
 	var t: vec3<f32>;
 	switch (jt) {

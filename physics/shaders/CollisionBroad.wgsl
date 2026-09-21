@@ -483,7 +483,7 @@ fn ShapePairContacts(a: Shapes,b: Shapes, infPlane: bool, ba: ptr<function,i32>)
 }
 
 //////// import: "slmath-math.go"
-const Pi = 3.141592653589793;
+const SLPi = 3.141592653589793;
 
 //////// import: "slmath-matrix3.go"
 

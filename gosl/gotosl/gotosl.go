@@ -289,18 +289,22 @@ func (st *State) Run() error {
 	}
 
 	st.ImportsDir = filepath.Join(st.Config.Output, "imports")
-	os.MkdirAll(st.Config.Output, 0755)
-	os.MkdirAll(st.ImportsDir, 0755)
+	if err := os.MkdirAll(st.Config.Output, 0755); err != nil {
+		return errors.Log(err)
+	}
+	if err := os.MkdirAll(st.ImportsDir, 0755); err != nil {
+		return errors.Log(err)
+	}
 	RemoveGenFiles(st.Config.Output)
 	RemoveGenFiles(st.ImportsDir)
 
-	st.ExtractFiles()   // get .go from project files
-	st.ExtractImports() // get .go from imports
-	st.TranslateDir("./" + st.ImportsDir)
+	var errs []error
+	errs = append(errs, st.ExtractFiles())                   // get .go from project files
+	errs = append(errs, st.ExtractImports())                 // get .go from imports
+	errs = append(errs, st.TranslateDir("./"+st.ImportsDir)) // the main event
+	errs = append(errs, st.GenGPU(false))
 
-	st.GenGPU(false)
-
-	return nil
+	return errors.Join(errs...)
 }
 
 // System returns the given system by name, making if not made.

@@ -6,17 +6,17 @@ package slmath
 
 //gosl:start
 
-const Pi = 3.141592653589793
+const SLPi = 3.141592653589793
 
 // MinAngleDiff returns the minimum difference between two angles
 // (in radians): a-b, dealing with the wrap-around issues with angles.
 func MinAngleDiff(a, b float32) float32 {
 	d := a - b
-	if d > Pi {
-		d -= 2 * Pi
+	if d > SLPi {
+		d -= 2 * SLPi
 	}
-	if d < -Pi {
-		d += 2 * Pi
+	if d < -SLPi {
+		d += 2 * SLPi
 	}
 	return d
 }

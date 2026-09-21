@@ -324,7 +324,7 @@ const  Box: Shapes = 4;
 const  Cone: Shapes = 5;
 
 //////// import: "slmath-math.go"
-const Pi = 3.141592653589793;
+const SLPi = 3.141592653589793;
 
 //////// import: "slmath-matrix3.go"
 
