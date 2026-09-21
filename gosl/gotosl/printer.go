@@ -23,6 +23,7 @@ import (
 	"text/tabwriter"
 	"unicode"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fsx"
 	"golang.org/x/tools/go/packages"
 )
@@ -91,6 +92,7 @@ type printer struct {
 	last         token.Position // value of pos after calling writeString
 	linePtr      *int           // if set, record out.Line for the next token in *linePtr
 	sourcePosErr error          // if non-nil, the first error emitting a //line directive
+	errs         []error        // all errors for gosl
 
 	// The list of all source comments, in order of appearance.
 	comments        []*ast.CommentGroup // may be nil
@@ -122,9 +124,9 @@ func (p *printer) internalError(msg ...any) {
 }
 
 func (p *printer) userError(err error) {
-	fname := fsx.DirAndFile(p.pos.String())
-	fmt.Print(fname + ": ")
+	err = fmt.Errorf("%s: %w", fsx.DirAndFile(p.pos.String()), err)
 	fmt.Println(err.Error())
+	p.errs = append(p.errs, err)
 }
 
 // commentsHaveNewline reports whether a list of comments belonging to
@@ -1384,12 +1386,12 @@ func (p *printer) free() {
 }
 
 // fprint implements Fprint and takes a nodesSizes map for setting up the printer state.
-func (cfg *PrintConfig) fprint(output io.Writer, pkg *packages.Package, node any, nodeSizes map[ast.Node]int) (err error) {
+func (cfg *PrintConfig) fprint(output io.Writer, pkg *packages.Package, node any, nodeSizes map[ast.Node]int) error {
 	// print node
 	p := newPrinter(cfg, pkg, nodeSizes)
 	defer p.free()
-	if err = p.printNode(node); err != nil {
-		return
+	if err := p.printNode(node); err != nil {
+		p.errs = append(p.errs, err)
 	}
 	// print outstanding comments
 	p.impliedSemi = false // EOF acts like a newline
@@ -1424,16 +1426,19 @@ func (cfg *PrintConfig) fprint(output io.Writer, pkg *packages.Package, node any
 	}
 
 	// write printer result via tabwriter/trimmer to output
-	if _, err = output.Write(p.output); err != nil {
-		return
+	if _, err := output.Write(p.output); err != nil {
+		p.errs = append(p.errs, err)
 	}
 
 	// flush tabwriter, if any
 	if tw, _ := output.(*tabwriter.Writer); tw != nil {
-		err = tw.Flush()
+		err := tw.Flush()
+		if err != nil {
+			p.errs = append(p.errs, err)
+		}
 	}
 
-	return
+	return errors.Join(p.errs...)
 }
 
 // A CommentedNode bundles an AST node and corresponding comments.
