@@ -97,14 +97,127 @@ func ClampMagnitude3(v math32.Vector3, mag float32) math32.Vector3 {
 	return r
 }
 
-// Normal3 returns this vector divided by its length (its unit vector).
+// Normal3 returns this vector divided by its length (its unit vector),
+// or the zero vector if the length is zero.
 func Normal3(v math32.Vector3) math32.Vector3 {
-	return v.DivScalar(Length3(v))
+	l := Length3(v)
+	if l == 0 {
+		return math32.Vec3(0, 0, 0)
+	}
+	return v.DivScalar(l)
 }
 
 // Cross3 returns the cross product of this vector with other.
 func Cross3(v, o math32.Vector3) math32.Vector3 {
 	return math32.Vec3(v.Y*o.Z-v.Z*o.Y, v.Z*o.X-v.X*o.Z, v.X*o.Y-v.Y*o.X)
+}
+
+// Floor3 returns floor of this vector components.
+func Floor3(v math32.Vector3) math32.Vector3 {
+	return math32.Vec3(math32.Floor(v.X), math32.Floor(v.Y), math32.Floor(v.Z))
+}
+
+// Ceil3 returns ceil of this vector components.
+func Ceil3(v math32.Vector3) math32.Vector3 {
+	return math32.Vec3(math32.Ceil(v.X), math32.Ceil(v.Y), math32.Ceil(v.Z))
+}
+
+// Round3 returns round of this vector components.
+func Round3(v math32.Vector3) math32.Vector3 {
+	return math32.Vec3(math32.Round(v.X), math32.Round(v.Y), math32.Round(v.Z))
+}
+
+// DistanceTo3 returns the distance between these two vectors as points.
+func DistanceTo3(v, o math32.Vector3) float32 {
+	return math32.Sqrt(DistanceToSquared3(v, o))
+}
+
+// DistanceToSquared3 returns the squared distance between
+// these two vectors as points.
+func DistanceToSquared3(v, o math32.Vector3) float32 {
+	dx := v.X - o.X
+	dy := v.Y - o.Y
+	dz := v.Z - o.Z
+	return dx*dx + dy*dy + dz*dz
+}
+
+// Lerp3 returns vector with each component as the linear interpolated value of
+// alpha between itself and the corresponding other component.
+func Lerp3(v, o math32.Vector3, alpha float32) math32.Vector3 {
+	return math32.Vec3(v.X+(o.X-v.X)*alpha, v.Y+(o.Y-v.Y)*alpha, v.Z+(o.Z-v.Z)*alpha)
+}
+
+// CosTo3 returns the cosine (normalized dot product)
+// between this vector and other.
+func CosTo3(v, o math32.Vector3) float32 {
+	return Dot3(v, o) / (Length3(v) * Length3(o))
+}
+
+// AngleTo3 returns the angle between this vector and other,
+// in the range of -PI to PI (not 0 to 2 PI).
+func AngleTo3(v, o math32.Vector3) float32 {
+	ang := math32.Acos(math32.Clamp(CosTo3(v, o), float32(-1), float32(1)))
+	cross := Cross3(v, o)
+	ax := math32.Abs(cross.X)
+	ay := math32.Abs(cross.Y)
+	az := math32.Abs(cross.Z)
+	if az >= ay && az >= ax {
+		if cross.Z > 0 {
+			ang = -ang
+		}
+	} else if ay >= az && ay >= ax {
+		if cross.Y > 0 {
+			ang = -ang
+		}
+	} else if ax >= az && ax >= ay {
+		if cross.X > 0 {
+			ang = -ang
+		}
+	}
+	return ang
+}
+
+// ProjectOnVector3 returns vector projected on other vector.
+func ProjectOnVector3(v, o math32.Vector3) math32.Vector3 {
+	on := Normal3(o)
+	return on.MulScalar(Dot3(v, on))
+}
+
+// ProjectOnPlane3 returns vector projected on the plane
+// specified by the given normal vector.
+func ProjectOnPlane3(v, planeNormal math32.Vector3) math32.Vector3 {
+	return v.Sub(ProjectOnVector3(v, planeNormal))
+}
+
+// Reflect3 returns vector reflected relative to the normal vector,
+// which is assumed to be already normalized.
+func Reflect3(v, normal math32.Vector3) math32.Vector3 {
+	return v.Sub(normal.MulScalar(2 * Dot3(v, normal)))
+}
+
+// NDCToWindow3 converts normalized display coordinates (NDC) to window
+// (pixel) coordinates, using given window size parameters.
+// near, far are 0, 1 by default (glDepthRange defaults).
+// flipY if true means flip the Y axis
+// (top = 0 for windows vs. bottom = 0 for 3D coords).
+func NDCToWindow3(v math32.Vector3, size, off math32.Vector2, near, far float32, flipY bool) math32.Vector3 {
+	var w math32.Vector3
+	half := size.MulScalar(0.5)
+	w.X = half.X*v.X + half.X
+	w.Y = half.Y*v.Y + half.Y
+	w.Z = 0.5*(far-near)*v.Z + 0.5*(far+near)
+	if flipY {
+		w.Y = size.Y - w.Y
+	}
+	w.X += off.X
+	w.Y += off.Y
+	return w
+}
+
+// Vec3FromVec4 returns a [math32.Vector3] from the X, Y, Z
+// components of the given [math32.Vector4].
+func Vec3FromVec4(v math32.Vector4) math32.Vector3 {
+	return math32.Vec3(v.X, v.Y, v.Z)
 }
 
 func Dim3(v math32.Vector3, dim int32) float32 {

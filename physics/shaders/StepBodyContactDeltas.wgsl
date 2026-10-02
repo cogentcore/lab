@@ -406,7 +406,11 @@ const  Cone: Shapes = 5;
 //////// import: "slmath-math.go"
 const SLPi = 3.141592653589793;
 
+//////// import: "slmath-matrix2.go"
+
 //////// import: "slmath-matrix3.go"
+
+//////// import: "slmath-matrix4.go"
 
 //////// import: "slmath-quaternion.go"
 fn QuatLength(q: vec4<f32>) -> f32 {
@@ -466,6 +470,8 @@ fn Length3(v: vec3<f32>) -> f32 {
 fn Cross3(v: vec3<f32>,o: vec3<f32>) -> vec3<f32> {
 	return vec3<f32>(v.y*o.z-v.z*o.y, v.z*o.x-v.x*o.z, v.x*o.y-v.y*o.x);
 }
+
+//////// import: "slmath-vector4.go"
 
 //////// import: "step.go"
 
