@@ -296,13 +296,19 @@ const  Cone: Shapes = 5;
 //////// import: "slmath-math.go"
 const SLPi = 3.141592653589793;
 
+//////// import: "slmath-matrix2.go"
+
 //////// import: "slmath-matrix3.go"
+
+//////// import: "slmath-matrix4.go"
 
 //////// import: "slmath-quaternion.go"
 
 //////// import: "slmath-vector2.go"
 
 //////// import: "slmath-vector3.go"
+
+//////// import: "slmath-vector4.go"
 
 //////// import: "step.go"
 

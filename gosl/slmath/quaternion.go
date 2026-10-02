@@ -130,10 +130,10 @@ func QuatSetDim(v math32.Quat, dim int32, val float32) math32.Quat {
 	if dim == 1 {
 		nv.Y = val
 	}
-	if dim == 3 {
+	if dim == 2 {
 		nv.Z = val
 	}
-	if dim == 4 {
+	if dim == 3 {
 		nv.W = val
 	}
 	return nv
@@ -171,6 +171,219 @@ func QuatToMatrix3(q math32.Quat) math32.Matrix3 {
 	m[8] = 1 - (xx + yy)
 
 	return m
+}
+
+// QuatIdentity returns the identity quaternion (no rotation).
+func QuatIdentity() math32.Quat {
+	return math32.NewQuat(0, 0, 0, 1)
+}
+
+// QuatIsIdentity returns whether the quaternion is the identity rotation.
+func QuatIsIdentity(q math32.Quat) bool {
+	return q.X == 0 && q.Y == 0 && q.Z == 0 && q.W == 1
+}
+
+// QuatIsNil returns whether all the quaternion components are zero.
+func QuatIsNil(q math32.Quat) bool {
+	return q.X == 0 && q.Y == 0 && q.Z == 0 && q.W == 0
+}
+
+// QuatLengthSquared returns the length squared of this quaternion.
+func QuatLengthSquared(q math32.Quat) float32 {
+	return q.X*q.X + q.Y*q.Y + q.Z*q.Z + q.W*q.W
+}
+
+// QuatConjugate returns the conjugate of the quaternion.
+func QuatConjugate(q math32.Quat) math32.Quat {
+	return math32.NewQuat(-q.X, -q.Y, -q.Z, q.W)
+}
+
+// QuatNormalizeFast approximates normalizing the quaternion.
+// Works best when the quaternion is already almost-normalized.
+func QuatNormalizeFast(q math32.Quat) math32.Quat {
+	f := (3 - QuatLengthSquared(q)) / 2
+	if f == 0 {
+		return QuatIdentity()
+	}
+	return QuatMulScalar(q, f)
+}
+
+// QuatFromEuler returns the quaternion for the given vector of
+// euler angles for each axis, which are assumed to be in XYZ order.
+func QuatFromEuler(euler math32.Vector3) math32.Quat {
+	c1 := math32.Cos(euler.X / 2)
+	c2 := math32.Cos(euler.Y / 2)
+	c3 := math32.Cos(euler.Z / 2)
+	s1 := math32.Sin(euler.X / 2)
+	s2 := math32.Sin(euler.Y / 2)
+	s3 := math32.Sin(euler.Z / 2)
+
+	return math32.NewQuat(
+		s1*c2*c3-c1*s2*s3,
+		c1*s2*c3+s1*c2*s3,
+		c1*c2*s3-s1*s2*c3,
+		c1*c2*c3+s1*s2*s3)
+}
+
+// QuatToEuler returns the euler angles for the given quaternion.
+func QuatToEuler(q math32.Quat) math32.Vector3 {
+	// columns
+	x := MulQuatVector(q, math32.Vec3(1, 0, 0))
+	y := MulQuatVector(q, math32.Vec3(0, 1, 0))
+	z := MulQuatVector(q, math32.Vec3(0, 0, 1))
+
+	phi := math32.Atan2(z.Y, z.Z)
+	sinp := -z.X
+	var theta float32
+	if math32.Abs(sinp) >= 1 {
+		theta = 0.5 * SLPi * math32.Sign(sinp)
+	} else {
+		theta = math32.Asin(sinp)
+	}
+	psi := math32.Atan2(y.X, x.X)
+
+	return math32.Vec3(-phi, -theta, -psi)
+}
+
+// EulerAnglesFromQuat returns the euler angles from the rotation matrix
+// of the given quaternion. Note that this uses a different convention
+// than [QuatToEuler].
+func EulerAnglesFromQuat(q math32.Quat) math32.Vector3 {
+	return Mat4ToEuler(Mat4FromQuat(q))
+}
+
+// QuatFromAxisAngle returns the quaternion for the rotation
+// specified by the given axis and angle (in radians).
+func QuatFromAxisAngle(axis math32.Vector3, angle float32) math32.Quat {
+	ha := angle / 2
+	s := math32.Sin(ha)
+	return math32.NewQuat(axis.X*s, axis.Y*s, axis.Z*s, math32.Cos(ha))
+}
+
+// QuatToAxisAngle returns a [math32.Vector4] holding the axis (X, Y, Z)
+// and angle (W) of the given quaternion, which is assumed to be normalized.
+func QuatToAxisAngle(q math32.Quat) math32.Vector4 {
+	// http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToAngle/index.htm
+	qw := math32.Clamp(q.W, float32(-1), float32(1))
+	w := 2 * math32.Acos(qw)
+	s := math32.Sqrt(1 - qw*qw)
+	if s < 0.0001 {
+		return math32.Vec4(1, 0, 0, w)
+	}
+	return math32.Vec4(q.X/s, q.Y/s, q.Z/s, w)
+}
+
+// QuatFromMatrix4 returns the quaternion for the
+// given pure rotation matrix.
+func QuatFromMatrix4(m math32.Matrix4) math32.Quat {
+	m11 := m[0]
+	m12 := m[4]
+	m13 := m[8]
+	m21 := m[1]
+	m22 := m[5]
+	m23 := m[9]
+	m31 := m[2]
+	m32 := m[6]
+	m33 := m[10]
+	trace := m11 + m22 + m33
+
+	var q math32.Quat
+	var s float32
+	if trace > 0 {
+		s = 0.5 / math32.Sqrt(trace+1)
+		q.W = 0.25 / s
+		q.X = (m32 - m23) * s
+		q.Y = (m13 - m31) * s
+		q.Z = (m21 - m12) * s
+	} else if m11 > m22 && m11 > m33 {
+		s = 2 * math32.Sqrt(1+m11-m22-m33)
+		q.W = (m32 - m23) / s
+		q.X = 0.25 * s
+		q.Y = (m12 + m21) / s
+		q.Z = (m13 + m31) / s
+	} else if m22 > m33 {
+		s = 2 * math32.Sqrt(1+m22-m11-m33)
+		q.W = (m13 - m31) / s
+		q.X = (m12 + m21) / s
+		q.Y = 0.25 * s
+		q.Z = (m23 + m32) / s
+	} else {
+		s = 2 * math32.Sqrt(1+m33-m11-m22)
+		q.W = (m21 - m12) / s
+		q.X = (m13 + m31) / s
+		q.Y = (m23 + m32) / s
+		q.Z = 0.25 * s
+	}
+	return q
+}
+
+// QuatFromUnitVectors returns the quaternion for the rotation from
+// vector vFrom to vTo. Both vectors must be normalized.
+func QuatFromUnitVectors(vFrom, vTo math32.Vector3) math32.Quat {
+	var v1 math32.Vector3
+	r := Dot3(vFrom, vTo) + 1
+	if r < 0.000001 {
+		r = 0
+		if math32.Abs(vFrom.X) > math32.Abs(vFrom.Z) {
+			v1 = math32.Vec3(-vFrom.Y, vFrom.X, 0)
+		} else {
+			v1 = math32.Vec3(0, -vFrom.Z, vFrom.Y)
+		}
+	} else {
+		v1 = Cross3(vFrom, vTo)
+	}
+	return QuatNormalize(math32.NewQuat(v1.X, v1.Y, v1.Z, r))
+}
+
+// QuatSlerp returns the spherically linear interpolation
+// from quaternion q to o using t.
+func QuatSlerp(q, o math32.Quat, t float32) math32.Quat {
+	if t == 0 {
+		return q
+	}
+	if t == 1 {
+		return o
+	}
+	x := q.X
+	y := q.Y
+	z := q.Z
+	w := q.W
+
+	cosHalfTheta := w*o.W + x*o.X + y*o.Y + z*o.Z
+
+	nq := o
+	if cosHalfTheta < 0 {
+		nq.X = -o.X
+		nq.Y = -o.Y
+		nq.Z = -o.Z
+		nq.W = -o.W
+		cosHalfTheta = -cosHalfTheta
+	}
+	if cosHalfTheta >= 1 {
+		return q
+	}
+
+	var r math32.Quat
+	sqrSinHalfTheta := 1 - cosHalfTheta*cosHalfTheta
+	if sqrSinHalfTheta < 0.001 {
+		s := 1 - t
+		r.W = s*w + t*nq.W
+		r.X = s*x + t*nq.X
+		r.Y = s*y + t*nq.Y
+		r.Z = s*z + t*nq.Z
+		return QuatNormalize(r)
+	}
+
+	sinHalfTheta := math32.Sqrt(sqrSinHalfTheta)
+	halfTheta := math32.Atan2(sinHalfTheta, cosHalfTheta)
+	ratioA := math32.Sin((1-t)*halfTheta) / sinHalfTheta
+	ratioB := math32.Sin(t*halfTheta) / sinHalfTheta
+
+	r.W = w*ratioA + nq.W*ratioB
+	r.X = x*ratioA + nq.X*ratioB
+	r.Y = y*ratioA + nq.Y*ratioB
+	r.Z = z*ratioA + nq.Z*ratioB
+	return r
 }
 
 //gosl:end

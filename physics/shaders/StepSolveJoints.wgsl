@@ -430,7 +430,11 @@ fn MinAngleDiff(a: f32,b: f32) -> f32 {
 	}return d;
 }
 
+//////// import: "slmath-matrix2.go"
+
 //////// import: "slmath-matrix3.go"
+
+//////// import: "slmath-matrix4.go"
 
 //////// import: "slmath-quaternion.go"
 fn QuatLength(q: vec4<f32>) -> f32 {
@@ -539,7 +543,10 @@ fn Abs3(v: vec3<f32>) -> vec3<f32> {
 	return vec3<f32>(abs(v.x), abs(v.y), abs(v.z));
 }
 fn Normal3(v: vec3<f32>) -> vec3<f32> {
-	return v/(Length3(v));
+	var l = Length3(v);
+	if (l == 0) {
+		return vec3<f32>(0, 0, 0);
+	}return v/(l);
 }
 fn Cross3(v: vec3<f32>,o: vec3<f32>) -> vec3<f32> {
 	return vec3<f32>(v.y*o.z-v.z*o.y, v.z*o.x-v.x*o.z, v.x*o.y-v.y*o.x);
@@ -564,6 +571,8 @@ fn SetDim3(v: vec3<f32>, dim: i32, val: f32) -> vec3<f32> {
 		nv.z = val;
 	}return nv;
 }
+
+//////// import: "slmath-vector4.go"
 
 //////// import: "step.go"
 

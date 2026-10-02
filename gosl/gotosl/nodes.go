@@ -1304,6 +1304,10 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 	case *ast.IndexExpr:
 		// TODO(gri): should treat[] like parentheses and undo one level of depth
 		p.globalVarBasic(x)
+		if n := p.matrixDim(x.X); n > 0 { // gosl: flat Go index -> WGSL [col][row]
+			p.matrixIndex(x, n, depth)
+			break
+		}
 		p.expr1(x.X, token.HighestPrec, 1)
 		p.setPos(x.Lbrack)
 		p.print(token.LBRACK)
@@ -1566,6 +1570,12 @@ func normalizedNumber(lit *ast.BasicLit) *ast.BasicLit {
 // selectorExpr handles an *ast.SelectorExpr node and reports whether x spans
 // multiple lines, and thus was indented.
 func (p *printer) selectorExpr(x *ast.SelectorExpr, depth int) (wasIndented bool) {
+	if cr, ok := p.matrix2Field(x); ok { // gosl: named field -> WGSL [col][row]
+		p.derefPtrArgs(x.X, token.HighestPrec, depth)
+		p.setPos(x.Sel.Pos())
+		p.print(cr)
+		return false
+	}
 	p.derefPtrArgs(x.X, token.HighestPrec, depth)
 	p.print(token.PERIOD)
 	if line := p.lineFor(x.Sel.Pos()); p.pos.IsValid() && p.pos.Line < line {
@@ -2101,6 +2111,16 @@ func (p *printer) mathMeth(x *ast.CallExpr, depth int, methName, recvPath, recvT
 		p.curMethIsAtomic = false
 		return true
 	}
+	mpath := x.Fun.(*ast.SelectorExpr) // we know fun is selector
+	switch p.exprTypeName(mpath.X) {
+	case "math32.Matrix2", "math32.Matrix3", "math32.Matrix4":
+		return p.matrixMeth(x, depth, methName, p.exprTypeName(mpath.X))
+	case "math32.Quat":
+		if methName == "Mul" { // component-wise * is not quaternion multiply
+			p.userError(fmt.Errorf("gosl: math32.Quat.Mul is not supported: use slmath.MulQuats(a, b) instead"))
+			return true
+		}
+	}
 	opr := token.ILLEGAL
 	switch methName {
 	case "Add":
@@ -2124,6 +2144,106 @@ func (p *printer) mathMeth(x *ast.CallExpr, depth int, methName, recvPath, recvT
 	p.setPos(x.Rparen)
 	p.print(token.RPAREN)
 	p.curMethIsAtomic = false
+	return true
+}
+
+// gosl: matrixDim returns the dimension of the math32 matrix type that the
+// given expression has, or 0 if it is not one. [math32.Matrix3] and
+// [math32.Matrix4] are flat Go arrays stored column-wise, but they map to
+// the WGSL mat3x3f and mat4x4f types, which are indexed as [col][row].
+func (p *printer) matrixDim(x ast.Expr) int {
+	switch p.exprTypeName(x) {
+	case "math32.Matrix3":
+		return 3
+	case "math32.Matrix4":
+		return 4
+	}
+	return 0
+}
+
+// gosl: exprTypeName returns the package-local name of the type of the
+// given expression, e.g. "math32.Matrix3", or "" if it cannot be determined.
+func (p *printer) exprTypeName(x ast.Expr) string {
+	typ := p.pkg.TypesInfo.TypeOf(x)
+	if typ == nil {
+		return ""
+	}
+	return getLocalTypeName(typ)
+}
+
+// gosl: matrixIndex prints the flat Go index of an n x n math32 matrix as the
+// [col][row] index pair that the equivalent WGSL matNxNf type requires.
+// A constant index is folded; any other index is divided at runtime.
+func (p *printer) matrixIndex(x *ast.IndexExpr, n, depth int) {
+	p.expr1(x.X, token.HighestPrec, 1)
+	p.setPos(x.Lbrack)
+	if tv, ok := p.pkg.TypesInfo.Types[x.Index]; ok && tv.Value != nil {
+		if iv, exact := constant.Int64Val(constant.ToInt(tv.Value)); exact && iv >= 0 {
+			p.print(token.LBRACK, strconv.FormatInt(iv/int64(n), 10), token.RBRACK)
+			p.print(token.LBRACK, strconv.FormatInt(iv%int64(n), 10), token.RBRACK)
+			p.setPos(x.Rbrack)
+			return
+		}
+	}
+	ns := strconv.Itoa(n)
+	p.print(token.LBRACK, token.LPAREN)
+	p.expr0(x.Index, depth+1)
+	p.print(token.RPAREN, token.QUO, ns, token.RBRACK)
+	p.print(token.LBRACK, token.LPAREN)
+	p.expr0(x.Index, depth+1)
+	p.print(token.RPAREN, token.REM, ns, token.RBRACK)
+	p.setPos(x.Rbrack)
+}
+
+// gosl: matrix2Fields maps the [math32.Matrix2] field names to the [col][row]
+// index of the corresponding element of the WGSL mat2x3f that it maps to.
+var matrix2Fields = map[string]string{
+	"XX": "[0][0]", "XY": "[0][1]", "X0": "[0][2]",
+	"YX": "[1][0]", "YY": "[1][1]", "Y0": "[1][2]",
+}
+
+// gosl: matrix2Field returns the WGSL [col][row] index for a field access on
+// a [math32.Matrix2], which maps to a mat2x3f that has no named fields.
+func (p *printer) matrix2Field(x *ast.SelectorExpr) (string, bool) {
+	cr, ok := matrix2Fields[x.Sel.Name]
+	if !ok {
+		return "", false
+	}
+	if p.exprTypeName(x.X) != "math32.Matrix2" {
+		return "", false
+	}
+	return cr, true
+}
+
+// gosl: matrixMeth handles method calls on the math32 matrix types, which
+// cannot use the plain operator translation that the vector types do,
+// because the Go argument order and the WGSL matrix semantics differ.
+// It returns true if it handled the call, which it always does.
+func (p *printer) matrixMeth(x *ast.CallExpr, depth int, methName, recvType string) bool {
+	path := x.Fun.(*ast.SelectorExpr) // we know fun is selector
+	// mulExpr prints the receiver * the argument.
+	mulExpr := func() {
+		p.expr(path.X)
+		p.print(token.MUL)
+		p.setPos(x.Lparen)
+		p.print(token.LPAREN)
+		p.exprList(x.Lparen, x.Args, depth, commaTerm, x.Rparen, false)
+		p.setPos(x.Rparen)
+		p.print(token.RPAREN)
+		p.curMethIsAtomic = false
+	}
+	switch {
+	case methName == "Mul" && (recvType == "math32.Matrix3" || recvType == "math32.Matrix4"):
+		// Matrix3.Mul and Matrix4.Mul are both the standard a*b, as in WGSL.
+		mulExpr()
+		return true
+	case recvType == "math32.Matrix3" && (methName == "MulVector3" || methName == "MulScalar"):
+		// note: math32.Matrix4.MulScalar is a mutator, not an expression,
+		// so it is not supported here.
+		mulExpr()
+		return true
+	}
+	p.userError(fmt.Errorf("gosl: %s.%s is not supported: use the equivalent slmath.Mat%s function instead", recvType, methName, recvType[len(recvType)-1:]))
 	return true
 }
 
