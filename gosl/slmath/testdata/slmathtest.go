@@ -267,13 +267,13 @@ func SpatialTest(aP math32.Vector3, aQ math32.Quat, bP math32.Vector3, bQ math32
 
 // MatrixOpsTest exercises the matrix translations that gosl does directly,
 // rather than through an slmath function: the operator form of the Matrix3
-// methods, and indexing a matrix with a non-constant index.
+// methods, which are the standard a*b in both Go and WGSL, and indexing a
+// matrix with a non-constant index.
 // The [math32.Matrix4] methods all take pointers, which do not translate,
 // so the slmath functions must be used for those.
 func MatrixOpsTest(v3 math32.Vector3, s float32, d int32) float32 {
 	m3 := slmath.Mat3Rotate2D(s)
 	o3 := slmath.Mat3Scale2D(s, s)
-	// Matrix3.Mul applies the argument first, so it is b*a in WGSL.
 	r3 := m3.Mul(o3)
 	r3 = r3.MulScalar(s)
 	mv := r3.MulVector3(v3)

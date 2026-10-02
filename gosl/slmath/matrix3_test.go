@@ -77,7 +77,8 @@ func TestMatrix3Transforms(t *testing.T) {
 	eq2(t, vx, Mat3MulPoint2(Mat3Rotate2D(math32.DegToRad(-90)), vy), "rotate -90")
 
 	// 1,0 -> scale(2) = 2,0 -> rotate 90 = 0,2 -> trans 1,1 -> 1,3
-	// multiplication order is the *reverse* of the "logical" order:
+	// multiplication order is the *reverse* of the "logical" order,
+	// as in Matrix2, because the point multiplies on the right:
 	xf := Mat3Mul(Mat3Mul(Mat3Translate2D(1, 1), Mat3Rotate2D(math32.DegToRad(90))), Mat3Scale2D(2, 2))
 	eq2(t, math32.Vec2(1, 3), Mat3MulPoint2(xf, vx), "composed transform")
 }
@@ -121,12 +122,11 @@ func wgslMul3(m, n math32.Matrix3) math32.Matrix3 {
 
 // TestMatrix3MulWGSLOrder checks the operand order that gosl uses when it
 // translates a [math32.Matrix3] Mul method call into the WGSL * operator.
-// math32.Matrix3.Mul applies the argument's transform first, so a.Mul(b)
-// is the standard product b * a, which is why gosl swaps the operands.
+// a.Mul(b) is the standard product a * b, so the operands stay in order.
 func TestMatrix3MulWGSLOrder(t *testing.T) {
 	for _, a := range testMatrix3s() {
 		for _, b := range testMatrix3s() {
-			eqM3(t, Mat3Mul(a, b), wgslMul3(b, a), "a.Mul(b) is WGSL b*a")
+			eqM3(t, Mat3Mul(a, b), wgslMul3(a, b), "a.Mul(b) is WGSL a*b")
 		}
 	}
 }
@@ -143,5 +143,29 @@ func TestMatrix3MulVector3WGSL(t *testing.T) {
 				m[2]*v.X+m[5]*v.Y+m[8]*v.Z)
 			eq3(t, want, Mat3MulVector3(m, v), "Mat3MulVector3 is WGSL m*v")
 		}
+	}
+}
+
+// TestMatrix3Matches2D checks that the 2D affine functions on Matrix3
+// agree with their Matrix2 counterparts, which is the convention the
+// rest of the codebase uses.
+func TestMatrix3Matches2D(t *testing.T) {
+	for _, a2 := range testMatrix2s() {
+		a3 := Mat3FromMatrix2(a2)
+		for _, v := range testVec2s {
+			eq2(t, Mat2MulPoint(a2, v), Mat3MulPoint2(a3, v), "Mat3MulPoint2 matches Mat2MulPoint")
+			eq2(t, Mat2MulVector(a2, v), Mat3MulVector2(a3, v), "Mat3MulVector2 matches Mat2MulVector")
+		}
+		for _, b2 := range testMatrix2s() {
+			b3 := Mat3FromMatrix2(b2)
+			eqM3(t, Mat3FromMatrix2(Mat2Mul(a2, b2)), Mat3Mul(a3, b3), "Mat3Mul matches Mat2Mul")
+		}
+	}
+	for _, x := range testScalars {
+		for _, y := range testScalars {
+			eqM3(t, Mat3FromMatrix2(Mat2Translate2D(x, y)), Mat3Translate2D(x, y), "Mat3Translate2D")
+			eqM3(t, Mat3FromMatrix2(Mat2Scale2D(x, y)), Mat3Scale2D(x, y), "Mat3Scale2D")
+		}
+		eqM3(t, Mat3FromMatrix2(Mat2Rotate2D(x)), Mat3Rotate2D(x), "Mat3Rotate2D")
 	}
 }

@@ -40,7 +40,9 @@ Where math32 silently produces a different result on the GPU, slmath makes the G
 
 Because the WGSL constructors take their values column-wise, which is not the order of the `Matrix2` struct fields, matrices are built here with `Mat2Set` and `Mat4Set` rather than composite literals. `math32.Mat3` already takes its 9 values column-wise, so it is used directly.
 
-The matrix methods on the math32 types mostly cannot be used in gosl code, so call the `slmath` functions instead. gosl translates the ones that are a plain WGSL operator (`Matrix3.Mul`, with the operands swapped, since `a.Mul(b)` applies `b` first; `Matrix3.MulVector3`; `Matrix3.MulScalar`; `Matrix4.Mul`) and reports an error for the rest. `math32.Quat.Mul` is likewise an error, because the WGSL `*` on the `vec4<f32>` it maps to is a component-wise multiply, not a quaternion multiply: use `slmath.MulQuats`.
+The matrix methods on the math32 types mostly cannot be used in gosl code, so call the `slmath` functions instead. gosl translates the ones that are a plain WGSL operator (`Matrix3.Mul`, `Matrix3.MulVector3`, `Matrix3.MulScalar` and `Matrix4.Mul`) and reports an error for the rest.
+
+`Mat2Mul`, `Mat3Mul` and `Mat4Mul` are all the standard product `a * b`: element (row i, column j) of the result is row i of `a` dotted with column j of `b`, the same as the WGSL `*` operator. Every `Mul` function multiplies the vector or point on the right, so a chain of them applies its transforms right to left, as in `math32.Matrix2`. `math32.Quat.Mul` is likewise an error, because the WGSL `*` on the `vec4<f32>` it maps to is a component-wise multiply, not a quaternion multiply: use `slmath.MulQuats`.
 
 ## Tests
 

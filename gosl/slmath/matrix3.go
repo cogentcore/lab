@@ -12,6 +12,8 @@ import "cogentcore.org/core/math32"
 // array is column i/3, row i%3, which is exactly how the WGSL mat3x3f
 // that it maps to is indexed. [math32.Mat3] takes its 9 values in that
 // same column-wise order, matching the WGSL mat3x3f constructor.
+// All of the Mul functions multiply the vector or point on the right,
+// so a chain of Mat3Mul calls applies its transforms right to left.
 
 // Mat3Identity returns the identity [math32.Matrix3] matrix.
 func Mat3Identity() math32.Matrix3 {
@@ -21,11 +23,13 @@ func Mat3Identity() math32.Matrix3 {
 		0, 0, 1)
 }
 
-// Mat3FromMatrix2 returns a [math32.Matrix3] from a [math32.Matrix2].
+// Mat3FromMatrix2 returns a [math32.Matrix3] from a [math32.Matrix2],
+// as a standard homogeneous 2D affine matrix with the translation
+// in the third column.
 func Mat3FromMatrix2(m math32.Matrix2) math32.Matrix3 {
 	return math32.Mat3(
-		m.XX, m.XY, m.X0,
-		m.YX, m.YY, m.Y0,
+		m.XX, m.YX, 0,
+		m.XY, m.YY, 0,
 		m.X0, m.Y0, 1)
 }
 
@@ -56,22 +60,22 @@ func Mat3Rotate2D(angle float32) math32.Matrix3 {
 	return Mat3FromMatrix2(Mat2Rotate2D(angle))
 }
 
-// Mat3Mul returns the matrix multiplication a * b, using the
-// [math32.Matrix3] convention where the transform of b is applied
-// before that of a when multiplying a point on the right.
+// Mat3Mul returns the standard matrix multiplication a * b: element
+// (row i, column j) of the result is row i of a dotted with column j of b.
+// This is the same as [math32.Matrix3.Mul] and the WGSL mat3x3f * operator.
 func Mat3Mul(a, b math32.Matrix3) math32.Matrix3 {
 	return math32.Mat3(
-		b[0]*a[0]+b[3]*a[1]+b[6]*a[2],
-		b[1]*a[0]+b[4]*a[1]+b[7]*a[2],
-		b[2]*a[0]+b[5]*a[1]+b[8]*a[2],
+		a[0]*b[0]+a[3]*b[1]+a[6]*b[2],
+		a[1]*b[0]+a[4]*b[1]+a[7]*b[2],
+		a[2]*b[0]+a[5]*b[1]+a[8]*b[2],
 
-		b[0]*a[3]+b[3]*a[4]+b[6]*a[5],
-		b[1]*a[3]+b[4]*a[4]+b[7]*a[5],
-		b[2]*a[3]+b[5]*a[4]+b[8]*a[5],
+		a[0]*b[3]+a[3]*b[4]+a[6]*b[5],
+		a[1]*b[3]+a[4]*b[4]+a[7]*b[5],
+		a[2]*b[3]+a[5]*b[4]+a[8]*b[5],
 
-		b[0]*a[6]+b[3]*a[7]+b[6]*a[8],
-		b[1]*a[6]+b[4]*a[7]+b[7]*a[8],
-		b[2]*a[6]+b[5]*a[7]+b[8]*a[8])
+		a[0]*b[6]+a[3]*b[7]+a[6]*b[8],
+		a[1]*b[6]+a[4]*b[7]+a[7]*b[8],
+		a[2]*b[6]+a[5]*b[7]+a[8]*b[8])
 }
 
 // Mat3MulScalar returns the matrix with each element
@@ -86,13 +90,13 @@ func Mat3MulScalar(m math32.Matrix3, s float32) math32.Matrix3 {
 // Mat3MulVector2 multiplies the [math32.Vector2] as a vector,
 // without adding translations. This is for directional vectors, not points.
 func Mat3MulVector2(a math32.Matrix3, v math32.Vector2) math32.Vector2 {
-	return math32.Vec2(a[0]*v.X+a[1]*v.Y, a[3]*v.X+a[4]*v.Y)
+	return math32.Vec2(a[0]*v.X+a[3]*v.Y, a[1]*v.X+a[4]*v.Y)
 }
 
 // Mat3MulPoint2 multiplies the [math32.Vector2] as a point,
 // including adding translations.
 func Mat3MulPoint2(a math32.Matrix3, v math32.Vector2) math32.Vector2 {
-	return math32.Vec2(a[0]*v.X+a[1]*v.Y+a[2], a[3]*v.X+a[4]*v.Y+a[5])
+	return math32.Vec2(a[0]*v.X+a[3]*v.Y+a[6], a[1]*v.X+a[4]*v.Y+a[7])
 }
 
 // Mat3MulVector3 multiplies the [math32.Vector3] on the right,

@@ -2221,42 +2221,26 @@ func (p *printer) matrix2Field(x *ast.SelectorExpr) (string, bool) {
 // It returns true if it handled the call, which it always does.
 func (p *printer) matrixMeth(x *ast.CallExpr, depth int, methName, recvType string) bool {
 	path := x.Fun.(*ast.SelectorExpr) // we know fun is selector
-	// mulExpr prints a * b, with the operands in the given order.
-	mulExpr := func(swap bool) {
-		if swap {
-			p.setPos(x.Lparen)
-			p.print(token.LPAREN)
-			p.exprList(x.Lparen, x.Args, depth, commaTerm, x.Rparen, false)
-			p.setPos(x.Rparen)
-			p.print(token.RPAREN, token.MUL)
-			p.expr(path.X)
-		} else {
-			p.expr(path.X)
-			p.print(token.MUL)
-			p.setPos(x.Lparen)
-			p.print(token.LPAREN)
-			p.exprList(x.Lparen, x.Args, depth, commaTerm, x.Rparen, false)
-			p.setPos(x.Rparen)
-			p.print(token.RPAREN)
-		}
+	// mulExpr prints the receiver * the argument.
+	mulExpr := func() {
+		p.expr(path.X)
+		p.print(token.MUL)
+		p.setPos(x.Lparen)
+		p.print(token.LPAREN)
+		p.exprList(x.Lparen, x.Args, depth, commaTerm, x.Rparen, false)
+		p.setPos(x.Rparen)
+		p.print(token.RPAREN)
 		p.curMethIsAtomic = false
 	}
 	switch {
-	case recvType == "math32.Matrix3" && methName == "MulScalar":
+	case methName == "Mul" && (recvType == "math32.Matrix3" || recvType == "math32.Matrix4"):
+		// Matrix3.Mul and Matrix4.Mul are both the standard a*b, as in WGSL.
+		mulExpr()
+		return true
+	case recvType == "math32.Matrix3" && (methName == "MulVector3" || methName == "MulScalar"):
 		// note: math32.Matrix4.MulScalar is a mutator, not an expression,
 		// so it is not supported here.
-		mulExpr(false)
-		return true
-	case recvType == "math32.Matrix4" && methName == "Mul":
-		// math32.Matrix4.Mul(b) is the standard a*b, as in WGSL.
-		mulExpr(false)
-		return true
-	case recvType == "math32.Matrix3" && methName == "Mul":
-		// math32.Matrix3.Mul(b) applies b before a, i.e. it is b*a in WGSL.
-		mulExpr(true)
-		return true
-	case recvType == "math32.Matrix3" && methName == "MulVector3":
-		mulExpr(false)
+		mulExpr()
 		return true
 	}
 	p.userError(fmt.Errorf("gosl: %s.%s is not supported: use the equivalent slmath.Mat%s function instead", recvType, methName, recvType[len(recvType)-1:]))

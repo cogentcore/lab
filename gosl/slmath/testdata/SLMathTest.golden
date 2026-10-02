@@ -227,7 +227,7 @@ return p.x + p.y + p.z + MinAngleDiff(aP.x, bP.x);
 fn MatrixOpsTest(v3: vec3<f32>, s: f32, d: i32) -> f32 {
 	var m3 = Mat3Rotate2D(s);
 	var o3 = Mat3Scale2D(s, s);
-	var r3 = (o3)*m3;
+	var r3 = m3*(o3);
 	r3 = r3*(s);
 	var mv = r3*(v3);
 	var r4 = Mat4MulScalar(Mat4Mul(Mat4RotateX(s), Mat4Scale3D(s, s, s)), s);
@@ -378,8 +378,8 @@ fn Mat3Identity() -> mat3x3f {
 }
 fn Mat3FromMatrix2(m: mat2x3f) -> mat3x3f {
 	return mat3x3f(
-		m[0][0], m[0][1], m[0][2],
-		m[1][0], m[1][1], m[1][2],
+		m[0][0], m[1][0], 0,
+		m[0][1], m[1][1], 0,
 		m[0][2], m[1][2], 1);
 }
 fn Mat3FromMatrix4(m: mat4x4f) -> mat3x3f {
@@ -399,15 +399,15 @@ fn Mat3Rotate2D(angle: f32) -> mat3x3f {
 }
 fn Mat3Mul(a: mat3x3f,b: mat3x3f) -> mat3x3f {
 	return mat3x3f(
-		b[0][0]*a[0][0]+b[1][0]*a[0][1]+b[2][0]*a[0][2],
-		b[0][1]*a[0][0]+b[1][1]*a[0][1]+b[2][1]*a[0][2],
-		b[0][2]*a[0][0]+b[1][2]*a[0][1]+b[2][2]*a[0][2],
-		b[0][0]*a[1][0]+b[1][0]*a[1][1]+b[2][0]*a[1][2],
-		b[0][1]*a[1][0]+b[1][1]*a[1][1]+b[2][1]*a[1][2],
-		b[0][2]*a[1][0]+b[1][2]*a[1][1]+b[2][2]*a[1][2],
-		b[0][0]*a[2][0]+b[1][0]*a[2][1]+b[2][0]*a[2][2],
-		b[0][1]*a[2][0]+b[1][1]*a[2][1]+b[2][1]*a[2][2],
-		b[0][2]*a[2][0]+b[1][2]*a[2][1]+b[2][2]*a[2][2]);
+		a[0][0]*b[0][0]+a[1][0]*b[0][1]+a[2][0]*b[0][2],
+		a[0][1]*b[0][0]+a[1][1]*b[0][1]+a[2][1]*b[0][2],
+		a[0][2]*b[0][0]+a[1][2]*b[0][1]+a[2][2]*b[0][2],
+		a[0][0]*b[1][0]+a[1][0]*b[1][1]+a[2][0]*b[1][2],
+		a[0][1]*b[1][0]+a[1][1]*b[1][1]+a[2][1]*b[1][2],
+		a[0][2]*b[1][0]+a[1][2]*b[1][1]+a[2][2]*b[1][2],
+		a[0][0]*b[2][0]+a[1][0]*b[2][1]+a[2][0]*b[2][2],
+		a[0][1]*b[2][0]+a[1][1]*b[2][1]+a[2][1]*b[2][2],
+		a[0][2]*b[2][0]+a[1][2]*b[2][1]+a[2][2]*b[2][2]);
 }
 fn Mat3MulScalar(m: mat3x3f, s: f32) -> mat3x3f {
 	return mat3x3f(
@@ -416,10 +416,10 @@ fn Mat3MulScalar(m: mat3x3f, s: f32) -> mat3x3f {
 		m[2][0]*s, m[2][1]*s, m[2][2]*s);
 }
 fn Mat3MulVector2(a: mat3x3f, v: vec2<f32>) -> vec2<f32> {
-	return vec2<f32>(a[0][0]*v.x+a[0][1]*v.y, a[1][0]*v.x+a[1][1]*v.y);
+	return vec2<f32>(a[0][0]*v.x+a[1][0]*v.y, a[0][1]*v.x+a[1][1]*v.y);
 }
 fn Mat3MulPoint2(a: mat3x3f, v: vec2<f32>) -> vec2<f32> {
-	return vec2<f32>(a[0][0]*v.x+a[0][1]*v.y+a[0][2], a[1][0]*v.x+a[1][1]*v.y+a[1][2]);
+	return vec2<f32>(a[0][0]*v.x+a[1][0]*v.y+a[2][0], a[0][1]*v.x+a[1][1]*v.y+a[2][1]);
 }
 fn Mat3MulVector3(a: mat3x3f, v: vec3<f32>) -> vec3<f32> {
 	return vec3<f32>(
