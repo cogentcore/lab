@@ -8,6 +8,8 @@ import (
 	"math"
 	"strconv"
 	"time"
+
+	"cogentcore.org/lab/plot/ticks"
 )
 
 // A Tick is a single tick mark on an axis.
@@ -47,30 +49,11 @@ func (DefaultTicks) Ticks(mn, mx float64, nticks int) []Tick {
 		return nil
 	}
 
-	labels, step, q, mag := talbotLinHanrahan(mn, mx, nticks, withinData, nil, nil, nil)
-	majorDelta := step * math.Pow10(mag)
-	if q == 0 {
-		// Simple fall back was chosen, so
-		// majorDelta is the label distance.
-		majorDelta = labels[1] - labels[0]
-	}
-
-	// Choose a reasonable, but ad
-	// hoc formatting for labels.
-	fc := byte('f')
-	var off int
-	if mag < -1 || 6 < mag {
-		off = 1
-		fc = 'g'
-	}
-	mag10 := math.Pow10(mag)
-	if math.Trunc(q*mag10) != q*mag10 {
-		off += 2
-	}
-	prec := min(6, max(off, -mag))
-	ticks := make([]Tick, len(labels))
-	for i, v := range labels {
-		ticks[i] = Tick{Value: v, Label: strconv.FormatFloat(float64(v), fc, prec, 64)}
+	values, step, q, mag := ticks.ForRange(mn, mx, nticks)
+	majorDelta, fc, prec := ticks.Format(values, step, q, mag)
+	labels := make([]Tick, len(values))
+	for i, v := range values {
+		labels[i] = Tick{Value: v, Label: strconv.FormatFloat(float64(v), fc, prec, 64)}
 	}
 
 	var minorDelta float64
@@ -81,8 +64,8 @@ func (DefaultTicks) Ticks(mn, mx float64, nticks int) []Tick {
 	case 2, 3, 4, 5:
 		minorDelta = majorDelta / step
 	default:
-		if majorDelta/2 < dlamchP {
-			return ticks
+		if majorDelta/2 < ticks.MachinePrecision {
+			return labels
 		}
 		minorDelta = majorDelta / 2
 	}
@@ -90,30 +73,30 @@ func (DefaultTicks) Ticks(mn, mx float64, nticks int) []Tick {
 	// Find the first minor tick not greater
 	// than the lowest data value.
 	var i float64
-	for labels[0]+(i-1)*minorDelta > mn {
+	for values[0]+(i-1)*minorDelta > mn {
 		i--
 	}
 	// Add ticks at minorDelta intervals when
 	// they are not within minorDelta/2 of a
 	// labelled tick.
 	for {
-		val := labels[0] + i*minorDelta
+		val := values[0] + i*minorDelta
 		if val > mx {
 			break
 		}
 		found := false
-		for _, t := range ticks {
+		for _, t := range labels {
 			if math.Abs(t.Value-val) < minorDelta/2 {
 				found = true
 			}
 		}
 		if !found {
-			ticks = append(ticks, Tick{Value: val})
+			labels = append(labels, Tick{Value: val})
 		}
 		i++
 	}
 
-	return ticks
+	return labels
 }
 
 // LogTicks is suitable for the Ticker field of an Axis,
