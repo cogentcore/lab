@@ -11,46 +11,89 @@
 // described in doi:10.1109/TVCG.2010.130 with reference to the R
 // implementation in the labeling package, ©2014 Justin Talbot (Licensed
 // MIT+file LICENSE|Unlimited).
-
-package plot
+package ticks
 
 import "math"
 
+//go:generate core generate
+
 const (
-	// dlamchE is the machine epsilon. For IEEE this is 2^{-53}.
-	dlamchE = 1.0 / (1 << 53)
+	// MachineEps is the machine epsilon. For IEEE this is 2^{-53}.
+	MachineEps = 1.0 / (1 << 53)
 
-	// dlamchB is the radix of the machine (the base of the number system).
-	dlamchB = 2
+	// MachineRadix is the radix of the machine (the base of the number system).
+	MachineRadix = 2
 
-	// dlamchP is base * eps.
-	dlamchP = dlamchB * dlamchE
+	// MachinePrecision is radix * eps.
+	MachinePrecision = MachineRadix * MachineEps
 )
 
+// Containments specifies guarantees for label and data range containment
+// relative to the min and max values provided.
+type Containments int32 //enums:enum
+
 const (
-	// free indicates no restriction on label containment.
-	free = iota
-	// containData specifies that all the data range lies
+	// Free indicates no restriction on label containment.
+	Free Containments = iota
+
+	// ContainData specifies that all the data range lies
 	// within the interval [label_min, label_max].
-	containData
-	// withinData specifies that all labels lie within the
+	ContainData
+
+	// WithinData specifies that all labels lie within the
 	// interval [dMin, dMax].
-	withinData
+	WithinData
 )
 
-// talbotLinHanrahan returns an optimal set of approximately want label values
-// for the data range [dMin, dMax], and the step and magnitude of the step between values.
-// containment is specifies are guarantees for label and data range containment, valid
-// values are free, containData and withinData.
-// The optional parameters Q, nice numbers, and w, weights, allow tuning of the
+// ForRange returns the tick values for given min / max range
+// of data values, using the default parameterization of the
+// Talbot, Lin and Hanrahan algorithm (doi:10.1109/TVCG.2010.130).
+// step = interval between labels, q = relevant nice number that was
+// used for selecting the step, magnitude = power of 10 exponent of the step
+// between values.
+func ForRange(mn, mx float64, nticks int) (values []float64, step, q float64, magnitude int) {
+	return TalbotLinHanrahan(mn, mx, nticks, WithinData, nil, nil, nil)
+}
+
+// Format returns the [strconv.FormatFloat] floating point number formatting
+// to use for the [ForRange] tick value return values: 'f' or 'g' and precision.
+// also returns the delta value between ticks: step * Pow10(mag)
+func Format(values []float64, step, q float64, mag int) (majorDelta float64, fc byte, prec int) {
+	majorDelta = step * math.Pow10(mag)
+	if q == 0 {
+		// Simple fall back was chosen, so
+		// majorDelta is the label distance.
+		majorDelta = values[1] - values[0]
+	}
+	fc = byte('f')
+	var off int
+	if mag < -1 || 6 < mag {
+		off = 1
+		fc = 'g'
+	}
+	mag10 := math.Pow10(mag)
+	if math.Trunc(q*mag10) != q*mag10 {
+		off += 2
+	}
+	prec = min(6, max(off, -mag))
+	return
+}
+
+// TalbotLinHanrahan returns an optimal set of approximately wantN label values
+// for the data range [dMin, dMax].
+// step = interval between labels, q = relevant nice number that was
+// used for selecting the step, magnitude = power of 10 exponent of the step
+// between values.
+// containment specifies guarantees for label and data range containment.
+// The optional parameters Q = nice numbers and w = weights allow tuning of the
 // algorithm but by default (when nil) are set to the parameters described in the
 // paper.
 // The legibility function allows tuning of the legibility assessment for labels.
 // By default, when nil, legbility will set the legibility score for each candidate
 // labelling scheme to 1.
 // See the paper for an explanation of the function of Q, w and legibility.
-func talbotLinHanrahan(dMin, dMax float64, want int, containment int, Q []float64, w *weights, legibility func(lMin, lMax, lStep float64) float64) (values []float64, step, q float64, magnitude int) {
-	const eps = dlamchP * 100
+func TalbotLinHanrahan(dMin, dMax float64, wantN int, containment Containments, Q []float64, w *weights, legibility func(lMin, lMax, lStep float64) float64) (values []float64, step, q float64, magnitude int) {
+	const eps = MachinePrecision * 100
 
 	if dMin > dMax {
 		panic("labelling: invalid data range: min greater than max")
@@ -72,8 +115,8 @@ func talbotLinHanrahan(dMin, dMax float64, want int, containment int, Q []float6
 	}
 
 	if r := dMax - dMin; r < eps {
-		l := make([]float64, want)
-		step := r / float64(want-1)
+		l := make([]float64, wantN)
+		step := r / float64(wantN-1)
 		for i := range l {
 			l[i] = dMin + float64(i)*step
 		}
@@ -105,7 +148,7 @@ outer:
 			}
 
 			for have := 2; ; have++ {
-				dm := maxDensity(have, want)
+				dm := maxDensity(have, wantN)
 				if w.score(sm, 1, dm, 1) < best.score {
 					break
 				}
@@ -131,22 +174,22 @@ outer:
 						lMax := lMin + kStep
 
 						switch containment {
-						case containData:
+						case ContainData:
 							if dMin < lMin || lMax < dMax {
 								continue
 							}
-						case withinData:
+						case WithinData:
 							if lMin < dMin || dMax < lMax {
 								continue
 							}
-						case free:
+						case Free:
 							// Free choice.
 						}
 
 						score := w.score(
 							simplicity(q, Q, skip, lMin, lMax, step),
 							coverage(dMin, dMax, lMin, lMax),
-							density(have, want, dMin, dMax, lMin, lMax),
+							density(have, wantN, dMin, dMax, lMin, lMax),
 							legibility(lMin, lMax, step),
 						)
 						if score > best.score {
@@ -167,8 +210,8 @@ outer:
 	}
 
 	if best.score == -2 {
-		l := make([]float64, want)
-		step := (dMax - dMin) / float64(want-1)
+		l := make([]float64, wantN)
+		step := (dMax - dMin) / float64(wantN-1)
 		for i := range l {
 			l[i] = dMin + float64(i)*step
 		}
@@ -192,7 +235,7 @@ func minAbsMag(a, b float64) int {
 // simplicity returns the simplicity score for how will the curent q, lMin, lMax,
 // lStep and skip match the given nice numbers, Q.
 func simplicity(q float64, Q []float64, skip int, lMin, lMax, lStep float64) float64 {
-	const eps = dlamchP * 100
+	const eps = MachinePrecision * 100
 
 	for i, v := range Q {
 		if v == q {
@@ -242,9 +285,9 @@ func maxCoverage(dMin, dMax, span float64) float64 {
 // density returns the density score which measures the goodness of
 // the labelling density compared to the user defined target
 // based on the want parameter given to talbotLinHanrahan.
-func density(have, want int, dMin, dMax, lMin, lMax float64) float64 {
+func density(have, wantN int, dMin, dMax, lMin, lMax float64) float64 {
 	rho := float64(have-1) / (lMax - lMin)
-	rhot := float64(want-1) / (math.Max(lMax, dMax) - math.Min(dMin, lMin))
+	rhot := float64(wantN-1) / (math.Max(lMax, dMax) - math.Min(dMin, lMin))
 	if d := rho / rhot; d >= 1 {
 		return 2 - d
 	}
@@ -252,11 +295,11 @@ func density(have, want int, dMin, dMax, lMin, lMax float64) float64 {
 }
 
 // maxDensity returns the maximum density score achievable for have and want.
-func maxDensity(have, want int) float64 {
-	if have < want {
+func maxDensity(have, wantN int) float64 {
+	if have < wantN {
 		return 1
 	}
-	return 2 - float64(have-1)/float64(want-1)
+	return 2 - float64(have-1)/float64(wantN-1)
 }
 
 // unitLegibility returns a default legibility score ignoring label
