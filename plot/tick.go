@@ -49,7 +49,7 @@ func (DefaultTicks) Ticks(mn, mx float64, nticks int) []Tick {
 		return nil
 	}
 
-	values, step, q, mag := ticks.ForRange(mn, mx, nticks)
+	values, step, q, mag := ticks.ForRange(mn, mx, nticks, ticks.WithinData)
 	majorDelta, fc, prec := ticks.Format(values, step, q, mag)
 	labels := make([]Tick, len(values))
 	for i, v := range values {
