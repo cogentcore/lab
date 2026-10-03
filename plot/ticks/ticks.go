@@ -51,8 +51,8 @@ const (
 // step = interval between labels, q = relevant nice number that was
 // used for selecting the step, magnitude = power of 10 exponent of the step
 // between values.
-func ForRange(mn, mx float64, nticks int) (values []float64, step, q float64, magnitude int) {
-	return TalbotLinHanrahan(mn, mx, nticks, WithinData, nil, nil, nil)
+func ForRange(mn, mx float64, nticks int, contain Containments) (values []float64, step, q float64, magnitude int) {
+	return TalbotLinHanrahan(mn, mx, nticks, contain, nil, nil, nil)
 }
 
 // Format returns the [strconv.FormatFloat] floating point number formatting
