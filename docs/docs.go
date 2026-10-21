@@ -25,7 +25,6 @@ import (
 // Must configure using BetterBibTeX for zotero: https://retorque.re/zotero-better-bibtex/
 
 //go:generate mdcite -vv -refs ./ccnlab.json -d ./content
-//go:generate go run cogentcore.org/core/content/cmd/contentcode
 
 //go:embed content citedrefs.json
 var econtent embed.FS

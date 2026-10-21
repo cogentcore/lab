@@ -38,16 +38,14 @@ fmt.Println("d:", d)
 fmt.Println("i:", i)
 ```
 
-Including eigenvector functions:
-
-<!--- TODO: not working with 2 return values here: -->
+Including eigenvector functions, which return two values (the eigenvectors and the eigenvalues), so they are called outside of math mode:
 
 ```Goal
 ##
 a := [[2., 1.], [1., 2.]]
-
-v := matrix.EigSym(a)
 ##
+
+v, _ := matrix.EigSym(a)
 
 fmt.Println("a:", a)
 fmt.Println("v:", v)
