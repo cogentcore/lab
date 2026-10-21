@@ -22,6 +22,8 @@ import (
 
 	"cogentcore.org/core/content"
 	"cogentcore.org/core/core"
+	"cogentcore.org/core/text/textcore"
+	"cogentcore.org/core/yaegicore"
 	"cogentcore.org/core/yaegicore/basesymbols"
 	"cogentcore.org/core/yaegicore/coresymbols"
 	"cogentcore.org/lab/yaegilab"
@@ -125,6 +127,38 @@ func TestCompiledGoal(t *testing.T) {
 		}
 	}
 	t.Logf("compiled Goal blocks: %d ran, %d with the same output as the interpreter, %d pages", nblocks, same, len(files))
+}
+
+// TestEditGoal checks that an edited Goal code block, which runs in the
+// interpreter, sees the variables of the blocks of its page that ran
+// compiled before it (content.GoalReplay), as content does when a reader
+// edits a block: compression-tutorial.md block 6 uses compress (block 5),
+// which uses a (block 4), which uses U and x (blocks 0, 2).
+func TestEditGoal(t *testing.T) {
+	srcs := goalSources(t, "compression-tutorial.md")
+	b := core.NewBody("edit")
+	parent := core.NewFrame(b)
+	ed := textcore.NewEditor(b)
+	ed.Lines.SetString("a3 := compress(3)\nfmt.Println(a3.Len())\n")
+	yaegicore.ResetGoalInterpreter()
+	content.GoalReplay = srcs[:6]
+	err := runTimeout(func() { yaegicore.BindTextEditor(ed, parent, "Goal") })
+	if err != nil {
+		t.Fatal(err)
+	}
+	if content.GoalReplay != nil {
+		t.Error("GoalReplay was not used")
+	}
+	if parent.NumChildren() == 0 {
+		t.Fatal("no output")
+	}
+	out, ok := parent.Child(parent.NumChildren() - 1).(*textcore.Editor)
+	if !ok {
+		t.Fatalf("last child %T is not the output", parent.Child(parent.NumChildren()-1))
+	}
+	if got := strings.TrimSpace(out.Lines.String()); got != "8" {
+		t.Errorf("output %q, want 8", got)
+	}
 }
 
 // runTimeout runs f, and returns its panic as an error.
