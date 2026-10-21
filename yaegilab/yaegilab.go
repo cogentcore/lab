@@ -10,6 +10,8 @@ import (
 	"reflect"
 
 	"cogentcore.org/core/base/errors"
+	"cogentcore.org/core/core"
+	"cogentcore.org/core/text/textcore"
 	"cogentcore.org/core/yaegicore"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/tensorfs"
@@ -22,6 +24,16 @@ func init() {
 	yaegicore.Interpreters["Goal"] = func(options interp.Options) yaegicore.Interpreter {
 		return NewInterpreter(options)
 	}
+}
+
+// BindTextEditor is [yaegicore.BindTextEditor], with the Goal interpreter
+// of this package registered. Content apps whose code blocks are compiled
+// into them (see cogentcore.org/core/content/cmd/contentcode) set
+// content.BindTextEditor to it to run edited code, and can list it in the
+// Web.DeferredFunctions of their core.toml, so that js builds load yaegi
+// and its symbols only when code is first edited.
+func BindTextEditor(ed *textcore.Editor, parent *core.Frame, language string) {
+	yaegicore.BindTextEditor(ed, parent, language)
 }
 
 // Interpreter implements [yaegicore.Interpreter] using the [interpreter.Interpreter] for Goal.

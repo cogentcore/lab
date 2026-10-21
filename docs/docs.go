@@ -17,7 +17,6 @@ import (
 	"cogentcore.org/lab/physics/examples/balls"
 	"cogentcore.org/lab/physics/examples/collide"
 	"cogentcore.org/lab/physics/examples/virtroom"
-	_ "cogentcore.org/lab/yaegilab"
 )
 
 // NOTE: you must make a symbolic link to the zotero CCNLab CSL file as ccnlab.json
@@ -26,6 +25,7 @@ import (
 // Must configure using BetterBibTeX for zotero: https://retorque.re/zotero-better-bibtex/
 
 //go:generate mdcite -vv -refs ./ccnlab.json -d ./content
+//go:generate go run cogentcore.org/core/content/cmd/contentcode
 
 //go:embed content citedrefs.json
 var econtent embed.FS
