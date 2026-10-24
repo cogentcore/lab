@@ -8,9 +8,9 @@ go 1.27.0
 // https://github.com/googleapis/go-genproto/issues/1015
 
 require (
-	cogentcore.org/core v0.5.1
+	cogentcore.org/core v0.5.3
 	github.com/cogentcore/readline v0.1.3
-	github.com/cogentcore/yaegi v0.0.0-20261024094450-b0c6fff779d9
+	github.com/cogentcore/yaegi v0.0.0-20261024125408-a9036a6a26bb
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/nsf/termbox-go v1.1.1
 	github.com/stretchr/testify v1.11.1
