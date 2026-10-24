@@ -92,7 +92,7 @@ func main() {
 		obj := wld.NewObject()
 
 		ml := ed.Model
-		ml.GPU = false
+		// ml.GPU = false
 		// ml.ReportTotalKE = true
 		sc := ed.Scene
 		rot := math32.NewQuatIdentity()
