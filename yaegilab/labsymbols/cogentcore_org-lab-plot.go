@@ -171,6 +171,7 @@ type _cogentcore_org_lab_plot_Plotter struct {
 	WApplyStyle  func(plotStyle *plot.PlotStyle, idx int)
 	WData        func() (data plot.Data, pixX []float32, pixY []float32)
 	WPlot        func(pt *plot.Plot)
+	WSetData     func(data any) error
 	WStylers     func() *plot.Stylers
 	WUpdateRange func(plt *plot.Plot)
 }
@@ -182,6 +183,7 @@ func (W _cogentcore_org_lab_plot_Plotter) Data() (data plot.Data, pixX []float32
 	return W.WData()
 }
 func (W _cogentcore_org_lab_plot_Plotter) Plot(pt *plot.Plot)         { W.WPlot(pt) }
+func (W _cogentcore_org_lab_plot_Plotter) SetData(data any) error     { return W.WSetData(data) }
 func (W _cogentcore_org_lab_plot_Plotter) Stylers() *plot.Stylers     { return W.WStylers() }
 func (W _cogentcore_org_lab_plot_Plotter) UpdateRange(plt *plot.Plot) { W.WUpdateRange(plt) }
 

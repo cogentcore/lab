@@ -21,6 +21,11 @@ func Clone(tsr Tensor) Values {
 	return tsr.AsValues()
 }
 
+// CloneValues returns a copy of the given [Values] tensor.
+func CloneValues[T Values](tsr T) T {
+	return tsr.Clone().(T)
+}
+
 // Flatten returns a copy of the given tensor as a 1D flat list
 // of values, by calling Clone(As1D(tsr)).
 // It is equivalent to the NumPy flatten function.

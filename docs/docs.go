@@ -17,7 +17,6 @@ import (
 	"cogentcore.org/lab/physics/examples/balls"
 	"cogentcore.org/lab/physics/examples/collide"
 	"cogentcore.org/lab/physics/examples/virtroom"
-	_ "cogentcore.org/lab/yaegilab"
 )
 
 // NOTE: you must make a symbolic link to the zotero CCNLab CSL file as ccnlab.json

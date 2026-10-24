@@ -126,7 +126,7 @@ func (sr *Simmer) NewJob(jp SubmitParams) {
 		loce := filepath.Join(sr.StartDir, ed)
 		jpathe := filepath.Join(jpath, ed)
 		spathe := filepath.Join(spath, ed)
-		sr.CopyFilesToJob(loce, jpathe, spathe, origProjPath, projPath, ".go")
+		sr.CopyFilesToJob(loce, jpathe, spathe, origProjPath, projPath, ".go", ".json", ".tsv")
 	}
 	// copy local files:
 	if isSlurm {

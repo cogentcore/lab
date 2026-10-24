@@ -48,7 +48,7 @@ for i := range 8 {
 }
 ```
 
-Next, we can compute the vector **a**, which represents **x** in terms of the **U** basis (such that $x = Ua$). This is just $a = U^{-1}x$, as computed below:
+Next, we can compute the vector **a**, which represents **x** in terms of the **U** basis (such that _x = Ua_). This is just _a = U^{-1}x_, as computed below:
 
 ```Goal
 # a := matrix.Inverse(U) @ x
