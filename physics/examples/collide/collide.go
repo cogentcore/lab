@@ -83,7 +83,7 @@ func Config(b tree.Node) {
 
 	ed.SetConfigFunc(func() {
 		ml := ed.Model
-		ml.GPU = false
+		// ml.GPU = false
 		// ml.ReportTotalKE = true
 		sc := ed.Scene
 		rot := math32.NewQuatIdentity()
