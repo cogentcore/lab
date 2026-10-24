@@ -127,9 +127,12 @@ func (sh *Shape) RowCellSize() (rows, cells int) {
 // No checking is done on the length or size of the index values relative
 // to the shape of the tensor.
 func (sh *Shape) IndexTo1D(index ...int) int {
+	// strides is a local so that goscript indexes it directly in the loop,
+	// which makes this about twice as fast in JS (natively it is the same).
+	strides := sh.Strides
 	oned := 0
 	for i, v := range index {
-		oned += v * sh.Strides[i]
+		oned += v * strides[i]
 	}
 	return oned
 }
