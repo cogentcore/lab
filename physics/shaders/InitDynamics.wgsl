@@ -160,7 +160,9 @@ const  DynAngDeltaX: DynamicVars = 29;
 const  DynAngDeltaY: DynamicVars = 30;
 const  DynAngDeltaZ: DynamicVars = 31;
 const  DynContactWeight: DynamicVars = 32;
-fn DynamicBody(idx: i32) -> i32 { return i32(bitcast<u32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(0), u32(DynBody))])); }
+fn DynamicBody(idx: i32) -> i32 {
+	return i32(bitcast<u32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(0), u32(DynBody))]));
+}
 
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 43;

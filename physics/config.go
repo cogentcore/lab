@@ -57,14 +57,14 @@ func (ml *Model) ConfigJoints() {
 	ml.BodyJoints.SetShapeSizes(int(nd), 2, maxi+1)
 	for di := range nd {
 		np := int32(len(bjp[di]))
-		ml.BodyJoints.Set(np, int(di), int(0), int(0))
+		ml.BodyJoints.Set3D(np, int(di), int(0), int(0))
 		for i, ji := range bjp[di] {
-			ml.BodyJoints.Set(ji, int(di), int(0), int(1+i))
+			ml.BodyJoints.Set3D(ji, int(di), int(0), int(1+i))
 		}
 		nc := int32(len(bjc[di]))
-		ml.BodyJoints.Set(nc, int(di), int(1), int(0))
+		ml.BodyJoints.Set3D(nc, int(di), int(1), int(0))
 		for i, ji := range bjc[di] {
-			ml.BodyJoints.Set(ji, int(di), int(1), int(1+i))
+			ml.BodyJoints.Set3D(ji, int(di), int(1), int(1+i))
 		}
 	}
 	if nj == 0 {
@@ -83,7 +83,7 @@ func (ml *Model) ConfigBodies() {
 	for bi := range nb {
 		shape := GetBodyShape(bi)
 		size := BodyHSize(bi)
-		mass := Bodies.Value(int(bi), int(BodyMass))
+		mass := Bodies.Value2D(int(bi), int(BodyMass))
 		ml.SetMass(bi, shape, size, mass)
 	}
 }
@@ -93,7 +93,7 @@ func (ml *Model) ConfigBodies() {
 func (ml *Model) InitControlState() {
 	params := GetParams(0)
 	for j := range params.JointDoFsN {
-		JointControls.Set(0, int(j), int(JointTargetPosCur))
+		JointControls.Set2D(0, int(j), int(JointTargetPosCur))
 	}
 }
 

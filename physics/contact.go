@@ -89,143 +89,143 @@ const (
 const BroadContactVarsN = ContactAPointX
 
 func SetBroadContactA(idx, bodIdx int32) {
-	BroadContacts.Set(math.Float32frombits(uint32(bodIdx)), int(idx), int(ContactA))
+	BroadContacts.Set2D(math.Float32frombits(uint32(bodIdx)), int(idx), int(ContactA))
 }
 
 func GetBroadContactA(idx int32) int32 {
-	return int32(math.Float32bits(BroadContacts.Value(int(idx), int(ContactA))))
+	return int32(math.Float32bits(BroadContacts.Value2D(int(idx), int(ContactA))))
 }
 
 func SetBroadContactB(idx, bodIdx int32) {
-	BroadContacts.Set(math.Float32frombits(uint32(bodIdx)), int(idx), int(ContactB))
+	BroadContacts.Set2D(math.Float32frombits(uint32(bodIdx)), int(idx), int(ContactB))
 }
 
 func GetBroadContactB(idx int32) int32 {
-	return int32(math.Float32bits(BroadContacts.Value(int(idx), int(ContactB))))
+	return int32(math.Float32bits(BroadContacts.Value2D(int(idx), int(ContactB))))
 }
 
 func SetBroadContactPointIdx(idx, ptIdx int32) {
-	BroadContacts.Set(math.Float32frombits(uint32(ptIdx)), int(idx), int(ContactPointIdx))
+	BroadContacts.Set2D(math.Float32frombits(uint32(ptIdx)), int(idx), int(ContactPointIdx))
 }
 
 func GetBroadContactPointIdx(idx int32) int32 {
-	return int32(math.Float32bits(BroadContacts.Value(int(idx), int(ContactPointIdx))))
+	return int32(math.Float32bits(BroadContacts.Value2D(int(idx), int(ContactPointIdx))))
 }
 
 //////// Narrow
 
 func SetContactA(idx, bodIdx int32) {
-	Contacts.Set(math.Float32frombits(uint32(bodIdx)), int(idx), int(ContactA))
+	Contacts.Set2D(math.Float32frombits(uint32(bodIdx)), int(idx), int(ContactA))
 }
 
 func GetContactA(idx int32) int32 {
-	return int32(math.Float32bits(Contacts.Value(int(idx), int(ContactA))))
+	return int32(math.Float32bits(Contacts.Value2D(int(idx), int(ContactA))))
 }
 
 func SetContactB(idx, bodIdx int32) {
-	Contacts.Set(math.Float32frombits(uint32(bodIdx)), int(idx), int(ContactB))
+	Contacts.Set2D(math.Float32frombits(uint32(bodIdx)), int(idx), int(ContactB))
 }
 
 func GetContactB(idx int32) int32 {
-	return int32(math.Float32bits(Contacts.Value(int(idx), int(ContactB))))
+	return int32(math.Float32bits(Contacts.Value2D(int(idx), int(ContactB))))
 }
 
 func SetContactPointIdx(idx, ptIdx int32) {
-	Contacts.Set(math.Float32frombits(uint32(ptIdx)), int(idx), int(ContactPointIdx))
+	Contacts.Set2D(math.Float32frombits(uint32(ptIdx)), int(idx), int(ContactPointIdx))
 }
 
 func GetContactPointIdx(idx int32) int32 {
-	return int32(math.Float32bits(Contacts.Value(int(idx), int(ContactPointIdx))))
+	return int32(math.Float32bits(Contacts.Value2D(int(idx), int(ContactPointIdx))))
 }
 
 func ContactAPoint(idx int32) math32.Vector3 {
-	return math32.Vec3(Contacts.Value(int(idx), int(ContactAPointX)), Contacts.Value(int(idx), int(ContactAPointY)), Contacts.Value(int(idx), int(ContactAPointZ)))
+	return math32.Vec3(Contacts.Value2D(int(idx), int(ContactAPointX)), Contacts.Value2D(int(idx), int(ContactAPointY)), Contacts.Value2D(int(idx), int(ContactAPointZ)))
 }
 
 func SetContactAPoint(idx int32, pos math32.Vector3) {
-	Contacts.Set(pos.X, int(idx), int(ContactAPointX))
-	Contacts.Set(pos.Y, int(idx), int(ContactAPointY))
-	Contacts.Set(pos.Z, int(idx), int(ContactAPointZ))
+	Contacts.Set2D(pos.X, int(idx), int(ContactAPointX))
+	Contacts.Set2D(pos.Y, int(idx), int(ContactAPointY))
+	Contacts.Set2D(pos.Z, int(idx), int(ContactAPointZ))
 }
 
 func ContactBPoint(idx int32) math32.Vector3 {
-	return math32.Vec3(Contacts.Value(int(idx), int(ContactBPointX)), Contacts.Value(int(idx), int(ContactBPointY)), Contacts.Value(int(idx), int(ContactBPointZ)))
+	return math32.Vec3(Contacts.Value2D(int(idx), int(ContactBPointX)), Contacts.Value2D(int(idx), int(ContactBPointY)), Contacts.Value2D(int(idx), int(ContactBPointZ)))
 }
 
 func SetContactBPoint(idx int32, pos math32.Vector3) {
-	Contacts.Set(pos.X, int(idx), int(ContactBPointX))
-	Contacts.Set(pos.Y, int(idx), int(ContactBPointY))
-	Contacts.Set(pos.Z, int(idx), int(ContactBPointZ))
+	Contacts.Set2D(pos.X, int(idx), int(ContactBPointX))
+	Contacts.Set2D(pos.Y, int(idx), int(ContactBPointY))
+	Contacts.Set2D(pos.Z, int(idx), int(ContactBPointZ))
 }
 
 func ContactAOff(idx int32) math32.Vector3 {
-	return math32.Vec3(Contacts.Value(int(idx), int(ContactAOffX)), Contacts.Value(int(idx), int(ContactAOffY)), Contacts.Value(int(idx), int(ContactAOffZ)))
+	return math32.Vec3(Contacts.Value2D(int(idx), int(ContactAOffX)), Contacts.Value2D(int(idx), int(ContactAOffY)), Contacts.Value2D(int(idx), int(ContactAOffZ)))
 }
 
 func SetContactAOff(idx int32, pos math32.Vector3) {
-	Contacts.Set(pos.X, int(idx), int(ContactAOffX))
-	Contacts.Set(pos.Y, int(idx), int(ContactAOffY))
-	Contacts.Set(pos.Z, int(idx), int(ContactAOffZ))
+	Contacts.Set2D(pos.X, int(idx), int(ContactAOffX))
+	Contacts.Set2D(pos.Y, int(idx), int(ContactAOffY))
+	Contacts.Set2D(pos.Z, int(idx), int(ContactAOffZ))
 }
 
 func ContactBOff(idx int32) math32.Vector3 {
-	return math32.Vec3(Contacts.Value(int(idx), int(ContactBOffX)), Contacts.Value(int(idx), int(ContactBOffY)), Contacts.Value(int(idx), int(ContactBOffZ)))
+	return math32.Vec3(Contacts.Value2D(int(idx), int(ContactBOffX)), Contacts.Value2D(int(idx), int(ContactBOffY)), Contacts.Value2D(int(idx), int(ContactBOffZ)))
 }
 
 func SetContactBOff(idx int32, pos math32.Vector3) {
-	Contacts.Set(pos.X, int(idx), int(ContactBOffX))
-	Contacts.Set(pos.Y, int(idx), int(ContactBOffY))
-	Contacts.Set(pos.Z, int(idx), int(ContactBOffZ))
+	Contacts.Set2D(pos.X, int(idx), int(ContactBOffX))
+	Contacts.Set2D(pos.Y, int(idx), int(ContactBOffY))
+	Contacts.Set2D(pos.Z, int(idx), int(ContactBOffZ))
 }
 
 func ContactNorm(idx int32) math32.Vector3 {
-	return math32.Vec3(Contacts.Value(int(idx), int(ContactNormX)), Contacts.Value(int(idx), int(ContactNormY)), Contacts.Value(int(idx), int(ContactNormZ)))
+	return math32.Vec3(Contacts.Value2D(int(idx), int(ContactNormX)), Contacts.Value2D(int(idx), int(ContactNormY)), Contacts.Value2D(int(idx), int(ContactNormZ)))
 }
 
 func SetContactNorm(idx int32, pos math32.Vector3) {
-	Contacts.Set(pos.X, int(idx), int(ContactNormX))
-	Contacts.Set(pos.Y, int(idx), int(ContactNormY))
-	Contacts.Set(pos.Z, int(idx), int(ContactNormZ))
+	Contacts.Set2D(pos.X, int(idx), int(ContactNormX))
+	Contacts.Set2D(pos.Y, int(idx), int(ContactNormY))
+	Contacts.Set2D(pos.Z, int(idx), int(ContactNormZ))
 }
 
 func ContactADelta(idx int32) math32.Vector3 {
-	return math32.Vec3(Contacts.Value(int(idx), int(ContactADeltaX)), Contacts.Value(int(idx), int(ContactADeltaY)), Contacts.Value(int(idx), int(ContactADeltaZ)))
+	return math32.Vec3(Contacts.Value2D(int(idx), int(ContactADeltaX)), Contacts.Value2D(int(idx), int(ContactADeltaY)), Contacts.Value2D(int(idx), int(ContactADeltaZ)))
 }
 
 func SetContactADelta(idx int32, pos math32.Vector3) {
-	Contacts.Set(pos.X, int(idx), int(ContactADeltaX))
-	Contacts.Set(pos.Y, int(idx), int(ContactADeltaY))
-	Contacts.Set(pos.Z, int(idx), int(ContactADeltaZ))
+	Contacts.Set2D(pos.X, int(idx), int(ContactADeltaX))
+	Contacts.Set2D(pos.Y, int(idx), int(ContactADeltaY))
+	Contacts.Set2D(pos.Z, int(idx), int(ContactADeltaZ))
 }
 
 func ContactAAngDelta(idx int32) math32.Vector3 {
-	return math32.Vec3(Contacts.Value(int(idx), int(ContactAAngDeltaX)), Contacts.Value(int(idx), int(ContactAAngDeltaY)), Contacts.Value(int(idx), int(ContactAAngDeltaZ)))
+	return math32.Vec3(Contacts.Value2D(int(idx), int(ContactAAngDeltaX)), Contacts.Value2D(int(idx), int(ContactAAngDeltaY)), Contacts.Value2D(int(idx), int(ContactAAngDeltaZ)))
 }
 
 func SetContactAAngDelta(idx int32, pos math32.Vector3) {
-	Contacts.Set(pos.X, int(idx), int(ContactAAngDeltaX))
-	Contacts.Set(pos.Y, int(idx), int(ContactAAngDeltaY))
-	Contacts.Set(pos.Z, int(idx), int(ContactAAngDeltaZ))
+	Contacts.Set2D(pos.X, int(idx), int(ContactAAngDeltaX))
+	Contacts.Set2D(pos.Y, int(idx), int(ContactAAngDeltaY))
+	Contacts.Set2D(pos.Z, int(idx), int(ContactAAngDeltaZ))
 }
 
 func ContactBDelta(idx int32) math32.Vector3 {
-	return math32.Vec3(Contacts.Value(int(idx), int(ContactBDeltaX)), Contacts.Value(int(idx), int(ContactBDeltaY)), Contacts.Value(int(idx), int(ContactBDeltaZ)))
+	return math32.Vec3(Contacts.Value2D(int(idx), int(ContactBDeltaX)), Contacts.Value2D(int(idx), int(ContactBDeltaY)), Contacts.Value2D(int(idx), int(ContactBDeltaZ)))
 }
 
 func SetContactBDelta(idx int32, pos math32.Vector3) {
-	Contacts.Set(pos.X, int(idx), int(ContactBDeltaX))
-	Contacts.Set(pos.Y, int(idx), int(ContactBDeltaY))
-	Contacts.Set(pos.Z, int(idx), int(ContactBDeltaZ))
+	Contacts.Set2D(pos.X, int(idx), int(ContactBDeltaX))
+	Contacts.Set2D(pos.Y, int(idx), int(ContactBDeltaY))
+	Contacts.Set2D(pos.Z, int(idx), int(ContactBDeltaZ))
 }
 
 func ContactBAngDelta(idx int32) math32.Vector3 {
-	return math32.Vec3(Contacts.Value(int(idx), int(ContactBAngDeltaX)), Contacts.Value(int(idx), int(ContactBAngDeltaY)), Contacts.Value(int(idx), int(ContactBAngDeltaZ)))
+	return math32.Vec3(Contacts.Value2D(int(idx), int(ContactBAngDeltaX)), Contacts.Value2D(int(idx), int(ContactBAngDeltaY)), Contacts.Value2D(int(idx), int(ContactBAngDeltaZ)))
 }
 
 func SetContactBAngDelta(idx int32, pos math32.Vector3) {
-	Contacts.Set(pos.X, int(idx), int(ContactBAngDeltaX))
-	Contacts.Set(pos.Y, int(idx), int(ContactBAngDeltaY))
-	Contacts.Set(pos.Z, int(idx), int(ContactBAngDeltaZ))
+	Contacts.Set2D(pos.X, int(idx), int(ContactBAngDeltaX))
+	Contacts.Set2D(pos.Y, int(idx), int(ContactBAngDeltaY))
+	Contacts.Set2D(pos.Z, int(idx), int(ContactBAngDeltaZ))
 }
 
 func WorldsCollide(wa, wb int32) bool {
@@ -257,8 +257,8 @@ func CollisionBroad(i uint32) { //gosl:kernel
 	if ci >= params.BodyCollidePairsN {
 		return
 	}
-	biA := BodyCollidePairs.Value(int(ci), int(0))
-	biB := BodyCollidePairs.Value(int(ci), int(1))
+	biA := BodyCollidePairs.Value2D(int(ci), int(0))
+	biB := BodyCollidePairs.Value2D(int(ci), int(1))
 
 	xwAR := BodyDynamicPos(biA, params.Cur)
 	xwAQ := BodyDynamicQuat(biA, params.Cur)
@@ -269,7 +269,7 @@ func CollisionBroad(i uint32) { //gosl:kernel
 	sA := GetBodyShape(biA)
 	sB := GetBodyShape(biB)
 
-	rb := Bodies.Value(int(biB), int(BodyRadius))
+	rb := Bodies.Value2D(int(biB), int(BodyRadius))
 	//    if type_a == GeoType.PLANE and type_b == GeoType.PLANE:
 	//        return
 
@@ -293,7 +293,7 @@ func CollisionBroad(i uint32) { //gosl:kernel
 		// fmt.Println("broad ct plane:", queryB, szA, closest, d, rb, margin)
 	} else {
 		d := slmath.Length3(xwAR.Sub(xwBR))
-		ra := Bodies.Value(int(biA), int(BodyRadius))
+		ra := Bodies.Value2D(int(biA), int(BodyRadius))
 		if d > ra+rb+margin {
 			return
 		}
@@ -432,8 +432,8 @@ func CollisionNarrow(i uint32) { //gosl:kernel
 	SetContactAOff(nci, offA)
 	SetContactBOff(nci, offB)
 	SetContactNorm(nci, norm)
-	Contacts.Set(offMagA, int(nci), int(ContactAThick))
-	Contacts.Set(offMagB, int(nci), int(ContactBThick))
+	Contacts.Set2D(offMagA, int(nci), int(ContactAThick))
+	Contacts.Set2D(offMagB, int(nci), int(ContactBThick))
 }
 
 // newton: solvers/xpbd/kernels.py: solve_body_contact_positions
@@ -465,8 +465,8 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 
 	ctAw := slmath.MulSpatialPoint(r1A, q1A, ctA)
 	ctBw := slmath.MulSpatialPoint(r1B, q1B, ctB)
-	thickA := Contacts.Value(int(ci), int(ContactAThick))
-	thickB := Contacts.Value(int(ci), int(ContactBThick))
+	thickA := Contacts.Value2D(int(ci), int(ContactAThick))
+	thickB := Contacts.Value2D(int(ci), int(ContactBThick))
 	thick := thickA + thickB
 	nnorm := ContactNorm(ci)
 	norm := slmath.Negate3(nnorm)
@@ -474,7 +474,7 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 
 	d := slmath.Dot3(norm, ctBw.Sub(ctAw)) - thick
 	if d >= 0.0 { // todo: should this be margin or not?
-		Contacts.Set(0.0, int(ci), int(ContactWeight))
+		Contacts.Set2D(0.0, int(ci), int(ContactWeight))
 		z := math32.Vec3(0, 0, 0)
 		SetContactADelta(ci, z)
 		SetContactBDelta(ci, z)
@@ -483,11 +483,11 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 		return
 	}
 	comA := BodyCom(biA)
-	mInvA := Bodies.Value(int(biA), int(BodyInvMass))
+	mInvA := Bodies.Value2D(int(biA), int(BodyInvMass))
 	iInvA := BodyInvInertia(biA)
 
 	comB := BodyCom(biB)
-	mInvB := Bodies.Value(int(biB), int(BodyInvMass))
+	mInvB := Bodies.Value2D(int(biB), int(BodyInvMass))
 	iInvB := BodyInvInertia(biB)
 
 	var w1A, w1B math32.Vector3
@@ -499,10 +499,10 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 	}
 
 	// use average contact material properties
-	mu := 0.5 * (Bodies.Value(int(biA), int(BodyFriction)) + Bodies.Value(int(biB), int(BodyFriction)))
-	frTors := 0.5 * (Bodies.Value(int(biA), int(BodyFrictionTortion)) + Bodies.Value(int(biB), int(BodyFrictionTortion)))
-	frRoll := 0.5 * (Bodies.Value(int(biA), int(BodyFrictionRolling)) + Bodies.Value(int(biB), int(BodyFrictionRolling)))
-	bounce := 0.5 * (Bodies.Value(int(biA), int(BodyBounce)) + Bodies.Value(int(biB), int(BodyBounce)))
+	mu := 0.5 * (Bodies.Value2D(int(biA), int(BodyFriction)) + Bodies.Value2D(int(biB), int(BodyFriction)))
+	frTors := 0.5 * (Bodies.Value2D(int(biA), int(BodyFrictionTortion)) + Bodies.Value2D(int(biB), int(BodyFrictionTortion)))
+	frRoll := 0.5 * (Bodies.Value2D(int(biA), int(BodyFrictionRolling)) + Bodies.Value2D(int(biB), int(BodyFrictionRolling)))
+	bounce := 0.5 * (Bodies.Value2D(int(biA), int(BodyBounce)) + Bodies.Value2D(int(biB), int(BodyBounce)))
 
 	// moment arms
 	dA := ctAw.Sub(slmath.MulSpatialPoint(r1A, q1A, comA))
@@ -633,7 +633,7 @@ func StepBodyContacts(i uint32) { //gosl:kernel
 		}
 	}
 
-	Contacts.Set(1.0, int(ci), int(ContactWeight))
+	Contacts.Set2D(1.0, int(ci), int(ContactWeight))
 	SetContactADelta(ci, linDeltaA)
 	SetContactBDelta(ci, linDeltaB)
 	SetContactAAngDelta(ci, angDeltaA)
@@ -649,7 +649,7 @@ func StepBodyContactDeltas(i uint32) { //gosl:kernel
 		return
 	}
 	bi := DynamicBody(di)
-	invMass := Bodies.Value(int(bi), int(BodyInvMass))
+	invMass := Bodies.Value2D(int(bi), int(BodyInvMass))
 	if invMass == 0 {
 		return // no updates
 	}
@@ -659,7 +659,7 @@ func StepBodyContactDeltas(i uint32) { //gosl:kernel
 	angDel := math32.Vec3(0, 0, 0)
 	tw := float32(0)
 	for ci := range cmax {
-		wt := Contacts.Value(int(ci), int(ContactWeight))
+		wt := Contacts.Value2D(int(ci), int(ContactWeight))
 		if wt == 0 { // 0 = no actual; else 1
 			continue
 		}
@@ -680,7 +680,7 @@ func StepBodyContactDeltas(i uint32) { //gosl:kernel
 			angDel = angDel.Add(a)
 		}
 	}
-	Dynamics.Set(tw, int(di), int(params.Next), int(DynContactWeight))
+	Dynamics.Set3D(tw, int(di), int(params.Next), int(DynContactWeight))
 	StepBodyDeltas(di, bi, true, tw, linDel, angDel)
 }
 
@@ -712,9 +712,9 @@ func (ml *Model) IsChildDynamic(dip, dic int32) bool {
 	if dip < 0 || dic < 0 {
 		return false
 	}
-	npja := ml.BodyJoints.Value(int(dip), int(0), int(0))
+	npja := ml.BodyJoints.Value3D(int(dip), int(0), int(0))
 	for j := range npja {
-		ji := ml.BodyJoints.Value(int(dip), int(0), int(1+j))
+		ji := ml.BodyJoints.Value3D(int(dip), int(0), int(1+j))
 		jci := JointChildIndex(ji)
 		if jci == dic {
 			return true
@@ -765,11 +765,11 @@ func (ml *Model) ConfigBodyCollidePairs() {
 			sA := GetBodyShape(a)
 			sB := GetBodyShape(b)
 			if sA <= sB {
-				pt.Set(a, int(np), int(0))
-				pt.Set(b, int(np), int(1))
+				pt.Set2D(a, int(np), int(0))
+				pt.Set2D(b, int(np), int(1))
 			} else {
-				pt.Set(b, int(np), int(0))
-				pt.Set(a, int(np), int(1))
+				pt.Set2D(b, int(np), int(0))
+				pt.Set2D(a, int(np), int(1))
 			}
 			np++
 		}
@@ -793,8 +793,8 @@ func (ml *Model) SetMaxContacts() {
 
 	n := int32(0)
 	for ci := range params.BodyCollidePairsN {
-		biA := BodyCollidePairs.Value(int(ci), int(0))
-		biB := BodyCollidePairs.Value(int(ci), int(1))
+		biA := BodyCollidePairs.Value2D(int(ci), int(0))
+		biB := BodyCollidePairs.Value2D(int(ci), int(1))
 
 		// note: sA <= sB
 		sA := GetBodyShape(biA)

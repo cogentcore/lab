@@ -172,9 +172,15 @@ const  DynAngDeltaX: DynamicVars = 29;
 const  DynAngDeltaY: DynamicVars = 30;
 const  DynAngDeltaZ: DynamicVars = 31;
 const  DynContactWeight: DynamicVars = 32;
-fn DynamicBody(idx: i32) -> i32 { return i32(bitcast<u32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(0), u32(DynBody))])); }
-fn DynamicPos(idx: i32,cni: i32) -> vec3<f32> { return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosZ))]); }
-fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> { return vec4<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatZ))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatW))]); }
+fn DynamicBody(idx: i32) -> i32 {
+	return i32(bitcast<u32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(0), u32(DynBody))]));
+}
+fn DynamicPos(idx: i32,cni: i32) -> vec3<f32> {
+	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynPosZ))]);
+}
+fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> {
+	return vec4<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatZ))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatW))]);
+}
 
 //////// import: "enumgen.go"
 const BodyVarsN: BodyVars = 43;

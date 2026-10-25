@@ -82,115 +82,115 @@ const (
 
 func SetDynamicBody(idx, bodyIdx int32) {
 	bi := math.Float32frombits(uint32(bodyIdx))
-	Dynamics.Set(bi, int(idx), int(0), int(DynBody))
-	Dynamics.Set(bi, int(idx), int(1), int(DynBody))
+	Dynamics.Set3D(bi, int(idx), int(0), int(DynBody))
+	Dynamics.Set3D(bi, int(idx), int(1), int(DynBody))
 }
 
 func DynamicBody(idx int32) int32 {
-	return int32(math.Float32bits(Dynamics.Value(int(idx), int(0), int(DynBody))))
+	return int32(math.Float32bits(Dynamics.Value3D(int(idx), int(0), int(DynBody))))
 }
 
 func DynamicPos(idx, cni int32) math32.Vector3 {
-	return math32.Vec3(Dynamics.Value(int(idx), int(cni), int(DynPosX)), Dynamics.Value(int(idx), int(cni), int(DynPosY)), Dynamics.Value(int(idx), int(cni), int(DynPosZ)))
+	return math32.Vec3(Dynamics.Value3D(int(idx), int(cni), int(DynPosX)), Dynamics.Value3D(int(idx), int(cni), int(DynPosY)), Dynamics.Value3D(int(idx), int(cni), int(DynPosZ)))
 }
 
 func SetDynamicPos(idx, cni int32, pos math32.Vector3) {
-	Dynamics.Set(pos.X, int(idx), int(cni), int(DynPosX))
-	Dynamics.Set(pos.Y, int(idx), int(cni), int(DynPosY))
-	Dynamics.Set(pos.Z, int(idx), int(cni), int(DynPosZ))
+	Dynamics.Set3D(pos.X, int(idx), int(cni), int(DynPosX))
+	Dynamics.Set3D(pos.Y, int(idx), int(cni), int(DynPosY))
+	Dynamics.Set3D(pos.Z, int(idx), int(cni), int(DynPosZ))
 }
 
 func DynamicQuat(idx, cni int32) math32.Quat {
-	return math32.NewQuat(Dynamics.Value(int(idx), int(cni), int(DynQuatX)), Dynamics.Value(int(idx), int(cni), int(DynQuatY)), Dynamics.Value(int(idx), int(cni), int(DynQuatZ)), Dynamics.Value(int(idx), int(cni), int(DynQuatW)))
+	return math32.NewQuat(Dynamics.Value3D(int(idx), int(cni), int(DynQuatX)), Dynamics.Value3D(int(idx), int(cni), int(DynQuatY)), Dynamics.Value3D(int(idx), int(cni), int(DynQuatZ)), Dynamics.Value3D(int(idx), int(cni), int(DynQuatW)))
 }
 
 func SetDynamicQuat(idx, cni int32, rot math32.Quat) {
-	Dynamics.Set(rot.X, int(idx), int(cni), int(DynQuatX))
-	Dynamics.Set(rot.Y, int(idx), int(cni), int(DynQuatY))
-	Dynamics.Set(rot.Z, int(idx), int(cni), int(DynQuatZ))
-	Dynamics.Set(rot.W, int(idx), int(cni), int(DynQuatW))
+	Dynamics.Set3D(rot.X, int(idx), int(cni), int(DynQuatX))
+	Dynamics.Set3D(rot.Y, int(idx), int(cni), int(DynQuatY))
+	Dynamics.Set3D(rot.Z, int(idx), int(cni), int(DynQuatZ))
+	Dynamics.Set3D(rot.W, int(idx), int(cni), int(DynQuatW))
 }
 
 func DynamicVel(idx, cni int32) math32.Vector3 {
-	return math32.Vec3(Dynamics.Value(int(idx), int(cni), int(DynVelX)), Dynamics.Value(int(idx), int(cni), int(DynVelY)), Dynamics.Value(int(idx), int(cni), int(DynVelZ)))
+	return math32.Vec3(Dynamics.Value3D(int(idx), int(cni), int(DynVelX)), Dynamics.Value3D(int(idx), int(cni), int(DynVelY)), Dynamics.Value3D(int(idx), int(cni), int(DynVelZ)))
 }
 
 func SetDynamicVel(idx, cni int32, vel math32.Vector3) {
-	Dynamics.Set(vel.X, int(idx), int(cni), int(DynVelX))
-	Dynamics.Set(vel.Y, int(idx), int(cni), int(DynVelY))
-	Dynamics.Set(vel.Z, int(idx), int(cni), int(DynVelZ))
+	Dynamics.Set3D(vel.X, int(idx), int(cni), int(DynVelX))
+	Dynamics.Set3D(vel.Y, int(idx), int(cni), int(DynVelY))
+	Dynamics.Set3D(vel.Z, int(idx), int(cni), int(DynVelZ))
 }
 
 func DynamicAcc(idx, cni int32) math32.Vector3 {
-	return math32.Vec3(Dynamics.Value(int(idx), int(cni), int(DynAccX)), Dynamics.Value(int(idx), int(cni), int(DynAccY)), Dynamics.Value(int(idx), int(cni), int(DynAccZ)))
+	return math32.Vec3(Dynamics.Value3D(int(idx), int(cni), int(DynAccX)), Dynamics.Value3D(int(idx), int(cni), int(DynAccY)), Dynamics.Value3D(int(idx), int(cni), int(DynAccZ)))
 }
 
 func SetDynamicAcc(idx, cni int32, acc math32.Vector3) {
-	Dynamics.Set(acc.X, int(idx), int(cni), int(DynAccX))
-	Dynamics.Set(acc.Y, int(idx), int(cni), int(DynAccY))
-	Dynamics.Set(acc.Z, int(idx), int(cni), int(DynAccZ))
+	Dynamics.Set3D(acc.X, int(idx), int(cni), int(DynAccX))
+	Dynamics.Set3D(acc.Y, int(idx), int(cni), int(DynAccY))
+	Dynamics.Set3D(acc.Z, int(idx), int(cni), int(DynAccZ))
 }
 
 func DynamicForce(idx, cni int32) math32.Vector3 {
-	return math32.Vec3(Dynamics.Value(int(idx), int(cni), int(DynForceX)), Dynamics.Value(int(idx), int(cni), int(DynForceY)), Dynamics.Value(int(idx), int(cni), int(DynForceZ)))
+	return math32.Vec3(Dynamics.Value3D(int(idx), int(cni), int(DynForceX)), Dynamics.Value3D(int(idx), int(cni), int(DynForceY)), Dynamics.Value3D(int(idx), int(cni), int(DynForceZ)))
 }
 
 func SetDynamicForce(idx, cni int32, force math32.Vector3) {
-	Dynamics.Set(force.X, int(idx), int(cni), int(DynForceX))
-	Dynamics.Set(force.Y, int(idx), int(cni), int(DynForceY))
-	Dynamics.Set(force.Z, int(idx), int(cni), int(DynForceZ))
+	Dynamics.Set3D(force.X, int(idx), int(cni), int(DynForceX))
+	Dynamics.Set3D(force.Y, int(idx), int(cni), int(DynForceY))
+	Dynamics.Set3D(force.Z, int(idx), int(cni), int(DynForceZ))
 }
 
 func DynamicTorque(idx, cni int32) math32.Vector3 {
-	return math32.Vec3(Dynamics.Value(int(idx), int(cni), int(DynTorqueX)), Dynamics.Value(int(idx), int(cni), int(DynTorqueY)), Dynamics.Value(int(idx), int(cni), int(DynTorqueZ)))
+	return math32.Vec3(Dynamics.Value3D(int(idx), int(cni), int(DynTorqueX)), Dynamics.Value3D(int(idx), int(cni), int(DynTorqueY)), Dynamics.Value3D(int(idx), int(cni), int(DynTorqueZ)))
 }
 
 func SetDynamicTorque(idx, cni int32, torque math32.Vector3) {
-	Dynamics.Set(torque.X, int(idx), int(cni), int(DynTorqueX))
-	Dynamics.Set(torque.Y, int(idx), int(cni), int(DynTorqueY))
-	Dynamics.Set(torque.Z, int(idx), int(cni), int(DynTorqueZ))
+	Dynamics.Set3D(torque.X, int(idx), int(cni), int(DynTorqueX))
+	Dynamics.Set3D(torque.Y, int(idx), int(cni), int(DynTorqueY))
+	Dynamics.Set3D(torque.Z, int(idx), int(cni), int(DynTorqueZ))
 }
 
 func DynamicAngVel(idx, cni int32) math32.Vector3 {
-	return math32.Vec3(Dynamics.Value(int(idx), int(cni), int(DynAngVelX)), Dynamics.Value(int(idx), int(cni), int(DynAngVelY)), Dynamics.Value(int(idx), int(cni), int(DynAngVelZ)))
+	return math32.Vec3(Dynamics.Value3D(int(idx), int(cni), int(DynAngVelX)), Dynamics.Value3D(int(idx), int(cni), int(DynAngVelY)), Dynamics.Value3D(int(idx), int(cni), int(DynAngVelZ)))
 }
 
 func SetDynamicAngVel(idx, cni int32, angVel math32.Vector3) {
-	Dynamics.Set(angVel.X, int(idx), int(cni), int(DynAngVelX))
-	Dynamics.Set(angVel.Y, int(idx), int(cni), int(DynAngVelY))
-	Dynamics.Set(angVel.Z, int(idx), int(cni), int(DynAngVelZ))
+	Dynamics.Set3D(angVel.X, int(idx), int(cni), int(DynAngVelX))
+	Dynamics.Set3D(angVel.Y, int(idx), int(cni), int(DynAngVelY))
+	Dynamics.Set3D(angVel.Z, int(idx), int(cni), int(DynAngVelZ))
 }
 
 func DynamicAngAcc(idx, cni int32) math32.Vector3 {
-	return math32.Vec3(Dynamics.Value(int(idx), int(cni), int(DynAngAccX)), Dynamics.Value(int(idx), int(cni), int(DynAngAccY)), Dynamics.Value(int(idx), int(cni), int(DynAngAccZ)))
+	return math32.Vec3(Dynamics.Value3D(int(idx), int(cni), int(DynAngAccX)), Dynamics.Value3D(int(idx), int(cni), int(DynAngAccY)), Dynamics.Value3D(int(idx), int(cni), int(DynAngAccZ)))
 }
 
 func SetDynamicAngAcc(idx, cni int32, angAcc math32.Vector3) {
-	Dynamics.Set(angAcc.X, int(idx), int(cni), int(DynAngAccX))
-	Dynamics.Set(angAcc.Y, int(idx), int(cni), int(DynAngAccY))
-	Dynamics.Set(angAcc.Z, int(idx), int(cni), int(DynAngAccZ))
+	Dynamics.Set3D(angAcc.X, int(idx), int(cni), int(DynAngAccX))
+	Dynamics.Set3D(angAcc.Y, int(idx), int(cni), int(DynAngAccY))
+	Dynamics.Set3D(angAcc.Z, int(idx), int(cni), int(DynAngAccZ))
 }
 
 //////// Accumulating deltas
 
 func DynamicDelta(idx, cni int32) math32.Vector3 {
-	return math32.Vec3(Dynamics.Value(int(idx), int(cni), int(DynDeltaX)), Dynamics.Value(int(idx), int(cni), int(DynDeltaY)), Dynamics.Value(int(idx), int(cni), int(DynDeltaZ)))
+	return math32.Vec3(Dynamics.Value3D(int(idx), int(cni), int(DynDeltaX)), Dynamics.Value3D(int(idx), int(cni), int(DynDeltaY)), Dynamics.Value3D(int(idx), int(cni), int(DynDeltaZ)))
 }
 
 func SetDynamicDelta(idx, cni int32, delta math32.Vector3) {
-	Dynamics.Set(delta.X, int(idx), int(cni), int(DynDeltaX))
-	Dynamics.Set(delta.Y, int(idx), int(cni), int(DynDeltaY))
-	Dynamics.Set(delta.Z, int(idx), int(cni), int(DynDeltaZ))
+	Dynamics.Set3D(delta.X, int(idx), int(cni), int(DynDeltaX))
+	Dynamics.Set3D(delta.Y, int(idx), int(cni), int(DynDeltaY))
+	Dynamics.Set3D(delta.Z, int(idx), int(cni), int(DynDeltaZ))
 }
 
 func DynamicAngDelta(idx, cni int32) math32.Vector3 {
-	return math32.Vec3(Dynamics.Value(int(idx), int(cni), int(DynAngDeltaX)), Dynamics.Value(int(idx), int(cni), int(DynAngDeltaY)), Dynamics.Value(int(idx), int(cni), int(DynAngDeltaZ)))
+	return math32.Vec3(Dynamics.Value3D(int(idx), int(cni), int(DynAngDeltaX)), Dynamics.Value3D(int(idx), int(cni), int(DynAngDeltaY)), Dynamics.Value3D(int(idx), int(cni), int(DynAngDeltaZ)))
 }
 
 func SetDynamicAngDelta(idx, cni int32, angDelta math32.Vector3) {
-	Dynamics.Set(angDelta.X, int(idx), int(cni), int(DynAngDeltaX))
-	Dynamics.Set(angDelta.Y, int(idx), int(cni), int(DynAngDeltaY))
-	Dynamics.Set(angDelta.Z, int(idx), int(cni), int(DynAngDeltaZ))
+	Dynamics.Set3D(angDelta.X, int(idx), int(cni), int(DynAngDeltaX))
+	Dynamics.Set3D(angDelta.Y, int(idx), int(cni), int(DynAngDeltaY))
+	Dynamics.Set3D(angDelta.Z, int(idx), int(cni), int(DynAngDeltaZ))
 }
 
 //gosl:end
@@ -198,13 +198,13 @@ func SetDynamicAngDelta(idx, cni int32, angDelta math32.Vector3) {
 // SetMass sets the mass of given body object (only relevant for dynamics),
 // including a default inertia tensor based on solid shape of given size.
 func (ml *Model) SetMass(idx int32, shape Shapes, size math32.Vector3, mass float32) {
-	Bodies.Set(shape.Radius(size), int(idx), int(BodyRadius))
-	Bodies.Set(mass, int(idx), int(BodyMass))
+	Bodies.Set2D(shape.Radius(size), int(idx), int(BodyRadius))
+	Bodies.Set2D(mass, int(idx), int(BodyMass))
 	invm := mass
 	if mass > 0 {
 		invm = 1.0 / mass
 	}
-	Bodies.Set(invm, int(idx), int(BodyInvMass))
+	Bodies.Set2D(invm, int(idx), int(BodyInvMass))
 	inertia := shape.Inertia(size, mass)
 	SetBodyInertia(idx, inertia)
 	SetBodyInvInertia(idx, inertia.Inverse())
@@ -218,7 +218,7 @@ func (ml *Model) TotalKineticEnergy() float32 {
 	n := int32(Dynamics.DimSize(0))
 	for di := range n {
 		bi := DynamicBody(di)
-		mass := Bodies.Value(int(bi), int(BodyMass))
+		mass := Bodies.Value2D(int(bi), int(BodyMass))
 		inertia := BodyInertia(bi)
 
 		v := DynamicVel(di, params.Next)

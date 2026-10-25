@@ -162,8 +162,7 @@ fn GetBroadContactB(idx: i32) -> i32 {
 	return i32(bitcast<u32>(BroadContacts[Index2D(TensorStrides[80], TensorStrides[81], u32(idx), u32(ContactB))]));
 }
 fn GetBroadContactPointIdx(idx: i32) -> i32 {
-	return i32(bitcast<u32>(BroadContacts[Index2D(TensorStrides[80], TensorStrides[81],
-	u32(idx), u32(ContactPointIdx))]));
+	return i32(bitcast<u32>(BroadContacts[Index2D(TensorStrides[80], TensorStrides[81], u32(idx), u32(ContactPointIdx))]));
 }
 fn SetContactA(idx: i32,bodIdx: i32) {
 	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactA))] = bitcast<f32>(u32(bodIdx));

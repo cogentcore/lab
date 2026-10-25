@@ -153,15 +153,15 @@ const (
 )
 
 func GetJointType(idx int32) JointTypes {
-	return JointTypes(math.Float32bits(Joints.Value(int(idx), int(JointType))))
+	return JointTypes(math.Float32bits(Joints.Value2D(int(idx), int(JointType))))
 }
 
 func SetJointType(idx int32, typ JointTypes) {
-	Joints.Set(math.Float32frombits(uint32(typ)), int(idx), int(JointType))
+	Joints.Set2D(math.Float32frombits(uint32(typ)), int(idx), int(JointType))
 }
 
 func GetJointEnabled(idx int32) bool {
-	je := math.Float32bits(Joints.Value(int(idx), int(JointEnabled)))
+	je := math.Float32bits(Joints.Value2D(int(idx), int(JointEnabled)))
 	return je != 0
 }
 
@@ -170,11 +170,11 @@ func SetJointEnabled(idx int32, enabled bool) {
 	if enabled {
 		je = 1
 	}
-	Joints.Set(math.Float32frombits(je), int(idx), int(JointEnabled))
+	Joints.Set2D(math.Float32frombits(je), int(idx), int(JointEnabled))
 }
 
 func GetJointParentFixed(idx int32) bool {
-	je := math.Float32bits(Joints.Value(int(idx), int(JointParentFixed)))
+	je := math.Float32bits(Joints.Value2D(int(idx), int(JointParentFixed)))
 	return je != 0
 }
 
@@ -183,11 +183,11 @@ func SetJointParentFixed(idx int32, enabled bool) {
 	if enabled {
 		je = 1
 	}
-	Joints.Set(math.Float32frombits(je), int(idx), int(JointParentFixed))
+	Joints.Set2D(math.Float32frombits(je), int(idx), int(JointParentFixed))
 }
 
 func GetJointNoLinearRotation(idx int32) bool {
-	je := math.Float32bits(Joints.Value(int(idx), int(JointNoLinearRotation)))
+	je := math.Float32bits(Joints.Value2D(int(idx), int(JointNoLinearRotation)))
 	return je != 0
 }
 
@@ -196,149 +196,149 @@ func SetJointNoLinearRotation(idx int32, enabled bool) {
 	if enabled {
 		je = 1
 	}
-	Joints.Set(math.Float32frombits(je), int(idx), int(JointNoLinearRotation))
+	Joints.Set2D(math.Float32frombits(je), int(idx), int(JointNoLinearRotation))
 }
 
 func SetJointParent(idx, bodyIdx int32) {
-	Joints.Set(math.Float32frombits(uint32(bodyIdx)), int(idx), int(JointParent))
+	Joints.Set2D(math.Float32frombits(uint32(bodyIdx)), int(idx), int(JointParent))
 }
 
 func JointParentIndex(idx int32) int32 {
-	return int32(math.Float32bits(Joints.Value(int(idx), int(JointParent))))
+	return int32(math.Float32bits(Joints.Value2D(int(idx), int(JointParent))))
 }
 
 func SetJointChild(idx, bodyIdx int32) {
-	Joints.Set(math.Float32frombits(uint32(bodyIdx)), int(idx), int(JointChild))
+	Joints.Set2D(math.Float32frombits(uint32(bodyIdx)), int(idx), int(JointChild))
 }
 
 func JointChildIndex(idx int32) int32 {
-	return int32(math.Float32bits(Joints.Value(int(idx), int(JointChild))))
+	return int32(math.Float32bits(Joints.Value2D(int(idx), int(JointChild))))
 }
 
 func SetJointLinearDoFN(idx, dofN int32) {
-	Joints.Set(math.Float32frombits(uint32(dofN)), int(idx), int(JointLinearDoFN))
+	Joints.Set2D(math.Float32frombits(uint32(dofN)), int(idx), int(JointLinearDoFN))
 }
 
 func GetJointLinearDoFN(idx int32) int32 {
-	return int32(math.Float32bits(Joints.Value(int(idx), int(JointLinearDoFN))))
+	return int32(math.Float32bits(Joints.Value2D(int(idx), int(JointLinearDoFN))))
 }
 
 func SetJointAngularDoFN(idx, dofN int32) {
-	Joints.Set(math.Float32frombits(uint32(dofN)), int(idx), int(JointAngularDoFN))
+	Joints.Set2D(math.Float32frombits(uint32(dofN)), int(idx), int(JointAngularDoFN))
 }
 
 func GetJointAngularDoFN(idx int32) int32 {
-	return int32(math.Float32bits(Joints.Value(int(idx), int(JointAngularDoFN))))
+	return int32(math.Float32bits(Joints.Value2D(int(idx), int(JointAngularDoFN))))
 }
 
 func SetJointDoFIndex(idx, dof, dofIdx int32) {
-	Joints.Set(math.Float32frombits(uint32(dofIdx)), int(idx), int(int32(JointDoF1)+dof))
+	Joints.Set2D(math.Float32frombits(uint32(dofIdx)), int(idx), int(int32(JointDoF1)+dof))
 }
 
 func JointDoFIndex(idx, dof int32) int32 {
-	return int32(math.Float32bits(Joints.Value(int(idx), int(int32(JointDoF1)+dof))))
+	return int32(math.Float32bits(Joints.Value2D(int(idx), int(int32(JointDoF1)+dof))))
 }
 
 func JointPPos(idx int32) math32.Vector3 {
-	return math32.Vec3(Joints.Value(int(idx), int(JointPPosX)), Joints.Value(int(idx), int(JointPPosY)), Joints.Value(int(idx), int(JointPPosZ)))
+	return math32.Vec3(Joints.Value2D(int(idx), int(JointPPosX)), Joints.Value2D(int(idx), int(JointPPosY)), Joints.Value2D(int(idx), int(JointPPosZ)))
 }
 
 func SetJointPPos(idx int32, pos math32.Vector3) {
-	Joints.Set(pos.X, int(idx), int(JointPPosX))
-	Joints.Set(pos.Y, int(idx), int(JointPPosY))
-	Joints.Set(pos.Z, int(idx), int(JointPPosZ))
+	Joints.Set2D(pos.X, int(idx), int(JointPPosX))
+	Joints.Set2D(pos.Y, int(idx), int(JointPPosY))
+	Joints.Set2D(pos.Z, int(idx), int(JointPPosZ))
 }
 
 func JointPQuat(idx int32) math32.Quat {
-	return math32.NewQuat(Joints.Value(int(idx), int(JointPQuatX)), Joints.Value(int(idx), int(JointPQuatY)), Joints.Value(int(idx), int(JointPQuatZ)), Joints.Value(int(idx), int(JointPQuatW)))
+	return math32.NewQuat(Joints.Value2D(int(idx), int(JointPQuatX)), Joints.Value2D(int(idx), int(JointPQuatY)), Joints.Value2D(int(idx), int(JointPQuatZ)), Joints.Value2D(int(idx), int(JointPQuatW)))
 }
 
 func SetJointPQuat(idx int32, rot math32.Quat) {
-	Joints.Set(rot.X, int(idx), int(JointPQuatX))
-	Joints.Set(rot.Y, int(idx), int(JointPQuatY))
-	Joints.Set(rot.Z, int(idx), int(JointPQuatZ))
-	Joints.Set(rot.W, int(idx), int(JointPQuatW))
+	Joints.Set2D(rot.X, int(idx), int(JointPQuatX))
+	Joints.Set2D(rot.Y, int(idx), int(JointPQuatY))
+	Joints.Set2D(rot.Z, int(idx), int(JointPQuatZ))
+	Joints.Set2D(rot.W, int(idx), int(JointPQuatW))
 }
 
 func JointCPos(idx int32) math32.Vector3 {
-	return math32.Vec3(Joints.Value(int(idx), int(JointCPosX)), Joints.Value(int(idx), int(JointCPosY)), Joints.Value(int(idx), int(JointCPosZ)))
+	return math32.Vec3(Joints.Value2D(int(idx), int(JointCPosX)), Joints.Value2D(int(idx), int(JointCPosY)), Joints.Value2D(int(idx), int(JointCPosZ)))
 }
 
 func SetJointCPos(idx int32, pos math32.Vector3) {
-	Joints.Set(pos.X, int(idx), int(JointCPosX))
-	Joints.Set(pos.Y, int(idx), int(JointCPosY))
-	Joints.Set(pos.Z, int(idx), int(JointCPosZ))
+	Joints.Set2D(pos.X, int(idx), int(JointCPosX))
+	Joints.Set2D(pos.Y, int(idx), int(JointCPosY))
+	Joints.Set2D(pos.Z, int(idx), int(JointCPosZ))
 }
 
 func JointCQuat(idx int32) math32.Quat {
-	return math32.NewQuat(Joints.Value(int(idx), int(JointCQuatX)), Joints.Value(int(idx), int(JointCQuatY)), Joints.Value(int(idx), int(JointCQuatZ)), Joints.Value(int(idx), int(JointCQuatW)))
+	return math32.NewQuat(Joints.Value2D(int(idx), int(JointCQuatX)), Joints.Value2D(int(idx), int(JointCQuatY)), Joints.Value2D(int(idx), int(JointCQuatZ)), Joints.Value2D(int(idx), int(JointCQuatW)))
 }
 
 func SetJointCQuat(idx int32, rot math32.Quat) {
-	Joints.Set(rot.X, int(idx), int(JointCQuatX))
-	Joints.Set(rot.Y, int(idx), int(JointCQuatY))
-	Joints.Set(rot.Z, int(idx), int(JointCQuatZ))
-	Joints.Set(rot.W, int(idx), int(JointCQuatW))
+	Joints.Set2D(rot.X, int(idx), int(JointCQuatX))
+	Joints.Set2D(rot.Y, int(idx), int(JointCQuatY))
+	Joints.Set2D(rot.Z, int(idx), int(JointCQuatZ))
+	Joints.Set2D(rot.W, int(idx), int(JointCQuatW))
 }
 
 func JointPForce(idx int32) math32.Vector3 {
-	return math32.Vec3(Joints.Value(int(idx), int(JointPForceX)), Joints.Value(int(idx), int(JointPForceY)), Joints.Value(int(idx), int(JointPForceZ)))
+	return math32.Vec3(Joints.Value2D(int(idx), int(JointPForceX)), Joints.Value2D(int(idx), int(JointPForceY)), Joints.Value2D(int(idx), int(JointPForceZ)))
 }
 
 func SetJointPForce(idx int32, f math32.Vector3) {
-	Joints.Set(f.X, int(idx), int(JointPForceX))
-	Joints.Set(f.Y, int(idx), int(JointPForceY))
-	Joints.Set(f.Z, int(idx), int(JointPForceZ))
+	Joints.Set2D(f.X, int(idx), int(JointPForceX))
+	Joints.Set2D(f.Y, int(idx), int(JointPForceY))
+	Joints.Set2D(f.Z, int(idx), int(JointPForceZ))
 }
 
 func JointPTorque(idx int32) math32.Vector3 {
-	return math32.Vec3(Joints.Value(int(idx), int(JointPTorqueX)), Joints.Value(int(idx), int(JointPTorqueY)), Joints.Value(int(idx), int(JointPTorqueZ)))
+	return math32.Vec3(Joints.Value2D(int(idx), int(JointPTorqueX)), Joints.Value2D(int(idx), int(JointPTorqueY)), Joints.Value2D(int(idx), int(JointPTorqueZ)))
 }
 
 func SetJointPTorque(idx int32, t math32.Vector3) {
-	Joints.Set(t.X, int(idx), int(JointPTorqueX))
-	Joints.Set(t.Y, int(idx), int(JointPTorqueY))
-	Joints.Set(t.Z, int(idx), int(JointPTorqueZ))
+	Joints.Set2D(t.X, int(idx), int(JointPTorqueX))
+	Joints.Set2D(t.Y, int(idx), int(JointPTorqueY))
+	Joints.Set2D(t.Z, int(idx), int(JointPTorqueZ))
 }
 
 func JointCForce(idx int32) math32.Vector3 {
-	return math32.Vec3(Joints.Value(int(idx), int(JointCForceX)), Joints.Value(int(idx), int(JointCForceY)), Joints.Value(int(idx), int(JointCForceZ)))
+	return math32.Vec3(Joints.Value2D(int(idx), int(JointCForceX)), Joints.Value2D(int(idx), int(JointCForceY)), Joints.Value2D(int(idx), int(JointCForceZ)))
 }
 
 func SetJointCForce(idx int32, f math32.Vector3) {
-	Joints.Set(f.X, int(idx), int(JointCForceX))
-	Joints.Set(f.Y, int(idx), int(JointCForceY))
-	Joints.Set(f.Z, int(idx), int(JointCForceZ))
+	Joints.Set2D(f.X, int(idx), int(JointCForceX))
+	Joints.Set2D(f.Y, int(idx), int(JointCForceY))
+	Joints.Set2D(f.Z, int(idx), int(JointCForceZ))
 }
 
 func JointCTorque(idx int32) math32.Vector3 {
-	return math32.Vec3(Joints.Value(int(idx), int(JointCTorqueX)), Joints.Value(int(idx), int(JointCTorqueY)), Joints.Value(int(idx), int(JointCTorqueZ)))
+	return math32.Vec3(Joints.Value2D(int(idx), int(JointCTorqueX)), Joints.Value2D(int(idx), int(JointCTorqueY)), Joints.Value2D(int(idx), int(JointCTorqueZ)))
 }
 
 func SetJointCTorque(idx int32, t math32.Vector3) {
-	Joints.Set(t.X, int(idx), int(JointCTorqueX))
-	Joints.Set(t.Y, int(idx), int(JointCTorqueY))
-	Joints.Set(t.Z, int(idx), int(JointCTorqueZ))
+	Joints.Set2D(t.X, int(idx), int(JointCTorqueX))
+	Joints.Set2D(t.Y, int(idx), int(JointCTorqueY))
+	Joints.Set2D(t.Z, int(idx), int(JointCTorqueZ))
 }
 
 func JointLinLambda(idx int32) math32.Vector3 {
-	return math32.Vec3(Joints.Value(int(idx), int(JointLinLambdaX)), Joints.Value(int(idx), int(JointLinLambdaY)), Joints.Value(int(idx), int(JointLinLambdaZ)))
+	return math32.Vec3(Joints.Value2D(int(idx), int(JointLinLambdaX)), Joints.Value2D(int(idx), int(JointLinLambdaY)), Joints.Value2D(int(idx), int(JointLinLambdaZ)))
 }
 
 func SetJointLinLambda(idx int32, t math32.Vector3) {
-	Joints.Set(t.X, int(idx), int(JointLinLambdaX))
-	Joints.Set(t.Y, int(idx), int(JointLinLambdaY))
-	Joints.Set(t.Z, int(idx), int(JointLinLambdaZ))
+	Joints.Set2D(t.X, int(idx), int(JointLinLambdaX))
+	Joints.Set2D(t.Y, int(idx), int(JointLinLambdaY))
+	Joints.Set2D(t.Z, int(idx), int(JointLinLambdaZ))
 }
 
 func JointAngLambda(idx int32) math32.Vector3 {
-	return math32.Vec3(Joints.Value(int(idx), int(JointAngLambdaX)), Joints.Value(int(idx), int(JointAngLambdaY)), Joints.Value(int(idx), int(JointAngLambdaZ)))
+	return math32.Vec3(Joints.Value2D(int(idx), int(JointAngLambdaX)), Joints.Value2D(int(idx), int(JointAngLambdaY)), Joints.Value2D(int(idx), int(JointAngLambdaZ)))
 }
 
 func SetJointAngLambda(idx int32, t math32.Vector3) {
-	Joints.Set(t.X, int(idx), int(JointAngLambdaX))
-	Joints.Set(t.Y, int(idx), int(JointAngLambdaY))
-	Joints.Set(t.Z, int(idx), int(JointAngLambdaZ))
+	Joints.Set2D(t.X, int(idx), int(JointAngLambdaX))
+	Joints.Set2D(t.Y, int(idx), int(JointAngLambdaY))
+	Joints.Set2D(t.Z, int(idx), int(JointAngLambdaZ))
 }
 
 // JointDoFVars are joint DoF state variables stored in tensor.Float32,
@@ -357,13 +357,13 @@ const (
 )
 
 func JointAxisDoF(didx int32) math32.Vector3 {
-	return math32.Vec3(JointDoFs.Value(int(didx), int(JointAxisX)), JointDoFs.Value(int(didx), int(JointAxisY)), JointDoFs.Value(int(didx), int(JointAxisZ)))
+	return math32.Vec3(JointDoFs.Value2D(int(didx), int(JointAxisX)), JointDoFs.Value2D(int(didx), int(JointAxisY)), JointDoFs.Value2D(int(didx), int(JointAxisZ)))
 }
 
 func SetJointAxisDoF(didx int32, axis math32.Vector3) {
-	JointDoFs.Set(axis.X, int(didx), int(JointAxisX))
-	JointDoFs.Set(axis.Y, int(didx), int(JointAxisY))
-	JointDoFs.Set(axis.Z, int(didx), int(JointAxisZ))
+	JointDoFs.Set2D(axis.X, int(didx), int(JointAxisX))
+	JointDoFs.Set2D(axis.Y, int(didx), int(JointAxisY))
+	JointDoFs.Set2D(axis.Z, int(didx), int(JointAxisZ))
 }
 
 func JointAxis(idx, dof int32) math32.Vector3 {
@@ -375,11 +375,11 @@ func SetJointAxis(idx, dof int32, axis math32.Vector3) {
 }
 
 func JointDoF(idx, dof int32, vr JointDoFVars) float32 {
-	return JointDoFs.Value(int(JointDoFIndex(idx, dof)), int(vr))
+	return JointDoFs.Value2D(int(JointDoFIndex(idx, dof)), int(vr))
 }
 
 func SetJointDoF(idx, dof int32, vr JointDoFVars, value float32) {
-	JointDoFs.Set(value, int(JointDoFIndex(idx, dof)), int(vr))
+	JointDoFs.Set2D(value, int(JointDoFIndex(idx, dof)), int(vr))
 }
 
 //gosl:end
@@ -391,9 +391,9 @@ func (ml *Model) JointDefaults(idx int32) {
 }
 
 func (ml *Model) JointDoFDefaults(didx int32) {
-	JointDoFs.Set(-JointLimitUnlimited, int(didx), int(JointLimitLower))
-	JointDoFs.Set(JointLimitUnlimited, int(didx), int(JointLimitUpper))
-	JointControls.Set(1, int(didx), int(JointTargetDamp))
+	JointDoFs.Set2D(-JointLimitUnlimited, int(didx), int(JointLimitLower))
+	JointDoFs.Set2D(JointLimitUnlimited, int(didx), int(JointLimitUpper))
+	JointControls.Set2D(1, int(didx), int(JointTargetDamp))
 }
 
 // NewJointFixed adds a new Fixed joint
@@ -538,9 +538,9 @@ func (ml *Model) newJoint(joint JointTypes, parent, child int32, ppos, cpos math
 		params.MaxObjectJoints = int32(ml.CurrentObjectJoint + 1)
 		ml.Objects.SetShapeSizes(ml.CurrentObject+1, int(params.MaxObjectJoints+1))
 	}
-	ml.Objects.Set(idx, int(ml.CurrentObject), int(1+ml.CurrentObjectJoint))
+	ml.Objects.Set2D(idx, int(ml.CurrentObject), int(1+ml.CurrentObjectJoint))
 	ml.CurrentObjectJoint++
-	ml.Objects.Set(int32(ml.CurrentObjectJoint), int(ml.CurrentObject), int(0))
+	ml.Objects.Set2D(int32(ml.CurrentObjectJoint), int(ml.CurrentObject), int(0))
 	return idx
 }
 

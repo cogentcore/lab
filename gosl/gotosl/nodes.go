@@ -1959,6 +1959,17 @@ func (p *printer) tensorMethod(x *ast.CallExpr, vr *Var, methName string) {
 	}
 }
 
+// gosl: tensorMethodName returns the name of the variadic tensor method
+// (Value, ValuePtr, Set, SetAdd etc) for the given method name, which may be
+// one of their fixed-arity versions for 2 to 5 indexes, such as Value3D or
+// SetAdd2D, which goal generates for x[i, j, k] in Go code.
+func tensorMethodName(name string) string {
+	if n := len(name); n > 2 && name[n-1] == 'D' && name[n-2] >= '2' && name[n-2] <= '5' {
+		return name[:n-2]
+	}
+	return name
+}
+
 func (p *printer) methodExpr(x *ast.CallExpr, depth int) {
 	path := x.Fun.(*ast.SelectorExpr) // we know fun is selector
 	methName := path.Sel.Name
@@ -1976,7 +1987,7 @@ func (p *printer) methodExpr(x *ast.CallExpr, depth int) {
 	} else if id, ok := path.X.(*ast.Ident); ok {
 		gvr := p.GoToSL.GlobalVar(id.Name)
 		if gvr != nil && gvr.Tensor {
-			p.tensorMethod(x, gvr, methName)
+			p.tensorMethod(x, gvr, tensorMethodName(methName))
 			return
 		}
 		recvPath = id.Name
@@ -3401,8 +3412,9 @@ func (p *printer) funcDecl(d *ast.FuncDecl) {
 	// We have to save startCol only after emitting FUNC; otherwise it can be on a
 	// different line (all whitespace preceding the FUNC is emitted only when the
 	// FUNC is emitted).
-	startCol := p.out.Column - len("func ")
-	p.print("fn", blank, fname)
+	p.print("fn", blank)
+	startCol := p.out.Column - len("fn ")
+	p.print(fname)
 	p.signature(d.Type, d.Recv)
 	p.funcBody(p.distanceFrom(d.Pos(), startCol), vtab, d.Body)
 	p.curPtrArgs = nil

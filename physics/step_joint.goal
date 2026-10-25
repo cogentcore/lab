@@ -235,7 +235,7 @@ func StepSolveJoint(ji int32) {
 			err = d - up
 		}
 		if math32.Abs(err) > 1e-9 {
-			//  compute gradients
+			// compute gradients
 			linearC := relPoseR
 			linearP := slmath.Negate3(linearC)
 			dC = xwCR.Sub(wComC)
@@ -310,7 +310,7 @@ func StepSolveJoint(ji int32) {
 			targetVel := slmath.Dim3(axisTargetVelKdD, dim)
 			derrRel := derr - targetVel
 
-			//  consider joint limits irrespective of axis mode
+			// consider joint limits irrespective of axis mode
 			lower := slmath.Dim3(axisLimitsLower, dim)
 			upper := slmath.Dim3(axisLimitsUpper, dim)
 			if e < lower {
@@ -379,7 +379,7 @@ func StepSolveJoint(ji int32) {
 	err0 := 2.0 * math32.Asin(math32.Clamp(qtwist.X, -1.0, 1.0))
 	err1 := qswing.Y
 	err2 := qswing.Z
-	//  analytic gradients of swing-twist decomposition
+	// analytic gradients of swing-twist decomposition
 	grad0 := math32.NewQuat(invs-relQ.X*relQ.X*invscube, 0.0, 0.0, -(relQ.W*relQ.X)*invscube)
 	grad1 := math32.NewQuat(
 		-relQ.W*(relQ.W*relQ.Z+relQ.X*relQ.Y)*invscube,
@@ -396,7 +396,7 @@ func StepSolveJoint(ji int32) {
 	
 	// rescale swing
 	swing_sq := qswing.W * qswing.W
-	//  if swing axis magnitude close to zero vector, just treat in quaternion space
+	// if swing axis magnitude close to zero vector, just treat in quaternion space
 	angularEps := float32(1.0e-4)
 	if swing_sq+angularEps < 1.0 {
 		d := math32.Sqrt(1.0 - qswing.W*qswing.W)
@@ -466,7 +466,7 @@ func StepSolveJoint(ji int32) {
 		angularClen := slmath.Length3(angularC)
 		derrRel := derr - targetVel*angularClen
 
-		//  consider joint limits irrespective of axis mode
+		// consider joint limits irrespective of axis mode
 		lower := slmath.Dim3(axisLimitsLower, dim)
 		upper := slmath.Dim3(axisLimitsUpper, dim)
 		if e < lower {

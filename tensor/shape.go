@@ -127,11 +127,46 @@ func (sh *Shape) RowCellSize() (rows, cells int) {
 // No checking is done on the length or size of the index values relative
 // to the shape of the tensor.
 func (sh *Shape) IndexTo1D(index ...int) int {
+	// strides is a local so that goscript indexes it directly in the loop,
+	// which makes this about twice as fast in JS (natively it is the same).
+	strides := sh.Strides
 	oned := 0
 	for i, v := range index {
-		oned += v * sh.Strides[i]
+		oned += v * strides[i]
 	}
 	return oned
+}
+
+// Index2To1D returns the flat 1D index from given 2-dimensional indicies.
+// No checking is done on the length or size of the index values relative
+// to the shape of the tensor.
+func (sh *Shape) Index2To1D(i, j int) int {
+	strides := sh.Strides
+	return i*strides[0] + j*strides[1]
+}
+
+// Index3To1D returns the flat 1D index from given 3-dimensional indicies.
+// No checking is done on the length or size of the index values relative
+// to the shape of the tensor.
+func (sh *Shape) Index3To1D(i, j, k int) int {
+	strides := sh.Strides
+	return i*strides[0] + j*strides[1] + k*strides[2]
+}
+
+// Index4To1D returns the flat 1D index from given 4-dimensional indicies.
+// No checking is done on the length or size of the index values relative
+// to the shape of the tensor.
+func (sh *Shape) Index4To1D(i, j, k, l int) int {
+	strides := sh.Strides
+	return i*strides[0] + j*strides[1] + k*strides[2] + l*strides[3]
+}
+
+// Index5To1D returns the flat 1D index from given 4-dimensional indicies.
+// No checking is done on the length or size of the index values relative
+// to the shape of the tensor.
+func (sh *Shape) Index5To1D(i, j, k, l, m int) int {
+	strides := sh.Strides
+	return i*strides[0] + j*strides[1] + k*strides[2] + l*strides[3] + m*strides[4]
 }
 
 // IndexFrom1D returns the n-dimensional index from a "flat" 1D array index.

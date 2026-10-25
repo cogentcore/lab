@@ -27,17 +27,17 @@ func InitDynamics(i uint32) { //gosl:kernel
 	}
 	for cni := range 2 {
 		bi := DynamicBody(ii)
-		Dynamics.Set(Bodies.Value(int(bi), int(BodyPosX)), int(ii), int(cni), int(DynPosX))
-		Dynamics.Set(Bodies.Value(int(bi), int(BodyPosY)), int(ii), int(cni), int(DynPosY))
-		Dynamics.Set(Bodies.Value(int(bi), int(BodyPosZ)), int(ii), int(cni), int(DynPosZ))
+		Dynamics.Set3D(Bodies.Value2D(int(bi), int(BodyPosX)), int(ii), int(cni), int(DynPosX))
+		Dynamics.Set3D(Bodies.Value2D(int(bi), int(BodyPosY)), int(ii), int(cni), int(DynPosY))
+		Dynamics.Set3D(Bodies.Value2D(int(bi), int(BodyPosZ)), int(ii), int(cni), int(DynPosZ))
 
-		Dynamics.Set(Bodies.Value(int(bi), int(BodyQuatX)), int(ii), int(cni), int(DynQuatX))
-		Dynamics.Set(Bodies.Value(int(bi), int(BodyQuatY)), int(ii), int(cni), int(DynQuatY))
-		Dynamics.Set(Bodies.Value(int(bi), int(BodyQuatZ)), int(ii), int(cni), int(DynQuatZ))
-		Dynamics.Set(Bodies.Value(int(bi), int(BodyQuatW)), int(ii), int(cni), int(DynQuatW))
+		Dynamics.Set3D(Bodies.Value2D(int(bi), int(BodyQuatX)), int(ii), int(cni), int(DynQuatX))
+		Dynamics.Set3D(Bodies.Value2D(int(bi), int(BodyQuatY)), int(ii), int(cni), int(DynQuatY))
+		Dynamics.Set3D(Bodies.Value2D(int(bi), int(BodyQuatZ)), int(ii), int(cni), int(DynQuatZ))
+		Dynamics.Set3D(Bodies.Value2D(int(bi), int(BodyQuatW)), int(ii), int(cni), int(DynQuatW))
 
 		for v := DynVelX; v < DynamicVarsN; v++ {
-			Dynamics.Set(0.0, int(ii), int(cni), int(v))
+			Dynamics.Set3D(0.0, int(ii), int(cni), int(v))
 		}
 	}
 }
@@ -50,7 +50,7 @@ func DynamicsCurToNext(i uint32) { //gosl:kernel
 		return
 	}
 	for di := DynBody; di < DynamicVarsN; di++ {
-		Dynamics.Set(Dynamics.Value(int(ii), int(params.Cur), int(di)), int(ii), int(params.Next), int(di))
+		Dynamics.Set3D(Dynamics.Value3D(int(ii), int(params.Cur), int(di)), int(ii), int(params.Next), int(di))
 	}
 }
 
@@ -61,20 +61,20 @@ func ForcesFromJoints(i uint32) { //gosl:kernel
 	if di >= params.DynamicsN {
 		return
 	}
-	np := BodyJoints.Value(int(di), int(0), int(0))
-	nc := BodyJoints.Value(int(di), int(1), int(0))
+	np := BodyJoints.Value3D(int(di), int(0), int(0))
+	nc := BodyJoints.Value3D(int(di), int(1), int(0))
 
 	tf := math32.Vec3(0, 0, 0)
 	tt := math32.Vec3(0, 0, 0)
 	for i := int32(1); i <= np; i++ {
-		ji := BodyJoints.Value(int(di), int(0), int(i))
+		ji := BodyJoints.Value3D(int(di), int(0), int(i))
 		f := JointPForce(ji)
 		tf = tf.Add(f)
 		t := JointPTorque(ji)
 		tt = tt.Add(t)
 	}
 	for i := int32(1); i <= nc; i++ {
-		ji := BodyJoints.Value(int(di), int(1), int(i))
+		ji := BodyJoints.Value3D(int(di), int(1), int(i))
 		f := JointCForce(ji)
 		tf = tf.Add(f)
 		t := JointCTorque(ji)
@@ -95,7 +95,7 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 	}
 	bi := DynamicBody(di)
 
-	invMass := Bodies.Value(int(bi), int(BodyInvMass))
+	invMass := Bodies.Value2D(int(bi), int(BodyInvMass))
 	inertia := BodyInertia(bi)
 	invInertia := BodyInvInertia(bi)
 	grav := params.Gravity.V()
@@ -157,7 +157,7 @@ func StepIntegrateBodies(i uint32) { //gosl:kernel
 func StepBodyDeltas(di, bi int32, contacts bool, cWt float32, linDel, angDel math32.Vector3) {
 	params := GetParams(0)
 
-	invMass := Bodies.Value(int(bi), int(BodyInvMass))
+	invMass := Bodies.Value2D(int(bi), int(BodyInvMass))
 	inertia := BodyInertia(bi)
 	invInertia := BodyInvInertia(bi)
 
