@@ -87,6 +87,10 @@ func TestShell(t *testing.T) {
 		{"in-file", []string{"echo abc > f.txt", "cat < f.txt"}, "abc\n"},
 		{"in-out-file", []string{"echo abc > f.txt", "cat < f.txt > g.txt", "cat g.txt"}, "abc\n"},
 
+		{"space-escaped", []string{`mkdir My\ Dir`, `echo x > My\ Dir/a\ b.txt`, `cat "My Dir/a b.txt"`}, "x\n"},
+		{"single-quotes", []string{`echo x > 'a b.txt'`, `cat a\ b.txt`, `echo 'a\b "c"'`}, "x\na\\b \"c\"\n"},
+		{"escaped-special", []string{`echo a\{b\}\;c\\d`}, "a{b};c\\d\n"},
+
 		{"pipe", []string{"echo abc | cat"}, "abc\n"},
 		{"pipe-3", []string{"echo abc | tr a-z A-Z | cat"}, "ABC\n"},
 		{"pipe-err", []string{"[ls nonexist |& grep -c nonexist]"}, "1\n"},

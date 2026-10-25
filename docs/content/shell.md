@@ -10,6 +10,10 @@ The following documentation describes specific use-cases.
 
 * `set <var> <value>` (space delimited as in all shell mode, no equals)
 
+## Quoting
+
+As in bash, an argument with spaces or other special characters can be quoted with `"` or `'`, or its characters can be escaped with a backslash: `ls "My Documents"`, `ls 'My Documents'` and `ls My\ Documents` are the same. Inside `'` quotes, everything is literal; inside `"` quotes, which are Go strings, `\` starts an escape as in Go. Tab completion of file names continues the word in the same way, escaping or quoting the characters that need it.
+
 ## Input and output redirection
 
 * Standard output to a file: `>`, or `>>` to append to it; `>&` and `>>&` also send the standard error to it.

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"go/token"
 	"slices"
+	"strconv"
 	"strings"
 
 	"cogentcore.org/core/base/logx"
@@ -354,9 +355,12 @@ func (st *State) transpileExec(ewords []string, output bool) Tokens {
 			etoks.AddTokens(st.transpileExec(ewords[i+1:], output)...)
 			return etoks
 		default:
-			if f[0] == '"' || f[0] == '`' {
+			switch {
+			case f[0] == '"' || f[0] == '`':
 				etoks.Add(token.STRING, f)
-			} else {
+			case len(f) > 1 && f[0] == '\'' && f[len(f)-1] == '\'': // literal, as in bash
+				etoks.Add(token.STRING, strconv.Quote(f[1:len(f)-1]))
+			default:
 				etoks.Add(token.IDENT, AddQuotes(f)) // mark as an IDENT but add quotes!
 			}
 			etoks.Add(token.COMMA)

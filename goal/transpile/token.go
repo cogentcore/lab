@@ -9,6 +9,7 @@ import (
 	"go/token"
 	"log/slog"
 	"slices"
+	"strconv"
 	"strings"
 
 	"cogentcore.org/core/base/logx"
@@ -274,7 +275,7 @@ func EscapeQuotes(str string) string {
 // AddQuotes surrounds given string with quotes,
 // also escaping any contained quotes
 func AddQuotes(str string) string {
-	return `"` + EscapeQuotes(str) + `"`
+	return strconv.Quote(str)
 }
 
 // IsBracket returns true if the given token is a bracket delimiter:

@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"strings"
 
-	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/mvmlab/tensorsymbols"
+	"cogentcore.org/lab/tensor"
 )
 
 func init() {

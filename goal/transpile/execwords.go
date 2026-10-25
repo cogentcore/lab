@@ -36,6 +36,7 @@ func ExecWords(ln string) ([]string, error) {
 	esc := false
 	dQuote := false
 	bQuote := false
+	sQuote := false
 	brace := 0
 	brack := 0
 	redir := false
@@ -62,7 +63,7 @@ func ExecWords(ln string) ([]string, error) {
 	}
 
 	for _, r := range ln {
-		quote := dQuote || bQuote
+		quote := dQuote || bQuote || sQuote
 
 		if redir {
 			redir = false
@@ -80,8 +81,15 @@ func ExecWords(ln string) ([]string, error) {
 		}
 
 		switch {
+		case sQuote: // everything is literal until the closing quote, as in bash
+			if r == '\'' {
+				sQuote = false
+			}
+			word += string(r)
 		case esc:
-			if brace == 0 && unicode.IsSpace(r) { // we will be quoted later anyway
+			// an escaped char outside of quotes and Go code is literal, as in
+			// bash: the escape is removed, and the word is quoted later.
+			if brace == 0 && !quote {
 				word = word[:len(word)-1]
 			}
 			word += string(r)
@@ -98,6 +106,9 @@ func ExecWords(ln string) ([]string, error) {
 			if !dQuote {
 				bQuote = !bQuote
 			}
+			word += string(r)
+		case r == '\'' && !quote && brace == 0:
+			sQuote = true
 			word += string(r)
 		case quote: // absorbs quote -- no need to check below
 			word += string(r)
@@ -153,8 +164,8 @@ func ExecWords(ln string) ([]string, error) {
 		atStart = false
 	}
 	addWord()
-	if dQuote || bQuote || brack > 0 {
-		return words, fmt.Errorf("goal: exec command has unterminated quotes (\": %v, `: %v) or brackets [ %v ]", dQuote, bQuote, brack > 0)
+	if dQuote || bQuote || sQuote || brack > 0 {
+		return words, fmt.Errorf("goal: exec command has unterminated quotes (\": %v, `: %v, ': %v) or brackets [ %v ]", dQuote, bQuote, sQuote, brack > 0)
 	}
 	return words, nil
 }
