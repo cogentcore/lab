@@ -94,6 +94,72 @@ func (tsr *Base[T]) Value1D(i int) T { return tsr.Values[i] }
 
 func (tsr *Base[T]) Set1D(val T, i int) { tsr.Values[i] = val }
 
+// Value2D to Value5D, ValuePtr2D to ValuePtr5D and Set2D to Set5D are the
+// fixed-arity versions of Value, ValuePtr and Set for 2 to 5 indexes, which
+// avoid the variadic index slice and loop. Goal translates n-dimensional
+// index expressions in Go code (x[i, j]) into them, which is much faster,
+// especially in JS.
+
+// Value2D returns the value at the given 2 indexes.
+func (tsr *Base[T]) Value2D(i, j int) T {
+	return tsr.Values[tsr.shape.Index2To1D(i, j)]
+}
+
+// Value3D returns the value at the given 3 indexes.
+func (tsr *Base[T]) Value3D(i, j, k int) T {
+	return tsr.Values[tsr.shape.Index3To1D(i, j, k)]
+}
+
+// Value4D returns the value at the given 4 indexes.
+func (tsr *Base[T]) Value4D(i, j, k, l int) T {
+	return tsr.Values[tsr.shape.Index4To1D(i, j, k, l)]
+}
+
+// Value5D returns the value at the given 5 indexes.
+func (tsr *Base[T]) Value5D(i, j, k, l, m int) T {
+	return tsr.Values[tsr.shape.Index5To1D(i, j, k, l, m)]
+}
+
+// ValuePtr2D returns a pointer to the value at the given 2 indexes.
+func (tsr *Base[T]) ValuePtr2D(i, j int) *T {
+	return &tsr.Values[tsr.shape.Index2To1D(i, j)]
+}
+
+// ValuePtr3D returns a pointer to the value at the given 3 indexes.
+func (tsr *Base[T]) ValuePtr3D(i, j, k int) *T {
+	return &tsr.Values[tsr.shape.Index3To1D(i, j, k)]
+}
+
+// ValuePtr4D returns a pointer to the value at the given 4 indexes.
+func (tsr *Base[T]) ValuePtr4D(i, j, k, l int) *T {
+	return &tsr.Values[tsr.shape.Index4To1D(i, j, k, l)]
+}
+
+// ValuePtr5D returns a pointer to the value at the given 5 indexes.
+func (tsr *Base[T]) ValuePtr5D(i, j, k, l, m int) *T {
+	return &tsr.Values[tsr.shape.Index5To1D(i, j, k, l, m)]
+}
+
+// Set2D sets the value at the given 2 indexes.
+func (tsr *Base[T]) Set2D(val T, i, j int) {
+	tsr.Values[tsr.shape.Index2To1D(i, j)] = val
+}
+
+// Set3D sets the value at the given 3 indexes.
+func (tsr *Base[T]) Set3D(val T, i, j, k int) {
+	tsr.Values[tsr.shape.Index3To1D(i, j, k)] = val
+}
+
+// Set4D sets the value at the given 4 indexes.
+func (tsr *Base[T]) Set4D(val T, i, j, k, l int) {
+	tsr.Values[tsr.shape.Index4To1D(i, j, k, l)] = val
+}
+
+// Set5D sets the value at the given 5 indexes.
+func (tsr *Base[T]) Set5D(val T, i, j, k, l, m int) {
+	tsr.Values[tsr.shape.Index5To1D(i, j, k, l, m)] = val
+}
+
 // SetNumRows sets the number of rows (outermost dimension) in a RowMajor organized tensor.
 // It is safe to set this to 0. For incrementally growing tensors (e.g., a log)
 // it is best to first set the anticipated full size, which allocates the

@@ -339,11 +339,20 @@ func (st *State) TranspileExec(ewords []string, output bool) Tokens {
 // translating it into a corresponding tensor Value or Set expression,
 // if it is a multi-dimensional indexing expression which is not valid in Go,
 // to support simple n-dimensional tensor indexing in Go (not math) mode.
+// For 2 to 5 indexes it uses the fixed-arity methods, such as
+//
+//	x[i, j, k]      -> x.Value3D(int(i), int(j), int(k))
+//	x[i, j, k] = v  -> x.Set3D(v, int(i), int(j), int(k))
+//	x[i, j, k] += v -> x.SetAdd3D(v, int(i), int(j), int(k))
+//	&x[i, j, k]     -> x.ValuePtr3D(int(i), int(j), int(k))
+//
+// and the variadic Value, Set etc for more indexes.
 // Gets the current sequence of toks tokens, where the ident starts at idIdx
 // and the ] is at rbIdx. It puts the results in gtoks generated tokens.
 // Returns a positive index to resume processing at, if it is actually an
 // n-dimensional expr, and -1 if not, in which case the normal process resumes.
 func (st *State) TranspileGoNDimIndex(toks Tokens, code string, gtoks *Tokens, idIdx, rbIdx int) int {
+	// Find the commas between the indexes, skipping nested expressions.
 	var commas []int
 	for i := idIdx + 2; i < rbIdx; i++ {
 		tk := toks[i]
@@ -360,13 +369,17 @@ func (st *State) TranspileGoNDimIndex(toks Tokens, code string, gtoks *Tokens, i
 	if len(commas) == 0 { // not multidim
 		return -1
 	}
+
+	// The address of the element is taken with ValuePtr, without the &
+	// that precedes the receiver expression, already in gtoks.
 	isPtr := false
-	if idIdx > 0 && toks[idIdx-1].Tok == token.AND {
+	if rs := receiverStart(*gtoks); rs > 0 && (*gtoks)[rs-1].Tok == token.AND {
 		isPtr = true
-		lgt := len(*gtoks)
-		*gtoks = slices.Delete(*gtoks, lgt-2, lgt-1) // get rid of &
+		*gtoks = slices.Delete(*gtoks, rs-1, rs)
 	}
-	// now we need to determine if it is a Set based on what happens after rb
+
+	// An assignment after the ] sets the element, with Set or an operator
+	// version of it, such as SetAdd.
 	isSet := false
 	stok := token.ILLEGAL
 	n := len(toks)
@@ -375,7 +388,7 @@ func (st *State) TranspileGoNDimIndex(toks Tokens, code string, gtoks *Tokens, i
 		hasComment = true
 		n--
 	}
-	if n-rbIdx > 1 {
+	if !isPtr && n-rbIdx > 1 {
 		ntk := toks[rbIdx+1].Tok
 		if ntk == token.ASSIGN || (ntk >= token.ADD_ASSIGN && ntk <= token.QUO_ASSIGN) {
 			isSet = true
@@ -383,22 +396,18 @@ func (st *State) TranspileGoNDimIndex(toks Tokens, code string, gtoks *Tokens, i
 		}
 	}
 	fun := "Value"
-	if isPtr {
+	switch {
+	case isPtr:
 		fun = "ValuePtr"
-		isSet = false
-	} else if isSet {
-		fun = "Set"
-		switch stok {
-		case token.ADD_ASSIGN:
-			fun += "Add"
-		case token.SUB_ASSIGN:
-			fun += "Sub"
-		case token.MUL_ASSIGN:
-			fun += "Mul"
-		case token.QUO_ASSIGN:
-			fun += "Div"
-		}
+	case isSet:
+		fun = "Set" + map[token.Token]string{token.ADD_ASSIGN: "Add", token.SUB_ASSIGN: "Sub", token.MUL_ASSIGN: "Mul", token.QUO_ASSIGN: "Div"}[stok]
 	}
+	if nd := len(commas) + 1; nd <= 5 {
+		fun += fmt.Sprintf("%dD", nd)
+	}
+
+	// The arguments are the value set, if any, and the indexes, each
+	// converted to int, as tensor indexes may be of any integer type.
 	gtoks.Add(token.PERIOD)
 	gtoks.Add(token.IDENT, fun)
 	gtoks.Add(token.LPAREN)
@@ -407,25 +416,74 @@ func (st *State) TranspileGoNDimIndex(toks Tokens, code string, gtoks *Tokens, i
 		gtoks.Add(token.COMMA)
 	}
 	sti := idIdx + 2
-	for _, cp := range commas {
+	for _, cp := range append(commas, rbIdx) {
+		if sti > idIdx+2 {
+			gtoks.Add(token.COMMA)
+		}
 		gtoks.Add(token.IDENT, "int")
 		gtoks.Add(token.LPAREN)
 		gtoks.AddTokens(st.TranspileGo(toks[sti:cp], code)...)
 		gtoks.Add(token.RPAREN)
-		gtoks.Add(token.COMMA)
 		sti = cp + 1
 	}
-	gtoks.Add(token.IDENT, "int")
-	gtoks.Add(token.LPAREN)
-	gtoks.AddTokens(st.TranspileGo(toks[sti:rbIdx], code)...)
 	gtoks.Add(token.RPAREN)
-	gtoks.Add(token.RPAREN)
-	if isSet {
-		if hasComment {
-			gtoks.AddTokens(toks[len(toks)-1])
-		}
-		return len(toks)
-	} else {
+	if !isSet {
 		return rbIdx
 	}
+	if hasComment {
+		gtoks.AddTokens(toks[len(toks)-1])
+	}
+	return len(toks)
+}
+
+// receiverStart returns the index in toks of the start of the primary
+// expression that ends toks, such as x, a.b.x, f(y).x or a[i].x.
+func receiverStart(toks Tokens) int {
+	i := len(toks) - 1
+	for i >= 0 {
+		// Skip back over a bracketed part, such as the arguments of a call
+		// or an index, to the operand that it applies to.
+		switch toks[i].Tok {
+		case token.RPAREN, token.RBRACK:
+			if lb := leftMatching(toks[:i+1]); lb > 0 {
+				i = lb - 1
+				continue
+			}
+			return i + 1
+		case token.IDENT:
+		default:
+			return i + 1
+		}
+
+		// An identifier continues a selector chain if a period precedes it.
+		if i >= 1 && toks[i-1].Tok == token.PERIOD {
+			i -= 2
+			continue
+		}
+		return i
+	}
+	return 0
+}
+
+// leftMatching returns the index of the bracket that matches the bracket
+// that ends toks, or -1 if there is none.
+func leftMatching(toks Tokens) int {
+	rb := toks[len(toks)-1].Tok
+	lb := token.LPAREN
+	if rb == token.RBRACK {
+		lb = token.LBRACK
+	}
+	depth := 0
+	for i := len(toks) - 2; i >= 0; i-- {
+		switch toks[i].Tok {
+		case lb:
+			if depth == 0 {
+				return i
+			}
+			depth--
+		case rb:
+			depth++
+		}
+	}
+	return -1
 }

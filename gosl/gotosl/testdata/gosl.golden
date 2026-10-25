@@ -43,6 +43,8 @@ const (
 	CtxVar GPUVars = 1
 	DataVar GPUVars = 2
 	BigVar GPUVars = 3
+	IntDataVar GPUVars = 4
+	Data6Var GPUVars = 5
 )
 
 // Tensor stride variables
@@ -87,6 +89,8 @@ func GPUInit() {
 			vr = sgp.Add("Big0", gpu.Float32, 1, gpu.ComputeShader)
 			vr = sgp.Add("Big1", gpu.Float32, 1, gpu.ComputeShader)
 			vr = sgp.Add("Big2", gpu.Float32, 1, gpu.ComputeShader)
+			vr = sgp.Add("IntData", gpu.Int32, 1, gpu.ComputeShader)
+			vr = sgp.Add("Data6", gpu.Float32, 1, gpu.ComputeShader)
 			sgp.SetNValues(1)
 		}
 		var pl *gpu.ComputePipeline
@@ -97,6 +101,8 @@ func GPUInit() {
 		pl.AddVarUsed(1, "Big2")
 		pl.AddVarUsed(0, "Ctx")
 		pl.AddVarUsed(1, "Data")
+		pl.AddVarUsed(1, "Data6")
+		pl.AddVarUsed(1, "IntData")
 		pl.AddVarUsed(0, "Params")
 		pl = gpu.NewComputePipelineShaderFS(shaders, "shaders/CycleUpdt.wgsl", sy)
 		pl.AddVarUsed(0, "TensorStrides")
@@ -248,6 +254,12 @@ func ToGPU(vars ...GPUVars) {
 				ed := min(bsz * (bi+1), n)
 				gpu.SetValueFrom(v, Big.Values[st:ed])
 			}
+		case IntDataVar:
+			v, _ := syVars.ValueByIndex(1, "IntData", 0)
+			gpu.SetValueFrom(v, IntData.Values)
+		case Data6Var:
+			v, _ := syVars.ValueByIndex(1, "Data6", 0)
+			gpu.SetValueFrom(v, Data6.Values)
 		}
 	}
 }
@@ -269,11 +281,19 @@ func ToGPUTensorStrides() {
 	}
 	sy := GPUSystem
 	syVars := sy.Vars()
-	TensorStrides.SetShapeSizes(20)
+	TensorStrides.SetShapeSizes(40)
 	TensorStrides.SetInt1D(Data.Shape().Strides[0], 0)
 	TensorStrides.SetInt1D(Data.Shape().Strides[1], 1)
 	TensorStrides.SetInt1D(Big.Shape().Strides[0], 10)
 	TensorStrides.SetInt1D(Big.Shape().Strides[1], 11)
+	TensorStrides.SetInt1D(IntData.Shape().Strides[0], 20)
+	TensorStrides.SetInt1D(IntData.Shape().Strides[1], 21)
+	TensorStrides.SetInt1D(Data6.Shape().Strides[0], 30)
+	TensorStrides.SetInt1D(Data6.Shape().Strides[1], 31)
+	TensorStrides.SetInt1D(Data6.Shape().Strides[2], 32)
+	TensorStrides.SetInt1D(Data6.Shape().Strides[3], 33)
+	TensorStrides.SetInt1D(Data6.Shape().Strides[4], 34)
+	TensorStrides.SetInt1D(Data6.Shape().Strides[5], 35)
 	v, _ := syVars.ValueByIndex(0, "TensorStrides", 0)
 	gpu.SetValueFrom(v, TensorStrides.Values)
 }
@@ -301,6 +321,12 @@ func ReadFromGPU(vars ...GPUVars) {
 				v, _ := syVars.ValueByIndex(1, fmt.Sprintf("Big%d", bi), 0)
 				v.GPUToRead(sy.CommandEncoder)
 			}
+		case IntDataVar:
+			v, _ := syVars.ValueByIndex(1, "IntData", 0)
+			v.GPUToRead(sy.CommandEncoder)
+		case Data6Var:
+			v, _ := syVars.ValueByIndex(1, "Data6", 0)
+			v.GPUToRead(sy.CommandEncoder)
 		}
 	}
 }
@@ -334,6 +360,14 @@ func SyncFromGPU(vars ...GPUVars) {
 				ed := min(bsz * (bi+1), n)
 				gpu.ReadToBytes(v, Big.Values[st:ed])
 			}
+		case IntDataVar:
+			v, _ := syVars.ValueByIndex(1, "IntData", 0)
+			v.ReadSync()
+			gpu.ReadToBytes(v, IntData.Values)
+		case Data6Var:
+			v, _ := syVars.ValueByIndex(1, "Data6", 0)
+			v.ReadSync()
+			gpu.ReadToBytes(v, Data6.Values)
 		}
 	}
 }

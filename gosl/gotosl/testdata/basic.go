@@ -5,6 +5,7 @@ package test
 
 import (
 	"math"
+	"sync/atomic"
 
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/gosl/slbool"
@@ -19,29 +20,34 @@ import (
 //gosl:vars
 var (
 	// Params are the parameters for the computation.
-	//
 	//gosl:read-only
 	Params []ParamStruct
 
 	// Ctx provides additional context, and is usually read-only,
 	// but is updated in a specific kernel flagged as read-write.
-	//
 	//gosl:read-or-write
 	Ctx []Context
 
 	// Data is the data on which the computation operates.
 	// 2D: outer index is data, inner index is: Raw, Integ, Exp vars.
-	//
 	//gosl:group Data
 	//gosl:dims 2
 	Data *tensor.Float32
 
 	// Big is a big data buffer that uses multiple buffers.
 	// 2D: outer index is data, inner index is: Raw, Integ, Exp vars.
-	//
 	//gosl:dims 2
 	//gosl:nbuffs 3
 	Big *tensor.Float32
+
+	// IntData is integer data that kernels accumulate atomically.
+	// 2D: outer index is data, inner index is: Raw, Integ, Exp vars.
+	//gosl:dims 2
+	IntData *tensor.Int32
+
+	// Data6 is 6D data, which goal indexes with the variadic IndexTo1D.
+	//gosl:dims 6
+	Data6 *tensor.Float32
 )
 
 const (
@@ -155,14 +161,14 @@ type ParamStruct struct {
 
 func (ps *ParamStruct) IntegFromRaw(idx int) float32 {
 	// note: the following are just to test basic control structures
-	integ := Data.Value(int(idx), int(Integ))
-	newVal := ps.Dt * (Data.Value(int(idx), int(Raw)) - integ)
+	integ := Data.Value2D(int(idx), int(Integ))
+	newVal := ps.Dt * (Data.Value2D(int(idx), int(Raw)) - integ)
 	if newVal < -10 || ps.Option.IsTrue() {
 		newVal = -10
 	}
 	integ += newVal
-	Data.Set(integ, int(idx), int(Integ))
-	Data.Set(math32.Exp(-integ), int(idx), int(Exp))
+	Data.Set2D(integ, int(idx), int(Integ))
+	Data.Set2D(math32.Exp(-integ), int(idx), int(Exp))
 	Data.Values[idx*2] = 55.0
 
 	a := ps.VXYf.X
@@ -177,19 +183,21 @@ func (ps *ParamStruct) IntegFromRaw(idx int) float32 {
 
 	ctx := GetCtx(0)
 	ps.AnotherMeth(ctx, idx, &a)
-	bv := Big.Value(int(idx), int(Integ))
+	bv := Big.Value2D(int(idx), int(Integ))
 	//gosl:wgsl
 	// bv *= 2 // will be uncommented in wgsl
 	//gosl:end
-	Big.Set(bv*2+c.Y+d.Z, int(idx), int(Exp))
-	return Data.Value(int(idx), int(Exp))
+	Big.Set2D(bv*2+c.Y+d.Z, int(idx), int(Exp))
+	atomic.AddInt32(IntData.ValuePtr2D(int(idx), int(Integ)), 1)
+	Data6.Set(Big.Value2D(int(idx), int(Exp)), int(idx), int(0), int(0), int(0), int(0), int(Exp))
+	return Data.Value2D(int(idx), int(Exp))
 }
 
 // AnotherMeth does more computation.
 // ctx arg must be converted to non-pointer.
 func (ps *ParamStruct) AnotherMeth(ctx *Context, idx int, ptrarg *float32) {
 	for i := 0; i < 10; i++ {
-		Data.SetMul(0.99, int(idx), int(Integ))
+		Data.SetMul2D(0.99, int(idx), int(Integ))
 	}
 	var flag NeuronFlags
 	flag &^= NeuronHasExt // clear flag -- op doesn't exist in C
@@ -198,24 +206,28 @@ func (ps *ParamStruct) AnotherMeth(ctx *Context, idx int, ptrarg *float32) {
 	switch mode { // note: no fallthrough!
 	case Test:
 		ab := float32(42)
-		Data.SetDiv(ab, int(idx), int(Exp))
+		Data.SetDiv2D(ab, int(idx), int(Exp))
 	case Train:
 		ab := float32(.5)
-		Data.SetMul(ab, int(idx), int(Exp))
+		Data.SetMul2D(ab, int(idx), int(Exp))
 	default: // and default is required!
 		ab := float32(1)
-		Data.SetMul(ab, int(idx), int(Exp))
+		Data.SetMul2D(ab, int(idx), int(Exp))
 	}
 
 	var a, b float32
 	b = 42
 	a = ps.Subs.Sum()
-	Data.Set(ps.Subs.SumPlus(b), int(idx), int(Exp))
-	Data.Set(a, int(idx), int(Integ))
+	Data.Set2D(ps.Subs.SumPlus(b), int(idx), int(Exp))
+	Data.Set2D(a, int(idx), int(Integ))
 
-	for i := range 10 {
-		_ = i
-		Data.SetMul(0.99, int(idx), int(Exp))
+	// for i := range 10 {
+	// 	_ = i
+	// 	Data[idx, Exp] *= 0.99
+	// }
+
+	for range 10 {
+		Data.SetMul2D(0.99, int(idx), int(Exp))
 	}
 
 	*ptrarg = -1

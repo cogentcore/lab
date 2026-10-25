@@ -124,6 +124,89 @@ func (tsr *Number[T]) SetDiv(val T, i ...int) {
 	tsr.Values[tsr.shape.IndexTo1D(i...)] /= val
 }
 
+// SetAdd2D to SetDiv5D are the fixed-arity versions of SetAdd, SetSub, SetMul
+// and SetDiv for 2 to 5 indexes (see [Base.Value2D]).
+
+// SetAdd2D adds val to the value at the given 2 indexes.
+func (tsr *Number[T]) SetAdd2D(val T, i, j int) {
+	tsr.Values[tsr.shape.Index2To1D(i, j)] += val
+}
+
+// SetAdd3D adds val to the value at the given 3 indexes.
+func (tsr *Number[T]) SetAdd3D(val T, i, j, k int) {
+	tsr.Values[tsr.shape.Index3To1D(i, j, k)] += val
+}
+
+// SetAdd4D adds val to the value at the given 4 indexes.
+func (tsr *Number[T]) SetAdd4D(val T, i, j, k, l int) {
+	tsr.Values[tsr.shape.Index4To1D(i, j, k, l)] += val
+}
+
+// SetAdd5D adds val to the value at the given 5 indexes.
+func (tsr *Number[T]) SetAdd5D(val T, i, j, k, l, m int) {
+	tsr.Values[tsr.shape.Index5To1D(i, j, k, l, m)] += val
+}
+
+// SetSub2D subtracts val from the value at the given 2 indexes.
+func (tsr *Number[T]) SetSub2D(val T, i, j int) {
+	tsr.Values[tsr.shape.Index2To1D(i, j)] -= val
+}
+
+// SetSub3D subtracts val from the value at the given 3 indexes.
+func (tsr *Number[T]) SetSub3D(val T, i, j, k int) {
+	tsr.Values[tsr.shape.Index3To1D(i, j, k)] -= val
+}
+
+// SetSub4D subtracts val from the value at the given 4 indexes.
+func (tsr *Number[T]) SetSub4D(val T, i, j, k, l int) {
+	tsr.Values[tsr.shape.Index4To1D(i, j, k, l)] -= val
+}
+
+// SetSub5D subtracts val from the value at the given 5 indexes.
+func (tsr *Number[T]) SetSub5D(val T, i, j, k, l, m int) {
+	tsr.Values[tsr.shape.Index5To1D(i, j, k, l, m)] -= val
+}
+
+// SetMul2D multiplies by val the value at the given 2 indexes.
+func (tsr *Number[T]) SetMul2D(val T, i, j int) {
+	tsr.Values[tsr.shape.Index2To1D(i, j)] *= val
+}
+
+// SetMul3D multiplies by val the value at the given 3 indexes.
+func (tsr *Number[T]) SetMul3D(val T, i, j, k int) {
+	tsr.Values[tsr.shape.Index3To1D(i, j, k)] *= val
+}
+
+// SetMul4D multiplies by val the value at the given 4 indexes.
+func (tsr *Number[T]) SetMul4D(val T, i, j, k, l int) {
+	tsr.Values[tsr.shape.Index4To1D(i, j, k, l)] *= val
+}
+
+// SetMul5D multiplies by val the value at the given 5 indexes.
+func (tsr *Number[T]) SetMul5D(val T, i, j, k, l, m int) {
+	tsr.Values[tsr.shape.Index5To1D(i, j, k, l, m)] *= val
+}
+
+// SetDiv2D divides by val the value at the given 2 indexes.
+func (tsr *Number[T]) SetDiv2D(val T, i, j int) {
+	tsr.Values[tsr.shape.Index2To1D(i, j)] /= val
+}
+
+// SetDiv3D divides by val the value at the given 3 indexes.
+func (tsr *Number[T]) SetDiv3D(val T, i, j, k int) {
+	tsr.Values[tsr.shape.Index3To1D(i, j, k)] /= val
+}
+
+// SetDiv4D divides by val the value at the given 4 indexes.
+func (tsr *Number[T]) SetDiv4D(val T, i, j, k, l int) {
+	tsr.Values[tsr.shape.Index4To1D(i, j, k, l)] /= val
+}
+
+// SetDiv5D divides by val the value at the given 5 indexes.
+func (tsr *Number[T]) SetDiv5D(val T, i, j, k, l, m int) {
+	tsr.Values[tsr.shape.Index5To1D(i, j, k, l, m)] /= val
+}
+
 ///////  Strings
 
 func (tsr *Number[T]) SetString(val string, i ...int) {
