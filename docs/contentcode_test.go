@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build !noyaegi
+//go:build !nointerp
 
 //go:debug randseednop=0
 
@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"io/fs"
 	"math/rand"
-	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -22,12 +21,9 @@ import (
 
 	"cogentcore.org/core/content"
 	"cogentcore.org/core/core"
+	"cogentcore.org/core/mvmcore"
 	"cogentcore.org/core/text/textcore"
-	"cogentcore.org/core/yaegicore"
-	"cogentcore.org/core/yaegicore/basesymbols"
-	"cogentcore.org/core/yaegicore/coresymbols"
-	"cogentcore.org/lab/yaegilab"
-	"github.com/cogentcore/yaegi/interp"
+	"cogentcore.org/lab/mvmlab"
 )
 
 var goalFence = regexp.MustCompile("(?m)^(\\s*)```Goal\\s*\n((?:.*\n)*?)\\s*```")
@@ -51,13 +47,11 @@ func goalSources(t *testing.T, file string) []string {
 
 // TestCompiledGoal runs the Goal code of every page of the docs that is
 // compiled into the app (contentcode_gen.go), block by block in order, as
-// the docs do when they show the page, and the same code in the yaegi Goal
+// the docs do when they show the page, and the same code in the mvm Goal
 // interpreter, and compares what each block prints.
 func TestCompiledGoal(t *testing.T) {
 	b := core.NewBody("code blocks")
 	parent := core.NewFrame(b)
-	basesymbols.Load()
-	coresymbols.Load()
 	var files []string
 	for f := range content.CompiledGoal {
 		files = append(files, f)
@@ -97,19 +91,16 @@ func TestCompiledGoal(t *testing.T) {
 
 		// interpreted
 		var interpOut bytes.Buffer
-		in := yaegilab.NewInterpreter(interp.Options{Stdout: &interpOut})
-		ip := new(*core.Frame)
-		coresymbols.Symbols["."]["b"] = reflect.ValueOf(ip).Elem()
-		in.Use(basesymbols.Symbols)
-		in.Use(coresymbols.Symbols)
-		in.ImportUsed()
+		in, err := mvmlab.NewInterpreter(&interpOut)
+		if err != nil {
+			t.Fatal(err)
+		}
 		rand.Seed(1)
 		for i := range compiled {
 			interpOut.Reset()
 			err := runTimeout(func() {
 				parent.DeleteChildren()
-				core.ExternalParent = parent
-				*ip = parent
+				mvmcore.SetParent(parent)
 				_, err := in.Eval(srcs[i])
 				if err != nil {
 					panic(err)
@@ -140,9 +131,9 @@ func TestEditGoal(t *testing.T) {
 	parent := core.NewFrame(b)
 	ed := textcore.NewEditor(b)
 	ed.Lines.SetString("a3 := compress(3)\nfmt.Println(a3.Len())\n")
-	yaegicore.ResetGoalInterpreter()
+	mvmcore.ResetGoalInterpreter()
 	content.GoalReplay = srcs[:6]
-	err := runTimeout(func() { yaegicore.BindTextEditor(ed, parent, "Goal") })
+	err := runTimeout(func() { mvmcore.BindTextEditor(ed, parent, "Goal") })
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -22,7 +22,6 @@ import (
 	"cogentcore.org/lab/goal"
 	"cogentcore.org/lab/goal/goalib"
 	"cogentcore.org/lab/goal/interpreter"
-	"github.com/cogentcore/yaegi/interp"
 )
 
 // goalrun is needed for running goal commands.
@@ -162,7 +161,7 @@ func (bm *BareMetal) updateServerIndexes() {
 
 // newInterpreter creates a new goal interpreter for exclusive use of bm.
 func (bm *BareMetal) newInterpreter() {
-	in := interpreter.NewInterpreter(interp.Options{})
+	in := interpreter.NewInterpreter(interpreter.Options{})
 	// has tensor, etc builtin
 	in.Config()
 	bm.interp = in

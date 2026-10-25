@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	// LabBrowser is the current Lab Browser, for yaegi / Go consistent access.
+	// LabBrowser is the current Lab Browser, for interpreter / Go consistent access.
 	LabBrowser *Browser
 
 	// RunScript is set if labscripts is imported.
@@ -63,7 +63,7 @@ type Browser struct { //types:add -setters
 	// It defaults to DataRoot/dbscripts
 	ScriptsDir string
 
-	// Scripts are interpreted goal scripts (via yaegi) to automate
+	// Scripts are interpreted goal scripts (via mvm) to automate
 	// routine tasks.
 	Scripts map[string]string `set:"-"`
 

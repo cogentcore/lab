@@ -1,6 +1,6 @@
 # Goal: Go augmented language
 
-Goal is an augmented version of the Go language, which combines the best parts of Go, `bash`, and Python, to provide and integrated shell and numerical expression processing experience, which can be combined with the [yaegi](https://github.com/traefik/yaegi) interpreter to provide an interactive "REPL" (read, evaluate, print loop).
+Goal is an augmented version of the Go language, which combines the best parts of Go, `bash`, and Python, to provide and integrated shell and numerical expression processing experience, which can be combined with the [mvm](https://github.com/cogentcore/mvm) interpreter to provide an interactive "REPL" (read, evaluate, print loop).
 
 See the [Cogent Lab Docs](https://cogentcore.org/lab/goal) for full documentation.
 

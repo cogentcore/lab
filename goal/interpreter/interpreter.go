@@ -17,16 +17,18 @@ import (
 	"syscall"
 
 	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/yaegicore/basesymbols"
+	"cogentcore.org/core/mvmcore/basesymbols"
 	"cogentcore.org/lab/goal"
+	"cogentcore.org/lab/mvmlab/tensorsymbols"
 	_ "cogentcore.org/lab/stats/metric"
 	_ "cogentcore.org/lab/stats/stats"
 	_ "cogentcore.org/lab/tensor/tmath"
 	"cogentcore.org/lab/tensorfs"
-	"cogentcore.org/lab/yaegilab/tensorsymbols"
+	"github.com/cogentcore/mvm/interp"
+	"github.com/cogentcore/mvm/lang/golang"
+	"github.com/cogentcore/mvm/stdlib"
+	_ "github.com/cogentcore/mvm/stdlib/core" // the core standard library
 	"github.com/cogentcore/readline"
-	"github.com/cogentcore/yaegi/interp"
-	"github.com/cogentcore/yaegi/stdlib"
 )
 
 // Interpreter represents one running shell context
@@ -39,19 +41,24 @@ type Interpreter struct {
 	// Update this prior to running Config() to take effect.
 	HistFile string
 
-	// the yaegi interpreter
-	Interp *interp.Interpreter
+	// the mvm interpreter
+	Interp *interp.Interp
 }
 
-func init() {
-	delete(stdlib.Symbols, "errors/errors") // use our errors package instead
+// Options are the options of a new [Interpreter]: its standard input and
+// output, which are those of the process if nil.
+type Options struct {
+	Stdin  io.Reader
+	Stdout io.Writer
+	Stderr io.Writer
 }
 
 // NewInterpreter returns a new [Interpreter] initialized with the given options.
-// It automatically imports the standard library and configures necessary shell
-// functions. End user app must call [Interp.Config] after importing any additional
-// symbols, prior to running the interpreter.
-func NewInterpreter(options interp.Options) *Interpreter {
+// It automatically imports the standard library, the base Cogent Core and
+// Cogent Lab packages, and configures necessary shell functions.
+// End user app must call [Interpreter.Config] after importing any additional
+// symbols with [Interpreter.Use], prior to running the interpreter.
+func NewInterpreter(options Options) *Interpreter {
 	in := &Interpreter{HistFile: "~/.goal-history"}
 	in.Goal = goal.NewGoal()
 	if options.Stdin != nil {
@@ -64,15 +71,20 @@ func NewInterpreter(options interp.Options) *Interpreter {
 		in.Goal.Config.StdIO.Err = options.Stderr
 	}
 	in.Goal.SaveOrigStdIO()
-	options.Stdout = in.Goal.StdIOWrappers.Out
-	options.Stderr = in.Goal.StdIOWrappers.Err
-	options.Stdin = in.Goal.StdIOWrappers.In
-	in.Interp = interp.New(options)
-	errors.Log(in.Interp.Use(basesymbols.Symbols))
-	errors.Log(in.Interp.Use(tensorsymbols.Symbols))
-	in.ImportGoal()
+	in.Interp = interp.NewInterpreter(golang.GoSpec)
+	in.Interp.SetIO(in.Goal.StdIOWrappers.In, in.Goal.StdIOWrappers.Out, in.Goal.StdIOWrappers.Err)
+	basesymbols.Load()
+	tensorsymbols.Load()
+	in.Use(stdlib.Values, basesymbols.Values, tensorsymbols.Values, in.goalrunValues())
 	go in.MonitorSignals()
 	return in
+}
+
+// Use imports the symbols of the given packages, by import path and name,
+// into the interpreter, such that they can be used without an import, by
+// their package names (see [basesymbols.Import]).
+func (in *Interpreter) Use(values ...map[string]map[string]reflect.Value) {
+	basesymbols.Import(in.Interp, values...)
 }
 
 // Prompt returns the appropriate REPL prompt to show the user.
@@ -136,8 +148,12 @@ func (in *Interpreter) RunCode() (reflect.Value, error) {
 	var v reflect.Value
 	var err error
 	for _, ch := range code {
-		ctx := in.Goal.StartContext()
-		v, err = in.Interp.EvalWithContext(ctx, ch)
+		// mvm takes empty source as the name of a package to run.
+		if strings.TrimSpace(ch) == "" {
+			continue
+		}
+		in.Goal.StartContext()
+		v, err = in.Interp.Eval("goal", ch)
 		in.Goal.EndContext()
 		if err != nil {
 			cancelled := errors.Is(err, context.Canceled)
@@ -181,9 +197,9 @@ func (in *Interpreter) MonitorSignals() {
 	}
 }
 
-// Config performs final configuration after all the imports have been Use'd
+// Config performs final configuration after all the imports have been Use'd:
+// it runs the user's .goal startup config file.
 func (in *Interpreter) Config() {
-	in.Interp.ImportUsed()
 	in.RunConfig()
 }
 

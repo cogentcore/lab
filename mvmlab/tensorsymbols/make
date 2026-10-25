@@ -1,0 +1,13 @@
+#!/bin/sh
+# make generates the symbols of the packages, one gen_*.go file per package,
+# with mvm extract -register.
+set -e
+cd "$(dirname "$0")"
+/bin/rm -f gen_*.go
+
+# The Cogent Lab packages that do not use the GUI.
+lab="tensor tensor/tmath table vector matrix stats/cluster stats/convolve stats/glm stats/histogram stats/metric stats/stats tensorfs goal/goalib"
+
+pkgs=""
+for p in $lab; do pkgs="$pkgs cogentcore.org/lab/$p"; done
+go run github.com/cogentcore/mvm/cmd/extract -register -pkg tensorsymbols $pkgs

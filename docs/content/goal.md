@@ -26,7 +26,7 @@ for _, x := range #[1,2,3]# {
 }
 ```
 
-Goal can be used in an interpreted mode by using the [yaegi](https://github.com/traefik/yaegi) Go interpreter (and can be used as your shell executable in a terminal), and it can also replace the standard `go` compiler in command-line mode, to build compiled executables using the extended Goal syntax.
+Goal can be used in an interpreted mode by using the [mvm](https://github.com/cogentcore/mvm) Go interpreter (and can be used as your shell executable in a terminal), and it can also replace the standard `go` compiler in command-line mode, to build compiled executables using the extended Goal syntax.
 
 A key design feature of Goal is that it always _transpiles directly to Go_ in a purely syntactically driven way, so the output of Goal is pure Go code.
 

@@ -9,7 +9,6 @@ import (
 	"cogentcore.org/core/base/logx"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/lab"
-	"github.com/cogentcore/yaegi/interp"
 )
 
 func init() {
@@ -22,7 +21,7 @@ func init() {
 // 	br.InitInterp()
 // 	in = br.Interpreter
 // }
-// in.Interp.Use(coresymbols.Symbols) // gui imports
+// mvmlab.UseGUI(in) // gui imports
 
 // Interpreter returns the interpreter for given browser,
 // or nil and an error message if not set.
@@ -36,7 +35,7 @@ func Interpreter(br *lab.Browser) (*interpreter.Interpreter, error) {
 // InitInterpreter initializes a new interpreter if not already set.
 func InitInterpreter(br *lab.Browser) {
 	if br.Interpreter == nil {
-		br.Interpreter = interpreter.NewInterpreter(interp.Options{})
+		br.Interpreter = interpreter.NewInterpreter(interpreter.Options{})
 	}
 	// logx.UserLevel = slog.LevelDebug // for debugging of init loading
 }
