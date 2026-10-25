@@ -122,30 +122,30 @@ const (
 )
 
 func GetBodyShape(idx int32) Shapes {
-	return Shapes(math.Float32bits(Bodies.Value(int(idx), int(BodyShape))))
+	return Shapes(math.Float32bits(Bodies.Value2D(int(idx), int(BodyShape))))
 }
 
 func SetBodyShape(idx int32, shape Shapes) {
-	Bodies.Set(math.Float32frombits(uint32(shape)), int(idx), int(BodyShape))
+	Bodies.Set2D(math.Float32frombits(uint32(shape)), int(idx), int(BodyShape))
 }
 
 func SetBodyDynamic(idx, dynIdx int32) {
-	Bodies.Set(math.Float32frombits(uint32(dynIdx)), int(idx), int(BodyDynamic))
+	Bodies.Set2D(math.Float32frombits(uint32(dynIdx)), int(idx), int(BodyDynamic))
 }
 
 func GetBodyDynamic(idx int32) int32 {
-	return int32(math.Float32bits(Bodies.Value(int(idx), int(BodyDynamic))))
+	return int32(math.Float32bits(Bodies.Value2D(int(idx), int(BodyDynamic))))
 }
 
 // SetBodyWorld partitions bodies into different worlds for
 // collision detection: Global bodies = -1 can collide with
 // everything; otherwise only items within the same world collide.
 func SetBodyWorld(idx, w int32) {
-	Bodies.Set(math.Float32frombits(uint32(w)), int(idx), int(BodyWorld))
+	Bodies.Set2D(math.Float32frombits(uint32(w)), int(idx), int(BodyWorld))
 }
 
 func GetBodyWorld(idx int32) int32 {
-	return int32(math.Float32bits(Bodies.Value(int(idx), int(BodyWorld))))
+	return int32(math.Float32bits(Bodies.Value2D(int(idx), int(BodyWorld))))
 }
 
 // SetBodyGroup partitions bodies within worlds into different groups
@@ -161,42 +161,42 @@ func GetBodyWorld(idx int32) int32 {
 // within a single joint do not collide with each other, so this
 // does not need to be handled here.
 func SetBodyGroup(idx, w int32) {
-	Bodies.Set(math.Float32frombits(uint32(w)), int(idx), int(BodyGroup))
+	Bodies.Set2D(math.Float32frombits(uint32(w)), int(idx), int(BodyGroup))
 }
 
 func GetBodyGroup(idx int32) int32 {
-	return int32(math.Float32bits(Bodies.Value(int(idx), int(BodyGroup))))
+	return int32(math.Float32bits(Bodies.Value2D(int(idx), int(BodyGroup))))
 }
 
 func BodyHSize(idx int32) math32.Vector3 {
-	return math32.Vec3(Bodies.Value(int(idx), int(BodyHSizeX)), Bodies.Value(int(idx), int(BodyHSizeY)), Bodies.Value(int(idx), int(BodyHSizeZ)))
+	return math32.Vec3(Bodies.Value2D(int(idx), int(BodyHSizeX)), Bodies.Value2D(int(idx), int(BodyHSizeY)), Bodies.Value2D(int(idx), int(BodyHSizeZ)))
 }
 
 func SetBodyHSize(idx int32, size math32.Vector3) {
-	Bodies.Set(size.X, int(idx), int(BodyHSizeX))
-	Bodies.Set(size.Y, int(idx), int(BodyHSizeY))
-	Bodies.Set(size.Z, int(idx), int(BodyHSizeZ))
+	Bodies.Set2D(size.X, int(idx), int(BodyHSizeX))
+	Bodies.Set2D(size.Y, int(idx), int(BodyHSizeY))
+	Bodies.Set2D(size.Z, int(idx), int(BodyHSizeZ))
 }
 
 func BodyPos(idx int32) math32.Vector3 {
-	return math32.Vec3(Bodies.Value(int(idx), int(BodyPosX)), Bodies.Value(int(idx), int(BodyPosY)), Bodies.Value(int(idx), int(BodyPosZ)))
+	return math32.Vec3(Bodies.Value2D(int(idx), int(BodyPosX)), Bodies.Value2D(int(idx), int(BodyPosY)), Bodies.Value2D(int(idx), int(BodyPosZ)))
 }
 
 func SetBodyPos(idx int32, pos math32.Vector3) {
-	Bodies.Set(pos.X, int(idx), int(BodyPosX))
-	Bodies.Set(pos.Y, int(idx), int(BodyPosY))
-	Bodies.Set(pos.Z, int(idx), int(BodyPosZ))
+	Bodies.Set2D(pos.X, int(idx), int(BodyPosX))
+	Bodies.Set2D(pos.Y, int(idx), int(BodyPosY))
+	Bodies.Set2D(pos.Z, int(idx), int(BodyPosZ))
 }
 
 func BodyQuat(idx int32) math32.Quat {
-	return math32.NewQuat(Bodies.Value(int(idx), int(BodyQuatX)), Bodies.Value(int(idx), int(BodyQuatY)), Bodies.Value(int(idx), int(BodyQuatZ)), Bodies.Value(int(idx), int(BodyQuatW)))
+	return math32.NewQuat(Bodies.Value2D(int(idx), int(BodyQuatX)), Bodies.Value2D(int(idx), int(BodyQuatY)), Bodies.Value2D(int(idx), int(BodyQuatZ)), Bodies.Value2D(int(idx), int(BodyQuatW)))
 }
 
 func SetBodyQuat(idx int32, rot math32.Quat) {
-	Bodies.Set(rot.X, int(idx), int(BodyQuatX))
-	Bodies.Set(rot.Y, int(idx), int(BodyQuatY))
-	Bodies.Set(rot.Z, int(idx), int(BodyQuatZ))
-	Bodies.Set(rot.W, int(idx), int(BodyQuatW))
+	Bodies.Set2D(rot.X, int(idx), int(BodyQuatX))
+	Bodies.Set2D(rot.Y, int(idx), int(BodyQuatY))
+	Bodies.Set2D(rot.Z, int(idx), int(BodyQuatZ))
+	Bodies.Set2D(rot.W, int(idx), int(BodyQuatW))
 }
 
 // BodyDynamicPos gets the position for dynamic bodies or
@@ -220,65 +220,65 @@ func BodyDynamicQuat(idx, cni int32) math32.Quat {
 }
 
 func BodyCom(idx int32) math32.Vector3 {
-	return math32.Vec3(Bodies.Value(int(idx), int(BodyComX)), Bodies.Value(int(idx), int(BodyComY)), Bodies.Value(int(idx), int(BodyComZ)))
+	return math32.Vec3(Bodies.Value2D(int(idx), int(BodyComX)), Bodies.Value2D(int(idx), int(BodyComY)), Bodies.Value2D(int(idx), int(BodyComZ)))
 }
 
 func SetBodyCom(idx int32, pos math32.Vector3) {
-	Bodies.Set(pos.X, int(idx), int(BodyComX))
-	Bodies.Set(pos.Y, int(idx), int(BodyComY))
-	Bodies.Set(pos.Z, int(idx), int(BodyComZ))
+	Bodies.Set2D(pos.X, int(idx), int(BodyComX))
+	Bodies.Set2D(pos.Y, int(idx), int(BodyComY))
+	Bodies.Set2D(pos.Z, int(idx), int(BodyComZ))
 }
 
 func BodyInertia(idx int32) math32.Matrix3 {
-	return math32.Mat3(Bodies.Value(int(idx), int(BodyInertiaXX)), Bodies.Value(int(idx), int(BodyInertiaYX)), Bodies.Value(int(idx), int(BodyInertiaZX)),
-		Bodies.Value(int(idx), int(BodyInertiaXY)), Bodies.Value(int(idx), int(BodyInertiaYY)), Bodies.Value(int(idx), int(BodyInertiaZY)),
-		Bodies.Value(int(idx), int(BodyInertiaXZ)), Bodies.Value(int(idx), int(BodyInertiaYZ)), Bodies.Value(int(idx), int(BodyInertiaZZ)))
+	return math32.Mat3(Bodies.Value2D(int(idx), int(BodyInertiaXX)), Bodies.Value2D(int(idx), int(BodyInertiaYX)), Bodies.Value2D(int(idx), int(BodyInertiaZX)),
+		Bodies.Value2D(int(idx), int(BodyInertiaXY)), Bodies.Value2D(int(idx), int(BodyInertiaYY)), Bodies.Value2D(int(idx), int(BodyInertiaZY)),
+		Bodies.Value2D(int(idx), int(BodyInertiaXZ)), Bodies.Value2D(int(idx), int(BodyInertiaYZ)), Bodies.Value2D(int(idx), int(BodyInertiaZZ)))
 }
 
 func BodyInvInertia(idx int32) math32.Matrix3 {
-	return math32.Mat3(Bodies.Value(int(idx), int(BodyInvInertiaXX)), Bodies.Value(int(idx), int(BodyInvInertiaYX)), Bodies.Value(int(idx), int(BodyInvInertiaZX)),
-		Bodies.Value(int(idx), int(BodyInvInertiaXY)), Bodies.Value(int(idx), int(BodyInvInertiaYY)), Bodies.Value(int(idx), int(BodyInvInertiaZY)),
-		Bodies.Value(int(idx), int(BodyInvInertiaXZ)), Bodies.Value(int(idx), int(BodyInvInertiaYZ)), Bodies.Value(int(idx), int(BodyInvInertiaZZ)))
+	return math32.Mat3(Bodies.Value2D(int(idx), int(BodyInvInertiaXX)), Bodies.Value2D(int(idx), int(BodyInvInertiaYX)), Bodies.Value2D(int(idx), int(BodyInvInertiaZX)),
+		Bodies.Value2D(int(idx), int(BodyInvInertiaXY)), Bodies.Value2D(int(idx), int(BodyInvInertiaYY)), Bodies.Value2D(int(idx), int(BodyInvInertiaZY)),
+		Bodies.Value2D(int(idx), int(BodyInvInertiaXZ)), Bodies.Value2D(int(idx), int(BodyInvInertiaYZ)), Bodies.Value2D(int(idx), int(BodyInvInertiaZZ)))
 }
 
 func SetBodyInertia(idx int32, inertia math32.Matrix3) {
 	for i := range 9 {
-		Bodies.Set(inertia[i], int(idx), int(int(BodyInertiaXX)+i))
+		Bodies.Set2D(inertia[i], int(idx), int(int(BodyInertiaXX)+i))
 	}
 }
 
 func SetBodyInvInertia(idx int32, invInertia math32.Matrix3) {
 	for i := range 9 {
-		Bodies.Set(invInertia[i], int(idx), int(int(BodyInvInertiaXX)+i))
+		Bodies.Set2D(invInertia[i], int(idx), int(int(BodyInvInertiaXX)+i))
 	}
 }
 
 // SetBodyThick specifies the thickness of the body, as a hollow shape.
 // if 0, then it is solid.
 func SetBodyThick(idx int32, val float32) {
-	Bodies.Set(val, int(idx), int(BodyThick))
+	Bodies.Set2D(val, int(idx), int(BodyThick))
 }
 
 // SetBodyBounce specifies the COR or coefficient of restitution (0..1),
 // which determines how elastic the collision is,
 // i.e., final velocity / initial velocity.
 func SetBodyBounce(idx int32, val float32) {
-	Bodies.Set(val, int(idx), int(BodyBounce))
+	Bodies.Set2D(val, int(idx), int(BodyBounce))
 }
 
 // SetBodyFriction is the standard coefficient for linear friction (mu).
 func SetBodyFriction(idx int32, val float32) {
-	Bodies.Set(val, int(idx), int(BodyFriction))
+	Bodies.Set2D(val, int(idx), int(BodyFriction))
 }
 
 // SetBodyFrictionTortion is resistance to spinning at the contact point.
 func SetBodyFrictionTortion(idx int32, val float32) {
-	Bodies.Set(val, int(idx), int(BodyFrictionTortion))
+	Bodies.Set2D(val, int(idx), int(BodyFrictionTortion))
 }
 
 // SetBodyFrictionRolling is resistance to rolling motion at contact.
 func SetBodyFrictionRolling(idx int32, val float32) {
-	Bodies.Set(val, int(idx), int(BodyFrictionRolling))
+	Bodies.Set2D(val, int(idx), int(BodyFrictionRolling))
 }
 
 //gosl:end

@@ -50,7 +50,7 @@ func NewGeomData(bi, cni int32, shp Shapes) GeomData {
 	gd.BodyIdx = bi
 	gd.Shape = shp
 	gd.Size = BodyHSize(bi)
-	gd.Thick = Bodies.Value(int(bi), int(BodyThick))
+	gd.Thick = Bodies.Value2D(int(bi), int(BodyThick))
 	gd.MinSize = min(gd.Size.X, gd.Size.Y)
 	gd.MinSize = min(gd.MinSize, gd.Size.Z)
 	gd.WbR = BodyDynamicPos(bi, cni)

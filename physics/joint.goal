@@ -13,7 +13,7 @@ import (
 
 //gosl:start
 
-//  Sentinel value for unlimited joint limits
+// Sentinel value for unlimited joint limits
 const JointLimitUnlimited = 1e10
 
 // JointTypes are joint types that determine nature of interaction.

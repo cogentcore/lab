@@ -153,169 +153,211 @@ const  ContactBAngDeltaX: ContactVars = 30;
 const  ContactBAngDeltaY: ContactVars = 31;
 const  ContactBAngDeltaZ: ContactVars = 32;
 const BroadContactVarsN = ContactAPointX;
-fn GetContactA(idx: i32) -> i32 { return i32(bitcast<u32>(Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactA))])); }
-fn GetContactB(idx: i32) -> i32 { return i32(bitcast<u32>(Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactB))])); }
-fn ContactAPoint(idx: i32) -> vec3<f32> { return vec3<f32>(Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAPointX))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAPointY))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAPointZ))]); }
-fn ContactBPoint(idx: i32) -> vec3<f32> { return vec3<f32>(Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBPointX))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBPointY))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBPointZ))]); }
-fn ContactAOff(idx: i32) -> vec3<f32> { return vec3<f32>(Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAOffX))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAOffY))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAOffZ))]); }
-fn ContactBOff(idx: i32) -> vec3<f32> { return vec3<f32>(Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBOffX))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBOffY))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBOffZ))]); }
-fn ContactNorm(idx: i32) -> vec3<f32> { return vec3<f32>(Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactNormX))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactNormY))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactNormZ))]); }
-fn SetContactADelta(idx: i32, pos: vec3<f32>) { Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactADeltaX))] = pos.x;; Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactADeltaY))] = pos.y;; Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactADeltaZ))] = pos.z; }
-fn SetContactAAngDelta(idx: i32, pos: vec3<f32>) { Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAAngDeltaX))] = pos.x;; Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAAngDeltaY))] = pos.y;; Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAAngDeltaZ))] = pos.z; }
-fn SetContactBDelta(idx: i32, pos: vec3<f32>) { Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBDeltaX))] = pos.x;; Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBDeltaY))] = pos.y;; Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBDeltaZ))] = pos.z; }
-fn SetContactBAngDelta(idx: i32, pos: vec3<f32>) { Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBAngDeltaX))] = pos.x;; Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBAngDeltaY))] = pos.y;; Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBAngDeltaZ))] = pos.z; }
+fn GetContactA(idx: i32) -> i32 {
+	return i32(bitcast<u32>(Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactA))]));
+}
+fn GetContactB(idx: i32) -> i32 {
+	return i32(bitcast<u32>(Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactB))]));
+}
+fn ContactAPoint(idx: i32) -> vec3<f32> {
+	return vec3<f32>(Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAPointX))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAPointY))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAPointZ))]);
+}
+fn ContactBPoint(idx: i32) -> vec3<f32> {
+	return vec3<f32>(Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBPointX))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBPointY))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBPointZ))]);
+}
+fn ContactAOff(idx: i32) -> vec3<f32> {
+	return vec3<f32>(Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAOffX))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAOffY))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAOffZ))]);
+}
+fn ContactBOff(idx: i32) -> vec3<f32> {
+	return vec3<f32>(Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBOffX))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBOffY))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBOffZ))]);
+}
+fn ContactNorm(idx: i32) -> vec3<f32> {
+	return vec3<f32>(Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactNormX))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactNormY))], Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactNormZ))]);
+}
+fn SetContactADelta(idx: i32, pos: vec3<f32>) {
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactADeltaX))] = pos.x;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactADeltaY))] = pos.y;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactADeltaZ))] = pos.z;
+}
+fn SetContactAAngDelta(idx: i32, pos: vec3<f32>) {
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAAngDeltaX))] = pos.x;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAAngDeltaY))] = pos.y;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactAAngDeltaZ))] = pos.z;
+}
+fn SetContactBDelta(idx: i32, pos: vec3<f32>) {
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBDeltaX))] = pos.x;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBDeltaY))] = pos.y;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBDeltaZ))] = pos.z;
+}
+fn SetContactBAngDelta(idx: i32, pos: vec3<f32>) {
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBAngDeltaX))] = pos.x;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBAngDeltaY))] = pos.y;
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(idx), u32(ContactBAngDeltaZ))] = pos.z;
+}
 fn StepBodyContacts(i: u32) { //gosl:kernel
-var params = Params[0];; var ci = i32(i);
-; var cmax = ContactsN[0];
-; if (ci >= cmax) {
-	return;
-}; var biA = GetContactA(ci);
-; var biB = GetContactB(ci);
-; var diA = GetBodyDynamic(biA);
-; var diB = GetBodyDynamic(biB);
-; var r1A = BodyDynamicPos(biA, params.Next);
-; var q1A = BodyDynamicQuat(biA, params.Next);
-; var r1B = BodyDynamicPos(biB, params.Next);
-; var q1B = BodyDynamicQuat(biB, params.Next);
-; var ctA = ContactAPoint(ci);
-; var offA = ContactAOff(ci);
-; var ctB = ContactBPoint(ci);
-; var offB = ContactBOff(ci);
-; var ctAw = MulSpatialPoint(r1A, q1A, ctA);
-; var ctBw = MulSpatialPoint(r1B, q1B, ctB);
-; var thickA = Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(ci), u32(ContactAThick))];
-; var thickB = Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(ci), u32(ContactBThick))];
-; var thick = thickA + thickB;
-; var nnorm = ContactNorm(ci);
-; var norm = Negate3(nnorm);
-;
-var d = Dot3(norm, ctBw-(ctAw)) - thick;
-; if (d >= 0.0) { // todo: should this be margin or not?
-	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(ci), u32(ContactWeight))] = 0.0;
-	var z = vec3<f32>(0, 0, 0);
-	SetContactADelta(ci, z);
-	SetContactBDelta(ci, z);
-	SetContactAAngDelta(ci, z);
-	SetContactBAngDelta(ci, z);return;
-}; var comA = BodyCom(biA);
-; var mInvA = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biA), u32(BodyInvMass))];
-; var iInvA = BodyInvInertia(biA);
-; var comB = BodyCom(biB);
-; var mInvB = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biB), u32(BodyInvMass))];
-; var iInvB = BodyInvInertia(biB);
-; var w1A: vec3<f32>;
-var w1B: vec3<f32>;; if (diA >= 0) {
-	w1A = DynamicAngDelta(diA, params.Next);
-}; if (diB >= 0) {
-	w1B = DynamicAngDelta(diB, params.Next);
-};
-var mu = 0.5 * (Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biA), u32(BodyFriction))] + Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biB), u32(BodyFriction))]);
-; var frTors = 0.5 * (Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biA), u32(BodyFrictionTortion))] + Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biB), u32(BodyFrictionTortion))]);
-; var frRoll = 0.5 * (Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biA), u32(BodyFrictionRolling))] + Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biB), u32(BodyFrictionRolling))]);
-; var bounce = 0.5 * (Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biA), u32(BodyBounce))] + Bodies[Index2D(TensorStrides[0], TensorStrides[1],
-u32(biB), u32(BodyBounce))]);
-; var dA = ctAw-(MulSpatialPoint(r1A, q1A, comA));
-; var dB = ctBw-(MulSpatialPoint(r1B, q1B, comB));
-; var angA = Negate3(Cross3(dA, norm));
-; var angB = Cross3(dB, norm);
-; var lambdaN = ContactConstraint(d, q1A, q1B, mInvA, mInvB, iInvA, iInvB, nnorm, norm, angA, angB, params.ContactRelax, params.Dt);
-; var linDeltaA = Negate3(norm)*(lambdaN);
-; var linDeltaB = norm*(lambdaN);
-; var angDeltaA = angA*(lambdaN);
-; var angDeltaB = angB*(lambdaN);
-;
-if (mu > 0.0) {
-	var ctAm = ctAw+(MulQuatVector(q1A, offA));
-	var ctBm = ctBw+(MulQuatVector(q1B, offB));
-	var delta = ctBm-(ctAm);
-	var frDelta = delta-(norm*(Dot3(norm, delta)));
-	var perp = Normal3(frDelta);
-	var dAm = ctAm-(MulSpatialPoint(r1A, q1A, comA));
-	var dBm = ctBm-(MulSpatialPoint(r1B, q1B, comB));
-	angA = Negate3(Cross3(dAm, perp));
-	angB = Cross3(dBm, perp);
-	var err = Length3(frDelta);
-	if (err > 0.0) {
-		var lambdaFr = ContactConstraint(err, q1A, q1B, mInvA, mInvB, iInvA, iInvB, Negate3(perp), perp, angA, angB, params.ContactRelax, params.Dt);
-		lambdaFr = max(lambdaFr, -lambdaN*mu);
-		linDeltaA = linDeltaA-(perp*(lambdaFr));
-		linDeltaB = linDeltaB+(perp*(lambdaFr));
-		angDeltaA = angDeltaA+(angA*(lambdaFr));
-		angDeltaB = angDeltaB+(angB*(lambdaFr));
+	var params = Params[0];
+	var ci = i32(i);
+	var cmax = ContactsN[0];
+	if (ci >= cmax) {
+		return;
 	}
-}; var deltaW = w1B-(w1A);
-; if (frTors > 0.0) {
-	var err = Dot3(deltaW, norm) * params.Dt;
-	if (abs(err) > 0.0) {
-		var lin = vec3<f32>(0, 0, 0);
-		var lambdaTors = ContactConstraint(err, q1A, q1B, mInvA, mInvB, iInvA, iInvB, lin, lin, nnorm, norm, params.ContactRelax, params.Dt);
-		lambdaTors = clamp(lambdaTors, -lambdaN*frTors, lambdaN*frTors);
-		angDeltaA = angDeltaA-(norm*(lambdaTors));
-		angDeltaB = angDeltaB+(norm*(lambdaTors));
+	var biA = GetContactA(ci);
+	var biB = GetContactB(ci);
+	var diA = GetBodyDynamic(biA);
+	var diB = GetBodyDynamic(biB);
+	var r1A = BodyDynamicPos(biA, params.Next);
+	var q1A = BodyDynamicQuat(biA, params.Next);
+	var r1B = BodyDynamicPos(biB, params.Next);
+	var q1B = BodyDynamicQuat(biB, params.Next);
+	var ctA = ContactAPoint(ci);
+	var offA = ContactAOff(ci);
+	var ctB = ContactBPoint(ci);
+	var offB = ContactBOff(ci);
+	var ctAw = MulSpatialPoint(r1A, q1A, ctA);
+	var ctBw = MulSpatialPoint(r1B, q1B, ctB);
+	var thickA = Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(ci), u32(ContactAThick))];
+	var thickB = Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(ci), u32(ContactBThick))];
+	var thick = thickA + thickB;
+	var nnorm = ContactNorm(ci);
+	var norm = Negate3(nnorm);
+	var d = Dot3(norm, ctBw-(ctAw)) - thick;
+	if (d >= 0.0) { // todo: should this be margin or not?
+		Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(ci), u32(ContactWeight))] = 0.0;
+		var z = vec3<f32>(0, 0, 0);
+		SetContactADelta(ci, z);
+		SetContactBDelta(ci, z);
+		SetContactAAngDelta(ci, z);
+		SetContactBAngDelta(ci, z);return;
 	}
-}; if (frRoll > 0.0) {
-	deltaW = deltaW-(norm*(Dot3(norm, deltaW)));
-	var err = Length3(deltaW) * params.Dt;
-	if (err > 0.0) {
-		var lin = vec3<f32>(0, 0, 0);
-		var rollN = Normal3(deltaW);
-		var lambdaRoll = ContactConstraint(err, q1A, q1B, mInvA, mInvB, iInvA, iInvB, lin, lin, Negate3(rollN), rollN, params.ContactRelax, params.Dt);
-		lambdaRoll = max(lambdaRoll, -lambdaN*frRoll);
-		angDeltaA = angDeltaA-(rollN*(lambdaRoll));
-		angDeltaB = angDeltaB+(rollN*(lambdaRoll));
-	}
-};
-if (params.Restitution == 1 && bounce > 0 && (mInvA > 0 || mInvB > 0)) {
-	var vA: vec3<f32>;
-	var vB: vec3<f32>;
-	var vAnew: vec3<f32>;
-	var vBnew: vec3<f32>;
-	var dAnew: vec3<f32>;
-	var dBnew: vec3<f32>;
-	var mInvAr: f32;
-	var mInvBr: f32;
-	var q0A: vec4<f32>;
-	var q0B: vec4<f32>;
-	var grav = vec3<f32>(params.Gravity.x,params.Gravity.y,params.Gravity.z)*(params.Dt);
+	var comA = BodyCom(biA);
+	var mInvA = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biA), u32(BodyInvMass))];
+	var iInvA = BodyInvInertia(biA);
+	var comB = BodyCom(biB);
+	var mInvB = Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biB), u32(BodyInvMass))];
+	var iInvB = BodyInvInertia(biB);
+	var w1A: vec3<f32>;
+	var w1B: vec3<f32>;
 	if (diA >= 0) {
-		q0A = DynamicQuat(diA, params.Cur);
-		var w0A = DynamicAngDelta(diA, params.Cur);
-		var v0A = DynamicDelta(diA, params.Cur);
-		var v1A = DynamicDelta(diA, params.Next);
-		vA = VelocityAtPoint(v0A, w0A, dA)+(grav);
-		vAnew = VelocityAtPoint(v1A, w1A, dA);
-		dAnew = MulQuatVectorInverse(q0A, Cross3(dA, nnorm)); // norm is not - here..
-		mInvAr = mInvA + Dot3(dAnew, iInvA*(dAnew));
+		w1A = DynamicAngDelta(diA, params.Next);
 	}
 	if (diB >= 0) {
-		q0B = DynamicQuat(diB, params.Cur);
-		var w0B = DynamicAngDelta(diB, params.Cur);
-		var v0B = DynamicDelta(diB, params.Cur);
-		var v1B = DynamicDelta(diB, params.Next);
-		vB = VelocityAtPoint(v0B, w0B, dB)+(grav);
-		vBnew = VelocityAtPoint(v1B, w1B, dB);
-		dBnew = MulQuatVectorInverse(q0B, Cross3(dB, norm)); // norm is not - here..
-		mInvBr = mInvB + Dot3(dBnew, iInvB*(dBnew));
+		w1B = DynamicAngDelta(diB, params.Next);
 	}
-	var mInv = mInvAr + mInvBr;
-	var relVel0 = Dot3(nnorm, vA-(vB));
-	var relVel1 = Dot3(nnorm, vAnew-(vBnew));
-	if (relVel0 < 0) {
-		var dv = -(relVel1 - relVel0*bounce) / mInv;
+	var mu = 0.5 * (Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biA), u32(BodyFriction))] + Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biB), u32(BodyFriction))]);
+	var frTors = 0.5 * (Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biA), u32(BodyFrictionTortion))] + Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biB), u32(BodyFrictionTortion))]);
+	var frRoll = 0.5 * (Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biA), u32(BodyFrictionRolling))] + Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biB), u32(BodyFrictionRolling))]);
+	var bounce = 0.5 * (Bodies[Index2D(TensorStrides[0], TensorStrides[1], u32(biA), u32(BodyBounce))] + Bodies[Index2D(TensorStrides[0], TensorStrides[1],
+	u32(biB), u32(BodyBounce))]);
+	var dA = ctAw-(MulSpatialPoint(r1A, q1A, comA));
+	var dB = ctBw-(MulSpatialPoint(r1B, q1B, comB));
+	var angA = Negate3(Cross3(dA, norm));
+	var angB = Cross3(dB, norm);
+	var lambdaN = ContactConstraint(d, q1A, q1B, mInvA, mInvB, iInvA, iInvB, nnorm, norm, angA, angB, params.ContactRelax, params.Dt);
+	var linDeltaA = Negate3(norm)*(lambdaN);
+	var linDeltaB = norm*(lambdaN);
+	var angDeltaA = angA*(lambdaN);
+	var angDeltaB = angB*(lambdaN);
+	if (mu > 0.0) {
+		var ctAm = ctAw+(MulQuatVector(q1A, offA));
+		var ctBm = ctBw+(MulQuatVector(q1B, offB));
+		var delta = ctBm-(ctAm);
+		var frDelta = delta-(norm*(Dot3(norm, delta)));
+		var perp = Normal3(frDelta);
+		var dAm = ctAm-(MulSpatialPoint(r1A, q1A, comA));
+		var dBm = ctBm-(MulSpatialPoint(r1B, q1B, comB));
+		angA = Negate3(Cross3(dAm, perp));
+		angB = Cross3(dBm, perp);
+		var err = Length3(frDelta);
+		if (err > 0.0) {
+			var lambdaFr = ContactConstraint(err, q1A, q1B, mInvA, mInvB, iInvA, iInvB, Negate3(perp), perp, angA, angB, params.ContactRelax, params.Dt);
+			lambdaFr = max(lambdaFr, -lambdaN*mu);
+			linDeltaA = linDeltaA-(perp*(lambdaFr));
+			linDeltaB = linDeltaB+(perp*(lambdaFr));
+			angDeltaA = angDeltaA+(angA*(lambdaFr));
+			angDeltaB = angDeltaB+(angB*(lambdaFr));
+		}
+	}
+	var deltaW = w1B-(w1A);
+	if (frTors > 0.0) {
+		var err = Dot3(deltaW, norm) * params.Dt;
+		if (abs(err) > 0.0) {
+			var lin = vec3<f32>(0, 0, 0);
+			var lambdaTors = ContactConstraint(err, q1A, q1B, mInvA, mInvB, iInvA, iInvB, lin, lin, nnorm, norm, params.ContactRelax, params.Dt);
+			lambdaTors = clamp(lambdaTors, -lambdaN*frTors, lambdaN*frTors);
+			angDeltaA = angDeltaA-(norm*(lambdaTors));
+			angDeltaB = angDeltaB+(norm*(lambdaTors));
+		}
+	}
+	if (frRoll > 0.0) {
+		deltaW = deltaW-(norm*(Dot3(norm, deltaW)));
+		var err = Length3(deltaW) * params.Dt;
+		if (err > 0.0) {
+			var lin = vec3<f32>(0, 0, 0);
+			var rollN = Normal3(deltaW);
+			var lambdaRoll = ContactConstraint(err, q1A, q1B, mInvA, mInvB, iInvA, iInvB, lin, lin, Negate3(rollN), rollN, params.ContactRelax, params.Dt);
+			lambdaRoll = max(lambdaRoll, -lambdaN*frRoll);
+			angDeltaA = angDeltaA-(rollN*(lambdaRoll));
+			angDeltaB = angDeltaB+(rollN*(lambdaRoll));
+		}
+	}
+	if (params.Restitution == 1 && bounce > 0 && (mInvA > 0 || mInvB > 0)) {
+		var vA: vec3<f32>;
+		var vB: vec3<f32>;
+		var vAnew: vec3<f32>;
+		var vBnew: vec3<f32>;
+		var dAnew: vec3<f32>;
+		var dBnew: vec3<f32>;
+		var mInvAr: f32;
+		var mInvBr: f32;
+		var q0A: vec4<f32>;
+		var q0B: vec4<f32>;
+		var grav = vec3<f32>(params.Gravity.x,params.Gravity.y,params.Gravity.z)*(params.Dt);
 		if (diA >= 0) {
-			var dvA = nnorm*(mInvA * dv);
-			var dwA = MulQuatVector(q0A, iInvA*(dAnew)*(dv));
-			linDeltaA = linDeltaA+(dvA);
-			angDeltaA = angDeltaA+(dwA);
+			q0A = DynamicQuat(diA, params.Cur);
+			var w0A = DynamicAngDelta(diA, params.Cur);
+			var v0A = DynamicDelta(diA, params.Cur);
+			var v1A = DynamicDelta(diA, params.Next);
+			vA = VelocityAtPoint(v0A, w0A, dA)+(grav);
+			vAnew = VelocityAtPoint(v1A, w1A, dA);
+			dAnew = MulQuatVectorInverse(q0A, Cross3(dA, nnorm)); // norm is not - here..
+			mInvAr = mInvA + Dot3(dAnew, iInvA*(dAnew));
 		}
 		if (diB >= 0) {
-			var dvB = norm*(mInvB * dv);
-			var dwB = MulQuatVector(q0B, iInvB*(dBnew)*(dv));
-			linDeltaB = linDeltaB+(dvB);
-			angDeltaB = angDeltaB+(dwB);
+			q0B = DynamicQuat(diB, params.Cur);
+			var w0B = DynamicAngDelta(diB, params.Cur);
+			var v0B = DynamicDelta(diB, params.Cur);
+			var v1B = DynamicDelta(diB, params.Next);
+			vB = VelocityAtPoint(v0B, w0B, dB)+(grav);
+			vBnew = VelocityAtPoint(v1B, w1B, dB);
+			dBnew = MulQuatVectorInverse(q0B, Cross3(dB, norm)); // norm is not - here..
+			mInvBr = mInvB + Dot3(dBnew, iInvB*(dBnew));
+		}
+		var mInv = mInvAr + mInvBr;
+		var relVel0 = Dot3(nnorm, vA-(vB));
+		var relVel1 = Dot3(nnorm, vAnew-(vBnew));
+		if (relVel0 < 0) {
+			var dv = -(relVel1 - relVel0*bounce) / mInv;
+			if (diA >= 0) {
+				var dvA = nnorm*(mInvA * dv);
+				var dwA = MulQuatVector(q0A, iInvA*(dAnew)*(dv));
+				linDeltaA = linDeltaA+(dvA);
+				angDeltaA = angDeltaA+(dwA);
+			}
+			if (diB >= 0) {
+				var dvB = norm*(mInvB * dv);
+				var dwB = MulQuatVector(q0B, iInvB*(dBnew)*(dv));
+				linDeltaB = linDeltaB+(dvB);
+				angDeltaB = angDeltaB+(dwB);
+			}
 		}
 	}
-}; Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(ci), u32(ContactWeight))] = 1.0;; SetContactADelta(ci, linDeltaA);; SetContactBDelta(ci, linDeltaB);; SetContactAAngDelta(ci, angDeltaA);; SetContactBAngDelta(ci, angDeltaB); }
+	Contacts[Index2D(TensorStrides[100], TensorStrides[101], u32(ci), u32(ContactWeight))] = 1.0;
+	SetContactADelta(ci, linDeltaA);
+	SetContactBDelta(ci, linDeltaB);
+	SetContactAAngDelta(ci, angDeltaA);
+	SetContactBAngDelta(ci, angDeltaB);
+	Params[0] = params;
+}
 fn ContactConstraint(err: f32, q0A: vec4<f32>,q0B: vec4<f32>, mInvA: f32,mInvB: f32, iInvA: mat3x3f,iInvB: mat3x3f, linA: vec3<f32>,linB: vec3<f32>,angA: vec3<f32>,angB: vec3<f32>, relaxation: f32,dt: f32) -> f32 {
 	var denom = f32(0.0);
 	denom += LengthSquared3(linA) * mInvA;

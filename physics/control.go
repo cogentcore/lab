@@ -47,11 +47,11 @@ const (
 // SetJointControl sets the control for given joint, dof and parameter
 // to given value.
 func SetJointControl(idx, dof int32, vr JointControlVars, value float32) {
-	JointControls.Set(value, int(JointDoFIndex(idx, dof)), int(vr))
+	JointControls.Set2D(value, int(JointDoFIndex(idx, dof)), int(vr))
 }
 
 func JointControl(idx, dof int32, vr JointControlVars) float32 {
-	return JointControls.Value(int(JointDoFIndex(idx, dof)), int(vr))
+	return JointControls.Value2D(int(JointDoFIndex(idx, dof)), int(vr))
 }
 
 // SetJointControlForce sets the force for given joint, dof to given value.

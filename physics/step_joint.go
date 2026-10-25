@@ -127,9 +127,9 @@ func StepSolveJoints(i uint32) { //gosl:kernel
 	if oi >= params.ObjectsN {
 		return
 	}
-	n := Objects.Value(int(oi), int(0))
+	n := Objects.Value2D(int(oi), int(0))
 	for i := int32(1); i < n+1; i++ {
-		ji := Objects.Value(int(oi), int(i))
+		ji := Objects.Value2D(int(oi), int(i))
 		jt := GetJointType(ji)
 		if jt == Free || !GetJointEnabled(ji) {
 			continue
@@ -176,7 +176,7 @@ func StepSolveJoint(ji int32) {
 		posePQ = DynamicQuat(jPi, params.Next)
 		slmath.MulSpatialTransforms(posePR, posePQ, jPR, jPQ, &xwPR, &xwPQ)
 		comP = BodyCom(jPbi)
-		mInvP = Bodies.Value(int(jPbi), int(BodyInvMass))
+		mInvP = Bodies.Value2D(int(jPbi), int(BodyInvMass))
 		iInvP = BodyInvInertia(jPbi)
 		vP = DynamicDelta(jPi, params.Next)
 		wP = DynamicAngDelta(jPi, params.Next)
@@ -194,7 +194,7 @@ func StepSolveJoint(ji int32) {
 	xwCQ := jCQ
 	slmath.MulSpatialTransforms(poseCR, poseCQ, jCR, jCQ, &xwCR, &xwCQ)
 	comC := BodyCom(jCbi)
-	mInvC := Bodies.Value(int(jCbi), int(BodyInvMass))
+	mInvC := Bodies.Value2D(int(jCbi), int(BodyInvMass))
 	iInvC := BodyInvInertia(jCbi)
 	vC := DynamicDelta(jCi, params.Next)
 	wC := DynamicAngDelta(jCi, params.Next)

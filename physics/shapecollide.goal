@@ -349,7 +349,7 @@ func ColCylinderPlane(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB, 
 	n := plNorm
 	axis := cylAx
 
-	//  Project, make sure axis points toward plane
+	// Project, make sure axis points toward plane
 	prjaxis := slmath.Dot3(n, axis)
 	if prjaxis > 0 {
 		axis = slmath.Negate3(axis)
