@@ -10,9 +10,12 @@ The following documentation describes specific use-cases.
 
 * `set <var> <value>` (space delimited as in all shell mode, no equals)
 
-## Output redirction
+## Input and output redirection
 
-* Standard output redirect: `>` and `>&` (and `|`, `|&` if needed)
+* Standard output to a file: `>`, or `>>` to append to it; `>&` and `>>&` also send the standard error to it.
+* Standard input from a file: `<`.
+* Pipes: `|` sends the standard output to the standard input of the next command, and `|&` the standard error too. Commands defined with `command` can be used anywhere in a pipe.
+* Output of a command as a Go string: `$...$`, which can include pipes, as in `x := $ls | grep go$`.
 
 ## Control flow
 

@@ -62,8 +62,11 @@ func NewInterpreter(out io.Writer) (*Interpreter, error) {
 // packages of Cogent Core and Cogent Lab ([coresymbols] and [labsymbols]),
 // and those of the given packages, which replace them, such that they can
 // be used without an import. Apps with a GUI that run Goal call it before
-// [interpreter.Interpreter.Config].
+// [interpreter.Interpreter.Config]. It also closes the interpreter when the
+// app quits, which restores the terminal if its interactive shell is
+// reading a line (see [interpreter.Interpreter.Close]).
 func UseGUI(in *interpreter.Interpreter, values ...map[string]map[string]reflect.Value) {
+	core.TheApp.AddQuitCleanFunc(in.Close)
 	mvmcore.Load()
 	labsymbols.Load()
 	in.Use(append([]map[string]map[string]reflect.Value{coresymbols.Values, labsymbols.Values}, values...)...)

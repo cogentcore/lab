@@ -14,6 +14,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 
 	"cogentcore.org/core/base/errors"
@@ -43,6 +44,13 @@ type Interpreter struct {
 
 	// the mvm interpreter
 	Interp *interp.Interp
+
+	// readline is the line reader of [Interpreter.Interactive], while it
+	// runs, and closed is whether [Interpreter.Close] was called;
+	// readlineMu protects both.
+	readline   *readline.Instance
+	closed     bool
+	readlineMu sync.Mutex
 }
 
 // Options are the options of a new [Interpreter]: its standard input and
@@ -168,6 +176,11 @@ func (in *Interpreter) RunCode() (reflect.Value, error) {
 			}
 			break
 		}
+		// the errors of the commands that ran stop the code
+		if len(in.Goal.Errors) > 0 {
+			err = errors.Join(in.Goal.Errors...)
+			break
+		}
 	}
 	return v, err
 }
@@ -230,6 +243,41 @@ func (in *Interpreter) SaveHistory() error {
 	return in.Goal.SaveHistory(n, in.HistFile)
 }
 
+// setReadline sets the line reader of [Interpreter.Interactive], returning
+// false if the interpreter is already closed.
+func (in *Interpreter) setReadline(rl *readline.Instance) bool {
+	in.readlineMu.Lock()
+	defer in.readlineMu.Unlock()
+	if in.closed {
+		return false
+	}
+	in.readline = rl
+	return true
+}
+
+// isClosed returns whether [Interpreter.Close] was called.
+func (in *Interpreter) isClosed() bool {
+	in.readlineMu.Lock()
+	defer in.readlineMu.Unlock()
+	return in.closed
+}
+
+// Close stops [Interpreter.Interactive], restoring the terminal from the
+// raw mode in which it reads a line, which is otherwise left on if the
+// program exits while it reads one, as a GUI app does when its window is
+// closed (see cogentcore.org/lab/mvmlab.UseGUI, which calls Close when the
+// app quits). It can be called from any goroutine, more than once.
+func (in *Interpreter) Close() {
+	in.readlineMu.Lock()
+	in.closed = true
+	rl := in.readline
+	in.readline = nil
+	in.readlineMu.Unlock()
+	if rl != nil {
+		rl.Close()
+	}
+}
+
 // Interactive runs an interactive shell that allows the user to input goal.
 // Must have done in.Config() prior to calling.
 func (in *Interpreter) Interactive() error {
@@ -241,13 +289,22 @@ func (in *Interpreter) Interactive() error {
 	if err != nil {
 		return err
 	}
+	if !in.setReadline(rl) {
+		rl.Close()
+		return nil
+	}
 	in.OpenHistory(rl)
-	defer rl.Close()
+	defer in.Close()
 	log.SetOutput(rl.Stderr()) // redraw the prompt correctly after log output
+	defer log.SetOutput(os.Stderr)
 
 	for {
 		rl.SetPrompt(in.Prompt())
 		line, err := rl.ReadLine()
+		if in.isClosed() {
+			in.SaveHistory()
+			return nil
+		}
 		if errors.Is(err, readline.ErrInterrupt) {
 			continue
 		}

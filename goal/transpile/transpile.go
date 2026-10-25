@@ -251,6 +251,37 @@ func (st *State) TranspileExecTokens(toks Tokens, code string, output bool) Toke
 // TranspileExec returns transpiled tokens assuming Exec code,
 // with the given bools indicating the type of run to execute.
 func (st *State) TranspileExec(ewords []string, output bool) Tokens {
+	etoks := st.transpileExec(ewords, output)
+	if !output {
+		return etoks
+	}
+	// The output of a pipe or list of commands ($a | b$, $a; b$) is that of
+	// the last one (unlike bash, which outputs those of all of a list), but
+	// they are statements, so they are wrapped in a func that returns it,
+	// which is an expression.
+	last := -1
+	for i, tk := range etoks {
+		if tk.Tok == token.SEMICOLON {
+			last = i
+		}
+	}
+	if last < 0 {
+		return etoks
+	}
+	wtoks := make(Tokens, 0, len(etoks)+10)
+	wtoks.AddMulti(token.FUNC, token.LPAREN, token.RPAREN)
+	wtoks.Add(token.IDENT, "string")
+	wtoks.Add(token.LBRACE)
+	wtoks.AddTokens(etoks[:last+1]...)
+	wtoks.Add(token.RETURN)
+	wtoks.AddTokens(etoks[last+1:]...)
+	wtoks.AddMulti(token.RBRACE, token.LPAREN, token.RPAREN)
+	return wtoks
+}
+
+// transpileExec returns the transpiled tokens of [State.TranspileExec],
+// as a list of statements.
+func (st *State) transpileExec(ewords []string, output bool) Tokens {
 	n := len(ewords)
 	if n == 0 {
 		return nil
@@ -315,12 +346,12 @@ func (st *State) TranspileExec(ewords []string, output bool) Tokens {
 			etoks.Add(token.COMMA)
 			endExec()
 			etoks.Add(token.SEMICOLON)
-			etoks.AddTokens(st.TranspileExec(ewords[i+1:], output)...)
+			etoks.AddTokens(st.transpileExec(ewords[i+1:], output)...)
 			return etoks
 		case f == ";":
 			endExec()
 			etoks.Add(token.SEMICOLON)
-			etoks.AddTokens(st.TranspileExec(ewords[i+1:], output)...)
+			etoks.AddTokens(st.transpileExec(ewords[i+1:], output)...)
 			return etoks
 		default:
 			if f[0] == '"' || f[0] == '`' {

@@ -110,8 +110,10 @@ func (gl *Goal) Unset(cmdIO *exec.CmdIO, args ...string) error {
 
 // JobsCmd is the builtin jobs command
 func (gl *Goal) JobsCmd(cmdIO *exec.CmdIO, args ...string) error {
+	gl.jobsMu.Lock()
+	defer gl.jobsMu.Unlock()
 	for i, jb := range gl.Jobs {
-		cmdIO.Printf("[%d]  %s\n", i+1, jb.String())
+		cmdIO.Printf("[%d]  %s\n", i+1, jb.Desc)
 	}
 	return nil
 }
@@ -138,7 +140,9 @@ func (gl *Goal) Fg(cmdIO *exec.CmdIO, args ...string) error {
 		return fmt.Errorf("goal fg: argument was not a job id in the form %%n")
 	}
 	jno, _ := strconv.Atoi(jid[1:]) // guaranteed good
-	job := gl.Jobs[jno]
+	gl.jobsMu.Lock()
+	job := gl.Jobs[jno-1] // in range, as JobIDExpand expanded it
+	gl.jobsMu.Unlock()
 	cmdIO.Printf("foregrounding job [%d]\n", jno)
 	_ = job
 	// todo: the problem here is we need to change the stdio for running job

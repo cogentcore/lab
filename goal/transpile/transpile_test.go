@@ -106,6 +106,8 @@ func TestTranspile(t *testing.T) {
 		{`fmt.Println("hi")`, `fmt.Println("hi")`},
 		{`for i := 0; i < 3; i++ { fmt.Println(i, "\n")`, `for i := 0; i < 3; i++ { fmt.Println(i, "\n")`},
 		{"for i, v := range $ls -la$ {", `for i, v := range goalrun.Output("ls", "-la") {`},
+		{"x := $ls | grep go$", `x := func()string { goalrun.Start("ls", "|"); return goalrun.Output("grep", "go") } ()`},
+		{"x := $cd sub; ls$", `x := func()string { goalrun.Output("cd", "sub"); return goalrun.Output("ls") } ()`},
 		{`// todo: fixit`, `// todo: fixit`},
 		{"$go build$", `goalrun.Run("go", "build")`},
 		{"{go build()}", `go build()`},
