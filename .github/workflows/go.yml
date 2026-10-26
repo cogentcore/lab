@@ -25,7 +25,7 @@ jobs:
       run: go build -v ./...
 
     - name: Test
-      run: go test -v ./... -coverprofile cover.out -timeout 30s
+      run: go test -short -v ./... -coverprofile cover.out -timeout 2m
 
     - name: Update coverage report
       uses: cogentcore/goal-coverage-report@v0

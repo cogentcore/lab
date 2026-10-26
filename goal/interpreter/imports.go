@@ -6,16 +6,14 @@ package interpreter
 
 import (
 	"reflect"
-
-	"github.com/cogentcore/yaegi/interp"
 )
 
-var Symbols = map[string]map[string]reflect.Value{}
-
-// ImportGoal makes the methods of goal object available in goalrun package.
-func (in *Interpreter) ImportGoal() {
-	in.Interp.Use(interp.Exports{
-		"cogentcore.org/lab/goalrun/goalrun": map[string]reflect.Value{
+// goalrunValues returns the symbols of the goalrun package, which makes
+// the methods of the goal object available to the code that Goal
+// transpiles.
+func (in *Interpreter) goalrunValues() map[string]map[string]reflect.Value {
+	return map[string]map[string]reflect.Value{
+		"cogentcore.org/lab/goalrun": {
 			"Run":         reflect.ValueOf(in.Goal.Run),
 			"RunErrOK":    reflect.ValueOf(in.Goal.RunErrOK),
 			"Output":      reflect.ValueOf(in.Goal.Output),
@@ -25,5 +23,5 @@ func (in *Interpreter) ImportGoal() {
 			"RunCommands": reflect.ValueOf(in.Goal.RunCommands),
 			"Args":        reflect.ValueOf(in.Goal.Args),
 		},
-	})
+	}
 }

@@ -1,0 +1,10 @@
+// the get, set and setcp functions of the "TensorFS" section of the math
+// mode docs: set stores the tensor itself, and setcp a copy of it.
+
+##
+a := [1., 2.]
+set("x", a)
+setcp("y", a)
+a += 1
+fmt.Println(get("x"), get("y"))
+##

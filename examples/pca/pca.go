@@ -12,16 +12,15 @@ import (
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/tree"
-	"cogentcore.org/core/yaegicore/coresymbols"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/lab"
 	_ "cogentcore.org/lab/lab/labscripts"
 	"cogentcore.org/lab/matrix"
+	"cogentcore.org/lab/mvmlab"
 	"cogentcore.org/lab/stats/metric"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
-	"cogentcore.org/lab/yaegilab/labsymbols"
 )
 
 // important: must be run from an interactive terminal.
@@ -36,8 +35,7 @@ func main() {
 func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 	dir := tensorfs.Mkdir("Iris")
 	b, br := lab.NewBasicWindow(tensorfs.CurRoot, "Iris")
-	in.Interp.Use(coresymbols.Symbols)
-	in.Interp.Use(labsymbols.Symbols)
+	mvmlab.UseGUI(in)
 	in.Config()
 	br.Interpreter = in
 	b.AddTopBar(func(bar *core.Frame) {

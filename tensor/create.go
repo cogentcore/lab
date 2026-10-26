@@ -201,7 +201,7 @@ func NewFloat64SpacedLinear(start, stop Tensor, num int, endpoint bool) *Float64
 	if endpoint {
 		fnum -= 1
 	}
-	step := Clone(start)
+	step := NewFloat64(start.ShapeSizes()...) // float, also for int start and stop
 	n := step.Len()
 	for i := range n {
 		step.SetFloat1D((stop.Float1D(i)-start.Float1D(i))/fnum, i)

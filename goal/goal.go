@@ -16,6 +16,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/exec"
@@ -54,8 +55,17 @@ type Goal struct {
 	Commands map[string]func(args ...string)
 
 	// Jobs is a stack of commands running in the background
-	// (via Start instead of Run)
+	// (via Start instead of Run). Use jobsMu to access it, as jobs
+	// delete themselves when they finish.
 	Jobs stack.Stack[*Job]
+
+	// pipeIn is the read end of the pipe of the output of the last command,
+	// when it was piped (cmd |), which the next command reads as its input
+	// and closes (see [Goal.Exec]).
+	pipeIn *os.File
+
+	// jobsMu protects Jobs and pipeIn.
+	jobsMu sync.Mutex
 
 	// Cancel, while the interpreter is running, can be called
 	// to stop the code interpreting.
@@ -330,17 +340,62 @@ func (gl *Goal) RunCommands(cmds []any) error {
 	return nil
 }
 
-// DeleteAllJobs deletes any existing jobs, closing stdio.
+// DeleteAllJobs deletes any existing jobs, closing stdio,
+// and closes the pipe to the next command, if any.
 func (gl *Goal) DeleteAllJobs() {
+	gl.jobsMu.Lock()
+	defer gl.jobsMu.Unlock()
 	n := len(gl.Jobs)
 	for i := n - 1; i >= 0; i-- {
 		jb := gl.Jobs.Pop()
 		jb.CmdIO.PopToStart()
 	}
+	if gl.pipeIn != nil {
+		gl.pipeIn.Close()
+		gl.pipeIn = nil
+	}
+}
+
+// NumJobs returns the number of jobs running in the background.
+func (gl *Goal) NumJobs() int {
+	gl.jobsMu.Lock()
+	defer gl.jobsMu.Unlock()
+	return len(gl.Jobs)
+}
+
+// addJob adds the given job, returning its job number.
+func (gl *Goal) addJob(job *Job) int {
+	gl.jobsMu.Lock()
+	defer gl.jobsMu.Unlock()
+	gl.Jobs.Push(job)
+	return len(gl.Jobs)
+}
+
+// setPipeIn sets the read end of the pipe of the output of the last
+// command, for the next command (see [Goal.pipeIn]).
+func (gl *Goal) setPipeIn(r *os.File) {
+	gl.jobsMu.Lock()
+	defer gl.jobsMu.Unlock()
+	if gl.pipeIn != nil { // not read by any command
+		gl.pipeIn.Close()
+	}
+	gl.pipeIn = r
+}
+
+// takePipeIn returns the read end of the pipe of the output of the last
+// command, if any, for this command to read, which then owns it.
+func (gl *Goal) takePipeIn() *os.File {
+	gl.jobsMu.Lock()
+	defer gl.jobsMu.Unlock()
+	r := gl.pipeIn
+	gl.pipeIn = nil
+	return r
 }
 
 // DeleteJob deletes the given job and returns true if successful,
 func (gl *Goal) DeleteJob(job *Job) bool {
+	gl.jobsMu.Lock()
+	defer gl.jobsMu.Unlock()
 	idx := slices.Index(gl.Jobs, job)
 	if idx >= 0 {
 		gl.Jobs = slices.Delete(gl.Jobs, idx, idx+1)
@@ -352,6 +407,8 @@ func (gl *Goal) DeleteJob(job *Job) bool {
 // JobIDExpand expands %n job id values in args with the full PID
 // returns number of PIDs expanded
 func (gl *Goal) JobIDExpand(args []string) int {
+	gl.jobsMu.Lock()
+	defer gl.jobsMu.Unlock()
 	exp := 0
 	for i, id := range args {
 		if id[0] == '%' {
@@ -375,6 +432,9 @@ func (gl *Goal) JobIDExpand(args []string) int {
 // Job represents a job that has been started and we're waiting for it to finish.
 type Job struct {
 	*exec.CmdIO
-	IsExec  bool
-	GotPipe bool
+	IsExec bool
+
+	// Desc is the description of the job, as jobs lists it, made when
+	// it starts, as its process state changes while it runs.
+	Desc string
 }

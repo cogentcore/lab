@@ -17,7 +17,6 @@ import (
 	"cogentcore.org/core/base/logx"
 	"cogentcore.org/lab/goal"
 	"cogentcore.org/lab/goal/goalib"
-	"github.com/cogentcore/yaegi/interp"
 )
 
 //go:generate core generate -add-types -add-funcs
@@ -59,7 +58,7 @@ type Config struct {
 // Run runs the specified goal file. If no file is specified,
 // it runs an interactive shell that allows the user to input goal.
 func Run(c *Config) error { //cli:cmd -root
-	in := NewInterpreter(interp.Options{})
+	in := NewInterpreter(Options{})
 	if len(c.Args) > 0 {
 		in.Goal.CliArgs = goalib.StringsToAnys(c.Args)
 	}
@@ -85,10 +84,7 @@ func Run(c *Config) error { //cli:cmd -root
 		}
 		code += c.Expr + "\n"
 	}
-	_, _, err := in.Eval(code)
-	if err == nil {
-		err = in.Goal.TrState.DepthError()
-	}
+	_, _, err := in.EvalCode(code)
 	if c.Interactive {
 		return c.InteractiveFunc(c, in)
 	}

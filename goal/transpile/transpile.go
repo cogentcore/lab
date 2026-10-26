@@ -5,9 +5,11 @@
 package transpile
 
 import (
+	"errors"
 	"fmt"
 	"go/token"
 	"slices"
+	"strconv"
 	"strings"
 
 	"cogentcore.org/core/base/logx"
@@ -36,7 +38,9 @@ func (st *State) TranspileLine(code string) string {
 		st.DeclDepth = 0
 	}
 	// logx.PrintlnDebug("depths: ", st.ParenDepth, st.BraceDepth, st.BrackDepth, st.TypeDepth, st.DeclDepth)
-	return toks.Code()
+	code, cols := toks.CodeMap()
+	st.lastCols = cols
+	return code
 }
 
 // TranspileLineTokens returns the tokens for the full line
@@ -60,9 +64,10 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 	}
 	ewords, err := ExecWords(code)
 	if err != nil {
-		st.AddError(err)
+		st.addWordsError(err, 0)
 		return nil
 	}
+	st.forgetDefines(toks)
 	logx.PrintlnDebug("\n########## line:\n", code, "\nTokens:", len(toks), "\n", toks.String(), "\nWords:", len(ewords), "\n", ewords)
 
 	if toks[0].Tok == token.TYPE {
@@ -231,9 +236,20 @@ func (st *State) TranspileExecString(str string, output bool) Tokens {
 	}
 	ewords, err := ExecWords(str)
 	if err != nil {
-		st.AddError(err)
+		st.addWordsError(err, 0)
 	}
 	return st.TranspileExec(ewords, output)
+}
+
+// addWordsError adds the given error of [ExecWords] for the code at the
+// given byte offset of the source line, at its position in it.
+func (st *State) addWordsError(err error, offset int) {
+	var we *WordsError
+	if errors.As(err, &we) {
+		st.addSourceError(offset+we.Pos+1, we.Msg)
+		return
+	}
+	st.AddError(err)
 }
 
 // TranspileExecTokens returns transpiled tokens assuming Exec code,
@@ -251,6 +267,37 @@ func (st *State) TranspileExecTokens(toks Tokens, code string, output bool) Toke
 // TranspileExec returns transpiled tokens assuming Exec code,
 // with the given bools indicating the type of run to execute.
 func (st *State) TranspileExec(ewords []string, output bool) Tokens {
+	etoks := st.transpileExec(ewords, output)
+	if !output {
+		return etoks
+	}
+	// The output of a pipe or list of commands ($a | b$, $a; b$) is that of
+	// the last one (unlike bash, which outputs those of all of a list), but
+	// they are statements, so they are wrapped in a func that returns it,
+	// which is an expression.
+	last := -1
+	for i, tk := range etoks {
+		if tk.Tok == token.SEMICOLON {
+			last = i
+		}
+	}
+	if last < 0 {
+		return etoks
+	}
+	wtoks := make(Tokens, 0, len(etoks)+10)
+	wtoks.AddMulti(token.FUNC, token.LPAREN, token.RPAREN)
+	wtoks.Add(token.IDENT, "string")
+	wtoks.Add(token.LBRACE)
+	wtoks.AddTokens(etoks[:last+1]...)
+	wtoks.Add(token.RETURN)
+	wtoks.AddTokens(etoks[last+1:]...)
+	wtoks.AddMulti(token.RBRACE, token.LPAREN, token.RPAREN)
+	return wtoks
+}
+
+// transpileExec returns the transpiled tokens of [State.TranspileExec],
+// as a list of statements.
+func (st *State) transpileExec(ewords []string, output bool) Tokens {
 	n := len(ewords)
 	if n == 0 {
 		return nil
@@ -295,7 +342,7 @@ func (st *State) TranspileExec(ewords []string, output bool) Tokens {
 		switch {
 		case f == "{": // embedded go
 			if n < i+3 {
-				st.AddError(fmt.Errorf("goal: no matching right brace } found in exec command line"))
+				st.addSourceError(1, "missing closing } of the Go expression in the command")
 			} else {
 				gstr := ewords[i+1]
 				etoks.AddTokens(st.TranspileGo(TokensFromString(gstr), gstr)...)
@@ -315,17 +362,20 @@ func (st *State) TranspileExec(ewords []string, output bool) Tokens {
 			etoks.Add(token.COMMA)
 			endExec()
 			etoks.Add(token.SEMICOLON)
-			etoks.AddTokens(st.TranspileExec(ewords[i+1:], output)...)
+			etoks.AddTokens(st.transpileExec(ewords[i+1:], output)...)
 			return etoks
 		case f == ";":
 			endExec()
 			etoks.Add(token.SEMICOLON)
-			etoks.AddTokens(st.TranspileExec(ewords[i+1:], output)...)
+			etoks.AddTokens(st.transpileExec(ewords[i+1:], output)...)
 			return etoks
 		default:
-			if f[0] == '"' || f[0] == '`' {
+			switch {
+			case f[0] == '"' || f[0] == '`':
 				etoks.Add(token.STRING, f)
-			} else {
+			case len(f) > 1 && f[0] == '\'' && f[len(f)-1] == '\'': // literal, as in bash
+				etoks.Add(token.STRING, strconv.Quote(f[1:len(f)-1]))
+			default:
 				etoks.Add(token.IDENT, AddQuotes(f)) // mark as an IDENT but add quotes!
 			}
 			etoks.Add(token.COMMA)

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"go/format"
+	"go/token"
 	"log/slog"
 	"os"
 	"strings"
@@ -42,9 +43,16 @@ type State struct {
 	// issues with contextual effects from import, package etc.
 	Chunks []string
 
+	// ChunkSources are the source lines of each of the Chunks,
+	// for mapping the errors of their Go code back to the source.
+	ChunkSources [][]SourceLine
+
 	// current stack of transpiled lines, that are accumulated into
 	// code Chunks.
 	Lines []string
+
+	// SourceLines are the source lines of each of the Lines.
+	SourceLines []SourceLine
 
 	// stack of runtime errors.
 	Errors []error
@@ -52,6 +60,17 @@ type State struct {
 	// if this is non-empty, it is the name of the last command defined.
 	// triggers insertion of the AddCommand call to add to list of defined commands.
 	lastCommand string
+
+	// math has what math mode knows about the variables and blocks
+	// of the code so far.
+	math mathNames
+
+	// lastCols is the column map of the line last transpiled
+	// (see [SourceLine.Cols]).
+	lastCols []token.Pos
+
+	// curSrc is the source line being transpiled.
+	curSrc string
 }
 
 // NewState returns a new transpiling state; mostly for testing
@@ -70,8 +89,17 @@ func (st *State) TranspileCode(code string) {
 	}
 	for _, ln := range lns {
 		hasDecl := st.DeclDepth > 0
+		st.curSrc = ln
+		st.lastCols = nil
+		line, paren, brace, brack := st.lineNumber(), st.ParenDepth, st.BraceDepth, st.BrackDepth
 		tl := st.TranspileLine(ln)
+		if st.ParenDepth < 0 || st.BraceDepth < 0 || st.BrackDepth < 0 {
+			if !st.checkClosers(ln, line, paren, brace, brack) {
+				st.ParenDepth, st.BraceDepth, st.BrackDepth = max(st.ParenDepth, 0), max(st.BraceDepth, 0), max(st.BrackDepth, 0)
+			}
+		}
 		st.AddLine(tl)
+		st.SourceLines[len(st.SourceLines)-1] = SourceLine{Src: ln, Cols: st.lastCols}
 		if st.BraceDepth == 0 && st.BrackDepth == 0 && st.ParenDepth == 1 && st.lastCommand != "" {
 			st.lastCommand = ""
 			nl := len(st.Lines)
@@ -155,7 +183,9 @@ func (st *State) TotalDepth() int {
 // ResetCode resets the stack of transpiled code
 func (st *State) ResetCode() {
 	st.Chunks = nil
+	st.ChunkSources = nil
 	st.Lines = nil
+	st.SourceLines = nil
 }
 
 // ResetDepth resets the current depths to 0
@@ -189,6 +219,7 @@ func (st *State) DepthError() error {
 // AddLine adds line on the stack
 func (st *State) AddLine(ln string) {
 	st.Lines = append(st.Lines, ln)
+	st.SourceLines = append(st.SourceLines, SourceLine{Src: ln})
 }
 
 // Code returns the current transpiled lines,
@@ -208,7 +239,9 @@ func (st *State) AddChunk() {
 		return
 	}
 	st.Chunks = append(st.Chunks, strings.Join(st.Lines, "\n"))
+	st.ChunkSources = append(st.ChunkSources, st.SourceLines)
 	st.Lines = nil
+	st.SourceLines = nil
 }
 
 // AddError adds the given error to the error stack if it is non-nil,
@@ -222,4 +255,20 @@ func (st *State) AddError(err error) error {
 	st.Errors = append(st.Errors, err)
 	logx.PrintlnError(err)
 	return err
+}
+
+// lineNumber returns the 1-based line number of the source line being
+// transpiled, in the code since [State.ResetCode].
+func (st *State) lineNumber() int {
+	n := len(st.SourceLines) + 1
+	for _, ch := range st.ChunkSources {
+		n += len(ch)
+	}
+	return n
+}
+
+// addSourceError adds an [Error] at the given 1-based column of the source
+// line being transpiled.
+func (st *State) addSourceError(col int, msg string) {
+	st.AddError(&Error{Line: st.lineNumber(), Col: col, Src: st.curSrc, Msg: msg})
 }

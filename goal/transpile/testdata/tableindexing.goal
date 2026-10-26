@@ -1,0 +1,26 @@
+// the Goal entries of the "Basic indexing" table of the math mode docs.
+
+##
+a := arange(30).reshape(5, 6)
+fmt.Println(a[1, 4])
+fmt.Println(a[-1])
+fmt.Println(a[1])
+fmt.Println(a[1, :])
+fmt.Println(a[0:2])
+fmt.Println(a[:2])
+fmt.Println(a[0:2, :])
+fmt.Println(a[-2:])
+fmt.Println(a[newaxis, -2:].shape)
+fmt.Println(a[0:2, 3:5])
+fmt.Println(a[1:5:2, :])
+fmt.Println(a[::2, :])
+fmt.Println(a[::-1, :])
+b := copy(a[1, :])
+a[1, 0] = 100
+fmt.Println(b)
+a[:2] = 2
+fmt.Println(a[:3])
+c := arange(30).reshape(5, 6) * 10
+a[:2] = c[:2, :6]
+fmt.Println(a[:2])
+##

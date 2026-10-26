@@ -1453,6 +1453,9 @@ func (p *parser) tryIdentOrType() ast.Expr {
 		return typ
 	case token.LBRACK:
 		lbrack := p.expect(token.LBRACK)
+		if p.tok == token.RBRACK || p.tok == token.ELLIPSIS { // math: Go []T or [...]T type
+			return p.parseArrayType(lbrack, nil)
+		}
 		return p.parseArrayList(lbrack) // math: full array exprs
 		//		return p.parseArrayType(lbrack, nil)
 	case token.STRUCT:
@@ -1500,6 +1503,9 @@ func (p *parser) parseBody() *ast.BlockStmt {
 	}
 
 	lbrace := p.expect(token.LBRACE)
+	if p.tok == token.EOF { // math: allow start only
+		return &ast.BlockStmt{Lbrace: lbrace}
+	}
 	list := p.parseStmtList()
 	rbrace := p.expect2(token.RBRACE)
 
@@ -2405,6 +2411,13 @@ func (p *parser) parseSwitchStmt() ast.Stmt {
 
 	typeSwitch := p.isTypeSwitchGuard(s2)
 	lbrace := p.expect(token.LBRACE)
+	if p.tok == token.EOF { // math: allow start only
+		body := &ast.BlockStmt{Lbrace: lbrace}
+		if typeSwitch {
+			return &ast.TypeSwitchStmt{Switch: pos, Init: s1, Assign: s2, Body: body}
+		}
+		return &ast.SwitchStmt{Switch: pos, Init: s1, Tag: p.makeExpr(s2, "switch expression"), Body: body}
+	}
 	var list []ast.Stmt
 	for p.tok == token.CASE || p.tok == token.DEFAULT {
 		list = append(list, p.parseCaseClause())

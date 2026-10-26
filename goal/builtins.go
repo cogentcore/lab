@@ -65,6 +65,10 @@ func (gl *Goal) Cd(cmdIO *exec.CmdIO, args ...string) error {
 	}
 	err = os.Chdir(dir)
 	if err != nil {
+		var pe *os.PathError
+		if errors.As(err, &pe) {
+			return fmt.Errorf("cd: %s: %w", dir, pe.Err)
+		}
 		return err
 	}
 	gl.Config.Dir = dir
@@ -110,8 +114,10 @@ func (gl *Goal) Unset(cmdIO *exec.CmdIO, args ...string) error {
 
 // JobsCmd is the builtin jobs command
 func (gl *Goal) JobsCmd(cmdIO *exec.CmdIO, args ...string) error {
+	gl.jobsMu.Lock()
+	defer gl.jobsMu.Unlock()
 	for i, jb := range gl.Jobs {
-		cmdIO.Printf("[%d]  %s\n", i+1, jb.String())
+		cmdIO.Printf("[%d]  %s\n", i+1, jb.Desc)
 	}
 	return nil
 }
@@ -138,7 +144,9 @@ func (gl *Goal) Fg(cmdIO *exec.CmdIO, args ...string) error {
 		return fmt.Errorf("goal fg: argument was not a job id in the form %%n")
 	}
 	jno, _ := strconv.Atoi(jid[1:]) // guaranteed good
-	job := gl.Jobs[jno]
+	gl.jobsMu.Lock()
+	job := gl.Jobs[jno-1] // in range, as JobIDExpand expanded it
+	gl.jobsMu.Unlock()
 	cmdIO.Printf("foregrounding job [%d]\n", jno)
 	_ = job
 	// todo: the problem here is we need to change the stdio for running job
@@ -241,6 +249,8 @@ func (gl *Goal) GoSSH(cmdIO *exec.CmdIO, args ...string) error {
 		return nil
 	case cmd == "@" && len(args) == 2:
 		name = args[1]
+	case strings.HasPrefix(cmd, "@") && len(args) == 1: // gossh @name: the default host
+		name = cmd[1:]
 	case len(args) == 2:
 		con = true
 		host = args[0]
@@ -271,51 +281,54 @@ func (gl *Goal) GoSSH(cmdIO *exec.CmdIO, args ...string) error {
 	return err
 }
 
-// Scp performs file copy over SSH connection, with the remote filename
-// prefixed with the @name: and the local filename un-prefixed.
-// The order is from -> to, as in standard cp.
-// The remote filename is automatically relative to the current working
-// directory on the remote host.
+// Scp copies files between hosts, as cp -r does: scp source... destination,
+// where a path on a remote host connected with gossh is @name:path (with
+// @name: for its current directory), and a path on the local host is just
+// the path, or @0:path. A source can have wildcards, as in @name:*.tsv, and
+// directories are copied with their contents. The sources are copied into
+// the destination if it is a directory (or ends with a /, or there are
+// several sources), with their own names, as in scp @name:file.tsv .
+// It uses the connections of gossh, through SFTP, and shows its progress
+// if its output is a terminal.
 func (gl *Goal) Scp(cmdIO *exec.CmdIO, args ...string) error {
-	if len(args) != 2 {
-		return fmt.Errorf("scp: requires exactly two arguments")
+	if len(args) < 2 {
+		return fmt.Errorf("scp: requires a source and a destination: scp source... destination")
 	}
-	var lfn, hfn string
-	toHost := false
-	if args[0][0] == '@' {
-		hfn = args[0]
-		lfn = args[1]
-	} else if args[1][0] == '@' {
-		hfn = args[1]
-		lfn = args[0]
-		toHost = true
-	} else {
-		return fmt.Errorf("scp: one of the files must a remote host filename, specified by @name:")
+	locs := make([]sshclient.Location, len(args))
+	for i, a := range args {
+		loc, err := gl.scpLocation(a)
+		if err != nil {
+			return err
+		}
+		locs[i] = loc
 	}
-
-	ci := strings.Index(hfn, ":")
-	if ci < 0 {
-		return fmt.Errorf("scp: remote host filename does not contain a : after the host name")
-	}
-	host := hfn[1:ci]
-	hfn = hfn[ci+1:]
-
-	cl, err := gl.SSHByHost(host)
-	if err != nil {
-		return err
-	}
-
 	ctx := gl.Ctx
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	n := len(locs)
+	return sshclient.CopyProgress(ctx, scpProgress(cmdIO.Out), locs[n-1], locs[:n-1]...)
+}
 
-	if toHost {
-		err = cl.CopyLocalFileToHost(ctx, lfn, hfn)
-	} else {
-		err = cl.CopyHostToLocalFile(ctx, hfn, lfn)
+// scpLocation returns the location of the given argument of [Goal.Scp]:
+// @name:path on the host of the given gossh connection, or a local path,
+// which can also be @0:path.
+func (gl *Goal) scpLocation(arg string) (sshclient.Location, error) {
+	if !strings.HasPrefix(arg, "@") {
+		return sshclient.Location{Path: arg}, nil
 	}
-	return err
+	host, p, ok := strings.Cut(arg[1:], ":")
+	if !ok {
+		return sshclient.Location{}, fmt.Errorf("scp: %s: a path on a host is @name:path", arg)
+	}
+	if host == "0" {
+		return sshclient.Location{Path: p}, nil
+	}
+	cl, err := gl.SSHByHost(host)
+	if err != nil {
+		return sshclient.Location{}, fmt.Errorf("scp: %w", err)
+	}
+	return sshclient.Location{Client: cl, Path: p}, nil
 }
 
 // Debug changes log level

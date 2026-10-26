@@ -32,7 +32,7 @@ fr.Styler(func(s *styles.Style) {
     s.Direction = styles.Column
     s.Gap.Y.Dp(2)
 })
-for i := range 8 {
+# for i := range x {
     # v := U[:, i]
     fig2 := plot.New()
     pw := plotcore.NewPlot(fr).SetPlot(fig2)
@@ -44,7 +44,7 @@ for i := range 8 {
         s.Range.SetMin(-0.5).SetMax(0.5)
     })
     plots.NewPointLine(fig2, v)
-    plots.NewLine(fig2, #zeros(8)#)
+    plots.NewLine(fig2, #zeros(len(x))#)
 }
 ```
 
@@ -52,7 +52,7 @@ Next, we can compute the vector **a**, which represents **x** in terms of the **
 
 ```Goal
 # a := matrix.Inverse(U) @ x
-core.NewText(b).SetText(a.String())
+fmt.Println(a)
 ```
 
 To compress the data, we will define a function that zeroes all but the *n* elements of **a** with the highest absolute values:
@@ -63,15 +63,17 @@ func compress(n int) tensor.Tensor {
     sorted.SortFunc(0, func(tsr tensor.Tensor, i, j int) int {
         return cmp.Compare(math.Abs(tsr.Float1D(j)), math.Abs(tsr.Float1D(i)))
     })
-    # top := sorted[:n]
-    # res := zeros(8)
-    for i := range 8 {
-        if tensor.ContainsFloat(top, #a[i]#) {
-            # res[i] = a[i]
+	##
+    top := sorted[:n]
+    res := zeros(len(x))
+    for i := range res {
+        if tensor.ContainsFloat(top, a[i]) {
+            res[i] = a[i]
         } else {
-            # res[i] = 0
+            res[i] = 0
         }
-    }    
+    }
+	##
     return res
 }
 ```
@@ -80,14 +82,14 @@ Then, we will make **a2**, the result of `compress(2)` (so the two most importan
 
 ```Goal
 a2 := compress(2)
-core.NewText(b).SetText(a2.String())
+fmt.Println(a2)
 ```
 
 From **a2**, we can compute and plot **x2**, the approximation of **x** based on the two most important elements of **a**:
 
 ```Goal
 # x2 := U @ a2
-core.NewText(b).SetText(x2.String())
+fmt.Println(x2)
 fig1a := lab.NewPlotFrom(fig1, b)
 plot.Styler(x2, func(s *plot.Style) {
     s.Point.Shape = plot.Pyramid
@@ -99,9 +101,9 @@ We can do the same thing for **a4** and **x4**, with the four most important ele
 
 ```Goal
 a4 := compress(4)
-core.NewText(b).SetText(a4.String())
+fmt.Println(a4)
 # x4 := U @ a4
-core.NewText(b).SetText(x4.String())
+fmt.Println(x4)
 fig1b := lab.NewPlotFrom(fig1a, b)
 plot.Styler(x4, func(s *plot.Style) {
     s.Point.Shape = plot.Cross
@@ -113,7 +115,7 @@ We can also compute **x8**, which just uses **a** without anything removed:
 
 ```Goal
 # x8 := U @ a
-core.NewText(b).SetText(x8.String())
+fmt.Println(x8)
 ```
 
 We can find the error of **x8** relative to **x**, which is very small since nothing is compressed:
@@ -122,12 +124,12 @@ We can find the error of **x8** relative to **x**, which is very small since not
 func relativeError(y tensor.Tensor) tensor.Tensor {
     # return sqrt(stats.Sum((x-y)**2)/stats.Sum(x**2))
 }
-core.NewText(b).SetText("x8 error: "+relativeError(x8).String())
+fmt.Println("x8 error: ", relativeError(x8))
 ```
 
 We can do the same for **x4** and **x2**:
 
 ```Goal
-core.NewText(b).SetText("x4 error: "+relativeError(x4).String())
-core.NewText(b).SetText("x2 error: "+relativeError(x2).String())
+fmt.Println("x4 error: ", relativeError(x4))
+fmt.Println("x2 error: ", relativeError(x2))
 ```

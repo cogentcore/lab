@@ -1,0 +1,117 @@
+// Copyright (c) 2026, Cogent Core. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package transpile
+
+import (
+	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+// TestGoalFiles transpiles each testdata/*.goal file to Go, builds them,
+// and runs each, checking that its output is that of testdata/*.want,
+// if it exists.
+func TestGoalFiles(t *testing.T) {
+	if testing.Short() {
+		t.Skip("builds Go programs")
+	}
+	files, err := filepath.Glob("testdata/*.goal")
+	assert.NoError(t, err)
+
+	// The programs are built in the module, in testdata, for its dependencies.
+	dir, err := os.MkdirTemp("testdata", "build")
+	assert.NoError(t, err)
+	defer os.RemoveAll(dir)
+	var names []string
+	for _, f := range files {
+		name := strings.TrimSuffix(filepath.Base(f), ".goal")
+		pdir := filepath.Join(dir, name)
+		assert.NoError(t, os.Mkdir(pdir, 0755))
+		st := NewState()
+		assert.NoError(t, st.TranspileFile(f, filepath.Join(pdir, "main.go")), name)
+		names = append(names, name)
+	}
+
+	bin := filepath.Join(dir, "bin") + string(filepath.Separator)
+	built := buildGoalFiles(t, dir, bin, names)
+
+	for _, name := range names {
+		t.Run(name, func(t *testing.T) {
+			if !built[name] {
+				t.Skip("only builds with unused variables")
+			}
+			out, err := exec.Command(filepath.Join(bin, name)).CombinedOutput()
+			assert.NoError(t, err, string(out))
+			want, err := os.ReadFile(filepath.Join("testdata", name+".want"))
+			if err != nil {
+				return
+			}
+			assert.Equal(t, string(want), string(out))
+		})
+	}
+}
+
+// buildGoalFiles builds the transpiled programs of the given names in dir
+// into bin, returning which ones were built. A program whose only compile
+// errors are unused variables is not built, but is not an error: those are
+// errors of Go, but not of the Goal interpreter, which can run it.
+func buildGoalFiles(t *testing.T, dir, bin string, names []string) map[string]bool {
+	pkg := func(name string) string { return "./" + filepath.ToSlash(filepath.Join(dir, name)) }
+	build := func(names []string) (string, error) {
+		args := []string{"build", "-o", bin}
+		for _, name := range names {
+			args = append(args, pkg(name))
+		}
+		out, err := exec.Command("go", args...).CombinedOutput()
+		return string(out), err
+	}
+	built := map[string]bool{}
+	out, err := build(names)
+	if err != nil {
+		// The compile errors of each program, which have a source position,
+		// follow a "# package" line (as do linker warnings).
+		errs := map[string][]string{}
+		name := ""
+		for _, ln := range strings.Split(strings.TrimSpace(out), "\n") {
+			if pk, ok := strings.CutPrefix(ln, "# "); ok {
+				name = path.Base(pk)
+				continue
+			}
+			if strings.Contains(ln, ".goal:") || strings.Contains(ln, ".go:") {
+				errs[name] = append(errs[name], ln)
+			}
+		}
+		var ok []string
+		for _, name := range names {
+			lines, failed := errs[name]
+			if !failed {
+				ok = append(ok, name)
+				continue
+			}
+			for _, ln := range lines {
+				if !strings.Contains(ln, "declared and not used") {
+					t.Errorf("building %s:\n%s", name, strings.Join(lines, "\n"))
+					break
+				}
+			}
+		}
+		if len(ok) == 0 {
+			return built
+		}
+		if out, err := build(ok); err != nil {
+			t.Fatalf("building the transpiled programs: %v\n%s", err, out)
+		}
+		names = ok
+	}
+	for _, name := range names {
+		built[name] = true
+	}
+	return built
+}

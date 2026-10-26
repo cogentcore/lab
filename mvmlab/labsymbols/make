@@ -1,0 +1,13 @@
+#!/bin/sh
+# make generates the symbols of the packages, one gen_*.go file per package,
+# with mvm extract -register.
+set -e
+cd "$(dirname "$0")"
+/bin/rm -f gen_*.go
+
+# The GUI packages of Cogent Lab.
+lab="physics physics/phyxyz physics/builder plot plot/plots plotcore tensorcore lab"
+
+pkgs=""
+for p in $lab; do pkgs="$pkgs cogentcore.org/lab/$p"; done
+go run github.com/cogentcore/mvm/cmd/extract -register -pkg labsymbols $pkgs

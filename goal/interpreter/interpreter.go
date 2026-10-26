@@ -14,19 +14,24 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 
 	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/yaegicore/basesymbols"
+	"cogentcore.org/core/mvmcore/basesymbols"
 	"cogentcore.org/lab/goal"
+	"cogentcore.org/lab/goal/transpile"
+	"cogentcore.org/lab/mvmlab/tensorsymbols"
 	_ "cogentcore.org/lab/stats/metric"
 	_ "cogentcore.org/lab/stats/stats"
 	_ "cogentcore.org/lab/tensor/tmath"
 	"cogentcore.org/lab/tensorfs"
-	"cogentcore.org/lab/yaegilab/tensorsymbols"
+	"github.com/cogentcore/mvm/interp"
+	"github.com/cogentcore/mvm/lang/golang"
+	"github.com/cogentcore/mvm/vm"
+	"github.com/cogentcore/mvm/stdlib"
+	_ "github.com/cogentcore/mvm/stdlib/core" // the core standard library
 	"github.com/cogentcore/readline"
-	"github.com/cogentcore/yaegi/interp"
-	"github.com/cogentcore/yaegi/stdlib"
 )
 
 // Interpreter represents one running shell context
@@ -39,19 +44,31 @@ type Interpreter struct {
 	// Update this prior to running Config() to take effect.
 	HistFile string
 
-	// the yaegi interpreter
-	Interp *interp.Interpreter
+	// the mvm interpreter
+	Interp *interp.Interp
+
+	// readline is the line reader of [Interpreter.Interactive], while it
+	// runs, and closed is whether [Interpreter.Close] was called;
+	// readlineMu protects both.
+	readline   *readline.Instance
+	closed     bool
+	readlineMu sync.Mutex
 }
 
-func init() {
-	delete(stdlib.Symbols, "errors/errors") // use our errors package instead
+// Options are the options of a new [Interpreter]: its standard input and
+// output, which are those of the process if nil.
+type Options struct {
+	Stdin  io.Reader
+	Stdout io.Writer
+	Stderr io.Writer
 }
 
 // NewInterpreter returns a new [Interpreter] initialized with the given options.
-// It automatically imports the standard library and configures necessary shell
-// functions. End user app must call [Interp.Config] after importing any additional
-// symbols, prior to running the interpreter.
-func NewInterpreter(options interp.Options) *Interpreter {
+// It automatically imports the standard library, the base Cogent Core and
+// Cogent Lab packages, and configures necessary shell functions.
+// End user app must call [Interpreter.Config] after importing any additional
+// symbols with [Interpreter.Use], prior to running the interpreter.
+func NewInterpreter(options Options) *Interpreter {
 	in := &Interpreter{HistFile: "~/.goal-history"}
 	in.Goal = goal.NewGoal()
 	if options.Stdin != nil {
@@ -64,15 +81,20 @@ func NewInterpreter(options interp.Options) *Interpreter {
 		in.Goal.Config.StdIO.Err = options.Stderr
 	}
 	in.Goal.SaveOrigStdIO()
-	options.Stdout = in.Goal.StdIOWrappers.Out
-	options.Stderr = in.Goal.StdIOWrappers.Err
-	options.Stdin = in.Goal.StdIOWrappers.In
-	in.Interp = interp.New(options)
-	errors.Log(in.Interp.Use(basesymbols.Symbols))
-	errors.Log(in.Interp.Use(tensorsymbols.Symbols))
-	in.ImportGoal()
+	in.Interp = interp.NewInterpreter(golang.GoSpec)
+	in.Interp.SetIO(in.Goal.StdIOWrappers.In, in.Goal.StdIOWrappers.Out, in.Goal.StdIOWrappers.Err)
+	basesymbols.Load()
+	tensorsymbols.Load()
+	in.Use(stdlib.Values, basesymbols.Values, tensorsymbols.Values, in.goalrunValues())
 	go in.MonitorSignals()
 	return in
+}
+
+// Use imports the symbols of the given packages, by import path and name,
+// into the interpreter, such that they can be used without an import, by
+// their package names (see [basesymbols.Import]).
+func (in *Interpreter) Use(values ...map[string]map[string]reflect.Value) {
+	basesymbols.Import(in.Interp, values...)
 }
 
 // Prompt returns the appropriate REPL prompt to show the user.
@@ -123,23 +145,57 @@ func (in *Interpreter) Eval(code string) (v reflect.Value, hasPrint bool, err er
 	return
 }
 
+// EvalCode evaluates (interprets) the given complete code, such as that of
+// a file or a code block, as [Interpreter.Eval]: unlike Eval, for which
+// a bracket that is not closed continues the code on the next line,
+// as in an interactive shell, that is an error.
+func (in *Interpreter) EvalCode(code string) (v reflect.Value, hasPrint bool, err error) {
+	v, hasPrint, err = in.Eval(code)
+	st := &in.Goal.TrState
+	if err == nil && st.TotalDepth() != 0 {
+		err = st.UnclosedError()
+		if err == nil {
+			err = st.DepthError()
+		}
+		st.ResetCode()
+		st.ResetDepth()
+		st.Errors = nil
+	}
+	return
+}
+
 // RunCode runs the accumulated set of code lines
 // and clears the stack of code lines.
 // It automatically logs any error in addition to returning it.
 func (in *Interpreter) RunCode() (reflect.Value, error) {
+	st := &in.Goal.TrState
+	if len(st.Errors) > 0 { // errors of transpiling the code
+		errs := st.Errors
+		st.Errors = nil
+		st.ResetCode()
+		return reflect.Value{}, errors.Join(errs...)
+	}
 	if len(in.Goal.Errors) > 0 {
 		return reflect.Value{}, errors.Join(in.Goal.Errors...)
 	}
-	in.Goal.TrState.AddChunk()
-	code := in.Goal.TrState.Chunks
-	in.Goal.TrState.ResetCode()
+	st.AddChunk()
+	code, sources := st.Chunks, st.ChunkSources
+	st.ResetCode()
+	// The errors that the code logs stop it, as errors of it.
+	prevHook := errors.SetLogHook(logHook)
+	defer errors.SetLogHook(prevHook)
 	var v reflect.Value
 	var err error
-	for _, ch := range code {
-		ctx := in.Goal.StartContext()
-		v, err = in.Interp.EvalWithContext(ctx, ch)
+	for ci, ch := range code {
+		// mvm takes empty source as the name of a package to run.
+		if strings.TrimSpace(ch) == "" {
+			continue
+		}
+		in.Goal.StartContext()
+		v, err = in.Interp.Eval("goal", ch)
 		in.Goal.EndContext()
 		if err != nil {
+			err = in.sourceError(err, sources, ci)
 			cancelled := errors.Is(err, context.Canceled)
 			// fmt.Println("cancelled:", cancelled)
 			in.Goal.DeleteAllJobs()
@@ -152,8 +208,31 @@ func (in *Interpreter) RunCode() (reflect.Value, error) {
 			}
 			break
 		}
+		// the errors of the commands that ran stop the code
+		if len(in.Goal.Errors) > 0 {
+			err = errors.Join(in.Goal.Errors...)
+			break
+		}
 	}
 	return v, err
+}
+
+// sourceError returns the given error of running the Go code of the
+// given chunk as an error at its position in the Goal source code
+// (see [transpile.SourceError]), if it has a position.
+func (in *Interpreter) sourceError(err error, sources [][]transpile.SourceLine, chunk int) error {
+	d, ok := in.Interp.Diagnose(err)
+	if !ok || d.Source != "goal" {
+		return err
+	}
+	var le *LogError
+	switch {
+	case errors.As(err, &le): // logged by the Go code that the code called
+		d.Msg = le.Error()
+	case errors.Is(err, vm.ErrInterrupted): // by Ctrl-C
+		d.Msg = "interrupted"
+	}
+	return transpile.SourceError(sources, chunk, d.Line, d.Col, d.Msg, err)
 }
 
 // RunConfig runs the .goal startup config file in the user's
@@ -178,12 +257,13 @@ func (in *Interpreter) MonitorSignals() {
 	for {
 		<-c
 		in.Goal.CancelExecution()
+		in.Interp.Interrupt() // the Go code that is running
 	}
 }
 
-// Config performs final configuration after all the imports have been Use'd
+// Config performs final configuration after all the imports have been Use'd:
+// it runs the user's .goal startup config file.
 func (in *Interpreter) Config() {
-	in.Interp.ImportUsed()
 	in.RunConfig()
 }
 
@@ -214,6 +294,41 @@ func (in *Interpreter) SaveHistory() error {
 	return in.Goal.SaveHistory(n, in.HistFile)
 }
 
+// setReadline sets the line reader of [Interpreter.Interactive], returning
+// false if the interpreter is already closed.
+func (in *Interpreter) setReadline(rl *readline.Instance) bool {
+	in.readlineMu.Lock()
+	defer in.readlineMu.Unlock()
+	if in.closed {
+		return false
+	}
+	in.readline = rl
+	return true
+}
+
+// isClosed returns whether [Interpreter.Close] was called.
+func (in *Interpreter) isClosed() bool {
+	in.readlineMu.Lock()
+	defer in.readlineMu.Unlock()
+	return in.closed
+}
+
+// Close stops [Interpreter.Interactive], restoring the terminal from the
+// raw mode in which it reads a line, which is otherwise left on if the
+// program exits while it reads one, as a GUI app does when its window is
+// closed (see cogentcore.org/lab/mvmlab.UseGUI, which calls Close when the
+// app quits). It can be called from any goroutine, more than once.
+func (in *Interpreter) Close() {
+	in.readlineMu.Lock()
+	in.closed = true
+	rl := in.readline
+	in.readline = nil
+	in.readlineMu.Unlock()
+	if rl != nil {
+		rl.Close()
+	}
+}
+
 // Interactive runs an interactive shell that allows the user to input goal.
 // Must have done in.Config() prior to calling.
 func (in *Interpreter) Interactive() error {
@@ -225,13 +340,22 @@ func (in *Interpreter) Interactive() error {
 	if err != nil {
 		return err
 	}
+	if !in.setReadline(rl) {
+		rl.Close()
+		return nil
+	}
 	in.OpenHistory(rl)
-	defer rl.Close()
+	defer in.Close()
 	log.SetOutput(rl.Stderr()) // redraw the prompt correctly after log output
+	defer log.SetOutput(os.Stderr)
 
 	for {
 		rl.SetPrompt(in.Prompt())
 		line, err := rl.ReadLine()
+		if in.isClosed() {
+			in.SaveHistory()
+			return nil
+		}
 		if errors.Is(err, readline.ErrInterrupt) {
 			continue
 		}

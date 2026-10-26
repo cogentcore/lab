@@ -4,7 +4,7 @@ Categories = ["Goal"]
 
 **Math** mode in [[Goal]] provides a [NumPy](https://numpy.org/doc/stable/index.html)-like language for mathematical expressions involving [[tensor]] data elements (see [[#Reference tables]]), which are transpiled into Go code for compilation or interactive interpretation. It is activated by a `#` character on a line, which is otherwise not a recognized symbol in Go, and `##` starts and stops multi-line blocks of math mode.
 
-The most important thing to remember about math mode is that everything must be a tensor! Any variables created in math mode are automatically tensors, but anything created outside of math mode must be converted to a tensor using the `array` function.
+Variables defined with `:=` in math mode are tensors, and its operators work on tensors. Plain Go values, such as a `float64` defined outside of math mode, are converted to tensors where needed, and can also be converted explicitly using the `array` function. All of Go can be used in math mode as well; see [[#Go values and code]].
 
 ```Goal
 fv := 42.0 // this is a float64
@@ -18,6 +18,46 @@ tfv := array(fv) // as is this
 fmt.Printf("fv: %v %T\n", fv, fv)
 fmt.Printf("tv: %v %T\n", tv, tv)
 fmt.Printf("tfv: %v %T\n", tfv, tfv)
+```
+
+## Go values and code
+
+Math mode transpiles each line into Go on its own, based only on its syntax, so it does not know whether a variable that it did not define is a tensor or a Go value. Instead, it uses functions that work for both, so that tensors and Go values can be mixed freely:
+
+* Go numbers, bools and strings, and slices of them, can be used in math expressions with tensors: they are converted to tensors where needed (with `tensor.ToTensor`).
+* Assignments, including assignment operators like `+=`, work for variables that are either tensors or Go values.
+* Conversions get Go values from tensors: `float64(x)`, `int(x)`, `bool(x)` and `string(x)` work for both tensors and Go values.
+* Conditions of `if`, `for` and `switch` statements can be tensors or Go `bool`s.
+
+All of Go can be used in math mode, including `for` loops, `if` and `switch` statements, `var` declarations, and composite and function literals:
+
+* The variables of `for` loops are Go values. In `for i := range n` and `for i, v := range x`, `i` is an `int`, and `v` is a `float64` if `x` is a tensor, while `n` and `x` can be either tensors or Go values. The init and post statements of a `for i := 0; i < n; i++` loop are Go.
+* A `switch` with a tag compares Go values, so a tensor tag must be converted, as in `switch int(x)`.
+
+Operators on Go values that math mode knows about are Go operators, which are much faster than tensor operations. These are the variables of `for` loops, variables declared with `var`, variables defined with `:=` as a conversion such as `int(x)` or as an expression of other such Go values, and function parameters of basic types, as well as variables defined as a number outside of math mode, as in `n := 10`. As in Go, the types must match: an `int` times a `float64` is done with tensors (and `float64(i) * x` with Go).
+
+```Goal
+tau := 0.5 // a float64
+##
+a := zeros(5)
+for i := range 5 {
+	a[i] = float64(i) * tau
+}
+sum := 0.0
+for _, v := range a {
+	if v > 1 {
+		sum += v
+	}
+}
+n := int(sum) // a Go int
+switch {
+case n > 2:
+	fmt.Println("big:", n)
+default:
+	fmt.Println("small:", n)
+}
+##
+fmt.Println(a, sum)
 ```
 
 ## Basics
@@ -229,12 +269,12 @@ The following tables summarize Goal math-mode syntax in terms of [NumPy](https:/
 | ------------ | ----------- | ------ | ---------------- |
 | `tensor.NewFloat64FromValues(` `1, 2, 3)` | `[1., 2., 3.]` | `np.array([1., 2., 3.])` | define a 1D tensor |
 | (reshape) | `[[1., 2., 3.], [4., 5., 6.]]` or: | `(np.array([[1., 2., 3.], [4., 5., 6.]])` | define a 2x3 2D tensor |
-| (reshape) | `[[a, b], [c, d]]` or `block([[a, b], [c, d]])` | `np.block([[a, b], [c, d]])` | construct a matrix from blocks `a`, `b`, `c`, and `d` |
+| TODO: | TODO: | `np.block([[a, b], [c, d]])` | construct a matrix from blocks `a`, `b`, `c`, and `d` |
 | `tensor.NewFloat64(3,4)` | `zeros(3,4)` | `np.zeros((3, 4))` | 3x4 2D tensor of float64 zeros; Goal does not use "tuple" so no double parens |
 | `tensor.NewFloat64(3,4,5)` | `zeros(3, 4, 5)` | `np.zeros((3, 4, 5))` | 3x4x5 three-dimensional tensor of float64 zeros |
 | `tensor.NewFloat64Ones(3,4)` | `ones(3, 4)`  | `np.ones((3, 4))` | 3x4 2D tensor of 64-bit floating point ones |
 | `tensor.NewFloat64Full(5.5, 3,4)` | `full(5.5, 3, 4)` | `np.full((3, 4), 5.5)` | 3x4 2D tensor of 5.5; Goal variadic arg structure requires value to come first |
-| `tensor.NewFloat64Rand(3,4)` | `rand(3, 4)` or `slrand(c, fi, 3, 4)` | `rng.random(3, 4)` | 3x4 2D float64 tensor with uniform random 0..1 elements; `rand` uses current Go `rand` source, while `slrand` uses [gosl](../gpu/gosl/slrand) GPU-safe call with counter `c` and function index `fi` and key = index of element |
+| `tensor.NewFloat64Rand(3,4)` | `rand(3, 4)` | `rng.random(3, 4)` | 3x4 2D float64 tensor with uniform random 0..1 elements, using the current Go `rand` source |
 | TODO: | TODO: |`np.concatenate((a,b),1)` or `np.hstack((a,b))` or `np.column_stack((a,b))` or `np.c_[a,b]` | concatenate columns of a and b |
 | TODO: | TODO: |`np.concatenate((a,b))` or `np.vstack((a,b))` or `np.r_[a,b]` | concatenate rows of a and b |
 | TODO: | TODO: |`np.tile(a, (m, n))`   | create m by n copies of a |
@@ -354,10 +394,10 @@ In Goal and NumPy, the standard `+, -, *, /` operators perform _element-wise_ op
 
 | `tensor` Go  |   Goal      | NumPy  | Notes            |
 | ------------ | ----------- | ------ | ---------------- |
-| . | `a.max()` or `max(a)` or `stats.Max(a)` | `a.max()` or `np.nanmax(a)` | maximum element of `a`, Goal always ignores `NaN` as missing data |
+| `stats.Max(a)` | `a.max()` or `max(a)` or `stats.Max(a)` | `a.max()` or `np.nanmax(a)` | maximum element of `a`, Goal always ignores `NaN` as missing data; likewise for `min`, `sum`, `prod`, `mean` and `std` |
 | . | . |`a.max(0)` | maximum element of each column of tensor `a` |
 | . | . |`a.max(1)` | maximum element of each row of tensor `a` |
-| . | . |`np.maximum(a, b)` | compares a and b element-wise, and returns the maximum value from each pair |
+| `tmath.Max(a, b)` | `max(a, b)` |`np.maximum(a, b)` | compares a and b element-wise, and returns the maximum value from each pair |
 | `stats.L2Norm(a)` | . | `np.sqrt(v @ v)` or `np.linalg.norm(v)` | L2 norm of vector v |
 | . | . |`cg`  | conjugate gradients solver |
 

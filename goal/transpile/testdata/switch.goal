@@ -1,0 +1,26 @@
+// switch statements in math mode: without a tag, the cases are
+// conditions, on tensors or Go values; with a tag, they are Go values.
+
+##
+a := [1., 2., 3.]
+for i := range 3 {
+	switch {
+	case a[i] < 2:
+		fmt.Println(i, "small")
+	case a[i] == 2:
+		fmt.Println(i, "two")
+	default:
+		fmt.Println(i, "big")
+	}
+}
+switch int(a[1]) {
+case 1, 3:
+	fmt.Println("odd")
+case 2: fmt.Println("two")
+}
+k := 2
+switch int(k) {
+case 2:
+	fmt.Println("k is two")
+}
+##

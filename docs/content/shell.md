@@ -10,9 +10,16 @@ The following documentation describes specific use-cases.
 
 * `set <var> <value>` (space delimited as in all shell mode, no equals)
 
-## Output redirction
+## Quoting
 
-* Standard output redirect: `>` and `>&` (and `|`, `|&` if needed)
+As in bash, an argument with spaces or other special characters can be quoted with `"` or `'`, or its characters can be escaped with a backslash: `ls "My Documents"`, `ls 'My Documents'` and `ls My\ Documents` are the same. Inside `'` quotes, everything is literal; inside `"` quotes, which are Go strings, `\` starts an escape as in Go. Tab completion of file names continues the word in the same way, escaping or quoting the characters that need it.
+
+## Input and output redirection
+
+* Standard output to a file: `>`, or `>>` to append to it; `>&` and `>>&` also send the standard error to it.
+* Standard input from a file: `<`.
+* Pipes: `|` sends the standard output to the standard input of the next command, and `|&` the standard error too. Commands defined with `command` can be used anywhere in a pipe.
+* Output of a command as a Go string: `$...$`, which can include pipes, as in `x := $ls | grep go$`.
 
 ## Control flow
 
@@ -77,13 +84,17 @@ The `make` package defines a number of useful utility functions that accomplish 
 
 TODO: implement and document above.
 
+## Interrupting with Ctrl-C
+
+Ctrl-C (Control+C) stops what is running: a shell command, a copy with `scp`, and also Go code, such as a loop that runs too long, which stops with an `interrupted` error at the line that it was running.  A Go function that waits, such as `time.Sleep`, stops when it returns.  Ctrl-C at the prompt clears the line, and the shell keeps running: use `exit` or Ctrl-D to leave it.
+
 ## SSH connections to remote hosts
 
 Any number of active SSH connections can be maintained and used dynamically within a script, including simple ways of copying data among the different hosts (including the local host).  The Go mode execution is always on the local host in one running process, and only the shell commands are executed remotely, enabling a unique ability to easily coordinate and distribute processing and data across various hosts.
 
 Each host maintains its own working directory and environment variables, which can be configured and re-used by default whenever using a given host.
 
-* `gossh hostname.org [name]`  establishes a connection, using given optional name to refer to this connection.  If the name is not provided, a sequential number will be used, starting with 1, with 0 referring always to the local host.
+* `gossh hostname.org [name]`  establishes a connection, using given optional name to refer to this connection, and makes it the default host (see below).  If the name is not provided, a sequential number will be used, starting with 1, with 0 referring always to the local host.  The host can be `user@hostname.org`, and can have a port, as in `hostname.org:2222`.  The connection uses the key `~/.ssh/id_rsa`, and the host must be in `~/.ssh/known_hosts` (as it is after a first connection with the standard `ssh` command).
 
 * `@name` then refers to the given host in all subsequent commands, with `@0` referring to the local host where the goal script is running. 
 
@@ -106,7 +117,7 @@ ${server} ls$
 gossh @name
 ```
 
-uses the given host for all subsequent commands (unless explicitly specified), until the default is changed.  Use `gossh @0` to return to localhost.
+uses the given host for all subsequent commands (unless explicitly specified), until the default is changed.  Use `@0` or `gossh @0` to return to localhost.  The builtins that act on the shell itself always run on the local host: `gossh`, `scp`, `exit`, `jobs` and `source`.
 
 ### Redirect input / output among hosts
 
@@ -114,29 +125,38 @@ The output of a remote host command can be sent to a file on the local host:
 ```sh
 @name cat hostfile.tsv > @0:localfile.tsv
 ```
-Note the use of the `:` colon delimiter after the host name here.  TODO: You cannot send output to a remote host file (e.g., `> @host:remotefile.tsv`) -- maybe with sftp?
-
-The output of any command can also be piped to a remote host as its standard input:
+Note the use of the `:` colon delimiter after the host name here.  Likewise, the output of any command can be sent to a file on a remote host, and `>>` adds to it:
 ```sh
-ls *.tsv | @host cat > files.txt
+ls *.tsv > @name:files.txt
+```
+
+The output of any command can also be piped to a remote host as its standard input, and a file without a host is on the host of the command:
+```sh
+ls *.tsv | @name cat > files.txt
 ```
 
 ### scp to copy files easily
 
 The builtin `scp` function allows easy copying of files across hosts, using the persistent connections established with `gossh` instead of creating new connections as in the standard scp command.
 
-`scp` is _always_ run from the local host, with the remote host filename specified as `@name:remotefile`
+`scp` is _always_ run from the local host, even when the default host is a remote one, with a remote host filename specified as `@name:remotefile`, and a local filename specified as just the filename, or `@0:localfile`.  A relative filename on a remote host is relative to its current directory (see `cd` above), and `@name:` is that directory.
 
 ```sh
 scp @name:hostfile.tsv localfile.tsv
 ```
 
-Importantly, file wildcard globbing works as expected:
+As with `cp`, files are copied into the destination if it is a directory, with their own names, as here into the current local directory:
 ```sh
-scp @name:*.tsv @0:data/
+scp @name:hostfile.tsv .
 ```
 
-and entire directories can be copied, as in `cp -a` or `cp -r` (this behavior is automatic and does not require a flag).
+There can be several files to copy, and file wildcard globbing works as expected, on the local and remote hosts.  A destination that ends with a `/` is a directory, which is made if needed:
+```sh
+scp @name:*.tsv @0:data/
+scp file.tsv *.go @name:
+```
+
+Entire directories can be copied, as in `cp -a` or `cp -r` (this behavior is automatic and does not require a flag), and files can also be copied between two remote hosts.  The files are copied with the SFTP protocol on the existing connection, which works with large files and keeps the permissions of the files.
 
 ### Close connections
 

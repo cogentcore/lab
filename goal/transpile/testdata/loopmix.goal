@@ -1,0 +1,18 @@
+// loops that mix Go ints and floats with tensors in math mode:
+// an int loop index times a float64 is a tensor operation, not a Go one,
+// which would not compile.
+
+tau := 0.5
+##
+a := zeros(4)
+for i := range 4 {
+	a[i] = i * tau
+}
+y := 0.0
+for _, v := range a {
+	if v > 0.6 {
+		y += v
+	}
+}
+fmt.Println(float64(a[3]), float64(y))
+##

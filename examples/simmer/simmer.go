@@ -7,6 +7,7 @@ package main
 //go:generate core generate -add-types -add-funcs
 
 import (
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -19,17 +20,16 @@ import (
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/core/tree"
-	"cogentcore.org/core/yaegicore/coresymbols"
 	"cogentcore.org/lab/examples/baremetal"
 	"cogentcore.org/lab/goal"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/lab"
 	"cogentcore.org/lab/lab/labscripts"
 	_ "cogentcore.org/lab/lab/labscripts"
+	"cogentcore.org/lab/mvmlab"
+	"cogentcore.org/lab/mvmlab/labsymbols"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensorcore"
-	"cogentcore.org/lab/yaegilab/labsymbols"
-	"github.com/cogentcore/yaegi/interp"
 )
 
 // goalrun is needed for running goal commands.
@@ -138,13 +138,11 @@ func (sr *Simmer) InitSimmer(startDir string) {
 	sr.SetDataRoot(ddr)
 	labscripts.InitInterpreter(&sr.Browser)
 	in, _ := labscripts.Interpreter(&sr.Browser)
-	in.Interp.Use(coresymbols.Symbols) // gui imports
-	in.Interp.Use(labsymbols.Symbols)
-	in.Interp.Use(interp.Exports{
-		"cogentcore.org/lab/lab/lab": map[string]reflect.Value{
-			"LabBrowser": reflect.ValueOf(sr), // our Simmer is available as lab.Lab
-		},
-	})
+	// our Simmer is available as lab.LabBrowser
+	labsymbols.Load()
+	labValues := maps.Clone(labsymbols.Values["cogentcore.org/lab/lab"])
+	labValues["LabBrowser"] = reflect.ValueOf(&sr)
+	mvmlab.UseGUI(in, map[string]map[string]reflect.Value{"cogentcore.org/lab/lab": labValues})
 	in.Config()
 	sr.SetScriptsDir(filepath.Join(sr.DataRoot, "labscripts"))
 	lab.LabBrowser = &sr.Browser

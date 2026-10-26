@@ -5,6 +5,7 @@
 package matrix
 
 import (
+	"fmt"
 	"slices"
 
 	"cogentcore.org/core/base/errors"
@@ -102,7 +103,7 @@ func MulOut(a, b tensor.Tensor, out *tensor.Float64) error {
 	switch {
 	case na == nb && na == 2:
 		if ea.DimSize(1) != eb.DimSize(0) {
-			return mat.ErrShape
+			return mulShapeError(a, b)
 		}
 		ma, _ := NewMatrix(ea)
 		mb, _ := NewMatrix(eb)
@@ -111,7 +112,7 @@ func MulOut(a, b tensor.Tensor, out *tensor.Float64) error {
 		do.Mul(ma, mb)
 	case na > 2 && nb == 2:
 		if ea.DimSize(2) != eb.DimSize(0) {
-			return mat.ErrShape
+			return mulShapeError(a, b)
 		}
 		mb, _ := NewMatrix(eb)
 		nr := ea.DimSize(0)
@@ -126,7 +127,7 @@ func MulOut(a, b tensor.Tensor, out *tensor.Float64) error {
 			})
 	case nb > 2 && na == 2:
 		if ea.DimSize(1) != eb.DimSize(1) {
-			return mat.ErrShape
+			return mulShapeError(a, b)
 		}
 		ma, _ := NewMatrix(ea)
 		nr := eb.DimSize(0)
@@ -144,7 +145,7 @@ func MulOut(a, b tensor.Tensor, out *tensor.Float64) error {
 			return errors.New("matrix.Mul: a and b input matricies are > 2 dimensional; must have same outer dimension sizes")
 		}
 		if ea.DimSize(2) != eb.DimSize(1) {
-			return mat.ErrShape
+			return mulShapeError(a, b)
 		}
 		nr := ea.DimSize(0)
 		out.SetShapeSizes(nr, ea.DimSize(1), eb.DimSize(2))
@@ -159,7 +160,7 @@ func MulOut(a, b tensor.Tensor, out *tensor.Float64) error {
 				do.Mul(ma, mb)
 			})
 	default:
-		return mat.ErrShape
+		return mulShapeError(a, b)
 	}
 	if collapse {
 		nd := out.NumDims()
@@ -218,7 +219,7 @@ func InverseOut(a tensor.Tensor, out *tensor.Float64) error {
 	}
 	na := a.NumDims()
 	if na == 1 {
-		return mat.ErrShape
+		return squareError("matrix.Inverse", a)
 	}
 	var asz []int
 	ea := a
@@ -231,7 +232,7 @@ func InverseOut(a tensor.Tensor, out *tensor.Float64) error {
 	}
 	if na == 2 {
 		if a.DimSize(0) != a.DimSize(1) {
-			return mat.ErrShape
+			return squareError("matrix.Inverse", a)
 		}
 		ma, _ := NewMatrix(a)
 		out.SetShapeSizes(a.DimSize(0), a.DimSize(1))
@@ -240,7 +241,7 @@ func InverseOut(a tensor.Tensor, out *tensor.Float64) error {
 	}
 	ea = tensor.Reshape(a, asz...)
 	if ea.DimSize(1) != ea.DimSize(2) {
-		return mat.ErrShape
+		return squareError("matrix.Inverse", a)
 	}
 	nr := ea.DimSize(0)
 	out.SetShapeSizes(nr, ea.DimSize(1), ea.DimSize(2))
@@ -257,4 +258,16 @@ func InverseOut(a tensor.Tensor, out *tensor.Float64) error {
 			}
 		})
 	return errors.Join(errs...)
+}
+
+// mulShapeError returns the error of [Mul] for tensors whose shapes do not
+// match: the number of columns of a is not the number of rows of b.
+func mulShapeError(a, b tensor.Tensor) error {
+	return fmt.Errorf("matrix.Mul: the shapes %v and %v do not match: the number of columns of a must be the number of rows of b: %w", a.ShapeSizes(), b.ShapeSizes(), mat.ErrShape)
+}
+
+// squareError returns the error of the given function for a tensor that
+// is not a square matrix, or a list of them.
+func squareError(fun string, a tensor.Tensor) error {
+	return fmt.Errorf("%s: the shape %v is not that of a square matrix, or a list of them: %w", fun, a.ShapeSizes(), mat.ErrShape)
 }

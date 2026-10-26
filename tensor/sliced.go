@@ -5,6 +5,7 @@
 package tensor
 
 import (
+	"fmt"
 	"math/rand"
 	"reflect"
 	"slices"
@@ -76,6 +77,21 @@ func AnySlice(tsr Tensor, idx ...any) Tensor {
 	return Reslice(tsr, idx...)
 }
 
+// resliceIndex returns the given index of the given dimension of the
+// given tensor for [Reslice], counting from the end if negative, and
+// panics if it is out of range, as an index of a Go slice does.
+func resliceIndex(tsr Tensor, dim, index int) int {
+	size := tsr.DimSize(dim)
+	ix := index
+	if ix < 0 {
+		ix += size
+	}
+	if ix < 0 || ix >= size {
+		panic(fmt.Sprintf("tensor: index %d out of range for dimension %d of size %d", index, dim, size))
+	}
+	return ix
+}
+
 // Reslice returns a new [Sliced] (and potentially [Reshaped]) view of given tensor,
 // with given slice expressions for each dimension, which can be:
 //   - an integer, indicating a specific index value along that dimension.
@@ -106,12 +122,7 @@ func Reslice(tsr Tensor, sls ...any) Tensor {
 			doReshape = true // doesn't add to new shape.
 			ni := st.Len()
 			for i := range ni {
-				ix := st.Int1D(i)
-				if ix < 0 {
-					ixs[ci] = []int{tsr.DimSize(ci) + ix}
-				} else {
-					ixs[ci] = []int{ix}
-				}
+				ixs[ci] = []int{resliceIndex(tsr, ci, st.Int1D(i))}
 				ci++
 			}
 			continue
@@ -119,11 +130,7 @@ func Reslice(tsr Tensor, sls ...any) Tensor {
 		switch x := s.(type) {
 		case int:
 			doReshape = true // doesn't add to new shape.
-			if x < 0 {
-				ixs[ci] = []int{tsr.DimSize(ci) + x}
-			} else {
-				ixs[ci] = []int{x}
-			}
+			ixs[ci] = []int{resliceIndex(tsr, ci, x)}
 		case Slice:
 			ixs[ci] = x.IntSlice(tsr.DimSize(ci))
 			reshape = append(reshape, len(ixs[ci]))

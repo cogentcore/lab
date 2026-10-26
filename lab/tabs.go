@@ -21,7 +21,7 @@ import (
 	"cogentcore.org/lab/tensorfs"
 )
 
-// Lab is the current Tabs, for yaegi / Go consistent access.
+// Lab is the current Tabs, for interpreter / Go consistent access.
 var Lab *Tabs
 
 // Tabber is a [core.Tabs] based widget that has support for opening

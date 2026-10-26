@@ -1,3 +1,3 @@
 [Web]
-  # yaegi is loaded when code is first edited (see yaegi.go)
-  DeferredFunctions = ["cogentcore.org/lab/yaegilab.BindTextEditor"]
+  # mvm is loaded when code is first edited (see interp.go)
+  DeferredFunctions = ["cogentcore.org/lab/mvmlab.BindTextEditor"]

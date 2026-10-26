@@ -1,0 +1,7 @@
+// allow an int size to be used inside math mode.
+
+n := 10
+##
+fast := zeros(n)
+##
+

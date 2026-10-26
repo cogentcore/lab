@@ -5,12 +5,24 @@
 package transpile
 
 import (
-	"fmt"
 	"strings"
 	"unicode"
 )
 
+// WordsError is an error of [ExecWords], such as an unterminated string,
+// at a byte offset in the line.
+type WordsError struct {
+	// Pos is the byte offset of the error in the line, such as that of the
+	// quote that starts an unterminated string.
+	Pos int
+
+	Msg string
+}
+
+func (e *WordsError) Error() string { return e.Msg }
+
 func ExecWords(ln string) ([]string, error) {
+	base := len(ln) - len(strings.TrimLeftFunc(ln, unicode.IsSpace)) // of ln in the line
 	ln = strings.TrimSpace(ln)
 	n := len(ln)
 	if n == 0 {
@@ -18,7 +30,9 @@ func ExecWords(ln string) ([]string, error) {
 	}
 
 	if ln[0] == '$' {
-		ln = strings.TrimSpace(ln[1:])
+		rest := ln[1:]
+		base += 1 + len(rest) - len(strings.TrimLeftFunc(rest, unicode.IsSpace))
+		ln = strings.TrimSpace(rest)
 		n = len(ln)
 		if n == 0 {
 			return nil, nil
@@ -36,6 +50,7 @@ func ExecWords(ln string) ([]string, error) {
 	esc := false
 	dQuote := false
 	bQuote := false
+	sQuote := false
 	brace := 0
 	brack := 0
 	redir := false
@@ -52,17 +67,26 @@ func ExecWords(ln string) ([]string, error) {
 	}
 
 	atStart := true
+	quoteStart, brackStart := 0, 0 // offsets of an open quote and [
 	sbrack := (ln[0] == '[')
 	if sbrack {
 		word = "["
 		addWord()
 		brack++
+		brackStart = base
 		ln = ln[1:]
+		base++
 		atStart = false
 	}
 
-	for _, r := range ln {
-		quote := dQuote || bQuote
+	for i, r := range ln {
+		quote := dQuote || bQuote || sQuote
+		if !quote && (r == '"' || r == '`' || r == '\'' && brace == 0) {
+			quoteStart = base + i
+		}
+		if r == '[' && brack == 0 {
+			brackStart = base + i
+		}
 
 		if redir {
 			redir = false
@@ -80,8 +104,15 @@ func ExecWords(ln string) ([]string, error) {
 		}
 
 		switch {
+		case sQuote: // everything is literal until the closing quote, as in bash
+			if r == '\'' {
+				sQuote = false
+			}
+			word += string(r)
 		case esc:
-			if brace == 0 && unicode.IsSpace(r) { // we will be quoted later anyway
+			// an escaped char outside of quotes and Go code is literal, as in
+			// bash: the escape is removed, and the word is quoted later.
+			if brace == 0 && !quote {
 				word = word[:len(word)-1]
 			}
 			word += string(r)
@@ -98,6 +129,9 @@ func ExecWords(ln string) ([]string, error) {
 			if !dQuote {
 				bQuote = !bQuote
 			}
+			word += string(r)
+		case r == '\'' && !quote && brace == 0:
+			sQuote = true
 			word += string(r)
 		case quote: // absorbs quote -- no need to check below
 			word += string(r)
@@ -153,8 +187,15 @@ func ExecWords(ln string) ([]string, error) {
 		atStart = false
 	}
 	addWord()
-	if dQuote || bQuote || brack > 0 {
-		return words, fmt.Errorf("goal: exec command has unterminated quotes (\": %v, `: %v) or brackets [ %v ]", dQuote, bQuote, brack > 0)
+	switch {
+	case dQuote:
+		return words, &WordsError{Pos: quoteStart, Msg: "unterminated \" string"}
+	case bQuote:
+		return words, &WordsError{Pos: quoteStart, Msg: "unterminated ` string"}
+	case sQuote:
+		return words, &WordsError{Pos: quoteStart, Msg: "unterminated ' string"}
+	case brack > 0:
+		return words, &WordsError{Pos: brackStart, Msg: "missing closing ]"}
 	}
 	return words, nil
 }

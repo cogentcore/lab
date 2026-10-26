@@ -5,6 +5,7 @@
 package tensor
 
 import (
+	"fmt"
 	"reflect"
 	"slices"
 
@@ -27,6 +28,12 @@ type Reshaped struct { //types:add
 	// Reshape is the effective shape we use for access.
 	// This must have the same Len() as the source Tensor.
 	Reshape Shape
+
+	// sourceStrides, if set, are the strides of the dimensions of the view
+	// in the source tensor, when they are not the row-major strides of
+	// Reshape, as for [Transpose]. Then the 1D index of a value in the
+	// view differs from its 1D index in the source.
+	sourceStrides []int
 }
 
 // NewReshaped returns a new [Reshaped] view of given tensor, with given shape
@@ -65,13 +72,15 @@ func Reshape(tsr Tensor, sizes ...int) Tensor {
 	return rs
 }
 
-// Transpose returns a new [Reshaped] tensor with the strides
-// switched so that rows and column dimensions are effectively
-// reversed.
+// Transpose returns a new [Reshaped] view of the given tensor with the
+// order of its dimensions reversed, so that the rows and columns of a 2D
+// tensor are switched, as the NumPy transpose function and .T do.
 func Transpose(tsr Tensor) Tensor {
 	rs := &Reshaped{Tensor: tsr}
-	rs.Reshape.CopyFrom(tsr.Shape())
-	rs.Reshape.Strides = ColumnMajorStrides(rs.Reshape.Sizes...)
+	sizes := tsr.ShapeSizes()
+	slices.Reverse(sizes)
+	rs.Reshape.SetShapeSizes(sizes...)
+	rs.sourceStrides = ColumnMajorStrides(sizes...)
 	return rs
 }
 
@@ -146,8 +155,9 @@ func (rs *Reshaped) SetShapeSizes(sizes ...int) error {
 		sz[negIdx] = sln / ln
 	}
 	rs.Reshape.SetShapeSizes(sz...)
-	if rs.Reshape.Len() != sln {
-		return errors.New("tensor.Reshaped SetShapeSizes: new length is different from source tensor; use Sliced or other views to change view content")
+	rs.sourceStrides = nil
+	if n := rs.Reshape.Len(); n != sln {
+		return fmt.Errorf("tensor.Reshape: the new shape %v has %d values, but the tensor has %d; use Sliced or other views to change the view content", sz, n, sln)
 	}
 	return nil
 }
@@ -167,49 +177,93 @@ func (rs *Reshaped) DimSize(dim int) int      { return rs.Reshape.DimSize(dim) }
 // the same shape as our view.  This calls [Clone] on the source
 // tensor to get the Values and then sets our shape sizes to it.
 func (rs *Reshaped) AsValues() Values {
+	if rs.sourceStrides != nil { // the values are in a different order than in the source
+		vals := NewOfType(rs.DataType(), rs.Reshape.Sizes...)
+		n := rs.Len()
+		for i := range n {
+			if rs.IsString() {
+				vals.SetString1D(rs.String1D(i), i)
+			} else {
+				vals.SetFloat1D(rs.Float1D(i), i)
+			}
+		}
+		return vals
+	}
 	vals := Clone(rs.Tensor)
 	vals.SetShapeSizes(rs.Reshape.Sizes...)
 	return vals
 }
 
+// source1D returns the 1D index in the source tensor of the value of the
+// given 1D index in this view, which is the same unless it has
+// sourceStrides.
+func (rs *Reshaped) source1D(i int) int {
+	if rs.sourceStrides == nil {
+		return i
+	}
+	sizes, strides := rs.Reshape.Sizes, rs.sourceStrides
+	oned := 0
+	for d := len(sizes) - 1; d >= 0; d-- {
+		if sizes[d] == 0 {
+			return 0
+		}
+		oned += (i % sizes[d]) * strides[d]
+		i /= sizes[d]
+	}
+	return oned
+}
+
+// sourceIndex returns the 1D index in the source tensor of the value of
+// the given index in this view.
+func (rs *Reshaped) sourceIndex(i ...int) int {
+	if rs.sourceStrides == nil {
+		return rs.Reshape.IndexTo1D(i...)
+	}
+	oned := 0
+	for d, v := range i {
+		oned += v * rs.sourceStrides[d]
+	}
+	return oned
+}
+
 ////////  Floats
 
 func (rs *Reshaped) Float(i ...int) float64 {
-	return rs.Tensor.Float1D(rs.Reshape.IndexTo1D(i...))
+	return rs.Tensor.Float1D(rs.sourceIndex(i...))
 }
 
 func (rs *Reshaped) SetFloat(val float64, i ...int) {
-	rs.Tensor.SetFloat1D(val, rs.Reshape.IndexTo1D(i...))
+	rs.Tensor.SetFloat1D(val, rs.sourceIndex(i...))
 }
 
-func (rs *Reshaped) Float1D(i int) float64         { return rs.Tensor.Float1D(i) }
-func (rs *Reshaped) SetFloat1D(val float64, i int) { rs.Tensor.SetFloat1D(val, i) }
+func (rs *Reshaped) Float1D(i int) float64         { return rs.Tensor.Float1D(rs.source1D(i)) }
+func (rs *Reshaped) SetFloat1D(val float64, i int) { rs.Tensor.SetFloat1D(val, rs.source1D(i)) }
 
 ////////  Strings
 
 func (rs *Reshaped) StringValue(i ...int) string {
-	return rs.Tensor.String1D(rs.Reshape.IndexTo1D(i...))
+	return rs.Tensor.String1D(rs.sourceIndex(i...))
 }
 
 func (rs *Reshaped) SetString(val string, i ...int) {
-	rs.Tensor.SetString1D(val, rs.Reshape.IndexTo1D(i...))
+	rs.Tensor.SetString1D(val, rs.sourceIndex(i...))
 }
 
-func (rs *Reshaped) String1D(i int) string         { return rs.Tensor.String1D(i) }
-func (rs *Reshaped) SetString1D(val string, i int) { rs.Tensor.SetString1D(val, i) }
+func (rs *Reshaped) String1D(i int) string         { return rs.Tensor.String1D(rs.source1D(i)) }
+func (rs *Reshaped) SetString1D(val string, i int) { rs.Tensor.SetString1D(val, rs.source1D(i)) }
 
 ////////  Ints
 
 func (rs *Reshaped) Int(i ...int) int {
-	return rs.Tensor.Int1D(rs.Reshape.IndexTo1D(i...))
+	return rs.Tensor.Int1D(rs.sourceIndex(i...))
 }
 
 func (rs *Reshaped) SetInt(val int, i ...int) {
-	rs.Tensor.SetInt1D(val, rs.Reshape.IndexTo1D(i...))
+	rs.Tensor.SetInt1D(val, rs.sourceIndex(i...))
 }
 
-func (rs *Reshaped) Int1D(i int) int         { return rs.Tensor.Int1D(i) }
-func (rs *Reshaped) SetInt1D(val int, i int) { rs.Tensor.SetInt1D(val, i) }
+func (rs *Reshaped) Int1D(i int) int         { return rs.Tensor.Int1D(rs.source1D(i)) }
+func (rs *Reshaped) SetInt1D(val int, i int) { rs.Tensor.SetInt1D(val, rs.source1D(i)) }
 
 // check for interface impl
 var _ Tensor = (*Reshaped)(nil)

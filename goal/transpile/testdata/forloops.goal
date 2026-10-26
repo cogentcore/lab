@@ -1,0 +1,35 @@
+// for loops in math mode: the init and post statements of a loop are Go,
+// so its variables are Go ints, and operators on them are Go operators.
+
+n := 4 // Go int, outside of math mode
+##
+m := zeros(n, n)
+for i := 0; i < n; i++ {
+	for j := 0; j < n; j++ {
+		m[i, j] = i * n + j
+	}
+}
+fmt.Println(float64(m[2, 3]))
+sum := 0.0
+for i := 0; i < len(m); i++ {
+	if i % 2 == 1 {
+		continue
+	}
+	sum += m[i / n, i % n]
+}
+fmt.Println(float64(sum))
+x := 1.0
+for x < 100 {
+	x *= 3
+}
+fmt.Println(float64(x))
+outer:
+for i := range n {
+	for j := range n {
+		if i + j == 5 {
+			fmt.Println("break at", i, j)
+			break outer
+		}
+	}
+}
+##

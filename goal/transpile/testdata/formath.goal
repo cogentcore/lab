@@ -1,0 +1,12 @@
+// support for loops within math mode
+
+n := 10
+##
+fast := zeros(n)
+sum := 0.0
+for i := range n {
+	sum += fast[i]
+}
+fmt.Println(sum)
+##
+

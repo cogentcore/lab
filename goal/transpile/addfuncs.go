@@ -9,24 +9,25 @@ import (
 	"reflect"
 	"strings"
 
+	"cogentcore.org/lab/mvmlab/tensorsymbols"
 	"cogentcore.org/lab/tensor"
-	"cogentcore.org/lab/yaegilab/tensorsymbols"
 )
 
 func init() {
-	AddYaegiTensorFuncs()
+	AddTensorFuncs()
 }
 
-var yaegiTensorPackages = []string{"/lab/tensor", "/lab/stats", "/lab/vector", "/lab/matrix"}
+var tensorPackages = []string{"/lab/tensor", "/lab/stats", "/lab/vector", "/lab/matrix"}
 
-// AddYaegiTensorFuncs grabs all tensor* package functions registered
-// in yaegicore and adds them to the `tensor.Funcs` map so we can
+// AddTensorFuncs grabs all tensor* package functions of the interpreter
+// symbols (see [tensorsymbols]) and adds them to the `tensor.Funcs` map so we can
 // properly convert symbols to either tensors or basic literals,
 // depending on the arg types for the current function.
-func AddYaegiTensorFuncs() {
-	for pth, symap := range tensorsymbols.Symbols {
+func AddTensorFuncs() {
+	tensorsymbols.Load()
+	for pth, symap := range tensorsymbols.Values {
 		has := false
-		for _, p := range yaegiTensorPackages {
+		for _, p := range tensorPackages {
 			if strings.Contains(pth, p) {
 				has = true
 				break
