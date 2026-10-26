@@ -90,7 +90,7 @@ Any number of active SSH connections can be maintained and used dynamically with
 
 Each host maintains its own working directory and environment variables, which can be configured and re-used by default whenever using a given host.
 
-* `gossh hostname.org [name]`  establishes a connection, using given optional name to refer to this connection.  If the name is not provided, a sequential number will be used, starting with 1, with 0 referring always to the local host.
+* `gossh hostname.org [name]`  establishes a connection, using given optional name to refer to this connection, and makes it the default host (see below).  If the name is not provided, a sequential number will be used, starting with 1, with 0 referring always to the local host.  The host can be `user@hostname.org`, and can have a port, as in `hostname.org:2222`.  The connection uses the key `~/.ssh/id_rsa`, and the host must be in `~/.ssh/known_hosts` (as it is after a first connection with the standard `ssh` command).
 
 * `@name` then refers to the given host in all subsequent commands, with `@0` referring to the local host where the goal script is running. 
 
@@ -113,7 +113,7 @@ ${server} ls$
 gossh @name
 ```
 
-uses the given host for all subsequent commands (unless explicitly specified), until the default is changed.  Use `gossh @0` to return to localhost.
+uses the given host for all subsequent commands (unless explicitly specified), until the default is changed.  Use `@0` or `gossh @0` to return to localhost.  The builtins that act on the shell itself always run on the local host: `gossh`, `scp`, `exit`, `jobs` and `source`.
 
 ### Redirect input / output among hosts
 
@@ -121,29 +121,38 @@ The output of a remote host command can be sent to a file on the local host:
 ```sh
 @name cat hostfile.tsv > @0:localfile.tsv
 ```
-Note the use of the `:` colon delimiter after the host name here.  TODO: You cannot send output to a remote host file (e.g., `> @host:remotefile.tsv`) -- maybe with sftp?
-
-The output of any command can also be piped to a remote host as its standard input:
+Note the use of the `:` colon delimiter after the host name here.  Likewise, the output of any command can be sent to a file on a remote host, and `>>` adds to it:
 ```sh
-ls *.tsv | @host cat > files.txt
+ls *.tsv > @name:files.txt
+```
+
+The output of any command can also be piped to a remote host as its standard input, and a file without a host is on the host of the command:
+```sh
+ls *.tsv | @name cat > files.txt
 ```
 
 ### scp to copy files easily
 
 The builtin `scp` function allows easy copying of files across hosts, using the persistent connections established with `gossh` instead of creating new connections as in the standard scp command.
 
-`scp` is _always_ run from the local host, with the remote host filename specified as `@name:remotefile`
+`scp` is _always_ run from the local host, even when the default host is a remote one, with a remote host filename specified as `@name:remotefile`, and a local filename specified as just the filename, or `@0:localfile`.  A relative filename on a remote host is relative to its current directory (see `cd` above), and `@name:` is that directory.
 
 ```sh
 scp @name:hostfile.tsv localfile.tsv
 ```
 
-Importantly, file wildcard globbing works as expected:
+As with `cp`, files are copied into the destination if it is a directory, with their own names, as here into the current local directory:
 ```sh
-scp @name:*.tsv @0:data/
+scp @name:hostfile.tsv .
 ```
 
-and entire directories can be copied, as in `cp -a` or `cp -r` (this behavior is automatic and does not require a flag).
+There can be several files to copy, and file wildcard globbing works as expected, on the local and remote hosts.  A destination that ends with a `/` is a directory, which is made if needed:
+```sh
+scp @name:*.tsv @0:data/
+scp file.tsv *.go @name:
+```
+
+Entire directories can be copied, as in `cp -a` or `cp -r` (this behavior is automatic and does not require a flag), and files can also be copied between two remote hosts.  The files are copied with the SFTP protocol on the existing connection, which works with large files and keeps the permissions of the files.
 
 ### Close connections
 

@@ -7,6 +7,7 @@ package goal
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"slices"
@@ -54,6 +55,9 @@ func (gl *Goal) Exec(errOk, start, output bool, cmd any, args ...any) string {
 	if start && pipeOut != nil && cl == nil && gl.isBuiltinOrCommand(scmd) {
 		gl.runBuiltinOrCommandToPipe(cmdIO, errOk, scmd, sargs...)
 		return out
+	}
+	if localBuiltins[scmd] { // not on the active ssh host
+		cl = nil
 	}
 	var err error
 	if cl != nil {
@@ -142,6 +146,12 @@ func (gl *Goal) runBuiltinOrCommandToPipe(cmdIO *exec.CmdIO, errOk bool, cmd str
 		cmdIO.PopToStart()
 	}()
 }
+
+// localBuiltins are the builtins that run on the local host even when the
+// commands run on an ssh host (see [Goal.SSHActive]), as they act on the
+// shell itself: its ssh connections, files on several hosts, jobs, and
+// the Goal code that it runs.
+var localBuiltins = map[string]bool{"gossh": true, "scp": true, "exit": true, "jobs": true, "source": true}
 
 // RunBuiltinOrCommand runs a builtin or a command, returning true if it ran,
 // and the output string if running in output mode.
@@ -386,21 +396,41 @@ func (gl *Goal) OutToFile(cl *sshclient.Client, cmdIO *exec.CmdIO, errOk bool, s
 		gl.HandleArgErr(errOk, fmt.Errorf("missing file name after %s", s))
 		return sargs
 	}
-	if cl != nil {
-		if !strings.HasPrefix(fn, "@0:") {
-			return sargs
+	// The file is on the host of the command, unless it is @name:file, on
+	// the host of that ssh connection, or @0:file, on the local host.
+	var fcl *sshclient.Client // the host of the file, if not local
+	if host, p, ok := strings.Cut(fn, ":"); ok && strings.HasPrefix(host, "@") {
+		fn = p
+		if host != "@0" {
+			hcl, err := gl.SSHByHost(host[1:])
+			if err != nil {
+				gl.HandleArgErr(errOk, err)
+				return sargs
+			}
+			fcl = hcl
 		}
-		fn = fn[3:]
+	} else if cl != nil {
+		fcl = cl
+	}
+	if fcl != nil && fcl == cl { // the shell of the host redirects it
+		if narg == 2 {
+			sargs[i+1] = fn
+		} else {
+			sargs[i] = ">" + fn // as >file
+		}
+		return sargs
 	}
 	sargs = slices.Delete(sargs, i, i+narg)
-	// todo: process @n: expressions here -- if @0 then it is the same
-	// if @1, then need to launch an ssh "cat >[>] file" with pipe from command as stdin
-	var f *os.File
-	var err error
+	flag := os.O_CREATE | os.O_WRONLY | os.O_TRUNC
 	if appn {
-		f, err = os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		flag = os.O_APPEND | os.O_CREATE | os.O_WRONLY
+	}
+	var f io.WriteCloser
+	var err error
+	if fcl != nil {
+		f, err = fcl.OpenFile(fn, flag)
 	} else {
-		f, err = os.Create(fn)
+		f, err = os.OpenFile(fn, flag, 0644)
 	}
 	if err == nil {
 		cmdIO.PushOut(f)
