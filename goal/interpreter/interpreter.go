@@ -28,6 +28,7 @@ import (
 	"cogentcore.org/lab/tensorfs"
 	"github.com/cogentcore/mvm/interp"
 	"github.com/cogentcore/mvm/lang/golang"
+	"github.com/cogentcore/mvm/vm"
 	"github.com/cogentcore/mvm/stdlib"
 	_ "github.com/cogentcore/mvm/stdlib/core" // the core standard library
 	"github.com/cogentcore/readline"
@@ -225,8 +226,11 @@ func (in *Interpreter) sourceError(err error, sources [][]transpile.SourceLine, 
 		return err
 	}
 	var le *LogError
-	if errors.As(err, &le) { // logged by the Go code that the code called
+	switch {
+	case errors.As(err, &le): // logged by the Go code that the code called
 		d.Msg = le.Error()
+	case errors.Is(err, vm.ErrInterrupted): // by Ctrl-C
+		d.Msg = "interrupted"
 	}
 	return transpile.SourceError(sources, chunk, d.Line, d.Col, d.Msg, err)
 }
@@ -253,6 +257,7 @@ func (in *Interpreter) MonitorSignals() {
 	for {
 		<-c
 		in.Goal.CancelExecution()
+		in.Interp.Interrupt() // the Go code that is running
 	}
 }
 

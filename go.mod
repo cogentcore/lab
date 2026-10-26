@@ -8,8 +8,8 @@ go 1.27.0
 // https://github.com/googleapis/go-genproto/issues/1015
 
 require (
-	cogentcore.org/core v0.5.7-0.20261026192839-4315399100d7
-	github.com/cogentcore/mvm v0.0.0-20261026173403-46b3f46311f4
+	cogentcore.org/core v0.5.7-0.20261026194324-4949fcc4f9e6
+	github.com/cogentcore/mvm v0.0.0-20261026193832-5ebd19c3fa21
 	github.com/cogentcore/readline v0.1.3
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/nsf/termbox-go v1.1.1

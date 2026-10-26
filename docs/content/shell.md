@@ -84,6 +84,10 @@ The `make` package defines a number of useful utility functions that accomplish 
 
 TODO: implement and document above.
 
+## Interrupting with Ctrl-C
+
+Ctrl-C (Control+C) stops what is running: a shell command, a copy with `scp`, and also Go code, such as a loop that runs too long, which stops with an `interrupted` error at the line that it was running.  A Go function that waits, such as `time.Sleep`, stops when it returns.  Ctrl-C at the prompt clears the line, and the shell keeps running: use `exit` or Ctrl-D to leave it.
+
 ## SSH connections to remote hosts
 
 Any number of active SSH connections can be maintained and used dynamically within a script, including simple ways of copying data among the different hosts (including the local host).  The Go mode execution is always on the local host in one running process, and only the shell commands are executed remotely, enabling a unique ability to easily coordinate and distribute processing and data across various hosts.
