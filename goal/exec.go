@@ -383,7 +383,7 @@ func (gl *Goal) OutToFile(cl *sshclient.Client, cmdIO *exec.CmdIO, errOk bool, s
 		narg = 1
 	}
 	if fn == "" {
-		gl.HandleArgErr(errOk, fmt.Errorf("goal: no output file specified"))
+		gl.HandleArgErr(errOk, fmt.Errorf("missing file name after %s", s))
 		return sargs
 	}
 	if cl != nil {
@@ -427,7 +427,7 @@ func (gl *Goal) InFromFile(cl *sshclient.Client, cmdIO *exec.CmdIO, errOk bool, 
 		narg = 2
 	}
 	if fn == "" {
-		gl.HandleArgErr(errOk, fmt.Errorf("goal: no input file specified"))
+		gl.HandleArgErr(errOk, fmt.Errorf("missing file name after <"))
 		return sargs
 	}
 	if cl != nil {

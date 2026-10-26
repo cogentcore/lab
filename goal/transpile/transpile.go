@@ -5,6 +5,7 @@
 package transpile
 
 import (
+	"errors"
 	"fmt"
 	"go/token"
 	"slices"
@@ -37,7 +38,9 @@ func (st *State) TranspileLine(code string) string {
 		st.DeclDepth = 0
 	}
 	// logx.PrintlnDebug("depths: ", st.ParenDepth, st.BraceDepth, st.BrackDepth, st.TypeDepth, st.DeclDepth)
-	return toks.Code()
+	code, cols := toks.CodeMap()
+	st.lastCols = cols
+	return code
 }
 
 // TranspileLineTokens returns the tokens for the full line
@@ -61,7 +64,7 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 	}
 	ewords, err := ExecWords(code)
 	if err != nil {
-		st.AddError(err)
+		st.addWordsError(err, 0)
 		return nil
 	}
 	st.forgetDefines(toks)
@@ -233,9 +236,20 @@ func (st *State) TranspileExecString(str string, output bool) Tokens {
 	}
 	ewords, err := ExecWords(str)
 	if err != nil {
-		st.AddError(err)
+		st.addWordsError(err, 0)
 	}
 	return st.TranspileExec(ewords, output)
+}
+
+// addWordsError adds the given error of [ExecWords] for the code at the
+// given byte offset of the source line, at its position in it.
+func (st *State) addWordsError(err error, offset int) {
+	var we *WordsError
+	if errors.As(err, &we) {
+		st.addSourceError(offset+we.Pos+1, we.Msg)
+		return
+	}
+	st.AddError(err)
 }
 
 // TranspileExecTokens returns transpiled tokens assuming Exec code,
@@ -328,7 +342,7 @@ func (st *State) transpileExec(ewords []string, output bool) Tokens {
 		switch {
 		case f == "{": // embedded go
 			if n < i+3 {
-				st.AddError(fmt.Errorf("goal: no matching right brace } found in exec command line"))
+				st.addSourceError(1, "missing closing } of the Go expression in the command")
 			} else {
 				gstr := ewords[i+1]
 				etoks.AddTokens(st.TranspileGo(TokensFromString(gstr), gstr)...)

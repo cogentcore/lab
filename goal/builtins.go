@@ -65,6 +65,10 @@ func (gl *Goal) Cd(cmdIO *exec.CmdIO, args ...string) error {
 	}
 	err = os.Chdir(dir)
 	if err != nil {
+		var pe *os.PathError
+		if errors.As(err, &pe) {
+			return fmt.Errorf("cd: %s: %w", dir, pe.Err)
+		}
 		return err
 	}
 	gl.Config.Dir = dir

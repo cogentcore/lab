@@ -76,7 +76,7 @@ func UseGUI(in *interpreter.Interpreter, values ...map[string]map[string]reflect
 func (in *Interpreter) Eval(src string) (res reflect.Value, err error) {
 	tensorfs.ListOutput = in.Goal.Config.StdIO.Out
 	in.Interpreter.Goal.TrState.MathRecord = true
-	res, _, err = in.Interpreter.Eval(src)
+	res, _, err = in.Interpreter.EvalCode(src)
 	tensorfs.ListOutput = nil
 	return
 }

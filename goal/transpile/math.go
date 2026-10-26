@@ -7,6 +7,7 @@ package transpile
 import (
 	"fmt"
 	"go/ast"
+	"go/scanner"
 	"go/token"
 	"reflect"
 	"strings"
@@ -52,24 +53,22 @@ func (st *State) transpileMath(toks Tokens, code string, fullLine bool, depth in
 	mods := mparser.AllErrors // | Trace
 
 	if fullLine {
-		ewords, err := ExecWords(str)
+		ewords, _ := ExecWords(str)
 		if len(ewords) > 0 {
 			if cmd, ok := tensorfsCommands[ewords[0]]; ok {
 				mp.ewords = ewords
-				err := cmd(&mp)
-				if err != nil {
-					fmt.Println(ewords[0]+":", err.Error())
+				if err := cmd(&mp); err != nil {
+					st.addSourceError(int(toks[0].Pos), ewords[0]+": "+err.Error())
 					return nil
-				} else {
-					return mp.out
 				}
+				return mp.out
 			}
 		}
 
 		stmts, err := mparser.ParseLine(str, mods)
 		if err != nil {
-			fmt.Println("line code:", str)
-			fmt.Println("parse err:", err)
+			st.addParseError(toks, err)
+			return toks
 		}
 		if len(stmts) == 0 {
 			return toks
@@ -78,19 +77,34 @@ func (st *State) transpileMath(toks Tokens, code string, fullLine bool, depth in
 	} else {
 		ex, err := mparser.ParseExpr(str, mods)
 		if err != nil {
-			fmt.Println("expr:", str)
-			fmt.Println("parse err:", err)
+			st.addParseError(toks, err)
+			return toks
 		}
 		mp.expr(ex)
 	}
 
 	if !(mp.idx == len(toks) || mp.idx == len(toks)-1) { // -1 is for comment at end
-		fmt.Println(code)
-		fmt.Println(mp.out.Code())
-		fmt.Printf("parsing error: index: %d != len(toks): %d\n", mp.idx, len(toks))
+		col := int(toks[min(mp.idx, len(toks)-1)].Pos)
+		st.addSourceError(col, "math mode cannot transpile this code (it may not be supported in math mode yet)")
 	}
 
 	return mp.out
+}
+
+// addParseError adds the given error of parsing the code of the given
+// tokens in math mode, at its position in the source line.
+func (st *State) addParseError(toks Tokens, err error) {
+	col, msg := int(toks[0].Pos), err.Error()
+	if el, ok := err.(scanner.ErrorList); ok && len(el) > 0 {
+		col += el[0].Pos.Column - 1
+		msg = el[0].Msg
+	}
+	for _, end := range []string{", found 'EOF'", ", found newline"} {
+		if m, ok := strings.CutSuffix(msg, end); ok {
+			msg = m + " at the end of the line"
+		}
+	}
+	st.addSourceError(col, msg)
 }
 
 // mathSource returns the source code of the given tokens.
@@ -301,7 +315,7 @@ func (mp *mathParse) startFunc(name string, noLookup ...bool) *funcInfo {
 	}
 	mp.funcs.Push(fi)
 	if name != "" {
-		mp.out.Add(token.IDENT, name)
+		mp.emit(token.IDENT, name)
 	}
 	return fi
 }
@@ -310,9 +324,26 @@ func (mp *mathParse) endFunc() {
 	mp.funcs.Pop()
 }
 
+// emit adds an output token, with the position of the current source
+// token, from which the code that it is part of comes.
+func (mp *mathParse) emit(tok token.Token, str ...string) *Token {
+	t := mp.out.Add(tok, str...)
+	if n := len(mp.toks); n > 0 {
+		t.Pos = mp.toks[min(mp.idx, n-1)].Pos
+	}
+	return t
+}
+
+// emitMulti adds output tokens (not IDENT), as [mathParse.emit].
+func (mp *mathParse) emitMulti(toks ...token.Token) {
+	for _, t := range toks {
+		mp.emit(t)
+	}
+}
+
 // addToken adds output token and increments idx
 func (mp *mathParse) addToken(tok token.Token) {
-	mp.out.Add(tok)
+	mp.emit(tok)
 	if mp.trace {
 		ctok := &Token{}
 		if mp.idx < len(mp.toks) {
@@ -444,6 +475,9 @@ func (mp *mathParse) stmt(st ast.Stmt) {
 			mp.copySemi()
 		}
 		if x.Tag != nil {
+			if mp.isTensorExpr(x.Tag) {
+				mp.state.addSourceError(int(mp.toks[mp.idx].Pos), "the cases of a switch are Go values, so a tensor must be converted to one, as in switch int(x)")
+			}
 			mp.anyExpr(x.Tag)
 		}
 		mp.state.math.addSwitch(mp.depth+1, x.Tag == nil)
@@ -521,10 +555,10 @@ func (mp *mathParse) rangeStmt(x *ast.RangeStmt) {
 	if goRange {
 		mp.goExprOut(x.X)
 	} else {
-		mp.out.Add(token.IDENT, "tensor.Iter")
-		mp.out.Add(token.LPAREN)
+		mp.emit(token.IDENT, "tensor.Iter")
+		mp.emit(token.LPAREN)
 		mp.anyExpr(x.X)
-		mp.out.Add(token.RPAREN)
+		mp.emit(token.RPAREN)
 	}
 	if x.Tok == token.DEFINE {
 		valueType := "float64" // of tensor.Iter
@@ -691,7 +725,7 @@ func (mp *mathParse) incDecStmt(x *ast.IncDecStmt) {
 		return
 	}
 	mp.startFunc("tmath." + fn)
-	mp.out.Add(token.LPAREN)
+	mp.emit(token.LPAREN)
 	mp.expr(x.X)
 	mp.addToken(token.RPAREN)
 	mp.endFunc()
@@ -707,15 +741,15 @@ func (mp *mathParse) expr(ex ast.Expr) {
 	}
 	if isInt, ints := mp.curArgIsInt(); isInt && mp.needsInts(ex) {
 		if ints {
-			mp.out.Add(token.IDENT, "tensor.ToInts")
+			mp.emit(token.IDENT, "tensor.ToInts")
 		} else {
-			mp.out.Add(token.IDENT, "tensor.ToInt")
+			mp.emit(token.IDENT, "tensor.ToInt")
 		}
-		mp.out.Add(token.LPAREN)
+		mp.emit(token.LPAREN)
 		mp.anyExpr(ex)
-		mp.out.Add(token.RPAREN)
+		mp.emit(token.RPAREN)
 		if ints {
-			mp.out.Add(token.ELLIPSIS)
+			mp.emit(token.ELLIPSIS)
 		}
 		return
 	}
@@ -736,7 +770,7 @@ func (mp *mathParse) expr(ex ast.Expr) {
 	case *ast.Ellipsis:
 		cfun := mp.funcs.Peek()
 		if cfun != nil && cfun.Name == "tensor.AnySlice" {
-			mp.out.Add(token.IDENT, "tensor.Ellipsis")
+			mp.emit(token.IDENT, "tensor.Ellipsis")
 			mp.idx++
 		} else {
 			mp.addToken(token.ELLIPSIS)
@@ -795,10 +829,10 @@ func (mp *mathParse) anyExpr(ex ast.Expr) {
 // toTensor transpiles an expression that is not known to be a tensor
 // where a tensor is needed, converting it with [tensor.ToTensor].
 func (mp *mathParse) toTensor(ex ast.Expr) {
-	mp.out.Add(token.IDENT, "tensor.ToTensor")
-	mp.out.Add(token.LPAREN)
+	mp.emit(token.IDENT, "tensor.ToTensor")
+	mp.emit(token.LPAREN)
 	mp.anyExpr(ex)
-	mp.out.Add(token.RPAREN)
+	mp.emit(token.RPAREN)
 }
 
 // cond transpiles a condition, of an if, for or a case of a switch without
@@ -809,10 +843,30 @@ func (mp *mathParse) cond(ex ast.Expr) {
 		mp.goExprOut(ex)
 		return
 	}
-	mp.out.Add(token.IDENT, "tensor.ToBool")
-	mp.out.Add(token.LPAREN)
+	mp.emit(token.IDENT, "tensor.ToBool")
+	mp.emit(token.LPAREN)
 	mp.anyExpr(ex)
-	mp.out.Add(token.RPAREN)
+	mp.emit(token.RPAREN)
+}
+
+// isTensorExpr returns whether the given expression is known to be a
+// tensor: a tensor variable, an index of math mode, a call of a tensor
+// function, or an operator of math mode.
+func (mp *mathParse) isTensorExpr(ex ast.Expr) bool {
+	switch x := ex.(type) {
+	case *ast.Ident:
+		return mp.state.math.isTensor(x.Name)
+	case *ast.ParenExpr:
+		return mp.isTensorExpr(x.X)
+	case *ast.IndexExpr:
+		_, isList := x.Index.(*ast.IndexListExpr)
+		return isList && !mp.isGoExpr(x)
+	case *ast.CallExpr:
+		return mp.callIsTensor(x)
+	case *ast.BinaryExpr, *ast.UnaryExpr:
+		return !mp.isGoExpr(ex)
+	}
+	return false
 }
 
 // needsToTensor returns whether the given expression, where a tensor is
@@ -1058,16 +1112,16 @@ func (mp *mathParse) conversion(x *ast.CallExpr) {
 		fn = "tensor.ToInt"
 	}
 	if wrap != "" {
-		mp.out.Add(token.IDENT, wrap)
-		mp.out.Add(token.LPAREN)
+		mp.emit(token.IDENT, wrap)
+		mp.emit(token.LPAREN)
 	}
-	mp.out.Add(token.IDENT, fn)
+	mp.emit(token.IDENT, fn)
 	mp.idx++ // type
 	mp.addToken(token.LPAREN)
 	mp.anyExpr(arg)
 	mp.addToken(token.RPAREN)
 	if wrap != "" {
-		mp.out.Add(token.RPAREN)
+		mp.emit(token.RPAREN)
 	}
 }
 
@@ -1113,15 +1167,33 @@ func (mp *mathParse) argsList(ex []ast.Expr) {
 	}
 }
 
+// atSource sets the position of the last output token to that of the
+// source token at the given position of the parsed code, such as that of
+// an operator for the call of its tmath function, so that the errors of
+// the call are shown there.
+func (mp *mathParse) atSource(pos token.Pos) {
+	if len(mp.out) == 0 {
+		return
+	}
+	for i := range mp.toks {
+		if mp.astPos(i) == pos {
+			mp.out[len(mp.out)-1].Pos = mp.toks[i].Pos
+			return
+		}
+	}
+}
+
 func (mp *mathParse) binaryExpr(ex *ast.BinaryExpr) {
 	if ex.Op == token.ILLEGAL { // @ = matmul
 		mp.startFunc("matrix.Mul")
-		mp.out.Add(token.LPAREN)
+		mp.atSource(ex.OpPos)
+		mp.emit(token.LPAREN)
+		mp.atSource(ex.OpPos)
 		mp.expr(ex.X)
-		mp.out.Add(token.COMMA)
+		mp.emit(token.COMMA)
 		mp.idx++
 		mp.expr(ex.Y)
-		mp.out.Add(token.RPAREN)
+		mp.emit(token.RPAREN)
 		mp.endFunc()
 		return
 	}
@@ -1162,16 +1234,18 @@ func (mp *mathParse) binaryExpr(ex *ast.BinaryExpr) {
 		fmt.Println("binary token:", ex.Op)
 	}
 	mp.startFunc("tmath." + fn)
-	mp.out.Add(token.LPAREN)
+	mp.atSource(ex.OpPos)
+	mp.emit(token.LPAREN)
+	mp.atSource(ex.OpPos) // the call, at its paren
 	mp.expr(ex.X)
-	mp.out.Add(token.COMMA)
+	mp.emit(token.COMMA)
 	mp.idx++
 	if fn == "Pow" {
 		mp.idx++
 	}
 	mp.nextArg()
 	mp.expr(ex.Y)
-	mp.out.Add(token.RPAREN)
+	mp.emit(token.RPAREN)
 	mp.endFunc()
 }
 
@@ -1210,7 +1284,7 @@ func (mp *mathParse) unaryExpr(ex *ast.UnaryExpr) {
 	mp.startFunc("tmath." + fn)
 	mp.addToken(token.LPAREN)
 	mp.expr(ex.X)
-	mp.out.Add(token.RPAREN)
+	mp.emit(token.RPAREN)
 	mp.endFunc()
 }
 
@@ -1246,9 +1320,9 @@ func (mp *mathParse) defineStmt(as *ast.AssignStmt) {
 		mp.toTensor(as.Rhs[0])
 	} else {
 		mp.startFunc("tensor.Tensor")
-		mp.out.Add(token.LPAREN)
+		mp.emit(token.LPAREN)
 		mp.exprList(as.Rhs)
-		mp.out.Add(token.RPAREN)
+		mp.emit(token.RPAREN)
 		mp.endFunc()
 	}
 	for _, l := range as.Lhs {
@@ -1259,8 +1333,8 @@ func (mp *mathParse) defineStmt(as *ast.AssignStmt) {
 	if firstStmt && mp.state.MathRecord {
 		nvar, ok := as.Lhs[0].(*ast.Ident)
 		if ok {
-			mp.out.Add(token.SEMICOLON)
-			mp.out.Add(token.IDENT, "tensorfs.Record("+nvar.Name+",`"+nvar.Name+"`)")
+			mp.emit(token.SEMICOLON)
+			mp.emit(token.IDENT, "tensorfs.Record("+nvar.Name+",`"+nvar.Name+"`)")
 		}
 	}
 }
@@ -1357,13 +1431,15 @@ func (mp *mathParse) assignStmt(as *ast.AssignStmt) {
 		return
 	}
 	mp.startFunc("tmath." + fn)
-	mp.out.Add(token.LPAREN)
+	mp.atSource(as.TokPos)
+	mp.emit(token.LPAREN)
+	mp.atSource(as.TokPos) // the call, at its paren
 	mp.exprList(as.Lhs)
-	mp.out.Add(token.COMMA)
+	mp.emit(token.COMMA)
 	mp.idx++
 	mp.nextArg()
 	mp.exprList(as.Rhs)
-	mp.out.Add(token.RPAREN)
+	mp.emit(token.RPAREN)
 	mp.endFunc()
 }
 
@@ -1381,18 +1457,18 @@ func (mp *mathParse) varAssign(lhs ast.Expr, op token.Token, rhs ast.Expr) {
 	default:
 		fn = "tmath." + assignFuncs[op] + "Var"
 	}
-	mp.out.Add(token.IDENT, fn)
-	mp.out.Add(token.LPAREN)
-	mp.out.Add(token.AND)
+	mp.emit(token.IDENT, fn)
+	mp.emit(token.LPAREN)
+	mp.emit(token.AND)
 	mp.copyNode(lhs)
-	mp.out.Add(token.COMMA)
+	mp.emit(token.COMMA)
 	mp.idx++ // the operator
 	if rhs == nil {
-		mp.out.Add(token.INT, "1")
+		mp.emit(token.INT, "1")
 	} else {
 		mp.anyExpr(rhs)
 	}
-	mp.out.Add(token.RPAREN)
+	mp.emit(token.RPAREN)
 }
 
 func (mp *mathParse) basicLit(lit *ast.BasicLit) {
@@ -1400,7 +1476,7 @@ func (mp *mathParse) basicLit(lit *ast.BasicLit) {
 		mp.tensorLit(lit, "")
 		return
 	}
-	mp.out.Add(lit.Kind, lit.Value)
+	mp.emit(lit.Kind, lit.Value)
 	if mp.trace {
 		fmt.Printf("%d\ttok: %s literal\n", mp.idx, lit.Value)
 	}
@@ -1411,13 +1487,13 @@ func (mp *mathParse) basicLit(lit *ast.BasicLit) {
 func (mp *mathParse) tensorLit(lit *ast.BasicLit, sign string) {
 	switch lit.Kind {
 	case token.INT:
-		mp.out.Add(token.IDENT, "tensor.NewIntScalar("+sign+lit.Value+")")
+		mp.emit(token.IDENT, "tensor.NewIntScalar("+sign+lit.Value+")")
 		mp.idx++
 	case token.FLOAT:
-		mp.out.Add(token.IDENT, "tensor.NewFloat64Scalar("+sign+lit.Value+")")
+		mp.emit(token.IDENT, "tensor.NewFloat64Scalar("+sign+lit.Value+")")
 		mp.idx++
 	case token.STRING:
-		mp.out.Add(token.IDENT, "tensor.NewStringScalar("+lit.Value+")")
+		mp.emit(token.IDENT, "tensor.NewStringScalar("+lit.Value+")")
 		mp.idx++
 	default:
 		mp.addCur()
@@ -1463,7 +1539,7 @@ func (fw *funWrap) wrapFunc(mp *mathParse) bool {
 		wrapFun = fw.wrap
 	}
 	mp.startFunc(wrapFun, true) // don't lookup -- don't auto-convert args
-	mp.out.Add(token.LPAREN)
+	mp.emit(token.LPAREN)
 	return ellip
 }
 
@@ -1472,7 +1548,7 @@ func (mp *mathParse) selectorExpr(ex *ast.SelectorExpr) {
 	if !ok {
 		mp.anyExpr(ex.X)
 		mp.addToken(token.PERIOD)
-		mp.out.Add(token.IDENT, ex.Sel.Name)
+		mp.emit(token.IDENT, ex.Sel.Name)
 		mp.idx++
 		return
 	}
@@ -1480,15 +1556,15 @@ func (mp *mathParse) selectorExpr(ex *ast.SelectorExpr) {
 	mp.expr(ex.X)
 	if fw.fun != "" {
 		mp.addToken(token.PERIOD)
-		mp.out.Add(token.IDENT, fw.fun)
+		mp.emit(token.IDENT, fw.fun)
 		mp.idx++
 	} else {
 		mp.idx += 2
 	}
 	if ellip {
-		mp.out.Add(token.ELLIPSIS)
+		mp.emit(token.ELLIPSIS)
 	}
-	mp.out.Add(token.RPAREN)
+	mp.emit(token.RPAREN)
 	mp.endFunc()
 }
 
@@ -1506,7 +1582,7 @@ func (mp *mathParse) basicSlicingExpr(il *ast.IndexExpr) {
 	iil := il.Index.(*ast.IndexListExpr)
 	fun := "tensor.AnySlice"
 	mp.startFunc(fun)
-	mp.out.Add(token.LPAREN)
+	mp.emit(token.LPAREN)
 	mp.expr(il.X)
 	mp.nextArg()
 	mp.addToken(token.COMMA) // use the [ -- can't use ( to preserve X
@@ -1519,17 +1595,17 @@ func (mp *mathParse) basicSlicingExpr(il *ast.IndexExpr) {
 // tensor.Slice, with the given sign for its start.
 func (mp *mathParse) sliceExpr(se *ast.SliceExpr, startSign ...string) {
 	if se.Low == nil && se.High == nil && se.Max == nil {
-		mp.out.Add(token.IDENT, "tensor.FullAxis")
+		mp.emit(token.IDENT, "tensor.FullAxis")
 		mp.idx++
 		return
 	}
-	mp.out.Add(token.IDENT, "tensor.Slice")
-	mp.out.Add(token.LBRACE)
+	mp.emit(token.IDENT, "tensor.Slice")
+	mp.emit(token.LBRACE)
 	prev := false
 	if se.Low != nil {
-		mp.out.Add(token.IDENT, "Start:")
+		mp.emit(token.IDENT, "Start:")
 		if len(startSign) == 1 {
-			mp.out.Add(token.SUB)
+			mp.emit(token.SUB)
 		}
 		mp.intExpr(se.Low)
 		prev = true
@@ -1539,25 +1615,25 @@ func (mp *mathParse) sliceExpr(se *ast.SliceExpr, startSign ...string) {
 	}
 	if se.High != nil {
 		if prev {
-			mp.out.Add(token.COMMA)
+			mp.emit(token.COMMA)
 		}
-		mp.out.Add(token.IDENT, "Stop:")
+		mp.emit(token.IDENT, "Stop:")
 		mp.idx++
 		mp.intExpr(se.High)
 		prev = true
 	}
 	if se.Max != nil {
 		if prev {
-			mp.out.Add(token.COMMA)
+			mp.emit(token.COMMA)
 		}
 		mp.idx++
 		if se.Low == nil && se.High == nil {
 			mp.idx++
 		}
-		mp.out.Add(token.IDENT, "Step:")
+		mp.emit(token.IDENT, "Step:")
 		mp.intExpr(se.Max)
 	}
-	mp.out.Add(token.RBRACE)
+	mp.emit(token.RBRACE)
 }
 
 // intExpr transpiles an expression where a Go int is needed, such as a
@@ -1568,10 +1644,10 @@ func (mp *mathParse) intExpr(ex ast.Expr) {
 		mp.anyExpr(ex)
 		return
 	}
-	mp.out.Add(token.IDENT, "tensor.ToInt")
-	mp.out.Add(token.LPAREN)
+	mp.emit(token.IDENT, "tensor.ToInt")
+	mp.emit(token.LPAREN)
 	mp.anyExpr(ex)
-	mp.out.Add(token.RPAREN)
+	mp.emit(token.RPAREN)
 }
 
 func (mp *mathParse) arrayLiteral(il *ast.IndexListExpr) {
@@ -1605,26 +1681,26 @@ func (mp *mathParse) arrayLiteral(il *ast.IndexListExpr) {
 	mp.arrayShape(il.Indices, &sh)
 	if len(sh) > 1 {
 		mp.startFunc("tensor.Reshape")
-		mp.out.Add(token.LPAREN)
+		mp.emit(token.LPAREN)
 	}
 	mp.startFunc("tensor.New" + fun + "FromValues")
-	mp.out.Add(token.LPAREN)
-	mp.out.Add(token.IDENT, "[]"+typ)
+	mp.emit(token.LPAREN)
+	mp.emit(token.IDENT, "[]"+typ)
 	mp.addToken(token.LBRACE)
 	mp.exprList(il.Indices)
 	mp.addToken(token.RBRACE)
-	mp.out.AddMulti(token.ELLIPSIS, token.RPAREN)
+	mp.emitMulti(token.ELLIPSIS, token.RPAREN)
 	mp.endFunc()
 	if len(sh) > 1 {
-		mp.out.Add(token.COMMA)
+		mp.emit(token.COMMA)
 		nsh := len(sh)
 		for i, s := range sh {
-			mp.out.Add(token.INT, fmt.Sprintf("%d", s))
+			mp.emit(token.INT, fmt.Sprintf("%d", s))
 			if i < nsh-1 {
-				mp.out.Add(token.COMMA)
+				mp.emit(token.COMMA)
 			}
 		}
-		mp.out.Add(token.RPAREN)
+		mp.emit(token.RPAREN)
 		mp.endFunc()
 	}
 	mp.inArray = false
@@ -1785,18 +1861,18 @@ func (mp *mathParse) callPropFun(cf *ast.CallExpr, fw funWrap) {
 	mp.idx += 2
 	mp.exprList(cf.Args) // this is the tensor
 	mp.addToken(token.PERIOD)
-	mp.out.Add(token.IDENT, fw.fun)
+	mp.emit(token.IDENT, fw.fun)
 	if ellip {
-		mp.out.Add(token.ELLIPSIS)
+		mp.emit(token.ELLIPSIS)
 	}
-	mp.out.Add(token.RPAREN)
+	mp.emit(token.RPAREN)
 	mp.endFunc()
 }
 
 // this calls global function through selector like: a.reshape()
 func (mp *mathParse) callPropSelFun(cf *ast.CallExpr, ex ast.Expr, fw funWrap) {
 	mp.startFunc(fw.fun).argOffset = 1 // the receiver is the first arg
-	mp.out.Add(token.LPAREN)           // use the (
+	mp.emit(token.LPAREN)              // use the (
 	mp.expr(ex)
 	mp.idx += 2
 	if len(cf.Args) > 0 {
@@ -1859,7 +1935,7 @@ func (mp *mathParse) ident(id *ast.Ident) {
 		return
 	}
 	if cn, ok := consts[id.Name]; ok {
-		mp.out.Add(token.IDENT, cn)
+		mp.emit(token.IDENT, cn)
 		mp.idx++
 		return
 	}

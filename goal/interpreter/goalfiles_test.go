@@ -30,7 +30,7 @@ func TestGoalFiles(t *testing.T) {
 			assert.NoError(t, err)
 			var out syncBuffer
 			in := NewInterpreter(Options{Stdout: &out, Stderr: &out})
-			_, _, err = in.Eval(string(src))
+			_, _, err = in.EvalCode(string(src))
 			assert.NoError(t, err, out.String())
 			want, err := os.ReadFile(strings.TrimSuffix(f, ".goal") + ".want")
 			if err != nil {
@@ -64,7 +64,7 @@ func TestMathDocs(t *testing.T) {
 		}
 		fmt.Fprintf(&out, "######## block %d\n", i)
 		in.Goal.TrState.MathRecord = true
-		_, _, err := in.Eval(strings.Join(lines, "\n") + "\n")
+		_, _, err := in.EvalCode(strings.Join(lines, "\n") + "\n")
 		assert.NoError(t, err, "block %d", i)
 	}
 	want, err := os.ReadFile("testdata/mathdocs.want")

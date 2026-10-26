@@ -84,10 +84,7 @@ func Run(c *Config) error { //cli:cmd -root
 		}
 		code += c.Expr + "\n"
 	}
-	_, _, err := in.Eval(code)
-	if err == nil {
-		err = in.Goal.TrState.DepthError()
-	}
+	_, _, err := in.EvalCode(code)
 	if c.Interactive {
 		return c.InteractiveFunc(c, in)
 	}

@@ -20,6 +20,7 @@ import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/mvmcore/basesymbols"
 	"cogentcore.org/lab/goal"
+	"cogentcore.org/lab/goal/transpile"
 	"cogentcore.org/lab/mvmlab/tensorsymbols"
 	_ "cogentcore.org/lab/stats/metric"
 	_ "cogentcore.org/lab/stats/stats"
@@ -143,19 +144,48 @@ func (in *Interpreter) Eval(code string) (v reflect.Value, hasPrint bool, err er
 	return
 }
 
+// EvalCode evaluates (interprets) the given complete code, such as that of
+// a file or a code block, as [Interpreter.Eval]: unlike Eval, for which
+// a bracket that is not closed continues the code on the next line,
+// as in an interactive shell, that is an error.
+func (in *Interpreter) EvalCode(code string) (v reflect.Value, hasPrint bool, err error) {
+	v, hasPrint, err = in.Eval(code)
+	st := &in.Goal.TrState
+	if err == nil && st.TotalDepth() != 0 {
+		err = st.UnclosedError()
+		if err == nil {
+			err = st.DepthError()
+		}
+		st.ResetCode()
+		st.ResetDepth()
+		st.Errors = nil
+	}
+	return
+}
+
 // RunCode runs the accumulated set of code lines
 // and clears the stack of code lines.
 // It automatically logs any error in addition to returning it.
 func (in *Interpreter) RunCode() (reflect.Value, error) {
+	st := &in.Goal.TrState
+	if len(st.Errors) > 0 { // errors of transpiling the code
+		errs := st.Errors
+		st.Errors = nil
+		st.ResetCode()
+		return reflect.Value{}, errors.Join(errs...)
+	}
 	if len(in.Goal.Errors) > 0 {
 		return reflect.Value{}, errors.Join(in.Goal.Errors...)
 	}
-	in.Goal.TrState.AddChunk()
-	code := in.Goal.TrState.Chunks
-	in.Goal.TrState.ResetCode()
+	st.AddChunk()
+	code, sources := st.Chunks, st.ChunkSources
+	st.ResetCode()
+	// The errors that the code logs stop it, as errors of it.
+	prevHook := errors.SetLogHook(logHook)
+	defer errors.SetLogHook(prevHook)
 	var v reflect.Value
 	var err error
-	for _, ch := range code {
+	for ci, ch := range code {
 		// mvm takes empty source as the name of a package to run.
 		if strings.TrimSpace(ch) == "" {
 			continue
@@ -164,6 +194,7 @@ func (in *Interpreter) RunCode() (reflect.Value, error) {
 		v, err = in.Interp.Eval("goal", ch)
 		in.Goal.EndContext()
 		if err != nil {
+			err = in.sourceError(err, sources, ci)
 			cancelled := errors.Is(err, context.Canceled)
 			// fmt.Println("cancelled:", cancelled)
 			in.Goal.DeleteAllJobs()
@@ -183,6 +214,21 @@ func (in *Interpreter) RunCode() (reflect.Value, error) {
 		}
 	}
 	return v, err
+}
+
+// sourceError returns the given error of running the Go code of the
+// given chunk as an error at its position in the Goal source code
+// (see [transpile.SourceError]), if it has a position.
+func (in *Interpreter) sourceError(err error, sources [][]transpile.SourceLine, chunk int) error {
+	d, ok := in.Interp.Diagnose(err)
+	if !ok || d.Source != "goal" {
+		return err
+	}
+	var le *LogError
+	if errors.As(err, &le) { // logged by the Go code that the code called
+		d.Msg = le.Error()
+	}
+	return transpile.SourceError(sources, chunk, d.Line, d.Col, d.Msg, err)
 }
 
 // RunConfig runs the .goal startup config file in the user's

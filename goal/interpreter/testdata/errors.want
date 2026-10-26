@@ -1,0 +1,403 @@
+######## go-missing-paren
+  1 | x := 1
+  2 | fmt.Println(x
+-------- error:
+2:12: ( is not closed: missing )
+    fmt.Println(x
+               ^
+
+######## go-extra-paren
+  1 | x := 1
+  2 | fmt.Println(x))
+-------- error:
+2:15: ) without a matching (
+    fmt.Println(x))
+                  ^
+
+######## go-missing-brace
+  1 | x := 1
+  2 | if x > 0 {
+  3 | 	x = 2
+  4 | 
+-------- error:
+2:10: { is not closed: missing }
+    if x > 0 {
+             ^
+
+######## go-unterminated-string
+  1 | s := "abc
+  2 | fmt.Println(s)
+-------- error:
+1:6: unterminated " string
+    s := "abc
+         ^
+
+######## go-bad-operator
+  1 | x := 1
+  2 | y := x +* 2
+-------- error:
+2:9: cannot dereference non-pointer type int
+    y := x +* 2
+            ^
+
+######## go-missing-operand
+  1 | x := 1
+  2 | y := x +
+-------- error:
+2:8: missing operand after +
+    y := x +
+           ^
+
+######## go-undefined
+  1 | x := 1
+  2 | y := x + z
+  3 | fmt.Println(y)
+-------- error:
+2:8: undefined: z
+    y := x + z
+           ^
+
+######## go-undefined-func
+  1 | x := 1
+  2 | y := double(x)
+  3 | fmt.Println(y)
+-------- error:
+2:12: undefined: double
+    y := double(x)
+               ^
+
+######## go-mismatched-types
+  1 | a := 10
+  2 | b := 12.5
+  3 | c := a + b
+  4 | fmt.Println(c)
+-------- error:
+3:8: invalid operation: mismatched types int and float64
+    c := a + b
+           ^
+
+######## go-assign-string
+  1 | x := 1
+  2 | x = "one"
+-------- error:
+2:3: panic: reflect.Set: value of type string is not assignable to type int
+    x = "one"
+      ^
+
+######## go-too-many-args
+  1 | f := func(a int) int { return a }
+  2 | fmt.Println(f(1, 2))
+-------- error:
+2:14: too many arguments in call to f
+    fmt.Println(f(1, 2))
+                 ^
+
+######## go-too-few-args
+  1 | f := func(a, b int) int { return a + b }
+  2 | fmt.Println(f(1))
+-------- error:
+2:14: not enough arguments in call to f
+    fmt.Println(f(1))
+                 ^
+
+######## go-not-a-function
+  1 | x := 1
+  2 | x(2)
+-------- error:
+2:2: invalid operation: cannot call non-function x (type int)
+    x(2)
+     ^
+
+######## go-no-field
+  1 | type P struct{ X int }
+  2 | p := P{X: 1}
+  3 | fmt.Println(p.Y)
+-------- error:
+3:14: undefined: Y
+    fmt.Println(p.Y)
+                 ^
+
+######## go-no-new-vars
+  1 | x := 1
+  2 | x := 2
+-------- no error
+
+######## go-return-type
+  1 | f := func() int {
+  2 | 	return "a"
+  3 | }
+  4 | fmt.Println(f())
+-------- no error
+
+######## go-index-range
+  1 | s := []int{1, 2}
+  2 | i := 5
+  3 | fmt.Println(s[i])
+-------- error:
+3:14: panic: runtime error: index out of range
+    fmt.Println(s[i])
+                 ^
+
+######## go-nil-map
+  1 | var m map[string]int
+  2 | m["a"] = 1
+-------- error:
+2:8: panic: assignment to entry in nil map
+    m["a"] = 1
+           ^
+
+######## go-nil-pointer
+  1 | type P struct{ X int }
+  2 | var p *P
+  3 | fmt.Println(p.X)
+-------- error:
+3:14: panic: runtime error: invalid memory address or nil pointer dereference
+    fmt.Println(p.X)
+                 ^
+
+######## go-divide-zero
+  1 | a := 1
+  2 | b := 0
+  3 | fmt.Println(a / b)
+-------- error:
+3:15: panic: runtime error: integer divide by zero
+    fmt.Println(a / b)
+                  ^
+
+######## go-type-assert
+  1 | var x any = "a"
+  2 | n := x.(int)
+  3 | fmt.Println(n)
+-------- error:
+2:7: panic: interface conversion: interface {} is string, not int
+    n := x.(int)
+          ^
+
+######## go-panic
+  1 | panic("boom")
+-------- error:
+1:6: panic: boom
+    panic("boom")
+         ^
+
+######## go-error-in-loop
+  1 | s := []int{1, 2}
+  2 | for i := range 3 {
+  3 | 	fmt.Println(s[i])
+  4 | }
+-------- error:
+3:15: panic: runtime error: index out of range
+     fmt.Println(s[i])
+                  ^
+
+######## math-unclosed-array
+  1 | ##
+  2 | a := [1, 2
+  3 | ##
+-------- error:
+2:6: [ is not closed: missing ]
+    a := [1, 2
+         ^
+
+######## math-unclosed-index
+  1 | ##
+  2 | a := zeros(3)
+  3 | b := a[1,
+  4 | ##
+-------- error:
+3:7: [ is not closed: missing ]
+    b := a[1,
+          ^
+
+######## math-missing-operand
+  1 | ##
+  2 | a := zeros(3)
+  3 | b := a +
+  4 | ##
+-------- error:
+3:9: expected operand at the end of the line
+    b := a +
+            ^
+
+######## math-bad-operator
+  1 | ##
+  2 | a := zeros(3)
+  3 | b := a +* 2
+  4 | ##
+-------- error:
+3:9: cannot dereference non-pointer type int
+    b := a +* 2
+            ^
+
+######## math-unclosed-call
+  1 | ##
+  2 | a := zeros(3, 4
+  3 | ##
+-------- error:
+2:11: ( is not closed: missing )
+    a := zeros(3, 4
+              ^
+
+######## math-undefined
+  1 | ##
+  2 | a := zeros(3)
+  3 | b := a + c
+  4 | ##
+-------- error:
+3:10: undefined: c
+    b := a + c
+             ^
+
+######## math-unknown-func
+  1 | ##
+  2 | a := zeros(3)
+  3 | b := foo(a)
+  4 | ##
+-------- error:
+3:9: undefined: foo
+    b := foo(a)
+            ^
+
+######## math-wrong-args
+  1 | ##
+  2 | a := full(3)
+  3 | ##
+-------- no error
+
+######## math-reshape-size
+  1 | ##
+  2 | a := zeros(2, 3)
+  3 | b := a.reshape(4, 4)
+  4 | fmt.Println(b)
+  5 | ##
+-------- error:
+3:6: tensor.Reshape: the new shape [4 4] has 16 values, but the tensor has 6; use Sliced or other views to change the view content
+    b := a.reshape(4, 4)
+         ^
+
+######## math-shape-mismatch
+  1 | ##
+  2 | a := [1., 2., 3.]
+  3 | b := [1., 2.]
+  4 | c := a + b
+  5 | fmt.Println(c)
+  6 | ##
+-------- error:
+4:8: tensor.AlignShapes: output dimension 0 does not align for a=3 b=2: must be either the same or one of them is a 1
+    c := a + b
+           ^
+
+######## math-matmul-shapes
+  1 | ##
+  2 | a := zeros(2, 3)
+  3 | b := zeros(2, 3)
+  4 | c := a @ b
+  5 | fmt.Println(c)
+  6 | ##
+-------- error:
+4:8: matrix.Mul: the shapes [2 3] and [2 3] do not match: the number of columns of a must be the number of rows of b: mat: dimension mismatch
+    c := a @ b
+           ^
+
+######## math-index-range
+  1 | ##
+  2 | a := zeros(3)
+  3 | b := a[5]
+  4 | fmt.Println(b)
+  5 | ##
+-------- error:
+3:6: panic: tensor: index 5 out of range for dimension 0 of size 3
+    b := a[5]
+         ^
+
+######## math-switch-tensor
+  1 | ##
+  2 | a := [1, 2]
+  3 | switch a[0] {
+  4 | case 1:
+  5 | 	fmt.Println("one")
+  6 | }
+  7 | ##
+-------- error:
+3:8: the cases of a switch are Go values, so a tensor must be converted to one, as in switch int(x)
+    switch a[0] {
+           ^
+
+######## math-range-map
+  1 | m := map[string]int{"a": 1}
+  2 | ##
+  3 | for k, v := range m {
+  4 | 	fmt.Println(k, v)
+  5 | }
+  6 | ##
+-------- error:
+3:19: panic: tensor.ToTensor: cannot convert value of type map[string]int to a tensor
+    for k, v := range m {
+                      ^
+
+######## math-go-int-float
+  1 | ##
+  2 | var n int = 3
+  3 | var x float64 = 0.5
+  4 | y := n * x
+  5 | fmt.Println(y)
+  6 | ##
+-------- no error
+
+######## math-range-float
+  1 | ##
+  2 | var x float64 = 2.5
+  3 | for i := range x {
+  4 | 	fmt.Println(i)
+  5 | }
+  6 | ##
+-------- error:
+3:10: cannot range over float64
+    for i := range x {
+             ^
+
+######## math-string-tensor
+  1 | ##
+  2 | a := ["a", "b"]
+  3 | b := a * 2
+  4 | fmt.Println(b)
+  5 | ##
+-------- no error
+
+######## inline-math-syntax
+  1 | x := 1
+  2 | fmt.Println(# x + #)
+-------- error:
+2:18: expected operand at the end of the line
+    fmt.Println(# x + #)
+                     ^
+
+######## inline-math-undefined
+  1 | fmt.Println(# zeros(3) + q #)
+-------- error:
+1:26: undefined: q
+    fmt.Println(# zeros(3) + q #)
+                             ^
+
+######## exec-not-found
+  1 | notacommand -x
+-------- error:
+notacommand: command not found
+
+######## exec-unterminated-quote
+  1 | echo "abc
+-------- error:
+1:6: unterminated " string
+    echo "abc
+         ^
+
+######## exec-cd-missing
+  1 | cd /no/such/dir
+-------- error:
+cd: /no/such/dir: no such file or directory
+
+######## exec-bad-redirect
+  1 | echo abc >
+-------- error:
+missing file name after >
+

@@ -165,6 +165,35 @@ func (tk Tokens) String() string {
 // Code returns concatenated Str values of the tokens,
 // to generate a surface-valid code string.
 func (tk Tokens) Code() string {
+	return tk.code(nil)
+}
+
+// CodeMap returns the code of the tokens, as [Tokens.Code], and the
+// position in the source of the token of each byte of it (see [Token.Pos]),
+// for mapping a position in the code back to the source. A token that the
+// transpiler adds has the position of the token before it, or 0 if none.
+func (tk Tokens) CodeMap() (string, []token.Pos) {
+	var starts []int
+	str := tk.code(&starts)
+	cols := make([]token.Pos, len(str))
+	var pos token.Pos
+	ti := 0
+	for i := range cols {
+		for ti < len(starts) && starts[ti] <= i {
+			if p := tk[ti].Pos; p != 0 {
+				pos = p
+			}
+			ti++
+		}
+		cols[i] = pos
+	}
+	return str, cols
+}
+
+// code returns the code of the tokens, recording in starts, if non-nil,
+// the offset in it where the text of each token starts (with any space
+// before it).
+func (tk Tokens) code(starts *[]int) string {
 	n := len(tk)
 	if n == 0 {
 		return ""
@@ -172,6 +201,9 @@ func (tk Tokens) Code() string {
 	str := ""
 	prvIdent := false
 	for _, tok := range tk {
+		if starts != nil {
+			*starts = append(*starts, len(str))
+		}
 		switch {
 		case tok.IsOp():
 			switch tok.Tok {

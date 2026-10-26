@@ -5,6 +5,7 @@
 package tensor
 
 import (
+	"fmt"
 	"reflect"
 	"slices"
 
@@ -155,8 +156,8 @@ func (rs *Reshaped) SetShapeSizes(sizes ...int) error {
 	}
 	rs.Reshape.SetShapeSizes(sz...)
 	rs.sourceStrides = nil
-	if rs.Reshape.Len() != sln {
-		return errors.New("tensor.Reshaped SetShapeSizes: new length is different from source tensor; use Sliced or other views to change view content")
+	if n := rs.Reshape.Len(); n != sln {
+		return fmt.Errorf("tensor.Reshape: the new shape %v has %d values, but the tensor has %d; use Sliced or other views to change the view content", sz, n, sln)
 	}
 	return nil
 }
