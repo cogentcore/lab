@@ -9,6 +9,10 @@ import (
 	"go/token"
 )
 
+// kindBool is the kind of the bool constants, true and false, which are
+// identifiers rather than literals.
+const kindBool = token.IDENT
+
 // inferKindExpr infers the basic Kind level type from given expression
 func inferKindExpr(ex ast.Expr) token.Token {
 	if ex == nil {
@@ -20,6 +24,12 @@ func inferKindExpr(ex ast.Expr) token.Token {
 
 	case *ast.Ident:
 		// todo: get type of object is not possible!
+		if x.Name == "true" || x.Name == "false" {
+			return kindBool
+		}
+
+	case *ast.UnaryExpr:
+		return inferKindExpr(x.X)
 
 	case *ast.BinaryExpr:
 		ta := inferKindExpr(x.X)
@@ -60,13 +70,19 @@ func inferKindExpr(ex ast.Expr) token.Token {
 	return token.ILLEGAL
 }
 
+// inferKindExprList infers the basic Kind level type of the given
+// expressions, such as the elements of an array literal: the first one
+// that is known, except that float takes precedence over int.
 func inferKindExprList(ex []ast.Expr) token.Token {
-	n := len(ex)
-	for i := range n {
-		t := inferKindExpr(ex[i])
-		if t != token.ILLEGAL {
-			return t
+	kind := token.ILLEGAL
+	for _, x := range ex {
+		t := inferKindExpr(x)
+		switch {
+		case t == token.FLOAT && kind == token.INT:
+			kind = t
+		case kind == token.ILLEGAL:
+			kind = t
 		}
 	}
-	return token.ILLEGAL
+	return kind
 }

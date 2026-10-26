@@ -1,0 +1,11 @@
+// the Goal entries of the "Statistics" table of the math mode docs,
+// and the other NumPy style reductions of all values of a tensor.
+
+##
+a := [3., 9., 1., 4.]
+fmt.Println(a.max(), max(a), stats.Max(a))
+fmt.Println(a.min(), min(a))
+fmt.Println(a.sum(), sum(a))
+fmt.Println(a.prod(), a.mean())
+fmt.Println(max(a, [5., 5., 5., 5.])) // element-wise
+##

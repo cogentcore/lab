@@ -269,12 +269,12 @@ The following tables summarize Goal math-mode syntax in terms of [NumPy](https:/
 | ------------ | ----------- | ------ | ---------------- |
 | `tensor.NewFloat64FromValues(` `1, 2, 3)` | `[1., 2., 3.]` | `np.array([1., 2., 3.])` | define a 1D tensor |
 | (reshape) | `[[1., 2., 3.], [4., 5., 6.]]` or: | `(np.array([[1., 2., 3.], [4., 5., 6.]])` | define a 2x3 2D tensor |
-| (reshape) | `[[a, b], [c, d]]` or `block([[a, b], [c, d]])` | `np.block([[a, b], [c, d]])` | construct a matrix from blocks `a`, `b`, `c`, and `d` |
+| TODO: | TODO: | `np.block([[a, b], [c, d]])` | construct a matrix from blocks `a`, `b`, `c`, and `d` |
 | `tensor.NewFloat64(3,4)` | `zeros(3,4)` | `np.zeros((3, 4))` | 3x4 2D tensor of float64 zeros; Goal does not use "tuple" so no double parens |
 | `tensor.NewFloat64(3,4,5)` | `zeros(3, 4, 5)` | `np.zeros((3, 4, 5))` | 3x4x5 three-dimensional tensor of float64 zeros |
 | `tensor.NewFloat64Ones(3,4)` | `ones(3, 4)`  | `np.ones((3, 4))` | 3x4 2D tensor of 64-bit floating point ones |
 | `tensor.NewFloat64Full(5.5, 3,4)` | `full(5.5, 3, 4)` | `np.full((3, 4), 5.5)` | 3x4 2D tensor of 5.5; Goal variadic arg structure requires value to come first |
-| `tensor.NewFloat64Rand(3,4)` | `rand(3, 4)` or `slrand(c, fi, 3, 4)` | `rng.random(3, 4)` | 3x4 2D float64 tensor with uniform random 0..1 elements; `rand` uses current Go `rand` source, while `slrand` uses [gosl](../gpu/gosl/slrand) GPU-safe call with counter `c` and function index `fi` and key = index of element |
+| `tensor.NewFloat64Rand(3,4)` | `rand(3, 4)` | `rng.random(3, 4)` | 3x4 2D float64 tensor with uniform random 0..1 elements, using the current Go `rand` source |
 | TODO: | TODO: |`np.concatenate((a,b),1)` or `np.hstack((a,b))` or `np.column_stack((a,b))` or `np.c_[a,b]` | concatenate columns of a and b |
 | TODO: | TODO: |`np.concatenate((a,b))` or `np.vstack((a,b))` or `np.r_[a,b]` | concatenate rows of a and b |
 | TODO: | TODO: |`np.tile(a, (m, n))`   | create m by n copies of a |
@@ -394,10 +394,10 @@ In Goal and NumPy, the standard `+, -, *, /` operators perform _element-wise_ op
 
 | `tensor` Go  |   Goal      | NumPy  | Notes            |
 | ------------ | ----------- | ------ | ---------------- |
-| . | `a.max()` or `max(a)` or `stats.Max(a)` | `a.max()` or `np.nanmax(a)` | maximum element of `a`, Goal always ignores `NaN` as missing data |
+| `stats.Max(a)` | `a.max()` or `max(a)` or `stats.Max(a)` | `a.max()` or `np.nanmax(a)` | maximum element of `a`, Goal always ignores `NaN` as missing data; likewise for `min`, `sum`, `prod`, `mean` and `std` |
 | . | . |`a.max(0)` | maximum element of each column of tensor `a` |
 | . | . |`a.max(1)` | maximum element of each row of tensor `a` |
-| . | . |`np.maximum(a, b)` | compares a and b element-wise, and returns the maximum value from each pair |
+| `tmath.Max(a, b)` | `max(a, b)` |`np.maximum(a, b)` | compares a and b element-wise, and returns the maximum value from each pair |
 | `stats.L2Norm(a)` | . | `np.sqrt(v @ v)` or `np.linalg.norm(v)` | L2 norm of vector v |
 | . | . |`cg`  | conjugate gradients solver |
 

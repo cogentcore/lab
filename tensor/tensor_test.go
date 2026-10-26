@@ -543,14 +543,21 @@ func TestReshaped(t *testing.T) {
 	err := rs.SetShapeSizes(5, -1)
 	assert.Error(t, err)
 
-	res = `[3 4]
-    [0] [3] [2] [1] 
-[0]   0   3  12  21 
-[0]   1  10  13  22 
-[0]   2  11  20  23 
+	res = `[4 3]
+    [0] [1] [2] 
+[0]   0  10  20 
+[1]   1  11  21 
+[2]   2  12  22 
+[3]   3  13  23 
 `
 	tr := Transpose(ft)
 	assert.Equal(t, res, tr.String())
+	assert.Equal(t, 12.0, tr.Float(2, 1))
+	assert.Equal(t, 12.0, tr.Float1D(7))
+	assert.Equal(t, []float64{0, 10, 20, 1, 11, 21, 2, 12, 22, 3, 13, 23}, tr.AsValues().(*Float64).Values)
+	tr.SetFloat(99, 0, 1) // a view: sets ft[1, 0]
+	assert.Equal(t, 99.0, ft.Float(1, 0))
+	assert.Equal(t, []int{3, 4}, Transpose(tr).ShapeSizes())
 
 }
 

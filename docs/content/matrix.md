@@ -14,12 +14,12 @@ v := [2., 3.]
 b  := matrix.Mul(a, a)
 c  := matrix.Mul(a, v)
 d  := matrix.Mul(v, a)
-##
 
 fmt.Println("a:", a)
 fmt.Println("b:", b)
 fmt.Println("c:", c)
 fmt.Println("d:", d)
+##
 ```
 
 And other standard matrix operations:
@@ -31,11 +31,11 @@ a := linspace(1., 4., 4., true).reshape(2, 2)
 t  := tensor.Transpose(a)
 d  := matrix.Det(a)
 i  := matrix.Inverse(a)
-##
 
 fmt.Println("t:", t)
 fmt.Println("d:", d)
 fmt.Println("i:", i)
+##
 ```
 
 Including eigenvector functions, which return two values (the eigenvectors and the eigenvalues), so they are called outside of math mode:
@@ -43,11 +43,11 @@ Including eigenvector functions, which return two values (the eigenvectors and t
 ```Goal
 ##
 a := [[2., 1.], [1., 2.]]
-##
 
 v, _ := matrix.EigSym(a)
 
 fmt.Println("a:", a)
 fmt.Println("v:", v)
+##
 ```
 

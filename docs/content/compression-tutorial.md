@@ -63,15 +63,17 @@ func compress(n int) tensor.Tensor {
     sorted.SortFunc(0, func(tsr tensor.Tensor, i, j int) int {
         return cmp.Compare(math.Abs(tsr.Float1D(j)), math.Abs(tsr.Float1D(i)))
     })
-    # top := sorted[:n]
-    # res := zeros(8)
-    for i := range 8 {
-        if tensor.ContainsFloat(top, #a[i]#) {
-            # res[i] = a[i]
+	##
+    top := sorted[:n]
+    res := zeros(8)
+    for i := range res {
+        if tensor.ContainsFloat(top, a[i]) {
+            res[i] = a[i]
         } else {
-            # res[i] = 0
+            res[i] = 0
         }
-    }    
+    }
+	##
     return res
 }
 ```

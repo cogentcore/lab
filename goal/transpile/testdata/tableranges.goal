@@ -1,0 +1,8 @@
+// the Goal entries of the "Ranges and grids" table of the math mode docs.
+
+##
+fmt.Println(arange(1, 11))
+fmt.Println(arange(10))
+fmt.Println(linspace(1, 3, 4, true))
+fmt.Println(linspace(1, 3, 4, false))
+##

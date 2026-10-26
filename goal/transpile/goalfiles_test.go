@@ -7,6 +7,7 @@ package transpile
 import (
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -62,26 +63,55 @@ func TestGoalFiles(t *testing.T) {
 // errors are unused variables is not built, but is not an error: those are
 // errors of Go, but not of the Goal interpreter, which can run it.
 func buildGoalFiles(t *testing.T, dir, bin string, names []string) map[string]bool {
-	built := map[string]bool{}
 	pkg := func(name string) string { return "./" + filepath.ToSlash(filepath.Join(dir, name)) }
-	if _, err := exec.Command("go", "build", "-o", bin, pkg("...")).CombinedOutput(); err == nil {
+	build := func(names []string) (string, error) {
+		args := []string{"build", "-o", bin}
 		for _, name := range names {
-			built[name] = true
+			args = append(args, pkg(name))
 		}
-		return built
+		out, err := exec.Command("go", args...).CombinedOutput()
+		return string(out), err
 	}
-	for _, name := range names {
-		out, err := exec.Command("go", "build", "-o", filepath.Join(bin, name), pkg(name)).CombinedOutput()
-		if err == nil {
-			built[name] = true
-			continue
-		}
-		for _, ln := range strings.Split(strings.TrimSpace(string(out)), "\n") {
-			if !strings.HasPrefix(ln, "#") && !strings.Contains(ln, "declared and not used") {
-				t.Errorf("building %s: %v\n%s", name, err, out)
-				break
+	built := map[string]bool{}
+	out, err := build(names)
+	if err != nil {
+		// The compile errors of each program, which have a source position,
+		// follow a "# package" line (as do linker warnings).
+		errs := map[string][]string{}
+		name := ""
+		for _, ln := range strings.Split(strings.TrimSpace(out), "\n") {
+			if pk, ok := strings.CutPrefix(ln, "# "); ok {
+				name = path.Base(pk)
+				continue
+			}
+			if strings.Contains(ln, ".goal:") || strings.Contains(ln, ".go:") {
+				errs[name] = append(errs[name], ln)
 			}
 		}
+		var ok []string
+		for _, name := range names {
+			lines, failed := errs[name]
+			if !failed {
+				ok = append(ok, name)
+				continue
+			}
+			for _, ln := range lines {
+				if !strings.Contains(ln, "declared and not used") {
+					t.Errorf("building %s:\n%s", name, strings.Join(lines, "\n"))
+					break
+				}
+			}
+		}
+		if len(ok) == 0 {
+			return built
+		}
+		if out, err := build(ok); err != nil {
+			t.Fatalf("building the transpiled programs: %v\n%s", err, out)
+		}
+		names = ok
+	}
+	for _, name := range names {
+		built[name] = true
 	}
 	return built
 }

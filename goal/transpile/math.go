@@ -198,6 +198,10 @@ type funcInfo struct {
 
 	// nargs is the number of args of the call.
 	nargs int
+
+	// argOffset is the number of args of the function that are not in the
+	// args list of the call, such as the receiver of a.reshape(3, 2).
+	argOffset int
 }
 
 // mathParse has the parsing state, active only during a parsing pass
@@ -1087,7 +1091,7 @@ func (mp *mathParse) exprList(ex []ast.Expr) {
 func (mp *mathParse) argsList(ex []ast.Expr) {
 	n := len(ex)
 	if cfun := mp.funcs.Peek(); cfun != nil {
-		cfun.nargs = n
+		cfun.nargs = n + cfun.argOffset
 	}
 	if n == 0 {
 		return
@@ -1172,6 +1176,12 @@ func (mp *mathParse) binaryExpr(ex *ast.BinaryExpr) {
 }
 
 func (mp *mathParse) unaryExpr(ex *ast.UnaryExpr) {
+	if se, ok := ex.X.(*ast.SliceExpr); ok && ex.Op == token.SUB && se.Low != nil {
+		// -2: is parsed as -(2:), whose sign is that of the start
+		mp.idx++
+		mp.sliceExpr(se, "-")
+		return
+	}
 	if lit, isbl := ex.X.(*ast.BasicLit); isbl {
 		if mp.curArgIsTensor() && (ex.Op == token.SUB || ex.Op == token.ADD) {
 			mp.idx++ // the sign goes in the literal
@@ -1505,7 +1515,9 @@ func (mp *mathParse) basicSlicingExpr(il *ast.IndexExpr) {
 	mp.endFunc()
 }
 
-func (mp *mathParse) sliceExpr(se *ast.SliceExpr) {
+// sliceExpr transpiles a slice expression, such as 1:5:2, as a
+// tensor.Slice, with the given sign for its start.
+func (mp *mathParse) sliceExpr(se *ast.SliceExpr, startSign ...string) {
 	if se.Low == nil && se.High == nil && se.Max == nil {
 		mp.out.Add(token.IDENT, "tensor.FullAxis")
 		mp.idx++
@@ -1516,7 +1528,10 @@ func (mp *mathParse) sliceExpr(se *ast.SliceExpr) {
 	prev := false
 	if se.Low != nil {
 		mp.out.Add(token.IDENT, "Start:")
-		mp.expr(se.Low)
+		if len(startSign) == 1 {
+			mp.out.Add(token.SUB)
+		}
+		mp.intExpr(se.Low)
 		prev = true
 		if se.High == nil && se.Max == nil {
 			mp.idx++
@@ -1528,7 +1543,7 @@ func (mp *mathParse) sliceExpr(se *ast.SliceExpr) {
 		}
 		mp.out.Add(token.IDENT, "Stop:")
 		mp.idx++
-		mp.expr(se.High)
+		mp.intExpr(se.High)
 		prev = true
 	}
 	if se.Max != nil {
@@ -1540,9 +1555,23 @@ func (mp *mathParse) sliceExpr(se *ast.SliceExpr) {
 			mp.idx++
 		}
 		mp.out.Add(token.IDENT, "Step:")
-		mp.expr(se.Max)
+		mp.intExpr(se.Max)
 	}
 	mp.out.Add(token.RBRACE)
+}
+
+// intExpr transpiles an expression where a Go int is needed, such as a
+// bound of a slice: a literal or Go value as such, and others with
+// [tensor.ToInt].
+func (mp *mathParse) intExpr(ex ast.Expr) {
+	if g, _ := mp.goExpr(ex); g {
+		mp.anyExpr(ex)
+		return
+	}
+	mp.out.Add(token.IDENT, "tensor.ToInt")
+	mp.out.Add(token.LPAREN)
+	mp.anyExpr(ex)
+	mp.out.Add(token.RPAREN)
 }
 
 func (mp *mathParse) arrayLiteral(il *ast.IndexListExpr) {
@@ -1561,6 +1590,9 @@ func (mp *mathParse) arrayLiteral(il *ast.IndexListExpr) {
 	case token.STRING:
 		typ = "string"
 		fun = "String"
+	case kindBool:
+		typ = "bool"
+		fun = "Bool"
 	}
 	if mp.inArray || mp.curArgIsInts() {
 		mp.idx++ // opening brace we're not using
@@ -1641,11 +1673,21 @@ func (mp *mathParse) callExpr(ex *ast.CallExpr) {
 			mp.callPropFun(ex, fw)
 			return
 		}
+		if red, ok := reductions[x.Name]; ok && len(ex.Args) == 1 {
+			mp.startFunc(red)
+			mp.idx++
+			mp.addToken(token.LPAREN)
+			break
+		}
 		mp.callName(x.Name, "")
 	case *ast.SelectorExpr:
 		fun := x.Sel.Name
 		if fw, ok := numpyFuncs[fun]; ok {
 			mp.callPropSelFun(ex, x.X, fw)
+			return
+		}
+		if red, ok := reductions[fun]; ok && len(ex.Args) == 0 {
+			mp.callPropSelFun(ex, x.X, funWrap{fun: red})
 			return
 		}
 		pkg, ok := x.X.(*ast.Ident)
@@ -1664,6 +1706,18 @@ func (mp *mathParse) callExpr(ex *ast.CallExpr) {
 	}
 	mp.addToken(token.RPAREN)
 	mp.endFunc()
+}
+
+// reductions are the stats functions of the NumPy style reductions of
+// all the values of a tensor to one, as in max(a) or a.max(). With two
+// args, max and min are the element-wise tmath functions.
+var reductions = map[string]string{
+	"max":  "stats.Max",
+	"min":  "stats.Min",
+	"sum":  "stats.Sum",
+	"prod": "stats.Prod",
+	"mean": "stats.Mean",
+	"std":  "stats.Std",
 }
 
 // callOther transpiles a call of a function that is not named, such as
@@ -1696,9 +1750,15 @@ func (mp *mathParse) callIsTensor(ex *ast.CallExpr) bool {
 		if _, ok := numpyFuncs[x.Name]; ok {
 			return true
 		}
+		if _, ok := reductions[x.Name]; ok && len(ex.Args) == 1 {
+			return true
+		}
 		return funcReturnsTensor("tmath."+x.Name) || funcReturnsTensor("tmath."+strings.ToUpper(x.Name[:1])+x.Name[1:])
 	case *ast.SelectorExpr:
 		if _, ok := numpyFuncs[x.Sel.Name]; ok {
+			return true
+		}
+		if _, ok := reductions[x.Sel.Name]; ok && len(ex.Args) == 0 {
 			return true
 		}
 		if pkg, ok := x.X.(*ast.Ident); ok {
@@ -1735,8 +1795,8 @@ func (mp *mathParse) callPropFun(cf *ast.CallExpr, fw funWrap) {
 
 // this calls global function through selector like: a.reshape()
 func (mp *mathParse) callPropSelFun(cf *ast.CallExpr, ex ast.Expr, fw funWrap) {
-	mp.startFunc(fw.fun)
-	mp.out.Add(token.LPAREN) // use the (
+	mp.startFunc(fw.fun).argOffset = 1 // the receiver is the first arg
+	mp.out.Add(token.LPAREN)           // use the (
 	mp.expr(ex)
 	mp.idx += 2
 	if len(cf.Args) > 0 {

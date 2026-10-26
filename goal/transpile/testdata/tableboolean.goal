@@ -1,0 +1,16 @@
+// the Goal entries of the "Boolean tensors and indexing" table of the
+// math mode docs.
+
+##
+a := [0.1, 0.6, 0.3, 0.9]
+fmt.Println(a > 0.5)
+b := [true, false, true, false]
+c := [true, true, false, false]
+fmt.Println(b && c)
+fmt.Println(b || c)
+fmt.Println(!b)
+fmt.Println(a[a < 0.5].flatten())
+fmt.Println(a * (a > 0.5))
+a[a < 0.5] = 0
+fmt.Println(a)
+##
