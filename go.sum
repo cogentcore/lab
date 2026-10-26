@@ -1,7 +1,7 @@
 codeberg.org/go-pdf/fpdf v0.11.1 h1:U8+coOTDVLxHIXZgGvkfQEi/q0hYHYvEHFuGNX2GzGs=
 codeberg.org/go-pdf/fpdf v0.11.1/go.mod h1:Y0DGRAdZ0OmnZPvjbMp/1bYxmIPxm0ws4tfoPOc4LjU=
-cogentcore.org/core v0.5.7-0.20261026083128-a8a4dcc4d613 h1:/K66LvPpteh+054rqXiaG3SK9xKfKDJGi/RngF5iygQ=
-cogentcore.org/core v0.5.7-0.20261026083128-a8a4dcc4d613/go.mod h1:HnDGB4VXne/+57t+eMyugetRB20nof/1uThdwRM9QP0=
+cogentcore.org/core v0.5.7-0.20261026165733-abc00e2c263f h1:ray+4+efm7Xyda/QoNtvS+WTTpAfwFlw51arHXRD57M=
+cogentcore.org/core v0.5.7-0.20261026165733-abc00e2c263f/go.mod h1:xdMufvOKfnFNWq2q+DSvWLw/zP/gAXx6LMpm3LBinPI=
 git.sr.ht/~sbinet/cmpimg v0.1.0 h1:E0zPRk2muWuCqSKSVZIWsgtU9pjsw3eKHi8VmQeScxo=
 git.sr.ht/~sbinet/cmpimg v0.1.0/go.mod h1:FU12psLbF4TfNXkKH2ZZQ29crIqoiqTZmeQ7dkp/pxE=
 git.sr.ht/~sbinet/overlayfs v0.1.1 h1:HvCHXT1cs8RMSjNLQXxPPosB2hgR3tRC8RniH0f3ESg=
@@ -32,8 +32,8 @@ github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UF
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/chewxy/math32 v1.11.2 h1:IufN08Zwr1NKuWfY+4Tz55BcwKmyKKNdOP7KtumehnM=
 github.com/chewxy/math32 v1.11.2/go.mod h1:dOB2rcuFrCn6UHrze36WSLVPKtzPMRAQvBvUwkSsLqs=
-github.com/cogentcore/mvm v0.0.0-20261026083022-c63aa0ace285 h1:s3EPLagTcS7hc/pHa6+LHn98aEgAyNCwEC4VMwA88qw=
-github.com/cogentcore/mvm v0.0.0-20261026083022-c63aa0ace285/go.mod h1:K/Zh/ATxZT2WBuvu5pkyP1s11+9MwFu4whU6fXET0ew=
+github.com/cogentcore/mvm v0.0.0-20261026165644-dc6a9d68f704 h1:3B6sj8aa4mCrBjy/wq9DoBTH6+rRY3bqeBNBxOAoDRY=
+github.com/cogentcore/mvm v0.0.0-20261026165644-dc6a9d68f704/go.mod h1:K/Zh/ATxZT2WBuvu5pkyP1s11+9MwFu4whU6fXET0ew=
 github.com/cogentcore/readline v0.1.3 h1:tYmjP3XHvsGwhsDLkAp+vBhkERmLFENZfftyPOR/PBE=
 github.com/cogentcore/readline v0.1.3/go.mod h1:IHVtJHSKXspK7CMg3OC/bbPEXxO++dFlug/vsPktvas=
 github.com/cogentcore/star-tex v0.7.2-0.20260625151004-a16970c7d698 h1:GsehCn/Dw8hhYAonDQO48EJz63sAAF4wxEhHmHt/xKA=
