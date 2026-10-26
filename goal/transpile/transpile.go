@@ -64,6 +64,7 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 		st.AddError(err)
 		return nil
 	}
+	st.forgetDefines(toks)
 	logx.PrintlnDebug("\n########## line:\n", code, "\nTokens:", len(toks), "\n", toks.String(), "\nWords:", len(ewords), "\n", ewords)
 
 	if toks[0].Tok == token.TYPE {

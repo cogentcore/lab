@@ -1,0 +1,24 @@
+// operations that mix Go values and tensors in math mode.
+
+tau := 0.25 // Go float64, outside of math mode
+k := 2      // Go int
+##
+fast := zeros(3)
+fast[0] = 0.5
+fast[1] = tau * fast[0]
+fast[2] = fast[1] + k
+fmt.Println(float64(fast[1]), float64(fast[2]))
+fast[2] += tau
+fmt.Println(float64(fast[2]))
+tau += fast[0]
+fmt.Println(tau)
+tau = fast[2] / 2
+fmt.Println(tau)
+k *= 3
+fmt.Println(k)
+b := fast * tau // tensor times Go value
+fmt.Println(float64(b[0]))
+c := tau        // a Go copy of a Go value
+c += 1
+fmt.Println(float64(c), tau)
+##

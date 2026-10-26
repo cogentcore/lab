@@ -1,0 +1,24 @@
+// if / else if / else in math mode, with conditions on tensors,
+// Go values, and both.
+
+x := 0.3 // Go float64, outside of math mode
+##
+a := [1., 2., 3.]
+if a[1] > 1.5 {
+	fmt.Println("a[1] > 1.5")
+}
+if x > 0.5 {
+	fmt.Println("x > 0.5")
+} else if x > 0.2 && a[0] == 1 {
+	fmt.Println("x > 0.2 and a[0] == 1")
+} else {
+	fmt.Println("else")
+}
+n := int(a[2]) // a Go int
+if n == 3 {
+	fmt.Println("n == 3")
+}
+if b := a[2] * 2; b > 5 {
+	fmt.Println("b:", float64(b))
+}
+##

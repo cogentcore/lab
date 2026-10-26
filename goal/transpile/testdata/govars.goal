@@ -1,0 +1,29 @@
+// plain Go in math mode: var declarations, conversions, composite
+// literals, function literals, and Go expressions.
+
+##
+var tau float64 = 0.5
+var steps = 3
+a := [1., 2., 3.]
+y := float64(a[1]) * tau // a Go float64
+j := steps + 1             // a Go int
+fmt.Println(y, j)
+s := []float64{1.5, 2.5}
+fmt.Println(len(s), s[1])
+p := struct{ X, Y float64 }{X: 1, Y: 2}
+fmt.Println(p.X + p.Y)
+m := map[string]int{"a": 1}
+if v, ok := m["a"]; ok {
+	fmt.Println("v:", v)
+}
+double := func(x float64) float64 {
+	return x * 2
+}
+fmt.Println(double(tau))
+tau = a[2] * 2 // a tensor value set to a Go variable
+fmt.Println(tau)
+tau += a[0]
+fmt.Println(tau)
+steps--
+fmt.Println(steps)
+##

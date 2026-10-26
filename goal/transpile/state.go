@@ -52,6 +52,10 @@ type State struct {
 	// if this is non-empty, it is the name of the last command defined.
 	// triggers insertion of the AddCommand call to add to list of defined commands.
 	lastCommand string
+
+	// math has what math mode knows about the variables and blocks
+	// of the code so far.
+	math mathNames
 }
 
 // NewState returns a new transpiling state; mostly for testing

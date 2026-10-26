@@ -1,0 +1,11 @@
+// tests interoperability between plain float64 and tensors in math mode.
+
+fastTau := 0.2 // float64
+
+##
+n := 10
+fast := zeros(n)
+fast[0] = 0.5
+fast[1] = fastTau * fast[0]
+##
+

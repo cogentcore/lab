@@ -1,0 +1,26 @@
+// range loops in math mode, over Go ints, tensors and Go slices.
+
+vals := []float64{1, 2, 4}
+##
+for i := range 3 {
+	fmt.Println("i:", i)
+}
+a := [10., 20., 30.]
+for i, v := range a {
+	fmt.Println(i, v)
+}
+for i := range a {
+	a[i] = a[i] + i
+}
+fmt.Println(float64(a[2]))
+total := 0.0
+for _, v := range vals {
+	total += v
+}
+fmt.Println(float64(total))
+count := 0
+for range 5 {
+	count++
+}
+fmt.Println(count)
+##
