@@ -44,10 +44,11 @@ Including eigenvector functions, which return two values (the eigenvectors and t
 ##
 a := [[2., 1.], [1., 2.]]
 
-v, _ := matrix.EigSym(a)
+v, l := matrix.EigSym(a)
 
 fmt.Println("a:", a)
 fmt.Println("v:", v)
+fmt.Println("l:", l)
 ##
 ```
 
