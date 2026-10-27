@@ -81,6 +81,12 @@ func ExecWords(ln string) ([]string, error) {
 
 	for i, r := range ln {
 		quote := dQuote || bQuote || sQuote
+		// A // that starts a word outside of quotes and Go code starts a
+		// comment, which has no words: an apostrophe in it, as in
+		// // don't, is not a quote.
+		if !quote && !esc && brace == 0 && word == "" && strings.HasPrefix(ln[i:], "//") {
+			break
+		}
 		if !quote && (r == '"' || r == '`' || r == '\'' && brace == 0) {
 			quoteStart = base + i
 		}

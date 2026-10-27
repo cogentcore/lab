@@ -44,6 +44,12 @@ func TestExecWords(t *testing.T) {
 		{`./"Cogent Code"`, false, []string{`./"Cogent Code"`}},
 		{`Cogent\ Code`, false, []string{`Cogent Code`}},
 		{`./Cogent\ Code`, false, []string{`./Cogent Code`}},
+		// comments have no words, and their quotes are not quotes
+		{`mlr = 1 // don't use sig deriv`, false, []string{`mlr`, `=`, `1`}},
+		{`// the neuron's index`, false, nil},
+		{`ls // the "a`, false, []string{`ls`}},
+		{`curl http://example.com/a`, false, []string{`curl`, `http://example.com/a`}},
+		{`echo "// don't"`, false, []string{`echo`, `"// don't"`}},
 	}
 	for _, test := range tests {
 		o, err := ExecWords(test.i)
@@ -89,6 +95,7 @@ func TestTranspile(t *testing.T) {
 	// logx.UserLevel = slog.LevelDebug
 	tests := []exIn{
 		{"ls", `goalrun.Run("ls")`},
+		{"mlr = 1 // don't use sig deriv", `mlr = 1 // don't use sig deriv`},
 		{"$ls -la$", `goalrun.Run("ls", "-la")`},
 		{"ls -la", `goalrun.Run("ls", "-la")`},
 		{"chmod +x file", `goalrun.Run("chmod", "+x", "file")`},
