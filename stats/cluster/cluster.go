@@ -9,7 +9,6 @@ package cluster
 import (
 	"fmt"
 	"math"
-	"math/rand"
 
 	"cogentcore.org/core/base/indent"
 	"cogentcore.org/lab/stats/stats"
@@ -120,7 +119,8 @@ func Glom(root *Node, metric Metrics, dmat tensor.Tensor) *Node {
 	aidx := make([]int, ntot)
 	bidx := make([]int, ntot)
 	for {
-		var ma, mb []int
+		// the first closest pair is merged, so ties are deterministic
+		na, nb := 0, 0
 		mval := math.MaxFloat64
 		for ai, ka := range root.Kids {
 			actr := 0
@@ -134,20 +134,10 @@ func Glom(root *Node, metric Metrics, dmat tensor.Tensor) *Node {
 				dv := metric.Call(aix, bix, ntot, maxd, dmat)
 				if dv < mval {
 					mval = dv
-					ma = []int{ai}
-					mb = []int{bi}
-				} else if dv == mval { // do all ties at same time
-					ma = append(ma, ai)
-					mb = append(mb, bi)
+					na, nb = ai, bi
 				}
 			}
 		}
-		ni := 0
-		if len(ma) > 1 {
-			ni = rand.Intn(len(ma))
-		}
-		na := ma[ni]
-		nb := mb[ni]
 		nn := NewNode(root.Kids[na], root.Kids[nb], mval)
 		for i := len(root.Kids) - 1; i >= 0; i-- {
 			if i == na || i == nb {

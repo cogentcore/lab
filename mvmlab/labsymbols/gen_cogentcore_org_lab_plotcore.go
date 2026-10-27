@@ -10,6 +10,7 @@ import (
 var _ = register(func() {
 	add(map[string]map[string]reflect.Value{
 		"cogentcore.org/lab/plotcore": {
+			"ClusterPlot":       reflect.ValueOf(p_cogentcore_org_lab_plotcore.ClusterPlot),
 			"Editor":            reflect.ValueOf((*p_cogentcore_org_lab_plotcore.Editor)(nil)),
 			"NewEditor":         reflect.ValueOf(p_cogentcore_org_lab_plotcore.NewEditor),
 			"NewPlot":           reflect.ValueOf(p_cogentcore_org_lab_plotcore.NewPlot),
