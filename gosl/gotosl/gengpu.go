@@ -154,7 +154,8 @@ func GPUInit() {
 	b.WriteString("}\n\n")
 
 	release := `// GPURelease releases the GPU compute system resources.
-// Call this at program exit.
+// Call this at program exit, or when done with the GPU:
+// it turns off UseGPU, and GPUInit then initializes it again.
 func GPURelease() {
 `
 
@@ -174,9 +175,11 @@ func GPURelease() {
 	gpuRelease := `
 	if !BorrowedGPU && ComputeGPU != nil {
 		ComputeGPU.Release()
-	
 	}
 	ComputeGPU = nil
+	BorrowedGPU = false
+	GPUInitialized = false
+	UseGPU = false
 }
 
 `

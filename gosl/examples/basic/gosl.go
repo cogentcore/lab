@@ -112,7 +112,8 @@ func GPUInit() {
 }
 
 // GPURelease releases the GPU compute system resources.
-// Call this at program exit.
+// Call this at program exit, or when done with the GPU:
+// it turns off UseGPU, and GPUInit then initializes it again.
 func GPURelease() {
 	if GPUSystem != nil {
 		GPUSystem.Release()
@@ -121,9 +122,11 @@ func GPURelease() {
 
 	if !BorrowedGPU && ComputeGPU != nil {
 		ComputeGPU.Release()
-	
 	}
 	ComputeGPU = nil
+	BorrowedGPU = false
+	GPUInitialized = false
+	UseGPU = false
 }
 
 // RunAtomic runs the Atomic kernel with given number of elements,
