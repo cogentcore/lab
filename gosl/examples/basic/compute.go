@@ -17,14 +17,12 @@ import (
 //gosl:vars
 var (
 	// Params are the parameters for the computation.
-	//
 	//gosl:group Params
 	//gosl:read-only
 	Params []ParamStruct
 
 	// Data is the data on which the computation operates.
 	// 2D: outer index is data, inner index is: Raw, Integ, Exp vars.
-	//
 	//gosl:group Data
 	//gosl:dims 2
 	//gosl:nbuffs 8
@@ -32,7 +30,6 @@ var (
 
 	// IntData is the int data on which the computation operates.
 	// 2D: outer index is data, inner index is: Raw, Integ, Exp vars.
-	//
 	//gosl:dims 2
 	IntData *tensor.Int32
 )
@@ -77,18 +74,18 @@ type ParamStruct struct {
 
 // IntegFromRaw computes integrated value from current raw value
 func (ps *SubStruct) IntegFromRaw(idx int) {
-	integ := Data.Value(int(idx), int(Integ))
-	integ += ps.Dt * (Data.Value(int(idx), int(Raw)) - integ)
-	Data.Set(integ, int(idx), int(Integ))
-	Data.Set(math32.FastExp(-integ), int(idx), int(Exp))
+	integ := Data.Value2D(int(idx), int(Integ))
+	integ += ps.Dt * (Data.Value2D(int(idx), int(Raw)) - integ)
+	Data.Set2D(integ, int(idx), int(Integ))
+	Data.Set2D(math32.FastExp(-integ), int(idx), int(Exp))
 }
 
 // IntegFromRaw computes integrated value from current raw value
 func (ps *ParamStruct) IntegFromRaw(idx int) {
-	integ := Data.Value(int(idx), int(Integ))
-	integ += ps.Dt * (Data.Value(int(idx), int(Raw)) - integ)
-	Data.Set(integ, int(idx), int(Integ))
-	Data.Set(math32.FastExp(-integ), int(idx), int(Exp))
+	integ := Data.Value2D(int(idx), int(Integ))
+	integ += ps.Dt * (Data.Value2D(int(idx), int(Raw)) - integ)
+	Data.Set2D(integ, int(idx), int(Integ))
+	Data.Set2D(math32.FastExp(-integ), int(idx), int(Exp))
 
 	ps.Sub.IntegFromRaw(idx)
 }
