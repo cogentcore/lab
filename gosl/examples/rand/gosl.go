@@ -90,8 +90,7 @@ func GPUInit() {
 }
 
 // GPURelease releases the GPU compute system resources.
-// Call this at program exit, or when done with the GPU:
-// it turns off UseGPU, and GPUInit then initializes it again.
+// Call this at program exit.
 func GPURelease() {
 	if GPUSystem != nil {
 		GPUSystem.Release()
@@ -100,11 +99,9 @@ func GPURelease() {
 
 	if !BorrowedGPU && ComputeGPU != nil {
 		ComputeGPU.Release()
+	
 	}
 	ComputeGPU = nil
-	BorrowedGPU = false
-	GPUInitialized = false
-	UseGPU = false
 }
 
 // RunCompute runs the Compute kernel with given number of elements,

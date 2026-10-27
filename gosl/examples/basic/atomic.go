@@ -12,7 +12,7 @@ import "sync/atomic"
 
 // Atomic does an atomic computation on the data.
 func Atomic(i uint32) { //gosl:kernel
-	atomic.AddInt32(IntData.ValuePtr(int(i), int(Integ)), 1)
+	atomic.AddInt32(IntData.ValuePtr2D(int(i), int(Integ)), 1)
 }
 
 //gosl:end
