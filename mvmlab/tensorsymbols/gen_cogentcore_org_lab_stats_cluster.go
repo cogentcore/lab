@@ -28,7 +28,6 @@ var _ = register(func() {
 			"NewNode":              reflect.ValueOf(p_cogentcore_org_lab_stats_cluster.NewNode),
 			"Node":                 reflect.ValueOf((*p_cogentcore_org_lab_stats_cluster.Node)(nil)),
 			"Plot":                 reflect.ValueOf(p_cogentcore_org_lab_stats_cluster.Plot),
-			"PlotFromTable":        reflect.ValueOf(p_cogentcore_org_lab_stats_cluster.PlotFromTable),
 			"PlotFromTableToTable": reflect.ValueOf(p_cogentcore_org_lab_stats_cluster.PlotFromTableToTable),
 		},
 	})
