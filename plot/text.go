@@ -155,6 +155,44 @@ func (tx *Text) PosY(height float32) math32.Vector2 {
 	return pos
 }
 
+// Rotated returns whether the text is rotated enough to be laid out
+// as rotated text, which is more than 10 degrees.
+func (tx *Text) Rotated() bool {
+	return math32.Abs(tx.Style.Rotation) > 10
+}
+
+// TickPosX returns, for a rotated tick label of the X axis (see
+// [Text.Rotated]), the position at which to draw it (see [Text.Draw]) for
+// a tick at x, such that the top of the rotated text is at the given top.
+// It also returns the extent of the rotated text relative to x, to the
+// left (negative) and right, and its height. The point of the text at the
+// tick is its end for a negative rotation, so that the text ends at the
+// tick, and its start for a positive rotation, centered vertically.
+// Text must have been config'd already.
+func (tx *Text) TickPosX(x, top float32) (pos math32.Vector2, left, right, height float32) {
+	bb := tx.PaintText.Bounds
+	anchor := math32.Vec2(bb.Min.X, 0.5*(bb.Min.Y+bb.Max.Y))
+	if tx.Style.Rotation < 0 {
+		anchor.X = bb.Max.X
+	}
+	rot := math32.Rotate2D(math32.DegToRad(tx.Style.Rotation))
+	corners := []math32.Vector2{bb.Min, math32.Vec2(bb.Max.X, bb.Min.Y), math32.Vec2(bb.Min.X, bb.Max.Y), bb.Max}
+	var minY, maxY float32
+	for i, c := range corners {
+		r := rot.MulVector(c.Sub(anchor))
+		if i == 0 {
+			left, right, minY, maxY = r.X, r.X, r.Y, r.Y
+			continue
+		}
+		left, right = min(left, r.X), max(right, r.X)
+		minY, maxY = min(minY, r.Y), max(maxY, r.Y)
+	}
+	at := math32.Vec2(x, top-minY) // the anchor
+	pos = at.Sub(rot.MulVector(anchor))
+	height = maxY - minY
+	return
+}
+
 // Draw renders the text at given upper left position
 func (tx *Text) Draw(pt *Plot, pos math32.Vector2) {
 	if tx.Style.Rotation == 0 {

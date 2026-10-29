@@ -732,3 +732,22 @@ func TestBarXLabels(t *testing.T) {
 	fnm := "bar-x-labels.png"
 	imagex.Assert(t, plt.RenderImage(), fnm)
 }
+
+// TestBarXLabelsRotated tests rotated X labels of different lengths:
+// with a negative rotation, each label ends at its tick, and with a
+// positive rotation, each starts at its tick, all below the axis.
+func TestBarXLabelsRotated(t *testing.T) {
+	for _, rot := range []float32{-45, 45} {
+		yd := make(plot.Values, 4)
+		xl := plot.Labels{"Short", "A much longer label", "Mid length", "X"}
+		for i := range yd {
+			yd[i] = float64(5) + float64(i)*2
+		}
+		plt := plot.New()
+		NewBar(plt, plot.Data{plot.X: xl, plot.Y: yd}).Styler(func(s *plot.Style) {
+			s.Plot.XAxis.Rotation = rot
+		})
+		fnm := fmt.Sprintf("bar-x-labels-rot%g.png", rot)
+		imagex.Assert(t, plt.RenderImage(), fnm)
+	}
+}
