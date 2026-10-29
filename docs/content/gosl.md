@@ -1,5 +1,6 @@
 +++
 Name = "GoSL"
+Categories = ["GoSL"]
 +++
 
 **GoSL** (via the `gosl` executable) allows you to write Go programs that run on [[GPU]] hardware, by transpiling Go into the WGSL shader language used by [WebGPU](https://www.w3.org/TR/webgpu/), thereby establishing the _Go shader language_.
