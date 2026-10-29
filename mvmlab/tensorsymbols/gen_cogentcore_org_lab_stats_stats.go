@@ -31,6 +31,7 @@ var _ = register(func() {
 			"GroupStats":                  reflect.ValueOf(p_cogentcore_org_lab_stats_stats.GroupStats),
 			"GroupStatsAsTable":           reflect.ValueOf(p_cogentcore_org_lab_stats_stats.GroupStatsAsTable),
 			"GroupStatsAsTableNoStatName": reflect.ValueOf(p_cogentcore_org_lab_stats_stats.GroupStatsAsTableNoStatName),
+			"GroupStatsDirTable":          reflect.ValueOf(p_cogentcore_org_lab_stats_stats.GroupStatsDirTable),
 			"Groups":                      reflect.ValueOf(p_cogentcore_org_lab_stats_stats.Groups),
 			"L1Norm":                      reflect.ValueOf(p_cogentcore_org_lab_stats_stats.L1Norm),
 			"L1NormOut":                   reflect.ValueOf(p_cogentcore_org_lab_stats_stats.L1NormOut),

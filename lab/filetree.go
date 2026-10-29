@@ -21,6 +21,7 @@ import (
 	"cogentcore.org/core/text/diffbrowser"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/core/types"
+	"cogentcore.org/lab/stats/stats"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
@@ -69,26 +70,72 @@ func (fn *FileNode) Init() {
 	fn.AddContextMenu(fn.ContextMenu)
 	// before the double click of the filetree, which opens and closes it
 	fn.Parts.OnDoubleClick(func(e events.Event) {
-		if fn.isLeafDir() {
+		if fn.editsDir() {
 			e.SetHandled()
 			fn.EditFile()
 		}
 	})
 }
 
-// isLeafDir returns whether this is a tensorfs directory that has no
-// subdirectories, only data, which double clicking edits, instead of
-// opening and closing it in the tree.
-func (fn *FileNode) isLeafDir() bool {
+// editsDir returns whether this is a tensorfs directory that double
+// clicking edits, instead of opening and closing it in the tree:
+// one that has only data, or an [isMatrixDir] or [isGroupStatsDir] one.
+func (fn *FileNode) editsDir() bool {
 	if !fn.IsDir() {
 		return false
 	}
 	d := TensorFS(fn.AsNode())
-	if d == nil {
+	return d != nil && (d.HasOnlyData() || isMatrixDir(d) || isGroupStatsDir(d))
+}
+
+// dirTable returns the table of the given tensorfs directory, for editing
+// and plotting it: a [tensorfs.DirTableMatrix] for an [isMatrixDir] one,
+// a stats.GroupStatsDirTable for an [isGroupStatsDir] one, and otherwise
+// a [tensorfs.DirTable].
+func dirTable(d *tensorfs.Node) *table.Table {
+	switch {
+	case isMatrixDir(d):
+		return tensorfs.DirTableMatrix(d, nil)
+	case isGroupStatsDir(d):
+		return stats.GroupStatsDirTable(d)
+	}
+	return tensorfs.DirTable(d, nil)
+}
+
+// isMatrixDir returns whether the given tensorfs directory has only
+// subdirectories, which have only data with single values, such as the
+// result of stats.Describe, which is edited as a [tensorfs.DirTableMatrix].
+func isMatrixDir(d *tensorfs.Node) bool {
+	if !d.HasOnlyDirs() {
 		return false
 	}
-	nds, err := d.Nodes()
-	return err == nil && !slices.ContainsFunc(nds, (*tensorfs.Node).IsDir)
+	nds, _ := d.Nodes()
+	return !slices.ContainsFunc(nds, func(sd *tensorfs.Node) bool {
+		if !sd.HasOnlyData() {
+			return true
+		}
+		vals, _ := sd.Nodes()
+		return slices.ContainsFunc(vals, func(v *tensorfs.Node) bool { return v.Tensor == nil || v.Tensor.Len() != 1 })
+	})
+}
+
+// isGroupStatsDir returns whether the given tensorfs directory is that of
+// a group in the results of stats.GroupStats, such as Stats/method, with
+// only subdirectories that have only data, starting with the values of
+// the group, named as the directory, which is edited as a
+// stats.GroupStatsDirTable.
+func isGroupStatsDir(d *tensorfs.Node) bool {
+	if !d.HasOnlyDirs() {
+		return false
+	}
+	nds, _ := d.Nodes()
+	return !slices.ContainsFunc(nds, func(sd *tensorfs.Node) bool {
+		if !sd.HasOnlyData() {
+			return true
+		}
+		vals, _ := sd.Nodes()
+		return vals[0].Name() != d.Name()
+	})
 }
 
 // Tabber returns the [Tabber] for this filenode, from root tree.
@@ -166,8 +213,10 @@ func (fn *FileNode) OpenFile() error {
 	switch {
 	case fn.IsDir():
 		d := TensorFS(ofn)
-		dt := tensorfs.DirTable(d, nil)
-		ts.AsLab().TensorTable(df, dt)
+		if d == nil {
+			break
+		}
+		ts.AsLab().TensorTable(df, dirTable(d))
 	case fn.Info.Cat == fileinfo.Data:
 		switch fn.Info.Known {
 		case fileinfo.Tensor:
@@ -275,13 +324,18 @@ func (fn *FileNode) PlotFiles() { //types:add
 	})
 }
 
-// PlotFile creates a plot of data.
+// PlotFile creates a plot of data, with the table of a directory as it is
+// edited (see [dirTable]), such as a [tensorfs.DirTableMatrix].
 func (fn *FileNode) PlotFile() {
 	ts := fn.Tabber()
 	if ts == nil {
 		return
 	}
 	d := TensorFS(fn.AsNode())
+	if d != nil && d.IsDir() {
+		ts.AsLab().PlotTable(DirAndFileNoSlash(d.Path())+" Plot", dirTable(d))
+		return
+	}
 	if d != nil {
 		ts.AsLab().PlotTensorFS(d)
 		return

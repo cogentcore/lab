@@ -117,13 +117,17 @@ func GroupAll(dir *tensorfs.Node, tsrs ...tensor.Tensor) error {
 // GroupStats computes the given stats function on the unique grouped indexes
 // produced by the [Groups] function, in the given [tensorfs] directory,
 // applied to each of the tensors passed here.
-// It creates a "Stats" subdirectory in given directory, with
-// subdirectories with the name of each value tensor (if it does not
-// yet exist), and then creates a subdirectory within that
-// for the statistic name. Within that statistic directory, it creates
-// a String tensor with the unique values of each source [Groups] tensor,
-// and a aligned Float64 tensor with the statistics results for each such
-// unique group value. See the README.md file for a diagram of the results.
+// It creates a "Stats" subdirectory in given directory, with a
+// subdirectory for each source [Groups] tensor, with subdirectories
+// with the name of each value tensor (if they do not yet exist).
+// Within each value directory, it creates a String tensor with the
+// unique values of the source [Groups] tensor, named as it, as the
+// first column, and an aligned Float64 tensor with the statistics results
+// for each such unique group value, named as the statistic, so that each
+// value directory is a table of its statistics for each group, which can
+// be read and plotted directly. See the README.md file for a diagram of
+// the results, and [GroupStatsDirTable] for a table of all the values.
+// The stats are computed on float64 values, converting other types of data.
 func GroupStats(dir *tensorfs.Node, stat Stats, tsrs ...tensor.Tensor) error {
 	gd := dir.Dir("Groups")
 	sd := dir.Dir("Stats")
@@ -138,19 +142,19 @@ func GroupStats(dir *tensorfs.Node, stat Stats, tsrs ...tensor.Tensor) error {
 			continue
 		}
 		sgd := sd.Dir(gpnm)
-		gv := sgd.Node(gpnm)
-		if gv == nil {
-			gtsr := tensorfs.Value[string](sgd, gpnm, nv)
-			for i, v := range vals {
-				gtsr.SetStringRow(metadata.Name(v), i, 0)
-			}
-		}
 		for _, tsr := range tsrs {
 			vd := sgd.Dir(metadata.Name(tsr))
+			if vd.Node(gpnm) == nil {
+				gtsr := tensorfs.Value[string](vd, gpnm, nv)
+				for i, v := range vals {
+					gtsr.SetStringRow(metadata.Name(v), i, 0)
+				}
+			}
 			sv := tensorfs.Value[float64](vd, stnm, nv)
+			ftsr := tensor.AsFloat64(tsr.AsValues()) // not truncated for int data
 			for i, v := range vals {
 				idx := tensor.AsIntSlice(v)
-				sg := tensor.NewRows(tsr.AsValues(), idx...)
+				sg := tensor.NewRows(ftsr, idx...)
 				stout := stat.Call(sg)
 				sv.SetFloatRow(stout.Float1D(0), i, 0)
 			}
@@ -183,18 +187,62 @@ func TableGroupDescribe(dir *tensorfs.Node, dt *table.Table, columns ...string) 
 }
 
 // GroupStatsAsTable returns the results from [GroupStats] in given directory
-// as a [table.Table], using [tensorfs.DirTable] function.
+// as a [table.Table], with the columns of [GroupStatsDirTable] for each group.
 func GroupStatsAsTable(dir *tensorfs.Node) *table.Table {
-	return tensorfs.DirTable(dir.Node("Stats"), nil)
+	dt := table.New("Stats")
+	gds, _ := dir.Dir("Stats").Nodes()
+	for _, gd := range gds {
+		addGroupStats(dt, gd)
+	}
+	return dt
+}
+
+// GroupStatsDirTable returns the results from [GroupStats] for one group,
+// in the given directory of the group within the "Stats" directory, as a
+// [table.Table], with the group values as the first column, named as the
+// group, followed by a Value/Stat column for each statistic of each value.
+func GroupStatsDirTable(gdir *tensorfs.Node) *table.Table {
+	dt := table.New(gdir.Name())
+	addGroupStats(dt, gdir)
+	return dt
+}
+
+// addGroupStats adds the columns of [GroupStatsDirTable] for the given
+// group directory to the given table.
+func addGroupStats(dt *table.Table, gdir *tensorfs.Node) {
+	gpnm := gdir.Name()
+	vds, _ := gdir.Nodes()
+	for _, vd := range vds {
+		if !vd.IsDir() {
+			continue
+		}
+		sts, _ := vd.Nodes()
+		for _, st := range sts {
+			if st.IsDir() || st.Tensor == nil || st.Tensor.NumDims() == 0 {
+				continue
+			}
+			nm := vd.Name() + "/" + st.Name()
+			if st.Name() == gpnm {
+				if dt.Columns.IndexByKey(gpnm) >= 0 {
+					continue // only once
+				}
+				nm = gpnm
+			}
+			if rows := st.Tensor.DimSize(0); dt.Columns.Rows < rows {
+				dt.SetNumRows(rows)
+			}
+			dt.AddColumn(nm, st.Tensor.AsValues())
+		}
+	}
 }
 
 // GroupStatsAsTableNoStatName returns the results from [GroupStats]
-// in given directory as a [table.Table], using [tensorfs.DirTable] function.
+// in given directory as a [table.Table], as [GroupStatsAsTable] does.
 // Column names are updated to not include the stat name, if there is only
 // one statistic such that the resulting name will still be unique.
 // Otherwise, column names are Value/Stat.
 func GroupStatsAsTableNoStatName(dir *tensorfs.Node) *table.Table {
-	dt := tensorfs.DirTable(dir.Node("Stats"), nil)
+	dt := GroupStatsAsTable(dir)
 	cols := make(map[string]string)
 	for _, nm := range dt.Columns.Keys {
 		vn := nm

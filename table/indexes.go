@@ -5,10 +5,12 @@
 package table
 
 import (
+	"math"
 	"math/rand"
 	"slices"
 	"sort"
 
+	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/lab/tensor"
 )
 
@@ -31,9 +33,11 @@ func (dt *Table) NumRows() int {
 }
 
 // Sequential sets Indexes to nil, resulting in sequential row-wise access into tensor.
-func (dt *Table) Sequential() { //types:add
+// returns the table itself, for chaining operations.
+func (dt *Table) Sequential() *Table { //types:add
 	dt.Indexes = nil
 	dt.Columns.UpdateRows()
+	return dt
 }
 
 // IndexesNeeded is called prior to an operation that needs actual indexes,
@@ -54,17 +58,20 @@ func (dt *Table) IndexesNeeded() {
 // IndexesFromTensor copies Indexes from the given [tensor.Rows] tensor,
 // including if they are nil. This allows column-specific Sort, Filter and
 // other such methods to be applied to the entire table.
-func (dt *Table) IndexesFromTensor(ix *tensor.Rows) {
+// returns the table itself, for chaining operations.
+func (dt *Table) IndexesFromTensor(ix *tensor.Rows) *Table {
 	dt.Indexes = ix.Indexes
+	return dt
 }
 
 // ValidIndexes deletes all invalid indexes from the list.
 // Call this if rows (could) have been deleted from table.
-func (dt *Table) ValidIndexes() {
+// returns the table itself, for chaining operations.
+func (dt *Table) ValidIndexes() *Table {
 	dt.Columns.UpdateRows()
 	if dt.Columns.Rows <= 0 || dt.Indexes == nil {
 		dt.Indexes = nil
-		return
+		return dt
 	}
 	ni := dt.NumRows()
 	for i := ni - 1; i >= 0; i-- {
@@ -72,16 +79,18 @@ func (dt *Table) ValidIndexes() {
 			dt.Indexes = append(dt.Indexes[:i], dt.Indexes[i+1:]...)
 		}
 	}
+	return dt
 }
 
 // Permuted sets indexes to a permuted order -- if indexes already exist
 // then existing list of indexes is permuted, otherwise a new set of
 // permuted indexes are generated
-func (dt *Table) Permuted() {
+// returns the table itself, for chaining operations.
+func (dt *Table) Permuted() *Table {
 	dt.Columns.UpdateRows()
 	if dt.Columns.Rows <= 0 {
 		dt.Indexes = nil
-		return
+		return dt
 	}
 	if dt.Indexes == nil {
 		dt.Indexes = rand.Perm(dt.Columns.Rows)
@@ -90,6 +99,7 @@ func (dt *Table) Permuted() {
 			dt.Indexes[i], dt.Indexes[j] = dt.Indexes[j], dt.Indexes[i]
 		})
 	}
+	return dt
 }
 
 // SortColumn sorts the indexes into our Table according to values in
@@ -113,11 +123,13 @@ func (dt *Table) SortColumn(columnName string, ascending bool) error { //types:a
 // as these row numbers have already been projected through the indexes.
 // cmp(a, b) should return a negative number when a < b, a positive
 // number when a > b and zero when a == b.
-func (dt *Table) SortFunc(cmp func(dt *Table, i, j int) int) {
+// returns the table itself, for chaining operations.
+func (dt *Table) SortFunc(cmp func(dt *Table, i, j int) int) *Table {
 	dt.IndexesNeeded()
 	slices.SortFunc(dt.Indexes, func(a, b int) int {
 		return cmp(dt, a, b) // key point: these are already indirected through indexes!!
 	})
+	return dt
 }
 
 // SortStableFunc stably sorts the indexes into our Table using given compare function.
@@ -127,11 +139,13 @@ func (dt *Table) SortFunc(cmp func(dt *Table, i, j int) int) {
 // number when a > b and zero when a == b.
 // It is *essential* that it always returns 0 when the two are equal
 // for the stable function to actually work.
-func (dt *Table) SortStableFunc(cmp func(dt *Table, i, j int) int) {
+// returns the table itself, for chaining operations.
+func (dt *Table) SortStableFunc(cmp func(dt *Table, i, j int) int) *Table {
 	dt.IndexesNeeded()
 	slices.SortStableFunc(dt.Indexes, func(a, b int) int {
 		return cmp(dt, a, b) // key point: these are already indirected through indexes!!
 	})
+	return dt
 }
 
 // SortColumns sorts the indexes into our Table according to values in
@@ -139,14 +153,16 @@ func (dt *Table) SortStableFunc(cmp func(dt *Table, i, j int) int) {
 // (use [tensor.Ascending] or [tensor.Descending] for self-documentation,
 // and optionally using a stable sort.
 // Uses first cell of higher dimensional data.
-func (dt *Table) SortColumns(ascending, stable bool, columns ...string) { //types:add
-	dt.SortColumnIndexes(ascending, stable, dt.ColumnIndexList(columns...)...)
+// returns the table itself, for chaining operations.
+func (dt *Table) SortColumns(ascending, stable bool, columns ...string) *Table { //types:add
+	return dt.SortColumnIndexes(ascending, stable, dt.ColumnIndexList(columns...)...)
 }
 
 // SortColumnIndexes sorts the indexes into our Table according to values in
 // given list of column indexes, using either ascending or descending order for
 // all of the columns. Uses first cell of higher dimensional data.
-func (dt *Table) SortColumnIndexes(ascending, stable bool, colIndexes ...int) {
+// returns the table itself, for chaining operations.
+func (dt *Table) SortColumnIndexes(ascending, stable bool, colIndexes ...int) *Table {
 	dt.IndexesNeeded()
 	sf := dt.SortFunc
 	if stable {
@@ -169,6 +185,7 @@ func (dt *Table) SortColumnIndexes(ascending, stable bool, colIndexes ...int) {
 		}
 		return 0
 	})
+	return dt
 }
 
 // SortIndexes sorts the indexes into our Table directly in
@@ -186,10 +203,12 @@ func (dt *Table) SortIndexes() {
 // view of the table, and false if it should be removed.
 type FilterFunc func(dt *Table, row int) bool
 
-// Filter filters the indexes into our Table using given Filter function.
+// Filter filters the indexes into our Table using given Filter function,
+// which returns true to include, or false to filter (exclude).
 // The Filter function operates directly on row numbers into the Table
 // as these row numbers have already been projected through the indexes.
-func (dt *Table) Filter(filterer func(dt *Table, row int) bool) {
+// returns the table itself, for chaining operations.
+func (dt *Table) Filter(filterer func(dt *Table, row int) bool) *Table {
 	dt.IndexesNeeded()
 	sz := len(dt.Indexes)
 	for i := sz - 1; i >= 0; i-- { // always go in reverse for filtering
@@ -197,6 +216,7 @@ func (dt *Table) Filter(filterer func(dt *Table, row int) bool) {
 			dt.Indexes = append(dt.Indexes[:i], dt.Indexes[i+1:]...)
 		}
 	}
+	return dt
 }
 
 // FilterString filters the indexes using string values in column compared to given
@@ -216,8 +236,48 @@ func (dt *Table) FilterString(columnName string, str string, opts tensor.StringM
 	return nil
 }
 
+const (
+	// AnyNA is used for the FilterNA method, to specify that any
+	// NA in any column will be filtered.
+	AnyNA = false
+
+	// AllNA is used for the FilterNA method, to specify that only
+	// rows with all NA values across all columns will be filtered.
+	AllNA = true
+)
+
+// FilterNA filters the indexes into our Table to remove NA = not available
+// data, which is represented as NaN values in numeric columns.
+// returns the table itself, for chaining operations.
+func (dt *Table) FilterNA(all bool) *Table {
+	dt.Filter(func(dt *Table, row int) bool {
+		nNA, nTot := dt.NAInRow(row)
+		if all {
+			return nNA < nTot
+		}
+		return nNA == 0
+	})
+	return dt
+}
+
+// NAInRow returns the number of NA = not available (NaN) values in
+// the given row of the data (nNA) along with the total number of
+// numeric columns that could have an NaN value.
+func (dt *Table) NAInRow(row int) (nNA, nTotal int) {
+	for _, tsr := range dt.Columns.Values {
+		if !reflectx.KindIsFloat(tsr.DataType()) {
+			continue
+		}
+		nTotal++
+		if math.IsNaN(tsr.FloatRow(row, 0)) {
+			nNA++
+		}
+	}
+	return
+}
+
 // New returns a new table with column data organized according to
-// the indexes.  If Indexes are nil, a clone of the current tensor is returned
+// the indexes. If Indexes are nil, a clone of the current tensor is returned
 // but this function is only sensible if there is an indexed view in place.
 func (dt *Table) New() *Table {
 	if dt.Indexes == nil {
@@ -243,9 +303,11 @@ func (dt *Table) New() *Table {
 // DeleteRows deletes n rows of Indexes starting at given index in the list of indexes.
 // This does not affect the underlying tensor data; To create an actual in-memory
 // ordering with rows deleted, use [Table.New].
-func (dt *Table) DeleteRows(at, n int) {
+// returns the table itself, for chaining operations.
+func (dt *Table) DeleteRows(at, n int) *Table {
 	dt.IndexesNeeded()
 	dt.Indexes = append(dt.Indexes[:at], dt.Indexes[at+n:]...)
+	return dt
 }
 
 // Swap switches the indexes for i and j

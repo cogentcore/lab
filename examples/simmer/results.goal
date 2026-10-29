@@ -189,7 +189,7 @@ func (sr *Simmer) PlotMean() { //types:add
 		}
 		stats.TableGroupStats(dir, stats.StatMean, rdt, fcols...)
 		edir := dir.Dir(rdir)
-		sdt := tensorfs.DirTable(edir, nil)
+		sdt := stats.GroupStatsDirTable(edir)
 		dt := sdt.InsertKeyColumns("JobID", jid, "JobLabel", label) // this clones the table
 		if AggTable == nil {
 			AggTable = dt

@@ -88,17 +88,20 @@ Then the `GroupStats` function operating on this `tensorfs` directory, using the
 ```
 Stats
     Person
-       Person:    [Alia,Ben] // string tensor of group values of Person
        Score
-           Mean:  [35, 15] // float64 tensor of means
-           Sem:   [5, 5]
+           Person:  [Alia,Ben] // string tensor of group values of Person
+           Mean:    [35, 15]   // float64 tensor of means
+           Sem:     [5, 5]
        Time
-           Mean:  [10, 11]
-           Sem:   [1, 0.5]
+           Person:  [Alia,Ben]
+           Mean:    [10, 11]
+           Sem:     [1, 0.5]
     // other groups here..
 ```
 
-The `Person` directory can be turned directly into a `table.Table` and plotted or otherwise used, in the `tensorfs` system and associated `databrowser`.
+Each value directory, such as `Score`, can be turned directly into a `table.Table` with the group values as its first column, and plotted or otherwise used, in the `tensorfs` system and associated `databrowser`. `GroupStatsDirTable` returns a table of all the values of a group, with the group values as the first column, followed by the `Score/Mean` etc. columns.
+
+`GroupDescribe` (and `TableGroupDescribe`) computes all of the `DescriptiveStats` in this way (like `groupby(...).describe()` in pandas).
 
 See the [examples/planets](../examples/planets) example for an interactive exploration of data on exoplanets using the `Groups` functions.
 
