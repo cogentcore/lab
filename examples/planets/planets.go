@@ -82,8 +82,6 @@ func AnalyzePlanets(dir *tensorfs.Node) {
 	// and another that has the data to put in the cells.
 }
 
-// important: must be run from an interactive terminal.
-// Will quit immediately if not!
 func main() {
 	dir := tensorfs.Mkdir("Planets")
 	AnalyzePlanets(dir)
@@ -95,9 +93,11 @@ func main() {
 }
 
 func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
-	b, _ := lab.NewBasicWindow(tensorfs.CurRoot, "Planets")
+	b, br := lab.NewBasicWindow(tensorfs.CurRoot, "Planets")
+	br.Interpreter = in
 	mvmlab.UseGUI(in)
 	in.Config()
+	mvmlab.InteractiveTerminal(c, in, br.Terminal)
 	b.AddTopBar(func(bar *core.Frame) {
 		tb := core.NewToolbar(bar)
 		// tb.Maker(tbv.MakeToolbar)
@@ -110,15 +110,6 @@ func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 			})
 		})
 	})
-	b.OnShow(func(e events.Event) {
-		go func() {
-			if c.Expr != "" {
-				in.Eval(c.Expr)
-			}
-			in.Interactive()
-		}()
-	})
-	b.RunWindow()
-	core.Wait()
+	b.RunMainWindow()
 	return nil
 }

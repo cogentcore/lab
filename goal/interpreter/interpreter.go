@@ -6,7 +6,6 @@ package interpreter
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -32,6 +31,7 @@ import (
 	"github.com/cogentcore/mvm/stdlib"
 	_ "github.com/cogentcore/mvm/stdlib/core" // the core standard library
 	"github.com/cogentcore/readline"
+	"golang.org/x/term"
 )
 
 // Interpreter represents one running shell context
@@ -53,6 +53,11 @@ type Interpreter struct {
 	readline   *readline.Instance
 	closed     bool
 	readlineMu sync.Mutex
+
+	// sizeFuncs are the functions of the line reader to call when the
+	// size of the terminal changes (see [Interpreter.SizeChanged]).
+	sizeFuncs   []func()
+	sizeFuncsMu sync.Mutex
 }
 
 // Options are the options of a new [Interpreter]: its standard input and
@@ -88,6 +93,18 @@ func NewInterpreter(options Options) *Interpreter {
 	in.Use(stdlib.Values, basesymbols.Values, tensorsymbols.Values, in.goalrunValues())
 	go in.MonitorSignals()
 	return in
+}
+
+// SetIO sets the standard input and output of the interpreter, as given
+// in the [Options] of a new one: for example, to the terminal device of a
+// terminal widget that runs [Interpreter.Interactive] (see
+// cogentcore.org/lab/mvmlab.InteractiveTerminal).
+func (in *Interpreter) SetIO(stdin io.Reader, stdout, stderr io.Writer) {
+	in.Goal.Config.StdIO.In = stdin
+	in.Goal.Config.StdIO.Out = stdout
+	in.Goal.Config.StdIO.Err = stderr
+	in.Goal.OrigStdIO = in.Goal.Config.StdIO
+	in.Goal.StdIOWrappers.SetWrappers(&in.Goal.OrigStdIO)
 }
 
 // Use imports the symbols of the given packages, by import path and name,
@@ -256,8 +273,28 @@ func (in *Interpreter) MonitorSignals() {
 	// signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGSEGV)
 	for {
 		<-c
-		in.Goal.CancelExecution()
-		in.Interp.Interrupt() // the Go code that is running
+		in.Interrupt()
+	}
+}
+
+// Interrupt interrupts the commands and the code that are running, as the
+// interrupt signal does (see [Interpreter.MonitorSignals]). It is for a
+// terminal that runs [Interpreter.Interactive] in this process, which does
+// not get the signal (see cogentcore.org/lab/mvmlab.InteractiveTerminal).
+func (in *Interpreter) Interrupt() {
+	in.Goal.CancelExecution()
+	in.Interp.Interrupt() // the Go code that is running
+}
+
+// SizeChanged tells [Interpreter.Interactive] that the size of the terminal
+// has changed, when its standard input is not that of the process, for
+// which it gets the window size signal.
+func (in *Interpreter) SizeChanged() {
+	in.sizeFuncsMu.Lock()
+	fs := in.sizeFuncs
+	in.sizeFuncsMu.Unlock()
+	for _, f := range fs {
+		f()
 	}
 }
 
@@ -313,6 +350,20 @@ func (in *Interpreter) isClosed() bool {
 	return in.closed
 }
 
+// endReadline closes the given line reader of [Interpreter.Interactive]
+// when it returns.
+func (in *Interpreter) endReadline(rl *readline.Instance) {
+	in.readlineMu.Lock()
+	if in.readline == rl {
+		in.readline = nil
+	}
+	in.readlineMu.Unlock()
+	in.sizeFuncsMu.Lock()
+	in.sizeFuncs = nil
+	in.sizeFuncsMu.Unlock()
+	rl.Close()
+}
+
 // Close stops [Interpreter.Interactive], restoring the terminal from the
 // raw mode in which it reads a line, which is otherwise left on if the
 // program exits while it reads one, as a GUI app does when its window is
@@ -330,13 +381,29 @@ func (in *Interpreter) Close() {
 }
 
 // Interactive runs an interactive shell that allows the user to input goal.
-// Must have done in.Config() prior to calling.
+// Must have done in.Config() prior to calling. It reads from the standard
+// input of the interpreter (see [Interpreter.SetIO]), which is a terminal:
+// that of the process by default, where it exits the process at the end of
+// the input (Control+D). For another terminal, such as the terminal device
+// of a terminal widget, it returns then, and its terminal is the standard
+// input and output of the process (os.Stdin etc) while it runs, as for the
+// commands that it runs, so that all of the output goes there.
 func (in *Interpreter) Interactive() error {
 	in.Goal.TrState.MathRecord = true
-	rl, err := readline.NewFromConfig(&readline.Config{
+	stdio := &in.Goal.Config.StdIO
+	cfg := &readline.Config{
 		AutoComplete: &goal.ReadlineCompleter{Goal: in.Goal},
 		Undo:         true,
-	})
+		Stdin:        stdio.In,
+		Stdout:       stdio.Out,
+		Stderr:       stdio.Err,
+	}
+	tty, ok := stdio.In.(*os.File)
+	processTerminal := !ok || tty == os.Stdin
+	if !processTerminal {
+		in.configTerminal(cfg, tty)
+	}
+	rl, err := readline.NewFromConfig(cfg)
 	if err != nil {
 		return err
 	}
@@ -345,7 +412,8 @@ func (in *Interpreter) Interactive() error {
 		return nil
 	}
 	in.OpenHistory(rl)
-	defer in.Close()
+	defer in.endReadline(rl)
+	defer stdio.SetToOS().SetToOS()
 	log.SetOutput(rl.Stderr()) // redraw the prompt correctly after log output
 	defer log.SetOutput(os.Stderr)
 
@@ -361,6 +429,9 @@ func (in *Interpreter) Interactive() error {
 		}
 		if errors.Is(err, io.EOF) {
 			in.SaveHistory()
+			if !processTerminal {
+				return nil
+			}
 			os.Exit(0)
 		}
 		if err != nil {
@@ -378,7 +449,7 @@ func (in *Interpreter) Interactive() error {
 				line = ""
 			} else {
 				line = in.Goal.Hist[hl]
-				fmt.Printf("h:%d\t%s\n", hl, line)
+				in.Goal.Config.StdIO.Printf("h:%d\t%s\n", hl, line)
 			}
 		} else if line != "" && !strings.HasPrefix(line, "history") && line != "h" {
 			in.Goal.AddHistory(line)
@@ -388,5 +459,47 @@ func (in *Interpreter) Interactive() error {
 		if err == nil && !hasPrint && v.IsValid() && !v.IsZero() && v.Kind() != reflect.Func {
 			in.Goal.Config.StdIO.Println(v.Interface())
 		}
+	}
+}
+
+// configTerminal configures the line reader for the given terminal, which
+// is not that of the process (the default), for which it has no signals.
+func (in *Interpreter) configTerminal(cfg *readline.Config, tty *os.File) {
+	fd := int(tty.Fd())
+	var restore func() error
+	var mu sync.Mutex // the line reader also exits raw mode when it closes
+	cfg.FuncIsTerminal = func() bool {
+		return term.IsTerminal(fd)
+	}
+	cfg.FuncMakeRaw = func() error {
+		mu.Lock()
+		defer mu.Unlock()
+		rs, err := makeRaw(fd)
+		if err == nil {
+			restore = rs
+		}
+		return err
+	}
+	cfg.FuncExitRaw = func() error {
+		mu.Lock()
+		defer mu.Unlock()
+		if restore == nil {
+			return nil
+		}
+		err := restore()
+		restore = nil
+		return err
+	}
+	cfg.FuncGetSize = func() (int, int) {
+		w, h, err := term.GetSize(fd)
+		if err != nil {
+			return -1, -1
+		}
+		return w, h
+	}
+	cfg.FuncOnWidthChanged = func(f func()) {
+		in.sizeFuncsMu.Lock()
+		in.sizeFuncs = append(in.sizeFuncs, f)
+		in.sizeFuncsMu.Unlock()
 	}
 }

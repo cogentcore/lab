@@ -6,18 +6,21 @@ import (
 	"io/fs"
 
 	"cogentcore.org/core/core"
+	"cogentcore.org/core/text/terminal"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/core/types"
 )
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/lab.Basic", IDName: "basic", Doc: "Basic is a basic data browser with the files as the left panel,\nand the Tabber as the right panel.", Embeds: []types.Field{{Name: "Frame"}, {Name: "Browser"}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/lab.Basic", IDName: "basic", Doc: "Basic is a basic data browser with the files as the left panel,\nand the Tabber as the right panel, with a [terminal.Terminal] below it,\nwhich runs the user's shell unless it is configured otherwise, such as\nto run the goal shell of the app with cogentcore.org/lab/mvmlab.InteractiveTerminal.", Embeds: []types.Field{{Name: "Frame"}, {Name: "Browser"}}})
 
 // NewBasic returns a new [Basic] with the given optional parent:
 // Basic is a basic data browser with the files as the left panel,
-// and the Tabber as the right panel.
+// and the Tabber as the right panel, with a [terminal.Terminal] below it,
+// which runs the user's shell unless it is configured otherwise, such as
+// to run the goal shell of the app with cogentcore.org/lab/mvmlab.InteractiveTerminal.
 func NewBasic(parent ...tree.Node) *Basic { return tree.New[Basic](parent...) }
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/lab.Browser", IDName: "browser", Doc: "Browser holds all the elements of a data browser, for browsing data\neither on an OS filesystem or as a tensorfs virtual data filesystem.\nIt supports the automatic loading of [goal] scripts as toolbar actions to\nperform pre-programmed tasks on the data, to create app-like functionality.\nScripts are ordered alphabetically and any leading #- prefix is automatically\nremoved from the label, so you can use numbers to specify a custom order.\nIt is not a [core.Widget] itself, and is intended to be incorporated into\na [core.Frame] widget, potentially along with other custom elements.\nSee [Basic] for a basic implementation.", Directives: []types.Directive{{Tool: "types", Directive: "add", Args: []string{"-setters"}}}, Methods: []types.Method{{Name: "UpdateFiles", Doc: "UpdateFiles Updates the files list.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "UpdateScripts", Doc: "UpdateScripts updates the Scripts and updates the toolbar.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}}, Fields: []types.Field{{Name: "FS", Doc: "FS is the filesystem, if browsing an FS."}, {Name: "DataRoot", Doc: "DataRoot is the path to the root of the data to browse."}, {Name: "StartDir", Doc: "StartDir is the starting directory, where the app was originally started."}, {Name: "ScriptsDir", Doc: "ScriptsDir is the directory containing scripts for toolbar actions.\nIt defaults to DataRoot/dbscripts"}, {Name: "Scripts", Doc: "Scripts are interpreted goal scripts (via mvm) to automate\nroutine tasks."}, {Name: "Interpreter", Doc: "Interpreter is the interpreter to use for running Browser scripts.\nis of type: *goal/interpreter.Interpreter but can't use that directly\nto avoid importing goal unless needed. Import [labscripts] if needed."}, {Name: "Files", Doc: "Files is the [DataTree] tree browser of the tensorfs or files."}, {Name: "Tabs", Doc: "Tabs is the [Tabs] element managing tabs of data views."}, {Name: "Toolbar", Doc: "Toolbar is the top-level toolbar for the browser, if used."}, {Name: "Splits", Doc: "Splits is the overall [core.Splits] for the browser."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/lab.Browser", IDName: "browser", Doc: "Browser holds all the elements of a data browser, for browsing data\neither on an OS filesystem or as a tensorfs virtual data filesystem.\nIt supports the automatic loading of [goal] scripts as toolbar actions to\nperform pre-programmed tasks on the data, to create app-like functionality.\nScripts are ordered alphabetically and any leading #- prefix is automatically\nremoved from the label, so you can use numbers to specify a custom order.\nIt is not a [core.Widget] itself, and is intended to be incorporated into\na [core.Frame] widget, potentially along with other custom elements.\nSee [Basic] for a basic implementation.", Directives: []types.Directive{{Tool: "types", Directive: "add", Args: []string{"-setters"}}}, Methods: []types.Method{{Name: "UpdateFiles", Doc: "UpdateFiles Updates the files list.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}, {Name: "UpdateScripts", Doc: "UpdateScripts updates the Scripts and updates the toolbar.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}}}, Fields: []types.Field{{Name: "FS", Doc: "FS is the filesystem, if browsing an FS."}, {Name: "DataRoot", Doc: "DataRoot is the path to the root of the data to browse."}, {Name: "StartDir", Doc: "StartDir is the starting directory, where the app was originally started."}, {Name: "ScriptsDir", Doc: "ScriptsDir is the directory containing scripts for toolbar actions.\nIt defaults to DataRoot/dbscripts"}, {Name: "Scripts", Doc: "Scripts are interpreted goal scripts (via mvm) to automate\nroutine tasks."}, {Name: "Interpreter", Doc: "Interpreter is the interpreter to use for running Browser scripts.\nis of type: *goal/interpreter.Interpreter but can't use that directly\nto avoid importing goal unless needed. Import [labscripts] if needed."}, {Name: "Files", Doc: "Files is the [DataTree] tree browser of the tensorfs or files."}, {Name: "Tabs", Doc: "Tabs is the [Tabs] element managing tabs of data views."}, {Name: "Terminal", Doc: "Terminal is the terminal, if used, such as for the goal shell of\nthe app (see cogentcore.org/lab/mvmlab.InteractiveTerminal)."}, {Name: "Toolbar", Doc: "Toolbar is the top-level toolbar for the browser, if used."}, {Name: "Splits", Doc: "Splits is the overall [core.Splits] for the browser."}}})
 
 // SetFS sets the [Browser.FS]:
 // FS is the filesystem, if browsing an FS.
@@ -43,6 +46,11 @@ func (t *Browser) SetFiles(v *DataTree) *Browser { t.Files = v; return t }
 // SetTabs sets the [Browser.Tabs]:
 // Tabs is the [Tabs] element managing tabs of data views.
 func (t *Browser) SetTabs(v *Tabs) *Browser { t.Tabs = v; return t }
+
+// SetTerminal sets the [Browser.Terminal]:
+// Terminal is the terminal, if used, such as for the goal shell of
+// the app (see cogentcore.org/lab/mvmlab.InteractiveTerminal).
+func (t *Browser) SetTerminal(v *terminal.Terminal) *Browser { t.Terminal = v; return t }
 
 // SetToolbar sets the [Browser.Toolbar]:
 // Toolbar is the top-level toolbar for the browser, if used.

@@ -14,11 +14,14 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/styles"
+	"cogentcore.org/core/text/terminal"
 	"cogentcore.org/core/tree"
 )
 
 // Basic is a basic data browser with the files as the left panel,
-// and the Tabber as the right panel.
+// and the Tabber as the right panel, with a [terminal.Terminal] below it,
+// which runs the user's shell unless it is configured otherwise, such as
+// to run the goal shell of the app with cogentcore.org/lab/mvmlab.InteractiveTerminal.
 type Basic struct {
 	core.Frame
 	Browser
@@ -46,9 +49,18 @@ func (br *Basic) Init() {
 				br.Files = w
 			})
 		})
-		tree.AddChildAt(w, "tabs", func(w *Tabs) {
-			br.Tabs = w
-			Lab = br.Tabs.AsLab()
+		tree.AddChildAt(w, "tabs-terminal", func(w *core.Splits) {
+			w.Styler(func(s *styles.Style) {
+				s.Direction = styles.Column
+			})
+			w.SetSplits(.7, .3)
+			tree.AddChildAt(w, "tabs", func(w *Tabs) {
+				br.Tabs = w
+				Lab = br.Tabs.AsLab()
+			})
+			tree.AddChildAt(w, "terminal", func(w *terminal.Terminal) {
+				br.Terminal = w
+			})
 		})
 	})
 	br.Updater(func() {
@@ -59,7 +71,8 @@ func (br *Basic) Init() {
 }
 
 // NewBasicWindow returns a new Lab Browser window for given
-// file system (nil for os files) and data directory.
+// file system (nil for os files) and data directory, with its
+// widgets made (Files, Tabs, Terminal, etc).
 // do RunWindow on resulting [core.Body] to open the window.
 func NewBasicWindow(fsys fs.FS, dataDir string) (*core.Body, *Basic) {
 	startDir, _ := os.Getwd()
@@ -78,6 +91,7 @@ func NewBasicWindow(fsys fs.FS, dataDir string) (*core.Body, *Basic) {
 	}
 	br.SetDataRoot(ddr)
 	br.SetScriptsDir(filepath.Join(ddr, "labscripts"))
+	br.Update() // makes the widgets, such as the Terminal to configure
 
 	LabBrowser = &br.Browser
 	return b, br

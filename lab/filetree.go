@@ -6,6 +6,7 @@ package lab
 
 import (
 	"image"
+	"slices"
 	"strings"
 
 	"cogentcore.org/core/base/errors"
@@ -66,6 +67,28 @@ type FileNode struct {
 func (fn *FileNode) Init() {
 	fn.Node.Init()
 	fn.AddContextMenu(fn.ContextMenu)
+	// before the double click of the filetree, which opens and closes it
+	fn.Parts.OnDoubleClick(func(e events.Event) {
+		if fn.isLeafDir() {
+			e.SetHandled()
+			fn.EditFile()
+		}
+	})
+}
+
+// isLeafDir returns whether this is a tensorfs directory that has no
+// subdirectories, only data, which double clicking edits, instead of
+// opening and closing it in the tree.
+func (fn *FileNode) isLeafDir() bool {
+	if !fn.IsDir() {
+		return false
+	}
+	d := TensorFS(fn.AsNode())
+	if d == nil {
+		return false
+	}
+	nds, err := d.Nodes()
+	return err == nil && !slices.ContainsFunc(nds, (*tensorfs.Node).IsDir)
 }
 
 // Tabber returns the [Tabber] for this filenode, from root tree.

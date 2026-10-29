@@ -12,11 +12,13 @@ package mvmlab
 import (
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/mvmcore"
 	"cogentcore.org/core/mvmcore/coresymbols"
+	"cogentcore.org/core/text/terminal"
 	"cogentcore.org/core/text/textcore"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/mvmlab/labsymbols"
@@ -79,4 +81,29 @@ func (in *Interpreter) Eval(src string) (res reflect.Value, err error) {
 	res, _, err = in.Interpreter.EvalCode(src)
 	tensorfs.ListOutput = nil
 	return
+}
+
+// InteractiveTerminal runs the interactive goal shell of the given interpreter
+// ([interpreter.Interpreter.Interactive]) in the given terminal, in this
+// process, so that it works with the data of the app directly, as in tensorfs.
+// It runs when the terminal starts, after the expression of the given config
+// the first time, if any, and again when the terminal is restarted after it
+// ends (Control+D). Control+C interrupts the code and commands that are
+// running. Call [UseGUI] and [interpreter.Interpreter.Config] first.
+// It is not supported on Windows.
+func InteractiveTerminal(c *interpreter.Config, in *interpreter.Interpreter, tm *terminal.Terminal) {
+	expr := ""
+	if c != nil {
+		expr = c.Expr
+	}
+	tm.Func = func(tty *os.File) error {
+		in.SetIO(tty, tty, tty)
+		if expr != "" {
+			in.Eval(expr)
+			expr = ""
+		}
+		return in.Interactive()
+	}
+	tm.OnInterrupt(in.Interrupt)
+	tm.OnResize(func(cols, rows int) { in.SizeChanged() })
 }

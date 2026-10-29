@@ -6,13 +6,17 @@ package goal
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"slices"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/text/parse/complete"
+	"cogentcore.org/lab/goal/transpile"
+	"cogentcore.org/lab/tensorfs"
 	"github.com/mitchellh/go-homedir"
 )
 
@@ -126,8 +130,11 @@ type shellCompletion struct {
 // and the commands, if it is the name of the command. The text that they
 // add continues the word as it is typed, escaped or quoted, and ends with
 // a / for a directory, and otherwise with the closing quote, if any, and a
-// space.
+// space. In math mode, they are those of [mathCompletions].
 func (gl *Goal) completions(line string) (w shellWord, comps []shellCompletion) {
+	if ml, ok := gl.mathLine(line); ok {
+		return mathCompletions(ml)
+	}
 	w = lastShellWord(line)
 	dir, base := filepath.Split(w.value)
 	end := " "
@@ -184,6 +191,120 @@ func (gl *Goal) completions(line string) (w shellWord, comps []shellCompletion) 
 	slices.SortFunc(comps, func(a, b shellCompletion) int { return strings.Compare(a.name, b.name) })
 	comps = slices.CompactFunc(comps, func(a, b shellCompletion) bool { return a.name == b.name })
 	return w, comps
+}
+
+// mathLine returns the given line without the # that starts a line of math
+// mode, and whether it is in math mode: on such a line, or when math mode
+// is on (after ##).
+func (gl *Goal) mathLine(line string) (string, bool) {
+	if gl.TrState.MathMode {
+		return line, true
+	}
+	t := strings.TrimLeftFunc(line, unicode.IsSpace)
+	if strings.HasPrefix(t, "#") {
+		return strings.TrimLeft(t, "#"), true
+	}
+	return line, false
+}
+
+// mathCompletions returns the completions of the word that ends at the end
+// of the given line of math mode, which are the nodes of the current
+// tensorfs directory ([tensorfs.CurDir]), or of the directory of the word:
+// the directories in the arguments of a tensorfs command, such as ls and
+// cd, which are shell words, and all of the nodes in a Go string, as in
+// get("name"). The first word of a command completes the names of those
+// commands.
+func mathCompletions(line string) (w shellWord, comps []shellCompletion) {
+	cmds := transpile.TensorfsCommands()
+	w = lastShellWord(line)
+	cmd := strings.Fields(line[strings.LastIndex(line, ";")+1:])
+	if !w.first && len(cmd) > 0 && slices.Contains(cmds, cmd[0]) {
+		end := " "
+		if w.quote != 0 {
+			end = string(w.quote) + end
+		}
+		return w, tensorfsCompletions(w.value, w.quote, end, true)
+	}
+	if q, s := openString(line); q != 0 {
+		w = shellWord{value: s, quote: q}
+		w.baseLen = utf8.RuneCountInString(s[strings.LastIndex(s, "/")+1:])
+		if q == '`' {
+			q = '\'' // no escapes
+		}
+		return w, tensorfsCompletions(w.value, q, string(w.quote), false)
+	}
+	if w.first {
+		for _, cmd := range cmds {
+			if strings.HasPrefix(cmd, w.value) {
+				comps = append(comps, shellCompletion{add: cmd[len(w.value):] + " ", name: cmd, icon: icons.Terminal})
+			}
+		}
+	}
+	return w, comps
+}
+
+// openString returns the quote of the Go string or raw string that is open
+// at the end of the given line, and its text up to there, or 0 if none is
+// open.
+func openString(line string) (quote rune, s string) {
+	start := 0
+	esc := false
+	for i, r := range line {
+		switch {
+		case quote == 0:
+			if r == '"' || r == '`' || r == '\'' {
+				quote, start = r, i+1
+			}
+		case esc:
+			esc = false
+		case r == '\\' && quote != '`':
+			esc = true
+		case r == quote:
+			quote = 0
+		}
+	}
+	if quote == 0 || quote == '\'' { // a rune
+		return 0, ""
+	}
+	return quote, line[start:]
+}
+
+// tensorfsCompletions returns the completions of the tensorfs path p:
+// the nodes of its directory whose names start with its base, or only the
+// directories if dirs is set. They are escaped for the given quote (see
+// [escapeShell]), and end with the given end, or a / for a directory.
+func tensorfsCompletions(p string, quote rune, end string, dirs bool) []shellCompletion {
+	dir, base := path.Split(p)
+	cur := tensorfs.CurDir
+	if cur == nil {
+		cur = tensorfs.CurRoot
+	}
+	if dir != "" {
+		d, err := cur.DirAtPath(dir)
+		if err != nil {
+			return nil
+		}
+		cur = d
+	}
+	entries, err := cur.ReadDir(".")
+	if err != nil {
+		return nil
+	}
+	var comps []shellCompletion
+	for _, entry := range entries {
+		name := entry.Name()
+		isDir := entry.IsDir()
+		if !strings.HasPrefix(name, base) || (dirs && !isDir) {
+			continue
+		}
+		c := shellCompletion{add: escapeShell(name[len(base):], quote) + end, name: name, icon: icons.TableChart}
+		if isDir {
+			c.add = escapeShell(name[len(base):], quote) + "/"
+			c.icon = icons.Folder
+		}
+		comps = append(comps, c)
+	}
+	return comps
 }
 
 // CompleteMatch is the [complete.MatchFunc] for the shell. The completions

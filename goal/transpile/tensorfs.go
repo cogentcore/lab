@@ -7,12 +7,20 @@ package transpile
 import (
 	"errors"
 	"go/token"
+	"maps"
+	"slices"
 )
 
 var tensorfsCommands = map[string]func(mp *mathParse) error{
 	"cd":    cd,
 	"mkdir": mkdir,
 	"ls":    ls,
+}
+
+// TensorfsCommands returns the names of the commands that math mode runs
+// on the tensorfs directories, such as ls and cd, sorted.
+func TensorfsCommands() []string {
+	return slices.Sorted(maps.Keys(tensorfsCommands))
 }
 
 func cd(mp *mathParse) error {

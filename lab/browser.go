@@ -22,6 +22,7 @@ import (
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/styles"
+	"cogentcore.org/core/text/terminal"
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/goal/goalib"
 	"golang.org/x/exp/maps"
@@ -77,6 +78,10 @@ type Browser struct { //types:add -setters
 
 	// Tabs is the [Tabs] element managing tabs of data views.
 	Tabs *Tabs
+
+	// Terminal is the terminal, if used, such as for the goal shell of
+	// the app (see cogentcore.org/lab/mvmlab.InteractiveTerminal).
+	Terminal *terminal.Terminal
 
 	// Toolbar is the top-level toolbar for the browser, if used.
 	Toolbar *core.Toolbar
