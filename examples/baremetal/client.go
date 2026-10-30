@@ -13,6 +13,7 @@ import (
 	"cogentcore.org/core/base/errors"
 	pb "cogentcore.org/lab/examples/baremetal/baremetal"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
@@ -45,9 +46,15 @@ func maxCallSendMessageSize() grpc.CallOption {
 	return grpc.MaxCallSendMsgSize(16 * math.MaxInt32)
 }
 
-// Connect connects to the server
+// Connect connects to the server. The connection is made again when it
+// is lost, as when the server is restarted, trying every few seconds
+// at most, instead of the gRPC default of up to two minutes, so that the
+// client works again soon after the server does.
 func (cl *Client) Connect() error {
-	conn, err := grpc.NewClient(cl.Host, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	bc := backoff.DefaultConfig
+	bc.MaxDelay = 5 * time.Second
+	conn, err := grpc.NewClient(cl.Host, grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithConnectParams(grpc.ConnectParams{Backoff: bc, MinConnectTimeout: 5 * time.Second}))
 	if err != nil {
 		return errors.Log(fmt.Errorf("did not connect: %v", err))
 	}
