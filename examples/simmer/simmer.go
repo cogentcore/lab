@@ -35,6 +35,16 @@ import (
 // goalrun is needed for running goal commands.
 var goalrun *goal.Goal
 
+// clearErrors clears the errors of the goal commands, which are logged
+// when they happen. After a command fails, goal runs no more commands
+// until they are cleared, as in a script, but the operations of simmer,
+// and those on each job, are independent: a command that fails, as when
+// the network to the server is lost, must not stop the operations after
+// it, such as when the network comes back.
+func clearErrors() {
+	goalrun.Errors = nil
+}
+
 var defaultJobFormat = `Name, Type
 JobID, string
 Status, string

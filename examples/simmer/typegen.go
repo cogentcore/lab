@@ -13,7 +13,7 @@ import (
 
 var _ = types.AddType(&types.Type{Name: "main.FilterResults", IDName: "filter-results", Doc: "FilterResults specifies which results files to open.", Fields: []types.Field{{Name: "FileContains", Doc: "File name contains this string, e.g., \"_epoch\" or \"_run\""}, {Name: "Ext", Doc: "extension of files, e.g., .tsv"}, {Name: "Fetch", Doc: "if true, fetch results before opening."}}})
 
-var _ = types.AddType(&types.Type{Name: "main.SubmitParams", IDName: "submit-params", Doc: "SubmitParams specifies the parameters for submitting a job.", Fields: []types.Field{{Name: "Message", Doc: "Message describing the simulation:\nthis is key info for what is special about this job, like a github commit message"}, {Name: "Label", Doc: "Label is brief, unique label used for plots to label this job"}, {Name: "Args", Doc: "\targuments to pass on the command line.\n\n-nogui is already passed by default"}}})
+var _ = types.AddType(&types.Type{Name: "main.SubmitParams", IDName: "submit-params", Doc: "SubmitParams specifies the parameters for submitting a job.", Fields: []types.Field{{Name: "Message", Doc: "Message describing the simulation:\nthis is key info for what is special about this job, like a github commit message"}, {Name: "Label", Doc: "Label is brief, unique label used for plots to label this job"}, {Name: "Args", Doc: "Args are the arguments to pass on the command line.\n-nogui is already passed by default"}}})
 
 var _ = types.AddType(&types.Type{Name: "main.JobParams", IDName: "job-params", Doc: "JobParams are parameters for running the job", Fields: []types.Field{{Name: "NRuns", Doc: "NRuns is the number of parallel runs; can also set to 1\nand run multiple runs per job using args."}, {Name: "Hours", Doc: "Hours is the max number of hours: slurm will terminate if longer,\nso be generous 2d = 48, 3d = 72, 4d = 96, 5d = 120, 6d = 144, 7d = 168"}, {Name: "Memory", Doc: "Memory per CPU in gigabytes"}, {Name: "Tasks", Doc: "Tasks is the number of mpi \"tasks\" (procs in MPI terminology)."}, {Name: "CPUsPerTask", Doc: "CPUsPerTask is the number of cpu cores (threads) per task."}, {Name: "TasksPerNode", Doc: "TasksPerNode is how to allocate tasks within compute nodes\ncpus_per_task * tasks_per_node <= total cores per node."}, {Name: "Qos", Doc: "Qos is the queue \"quality of service\" name."}, {Name: "SubCmd", Doc: "If true, the executable is in a subdirectory with the same name as [Config.Project],\nfilename main.go, to allow the primary directory to be imported into other apps.\nManages the copying and building of this sub-command."}, {Name: "BuildArgs", Doc: "BuildArgs are extra arts to pass during building, such as -tags mpi for mpi"}}})
 
@@ -62,6 +62,8 @@ func (t *Simmer) SetBareMetalActive(v ...*baremetal.Job) *Simmer { t.BareMetalAc
 
 // SetBareMetalActiveTable sets the [Simmer.BareMetalActiveTable]
 func (t *Simmer) SetBareMetalActiveTable(v *core.Table) *Simmer { t.BareMetalActiveTable = v; return t }
+
+var _ = types.AddFunc(&types.Func{Name: "main.clearErrors", Doc: "clearErrors clears the errors of the goal commands, which are logged\nwhen they happen. After a command fails, goal runs no more commands\nuntil they are cleared, as in a script, but the operations of simmer,\nand those on each job, are independent: a command that fails, as when\nthe network to the server is lost, must not stop the operations after\nit, such as when the network comes back."})
 
 var _ = types.AddFunc(&types.Func{Name: "main.main"})
 

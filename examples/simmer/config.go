@@ -42,8 +42,7 @@ type SubmitParams struct {
 	// Label is brief, unique label used for plots to label this job
 	Label string `width:"80"`
 
-	//	arguments to pass on the command line.
-	//
+	// Args are the arguments to pass on the command line.
 	// -nogui is already passed by default
 	Args string `width:"80"`
 }
@@ -197,6 +196,7 @@ type Configuration struct {
 }
 
 func (cf *Configuration) Defaults() {
+	clearErrors()
 	goalrun.Run("@0")
 	goalrun.Run("cd")
 	goalrun.Run("cd", cf.StartDir)

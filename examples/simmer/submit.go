@@ -61,6 +61,7 @@ func (sr *Simmer) FindGoMod(dir string) string {
 // If origProjPath and projPath are non-empty, and file is .go file, then the
 // origProjPath -> projPath replacement.
 func (sr *Simmer) CopyFilesToJob(localSrc, localJob, hostJob, origProjPath, projPath string, exts ...string) {
+	clearErrors()
 	goalrun.Run("@0")
 	goalrun.Run("mkdir", "-p", localJob)
 	goalrun.Run("cd", localJob)
@@ -87,6 +88,7 @@ func (sr *Simmer) CopyFilesToJob(localSrc, localJob, hostJob, origProjPath, proj
 // NewJob runs a new job with given parameters.
 // This is run as a separate goroutine!
 func (sr *Simmer) NewJob(jp SubmitParams) {
+	clearErrors()
 	message := jp.Message
 	args := jp.Args
 	label := jp.Label
@@ -242,6 +244,7 @@ func (sr *Simmer) ParamSearch() { //types:add
 // NewSearch runs a new parameter search with given parameters.
 // This is run as a separate goroutine!
 func (sr *Simmer) NewSearch(jp SubmitParams) {
+	clearErrors()
 	goalrun.Run("@0")
 	goalrun.Run("cd", sr.StartDir)
 	proj := sr.Config.Project

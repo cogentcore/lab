@@ -25,6 +25,7 @@ import (
 
 // SubmitBare submits a bare metal run job, returning the pid of the resulting process.
 func (sr *Simmer) SubmitBare(jid, args string) string {
+	clearErrors()
 	goalrun.Run("@0")
 	script := "job.sbatch"
 	f, _ := os.Create(script)
@@ -91,6 +92,7 @@ func (sr *Simmer) WriteBare(w io.Writer, jid, args string) {
 }
 
 func (sr *Simmer) QueueBare() {
+	clearErrors()
 	sr.UpdateBare()
 	ts := sr.Tabs.AsLab()
 	goalrun.Run("@1")
@@ -108,6 +110,7 @@ func (sr *Simmer) UpdateBare() { //types:add
 
 // FetchJobBare downloads results files from bare metal server.
 func (sr *Simmer) FetchJobBare(jid string, force bool) {
+	clearErrors()
 	jpath := sr.JobPath(jid)
 	goalrun.Run("@0")
 	goalrun.Run("cd", jpath)
@@ -137,7 +140,11 @@ func (sr *Simmer) FetchJobBare(jid string, force bool) {
 	}
 }
 
-func (sr *Simmer) CancelJobsBare(jobs []string) {
+// CancelJobsBare cancels the given jobs on bare metal.
+func (sr *Simmer) CancelJobsBare(jobs []string) error {
+	if sr.BareMetal == nil {
+		return errors.New("BareMetal is not connected")
+	}
 	jnos := make([]int, 0, len(jobs))
 	for _, jid := range jobs {
 		sjob := sr.ValueForJob(jid, "ServerJob")
@@ -146,7 +153,70 @@ func (sr *Simmer) CancelJobsBare(jobs []string) {
 			jnos = append(jnos, jno)
 		}
 	}
-	sr.BareMetal.CancelJobs(jnos...)
+	return sr.BareMetal.CancelJobs(jnos...)
+}
+
+// cancelActiveJobs cancels those of the given jobs that are still pending
+// or running on bare metal, instead of the given action on them, such as
+// "deleted", which would break the syncing of their files: they can have
+// the action once they are canceled. It returns the other jobs, and a
+// message about the canceled jobs, if any. Slurm jobs are all returned.
+func (sr *Simmer) cancelActiveJobs(jobs []string, action string) (others []string, msg string) {
+	if sr.IsSlurm() {
+		return jobs, ""
+	}
+	active, others := sr.activeJobsBare(jobs)
+	if len(active) == 0 {
+		return others, ""
+	}
+	if err := sr.CancelJobsBare(active); err != nil {
+		msg = fmt.Sprintf("Running jobs were not %s, and could not be canceled: %s: %v", action, strings.Join(active, " "), err)
+		return others, msg
+	}
+	msg = fmt.Sprintf("Running jobs were canceled instead of %s (do it once they are canceled): %s", action, strings.Join(active, " "))
+	return others, msg
+}
+
+// activeJobsBare returns those of the given jobs that are still pending
+// or running on bare metal, and the others. The status is from bare metal,
+// or from the jobs table if bare metal cannot be reached.
+func (sr *Simmer) activeJobsBare(jobs []string) (active, others []string) {
+	jids := map[int]string{} // by bare metal job
+	var jnos []int
+	for _, jid := range jobs {
+		if jno, err := strconv.Atoi(sr.ValueForJob(jid, "ServerJob")); err == nil {
+			jids[jno] = jid
+			jnos = append(jnos, jno)
+		}
+	}
+	isActive := map[string]bool{}
+	var bjobs []*baremetal.Job
+	err := errors.New("BareMetal is not connected")
+	if sr.BareMetal != nil && len(jnos) > 0 {
+		bjobs, err = sr.BareMetal.JobStatus(jnos...)
+	}
+	if err == nil {
+		for _, job := range bjobs {
+			if job.Status == baremetal.Pending || job.Status == baremetal.Running {
+				isActive[jids[job.ID]] = true
+			}
+		}
+	} else {
+		for _, jid := range jobs {
+			st := sr.ValueForJob(jid, "Status")
+			if st == baremetal.Pending.String() || st == baremetal.Running.String() {
+				isActive[jid] = true
+			}
+		}
+	}
+	for _, jid := range jobs {
+		if isActive[jid] {
+			active = append(active, jid)
+		} else {
+			others = append(others, jid)
+		}
+	}
+	return
 }
 
 func (sr *Simmer) RecoverJobsBare(jobs []string) {

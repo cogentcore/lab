@@ -106,6 +106,7 @@ func (sr *Simmer) Results() { //types:add
 // Diff shows the differences between two selected jobs, or if only
 // one job is selected, between that job and the current source directory.
 func (sr *Simmer) Diff() { //types:add
+	clearErrors()
 	goalrun.Run("@0")
 	tv := sr.JobsTableView
 	jobs := tv.SelectedColumnStrings("JobID")

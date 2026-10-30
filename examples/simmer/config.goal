@@ -40,7 +40,7 @@ type SubmitParams struct {
 	// Label is brief, unique label used for plots to label this job
 	Label string `width:"80"`
 
-	//	arguments to pass on the command line.
+	// Args are the arguments to pass on the command line.
 	// -nogui is already passed by default
 	Args string `width:"80"`
 }
@@ -152,7 +152,7 @@ type Configuration struct {
 	// ExcludeNodes are nodes to exclude from job, based on what is slow.
 	ExcludeNodes string
 
-	//	ExtraFiles has extra files to upload with job submit, from same dir.
+	// ExtraFiles has extra files to upload with job submit, from same dir.
 	ExtraFiles []string
 
 	// ExtraDirs has subdirs with other files to upload with job submit
@@ -194,6 +194,7 @@ type Configuration struct {
 }
 
 func (cf *Configuration) Defaults() {
+	clearErrors()
 	@0
 	cd
 	cd {cf.StartDir}

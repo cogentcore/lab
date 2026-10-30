@@ -102,6 +102,7 @@ func (sr *Simmer) WriteSBatchCleanup(w io.Writer, jid, array_id string) {
 }
 
 func (sr *Simmer) SubmitSBatch(jid, args string) string {
+	clearErrors()
 	goalrun.Run("@0")
 	f, _ := os.Create("job.setup.sbatch")
 	sr.WriteSBatchSetup(f, jid)
@@ -127,6 +128,7 @@ func (sr *Simmer) SubmitSBatch(jid, args string) string {
 // RunSBatch runs sbatch on the given sbatch file,
 // returning the resulting job id.
 func (sr *Simmer) RunSBatch(sbatch string) string {
+	clearErrors()
 	goalrun.Run("@1")
 	goalrun.Run("sbatch", sbatch, ">", "job.slurm")
 	goalrun.Run("@0")
@@ -144,6 +146,7 @@ func (sr *Simmer) RunSBatch(sbatch string) string {
 
 // QueueSlurm runs a queue query command on the server and shows the results.
 func (sr *Simmer) QueueSlurm() {
+	clearErrors()
 	ts := sr.Tabs.AsLab()
 	goalrun.Run("@1")
 	goalrun.Run("cd")
@@ -163,6 +166,7 @@ func (sr *Simmer) QueueSlurm() {
 }
 
 func (sr *Simmer) FetchJobSlurm(jid string, force bool) {
+	clearErrors()
 	spath := sr.ServerJobPath(jid)
 	jpath := sr.JobPath(jid)
 	goalrun.Run("@1")
@@ -209,11 +213,13 @@ func (sr *Simmer) FetchJobSlurm(jid string, force bool) {
 
 // CancelJobsSlurm cancels the given jobs, for slurm
 func (sr *Simmer) CancelJobsSlurm(jobs []string) {
+	clearErrors()
 	goalrun.Run("@0")
 	filepath.Join(sr.DataRoot, "jobs")
 	filepath.Join(sr.Config.Server.Root, "jobs")
 	goalrun.Run("@1")
 	for _, jid := range jobs {
+		clearErrors() // each job is independent
 		sjob := sr.ValueForJob(jid, "ServerJob")
 		if sjob != "" {
 			goalrun.Run("scancel", sjob)

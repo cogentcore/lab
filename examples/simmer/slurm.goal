@@ -100,6 +100,7 @@ func (sr *Simmer) WriteSBatchCleanup(w io.Writer, jid, array_id string) {
 }
 
 func (sr *Simmer) SubmitSBatch(jid, args string) string {
+	clearErrors()
 	@0
 	f, _ := os.Create("job.setup.sbatch")
 	sr.WriteSBatchSetup(f, jid)
@@ -125,6 +126,7 @@ func (sr *Simmer) SubmitSBatch(jid, args string) string {
 // RunSBatch runs sbatch on the given sbatch file, 
 // returning the resulting job id.
 func (sr *Simmer) RunSBatch(sbatch string) string {
+	clearErrors()
 	@1
 	sbatch {sbatch} > job.slurm
 	@0
@@ -142,6 +144,7 @@ func (sr *Simmer) RunSBatch(sbatch string) string {
 
 // QueueSlurm runs a queue query command on the server and shows the results.
 func (sr *Simmer) QueueSlurm() {
+	clearErrors()
 	ts := sr.Tabs.AsLab()
 	@1
 	cd
@@ -161,6 +164,7 @@ func (sr *Simmer) QueueSlurm() {
 }
 
 func (sr *Simmer) FetchJobSlurm(jid string, force bool) {
+	clearErrors()
 	spath := sr.ServerJobPath(jid)
 	jpath := sr.JobPath(jid)
 	@1
@@ -207,11 +211,13 @@ func (sr *Simmer) FetchJobSlurm(jid string, force bool) {
 
 // CancelJobsSlurm cancels the given jobs, for slurm
 func (sr *Simmer) CancelJobsSlurm(jobs []string) {
+	clearErrors()
 	@0
 	filepath.Join(sr.DataRoot, "jobs")
 	filepath.Join(sr.Config.Server.Root, "jobs")
 	@1
 	for _, jid := range jobs {
+		clearErrors() // each job is independent
 		sjob := sr.ValueForJob(jid, "ServerJob")
 		if sjob != "" {
 			scancel {sjob}
