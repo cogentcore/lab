@@ -87,11 +87,11 @@ func (sr *Simmer) Results() { //types:add
 		return
 	}
 	// fmt.Println(jobs)
-	if sr.Config.Filter.Ext == "" {
-		sr.Config.Filter.Ext = ".tsv"
+	if sr.Project.Filter.Ext == "" {
+		sr.Project.Filter.Ext = ".tsv"
 	}
-	lab.PromptStruct(sr, &sr.Config.Filter, "Open results data for files", func() {
-		if sr.Config.Filter.Fetch {
+	lab.PromptStruct(sr, &sr.Project.Filter, "Open results data for files", func() {
+		if sr.Project.Filter.Fetch {
 			core.MessageSnackbar(sr, "Fetching jobs..")
 			for _, jid := range jobs {
 				sr.FetchJob(jid, false)
@@ -99,7 +99,7 @@ func (sr *Simmer) Results() { //types:add
 			core.MessageSnackbar(sr, "Fetch Jobs completed")
 			sr.UpdateSims()
 		}
-		sr.OpenResultFiles(jobs, sr.Config.Filter)
+		sr.OpenResultFiles(jobs, sr.Project.Filter)
 	})
 }
 
@@ -160,7 +160,7 @@ func (sr *Simmer) Plot() { //types:add
 
 // PlotMean concatenates selected Results data files and generates a plot
 // of the resulting data, computing the mean over the values in
-// [Config.GroupColumns] to group values (e.g., across Epochs).
+// [Project.GroupColumns] to group values (e.g., across Epochs).
 func (sr *Simmer) PlotMean() { //types:add
 	ts := sr.Tabs.AsLab()
 	tv := sr.ResultsTableView
@@ -173,8 +173,8 @@ func (sr *Simmer) PlotMean() { //types:add
 		core.MessageSnackbar(sr, "PlotMean: No Results rows selected")
 		return
 	}
-	nc := len(sr.Config.GroupColumns)
-	rdir := "Stats/" + sr.Config.GroupColumns[nc-1] // results dir
+	nc := len(sr.Project.GroupColumns)
+	rdir := "Stats/" + sr.Project.GroupColumns[nc-1] // results dir
 	var AggTable *table.Table
 	for _, i := range jis {
 		res := sr.ResultsList[i]
@@ -182,7 +182,7 @@ func (sr *Simmer) PlotMean() { //types:add
 		label := res.Label
 		dir, _ := tensorfs.NewDir("root")
 		rdt := res.Table
-		stats.TableGroups(dir, rdt, sr.Config.GroupColumns...)
+		stats.TableGroups(dir, rdt, sr.Project.GroupColumns...)
 		var fcols []string
 		for ci, cl := range rdt.Columns.Values {
 			if cl.DataType() != reflect.Float32 && cl.DataType() != reflect.Float64 {

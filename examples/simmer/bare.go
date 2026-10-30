@@ -47,7 +47,7 @@ func (sr *Simmer) SubmitBare(jid, args string) string {
 	bm := sr.BareMetal
 
 	spath := sr.ServerJobPath(jid)
-	job, err := bm.Submit(sr.Config.Project, spath, script, sr.Config.FetchFiles, b.Bytes())
+	job, err := bm.Submit(sr.Project.Name, spath, script, sr.Project.FetchFiles, b.Bytes())
 	goalrun.Run("@0")
 	if err != nil {
 		core.ErrorSnackbar(sr, err)
@@ -62,8 +62,8 @@ func (sr *Simmer) SubmitBare(jid, args string) string {
 
 // WriteBare writes the bash script to run a "bare metal" run.
 func (sr *Simmer) WriteBare(w io.Writer, jid, args string) {
-	if sr.Config.JobScript != "" {
-		js := sr.Config.JobScript
+	if sr.Project.JobScript != "" {
+		js := sr.Project.JobScript
 		strings.ReplaceAll(js, "$JOB_ARGS", args)
 		fmt.Fprintln(w, js)
 		return
@@ -71,19 +71,19 @@ func (sr *Simmer) WriteBare(w io.Writer, jid, args string) {
 	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
 
 	fmt.Fprintf(w, "\n\n")
-	if sr.Config.SetupScript != "" {
-		fmt.Fprintln(w, sr.Config.SetupScript)
+	if sr.Project.SetupScript != "" {
+		fmt.Fprintln(w, sr.Project.SetupScript)
 	}
 
-	exe := sr.Config.Project
-	if sr.Config.Job.SubCmd {
+	exe := sr.Project.Name
+	if sr.Project.Job.SubCmd {
 		projname := exe
 		exe += "/" + exe
 		fmt.Fprintf(w, "cd %s\n", projname)
-		fmt.Fprintf(w, "go build -mod=mod %s\n", sr.Config.Job.BuildArgs)
+		fmt.Fprintf(w, "go build -mod=mod %s\n", sr.Project.Job.BuildArgs)
 		fmt.Fprintf(w, "cd ../\n")
 	} else {
-		fmt.Fprintf(w, "go build -mod=mod %s\n", sr.Config.Job.BuildArgs)
+		fmt.Fprintf(w, "go build -mod=mod %s\n", sr.Project.Job.BuildArgs)
 	}
 	cmd := `date '+%Y-%m-%d %T %Z' > job.start`
 	fmt.Fprintln(w, cmd)
@@ -93,6 +93,7 @@ func (sr *Simmer) WriteBare(w io.Writer, jid, args string) {
 
 func (sr *Simmer) QueueBare() {
 	clearErrors()
+	errors.Log(sr.connectServer())
 	sr.UpdateBare()
 	ts := sr.Tabs.AsLab()
 	goalrun.Run("@1")
@@ -120,7 +121,7 @@ func (sr *Simmer) FetchJobBare(jid string, force bool) {
 	}
 	sjob := sr.ValueForJob(jid, "ServerJob")
 	sj := errors.Log1(strconv.Atoi(sjob))
-	jobs, err := sr.BareMetal.FetchResults(sr.Config.FetchFiles, sj)
+	jobs, err := sr.BareMetal.FetchResults(sr.Project.FetchFiles, sj)
 	if err != nil {
 		core.ErrorSnackbar(sr, err)
 		return
@@ -154,27 +155,6 @@ func (sr *Simmer) CancelJobsBare(jobs []string) error {
 		}
 	}
 	return sr.BareMetal.CancelJobs(jnos...)
-}
-
-// cancelActiveJobs cancels those of the given jobs that are still pending
-// or running on bare metal, instead of the given action on them, such as
-// "deleted", which would break the syncing of their files: they can have
-// the action once they are canceled. It returns the other jobs, and a
-// message about the canceled jobs, if any. Slurm jobs are all returned.
-func (sr *Simmer) cancelActiveJobs(jobs []string, action string) (others []string, msg string) {
-	if sr.IsSlurm() {
-		return jobs, ""
-	}
-	active, others := sr.activeJobsBare(jobs)
-	if len(active) == 0 {
-		return others, ""
-	}
-	if err := sr.CancelJobsBare(active); err != nil {
-		msg = fmt.Sprintf("Running jobs were not %s, and could not be canceled: %s: %v", action, strings.Join(active, " "), err)
-		return others, msg
-	}
-	msg = fmt.Sprintf("Running jobs were canceled instead of %s (do it once they are canceled): %s", action, strings.Join(active, " "))
-	return others, msg
 }
 
 // activeJobsBare returns those of the given jobs that are still pending
@@ -231,12 +211,12 @@ func (sr *Simmer) RecoverJobsBare(jobs []string) {
 		job := &baremetal.Job{ID: jno}
 		job.Status.SetString(sr.ValueForJob(jid, "Status"))
 		job.Path = sr.ServerJobPath(jid)
-		job.Source = sr.Config.Project
+		job.Source = sr.Project.Name
 		job.Script = "job.sbatch"
-		job.ResultsGlob = sr.Config.FetchFiles
-		job.Submit = errors.Log1(time.Parse(sr.Config.TimeFormat, sr.ValueForJob(jid, "Submit")))
-		job.Start = errors.Log1(time.Parse(sr.Config.TimeFormat, sr.ValueForJob(jid, "Start")))
-		job.End = errors.Log1(time.Parse(sr.Config.TimeFormat, sr.ValueForJob(jid, "End")))
+		job.ResultsGlob = sr.Project.FetchFiles
+		job.Submit = errors.Log1(time.Parse(sr.Project.TimeFormat, sr.ValueForJob(jid, "Submit")))
+		job.Start = errors.Log1(time.Parse(sr.Project.TimeFormat, sr.ValueForJob(jid, "Start")))
+		job.End = errors.Log1(time.Parse(sr.Project.TimeFormat, sr.ValueForJob(jid, "End")))
 		job.ServerName = sr.ValueForJob(jid, "Server")
 		// todo: PID
 		// jpath := sr.JobPath(jid)

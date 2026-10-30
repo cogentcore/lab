@@ -52,3 +52,21 @@ func TestCancelActiveJobs(t *testing.T) {
 	assert.Equal(t, []string{"j2"}, others)
 	assert.Contains(t, msg, "not deleted, and could not be canceled: j1")
 }
+
+// TestActiveJobsSlurm tests that the slurm jobs that are still pending or
+// running are found from the status in the jobs table.
+func TestActiveJobsSlurm(t *testing.T) {
+	sr := &Simmer{}
+	sr.JobsTable = table.New()
+	ids := []string{"j1", "j2", "j3", "j4"}
+	sr.JobsTable.SetNumRows(len(ids))
+	jc := sr.JobsTable.AddStringColumn("JobID")
+	sc := sr.JobsTable.AddStringColumn("Status")
+	for i, st := range []string{"Running:2", "Finalized", "Pending:1", "Fetched"} {
+		jc.SetString1D(ids[i], i)
+		sc.SetString1D(st, i)
+	}
+	active, others := sr.activeJobsSlurm(ids)
+	assert.Equal(t, []string{"j1", "j3"}, active)
+	assert.Equal(t, []string{"j2", "j4"}, others)
+}

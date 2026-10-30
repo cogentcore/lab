@@ -8,16 +8,21 @@ Simmer provides a Cogent Lab based GUI for running simulation jobs, and managing
 
 The terminal at the bottom runs the interactive `goal` shell, in the app, with the data and the Simmer itself (as `lab.LabBrowser`), so you can work with them directly there.
 
-The local data goes into paths like this:
+# Projects
+
+Simmer works on one simulation project at a time, which you open from the `Open recent` menu, or the list of recent projects that it shows when it starts without one, or with `Open`. Each project opens in its own simmer app, so you can run the app from `/Applications` and open the projects of different simulations. Running `simmer` in the directory of a project opens it.
+
+The settings of a project are in the `simmer.json` file in the directory of the simulation, which `Edit project` edits and saves. They include the `Server.SSH` user@host of the server, which is connected as `@1` in goal commands, and connected again after the network is lost.
+
+`New project` makes a new project for the simulation in a given directory: the local data goes into paths like this:
 
 `~/simdata/simname/user` with `jobs` and `labscripts` subdirectories
 
+with a `simdata` symbolic link to it in the directory of the simulation, and a `simmer.json` file.
+
 The server data goes into similar paths but starting with `~/simserver` instead.
 
-The `install.goal` script makes the paths and a shortcut in given sim:
-```sh
-> ./install.goal ~/full/path/to/sim
-```
+A project made before `simmer.json` has its settings moved to it from its `labscripts/defaults.goal` script when it is first opened, including the server from its `gossh` command. The script is then renamed to `defaults.goal.old`.
 
 # Server types
 
