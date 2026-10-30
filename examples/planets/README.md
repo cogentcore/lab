@@ -28,3 +28,17 @@ The `Stats` directory has the data organized into `Groups` according to the `met
 
 For example, double-click on `Stats/method/orbital_period` and you can see a table of the summary stats by method. You can also see all the stats by double-clicking on `Stats/method` or `Stats/decade`, which are what is shown in the two bar plots that come up at startup.
 
+## Terminial
+
+Here's a transcript of something you can do in the terminal, using the **math mode** activated by typing '##':
+
+```
+~/go/src/cogentcore.org/lab/examples/planets/ > ##
+data # cd Planets/Data
+data/Planets/Data # ls
+method number orbital_period mass distance year
+data/Planets/Data # stats.Mean(get("orbital_period"))
+2002.917596
+data/Planets/Data #
+```
+
