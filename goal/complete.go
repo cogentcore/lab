@@ -299,17 +299,16 @@ func remoteDirEntries(cl *sshclient.Client, dir string) []dirEntry {
 	}
 	result := make(chan []dirEntry, 1)
 	go func() {
-		sc, err := cl.SFTP()
+		infos, err := cl.ReadDir(dir)
 		if err != nil {
 			result <- nil
 			return
 		}
-		infos, _ := sc.ReadDir(dir)
 		des := make([]dirEntry, len(infos))
 		for i, fi := range infos {
 			isDir := fi.IsDir()
 			if !isDir && fi.Mode()&os.ModeSymlink != 0 {
-				if st, err := sc.Stat(path.Join(dir, fi.Name())); err == nil {
+				if st, err := cl.Stat(path.Join(dir, fi.Name())); err == nil {
 					isDir = st.IsDir()
 				}
 			}
