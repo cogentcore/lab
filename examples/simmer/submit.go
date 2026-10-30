@@ -63,6 +63,7 @@ func (sr *Simmer) FindGoMod(dir string) string {
 func (sr *Simmer) CopyFilesToJob(localSrc, localJob, hostJob, origProjPath, projPath string, exts ...string) {
 	clearErrors()
 	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	goalrun.Run("@0")
 	goalrun.Run("mkdir", "-p", localJob)
 	goalrun.Run("cd", localJob)
@@ -91,6 +92,7 @@ func (sr *Simmer) CopyFilesToJob(localSrc, localJob, hostJob, origProjPath, proj
 func (sr *Simmer) NewJob(jp SubmitParams) {
 	clearErrors()
 	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	message := jp.Message
 	args := jp.Args
 	label := jp.Label
@@ -223,9 +225,11 @@ func (sr *Simmer) NewJob(jp SubmitParams) {
 
 // Submit submits a job on the server.
 // Creates a new job dir based on incrementing counter,
-// synchronizing the job files.
+// synchronizing the job files. The parameters start from those of
+// the last job, and are saved in the project.
 func (sr *Simmer) Submit() { //types:add
 	lab.PromptStruct(sr, &sr.Project.Submit, "Submit a new job", func() {
+		sr.SaveProject() // the parameters of the last job
 		go sr.NewJob(sr.Project.Submit)
 	})
 }
@@ -239,6 +243,7 @@ func (sr *Simmer) Submit() { //types:add
 // The jobs should write a job.label file for the searched parameter.
 func (sr *Simmer) ParamSearch() { //types:add
 	lab.PromptStruct(sr, &sr.Project.Submit, "Submit a new param search: make sure local sim has been built with search configured!", func() {
+		sr.SaveProject() // the parameters of the last job
 		go sr.NewSearch(sr.Project.Submit)
 	})
 }

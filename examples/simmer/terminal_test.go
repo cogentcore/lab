@@ -23,17 +23,14 @@ import (
 )
 
 // TestTerminalServer tests that the terminal of simmer runs the goal shell,
-// with the server of the project connected as @1, including interactive
-// commands and a shell on it.
+// with the server of the project connected as @1, in the jobs directory of
+// the project on it, including interactive commands and a shell on it.
 func TestTerminalServer(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("not supported")
 	}
 	s := sshtest.NewServer(t)
 	s.Pty.Store(true) // as on a real server, for the interactive commands
-	s0 := s.Root
-	require.NoError(t, os.Mkdir(filepath.Join(s0, "sub"), 0755))
-	require.NoError(t, os.WriteFile(filepath.Join(s.Root, "onserver.txt"), []byte("hello from server"), 0644))
 	t.Setenv("HOME", t.TempDir())
 	homedir.Reset()
 	t.Chdir(t.TempDir())
@@ -45,8 +42,13 @@ func TestTerminalServer(t *testing.T) {
 	goalrun.SSH.User.KeyPath = s.KeyPath
 	pr := &Project{StartDir: sim}
 	pr.Defaults()
+	pr.Update() // sets Server.Root
 	pr.Server.SSH = s.Addr
 	require.NoError(t, jsonx.Save(pr, filepath.Join(sim, ProjectFilename)))
+	// the commands on the server start in its jobs directory
+	s0 := filepath.Join(s.Root, pr.Server.Root, "jobs")
+	require.NoError(t, os.MkdirAll(filepath.Join(s0, "sub"), 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(s0, "onserver.txt"), []byte("hello from server"), 0644))
 	t.Cleanup(goalrun.CloseSSH)
 	sr.OpenProject(core.Filename(sim))
 	require.True(t, sr.isOpen())

@@ -105,6 +105,7 @@ func (sr *Simmer) WriteSBatchCleanup(w io.Writer, jid, array_id string) {
 func (sr *Simmer) SubmitSBatch(jid, args string) string {
 	clearErrors()
 	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	goalrun.Run("@0")
 	f, _ := os.Create("job.setup.sbatch")
 	sr.WriteSBatchSetup(f, jid)
@@ -132,6 +133,7 @@ func (sr *Simmer) SubmitSBatch(jid, args string) string {
 func (sr *Simmer) RunSBatch(sbatch string) string {
 	clearErrors()
 	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	goalrun.Run("@1")
 	goalrun.Run("sbatch", sbatch, ">", "job.slurm")
 	goalrun.Run("@0")
@@ -151,6 +153,7 @@ func (sr *Simmer) RunSBatch(sbatch string) string {
 func (sr *Simmer) QueueSlurm() {
 	clearErrors()
 	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	ts := sr.Tabs.AsLab()
 	goalrun.Run("@1")
 	goalrun.Run("cd")
@@ -172,6 +175,7 @@ func (sr *Simmer) QueueSlurm() {
 func (sr *Simmer) FetchJobSlurm(jid string, force bool) {
 	clearErrors()
 	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	spath := sr.ServerJobPath(jid)
 	jpath := sr.JobPath(jid)
 	goalrun.Run("@1")
@@ -235,6 +239,7 @@ func (sr *Simmer) activeJobsSlurm(jobs []string) (active, others []string) {
 func (sr *Simmer) CancelJobsSlurm(jobs []string) {
 	clearErrors()
 	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	goalrun.Run("@0")
 	filepath.Join(sr.DataRoot, "jobs")
 	filepath.Join(sr.Project.Server.Root, "jobs")

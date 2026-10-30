@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"cogentcore.org/core/base/iox/jsonx"
+	"cogentcore.org/core/base/sshclient/sshtest"
 	"cogentcore.org/lab/goal/interpreter"
 	"github.com/mitchellh/go-homedir"
 	"github.com/stretchr/testify/assert"
@@ -120,4 +121,56 @@ func TestProjectArg(t *testing.T) {
 	assert.Equal(t, "", projectArg())
 	os.Args = []string{"simmer", "script.goal"}
 	assert.Equal(t, "", projectArg())
+}
+
+// TestSubmitFromLastJob tests that the parameters to submit a job are
+// those of the last job when a project is opened, saved in its file.
+func TestSubmitFromLastJob(t *testing.T) {
+	sr := newTestSimmer(t)
+	sim := filepath.Join(t.TempDir(), "jobsim")
+	for _, job := range []struct{ id, message, label string }{
+		{"ore00001", "first", "one"},
+		{"ore00002", "second", "two"},
+		{"ore00003", "", ""}, // not a submitted job
+	} {
+		jd := filepath.Join(sim, "simdata", "jobs", job.id)
+		require.NoError(t, os.MkdirAll(jd, 0755))
+		if job.message != "" {
+			require.NoError(t, os.WriteFile(filepath.Join(jd, "job.message"), []byte(job.message), 0644))
+			require.NoError(t, os.WriteFile(filepath.Join(jd, "job.label"), []byte(job.label), 0644))
+			require.NoError(t, os.WriteFile(filepath.Join(jd, "job.args"), nil, 0644))
+		}
+	}
+	fn := filepath.Join(sim, ProjectFilename)
+	require.NoError(t, jsonx.Save(&Project{Name: "jobsim", Submit: SubmitParams{Message: "old", Label: "old"}}, fn))
+
+	require.NoError(t, sr.openProject(fn))
+	assert.Equal(t, SubmitParams{Message: "second", Label: "two"}, sr.Project.Submit)
+	var pr Project
+	require.NoError(t, jsonx.Open(&pr, fn))
+	assert.Equal(t, sr.Project.Submit, pr.Submit)
+}
+
+// TestServerDataDir tests that the client of the server starts in the jobs
+// directory of the project on the server, and stays there after the
+// operations of simmer that run commands in other directories on it.
+func TestServerDataDir(t *testing.T) {
+	sr := newTestSimmer(t)
+	s := sshtest.NewServer(t)
+	goalrun.SSH.User.KeyPath = s.KeyPath
+	t.Cleanup(goalrun.CloseSSH)
+	sr.Project.Server.SSH = s.Addr
+	sr.Project.Server.Root = "simserver/sim/user"
+	jobs := filepath.Join(s.Root, "simserver/sim/user/jobs")
+	require.NoError(t, os.MkdirAll(jobs, 0755))
+
+	require.NoError(t, sr.connectServer())
+	cl := goalrun.SSHClients["1"]
+	assert.Equal(t, jobs, cl.Dir)
+	func() { // an operation
+		defer sr.restoreServerDir()()
+		goalrun.Run("@1", "cd")
+		assert.Equal(t, cl.HomeDir, cl.Dir)
+	}()
+	assert.Equal(t, jobs, cl.Dir)
 }

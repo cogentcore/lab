@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -188,7 +189,7 @@ func (sr *Simmer) openProject(fn string) error {
 	}
 	pr.StartDir, pr.DataRoot = dir, sr.DataRoot // where it is now
 	pr.Update()
-	if !hasFile {
+	if sr.submitFromLastJob() || !hasFile {
 		sr.SaveProject()
 	}
 
@@ -208,6 +209,31 @@ func (sr *Simmer) openProject(fn string) error {
 		sr.Toolbar.Update()
 	}
 	return nil
+}
+
+// submitFromLastJob sets the [Project.Submit] parameters to those of the
+// last job that was submitted, if any, from its job.message, job.label
+// and job.args files, so that a new job starts from them. It returns
+// whether they changed.
+func (sr *Simmer) submitFromLastJob() bool {
+	dir := filepath.Join(sr.DataRoot, "jobs")
+	entries, _ := os.ReadDir(dir) // sorted by name, as the job numbers
+	for i := len(entries) - 1; i >= 0; i-- {
+		jd := filepath.Join(dir, entries[i].Name())
+		msg, err := os.ReadFile(filepath.Join(jd, "job.message"))
+		if err != nil {
+			continue
+		}
+		label, _ := os.ReadFile(filepath.Join(jd, "job.label"))
+		args, _ := os.ReadFile(filepath.Join(jd, "job.args"))
+		sp := SubmitParams{Message: strings.TrimSpace(string(msg)), Label: strings.TrimSpace(string(label)), Args: strings.TrimSpace(string(args))}
+		if sp == sr.Project.Submit {
+			return false
+		}
+		sr.Project.Submit = sp
+		return true
+	}
+	return false
 }
 
 // SaveProject saves the project in its simmer.json file.
@@ -338,8 +364,45 @@ func (sr *Simmer) connectServer() error {
 	if err := cl.Connect(ssh); err != nil {
 		return err
 	}
+	sr.serverDataDir(cl)
 	goalrun.SSHClients["1"] = cl
 	return nil
+}
+
+// serverDataDir sets the directory of the given client of the server to
+// the jobs directory of the project on the server, or its root directory
+// ([ServerParams.Root]) if it has no jobs yet, if it exists, so that the
+// commands on @1 in the terminal, and ssh @1, start where the jobs are.
+// The commands of simmer on the server do not depend on it.
+func (sr *Simmer) serverDataDir(cl *sshclient.Client) {
+	sc, err := cl.SFTP()
+	if err != nil {
+		return
+	}
+	root := sr.Project.Server.Root
+	if !path.IsAbs(root) {
+		root = path.Join(cl.HomeDir, root)
+	}
+	for _, dir := range []string{path.Join(root, "jobs"), root} {
+		if fi, err := sc.Stat(dir); err == nil && fi.IsDir() {
+			cl.Dir = dir
+			return
+		}
+	}
+}
+
+// restoreServerDir returns a function that restores the directory of the
+// client of the server (@1) to the one it has now, for the operations of
+// simmer that run commands in other directories on the server, so that the
+// commands in the terminal stay where they are, as in the jobs directory
+// (see [Simmer.serverDataDir]). Use as: defer sr.restoreServerDir()().
+func (sr *Simmer) restoreServerDir() func() {
+	cl, ok := goalrun.SSHClients["1"]
+	if !ok {
+		return func() {}
+	}
+	dir := cl.Dir
+	return func() { cl.Dir = dir }
 }
 
 // projectsTab shows the recent projects in a Projects tab, to open one,

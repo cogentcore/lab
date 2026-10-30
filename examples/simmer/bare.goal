@@ -92,6 +92,7 @@ func (sr *Simmer) WriteBare(w io.Writer, jid, args string) {
 func (sr *Simmer) QueueBare() {
 	clearErrors()
 	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	sr.UpdateBare()
 	ts := sr.Tabs.AsLab()
 	@1

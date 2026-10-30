@@ -86,12 +86,6 @@ func (sr *Simmer) Jobs() { //types:add
 		}
 	}
 	tv.Table.Sequential()
-	nrows := dt.NumRows()
-	if nrows > 0 && sr.Project.Submit.Message == "" {
-		sr.Project.Submit.Message = dt.Column("Message").String1D(nrows - 1)
-		sr.Project.Submit.Args = dt.Column("Args").String1D(nrows - 1)
-		sr.Project.Submit.Label = dt.Column("Label").String1D(nrows - 1)
-	}
 }
 
 // Jobs updates the Jobs tab with a Table showing all the Jobs
@@ -152,6 +146,7 @@ func (sr *Simmer) Queue() { //types:add
 func (sr *Simmer) JobStatus(jid string, force bool) {
 	clearErrors()
 	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	// fmt.Println("############\nStatus of Job:", jid)
 	spath := sr.ServerJobPath(jid)
 	jpath := sr.JobPath(jid)
@@ -389,6 +384,7 @@ func (sr *Simmer) cancelActiveJobs(jobs []string, action string) (others []strin
 func (sr *Simmer) DeleteJobs(jobs []string) {
 	clearErrors()
 	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	jobs, msg := sr.cancelActiveJobs(jobs, "deleted")
 	if msg != "" {
 		defer core.MessageSnackbar(sr, msg) // after the message of the deleted jobs
@@ -434,6 +430,7 @@ func (sr *Simmer) Delete() { //types:add
 func (sr *Simmer) ArchiveJobs(jobs []string) {
 	clearErrors()
 	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	jobs, msg := sr.cancelActiveJobs(jobs, "archived")
 	if msg != "" {
 		defer core.MessageSnackbar(sr, msg) // after the message of the archived jobs
