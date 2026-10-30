@@ -5,14 +5,17 @@
 package goal
 
 import (
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
+	"cogentcore.org/core/base/sshclient"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/text/parse/complete"
 	"cogentcore.org/lab/goal/transpile"
@@ -38,6 +41,13 @@ type shellWord struct {
 	// baseLen is the number of runes of the word as typed after its last
 	// path separator, which completion replaces.
 	baseLen int
+
+	// host is the name of the ssh host of the command, from the @name
+	// that starts it, if any, which is not a word of the command.
+	host string
+
+	// cmd is the name of the command, if the word is not the first.
+	cmd string
 }
 
 // lastShellWord returns the word of the given shell command line that ends
@@ -72,17 +82,27 @@ func lastShellWord(line string) shellWord {
 			w.quote = r
 		case unicode.IsSpace(r) || strings.ContainsRune(";|&<>", r):
 			if len(value) > 0 || start < i {
-				words++
+				v := string(value)
+				switch {
+				case words == 0 && w.host == "" && isHostName(v):
+					w.host = v[1:]
+				case words == 0:
+					w.cmd = v
+					words++
+				default:
+					words++
+				}
 			}
 			if strings.ContainsRune(";|&", r) {
 				words = 0 // a new command
+				w.host, w.cmd = "", ""
 			}
 			value = value[:0]
 			start, base = i+1, i+1
 		default:
 			value = append(value, r)
 		}
-		if r == '/' {
+		if r == '/' || (r == ':' && isHostName(string(value[:len(value)-1]))) { // @name:path
 			base = i + 1
 		}
 	}
@@ -90,6 +110,12 @@ func lastShellWord(line string) shellWord {
 	w.first = words == 0
 	w.baseLen = len(rs) - base
 	return w
+}
+
+// isHostName returns whether the given word is the name of an ssh host,
+// as @name.
+func isHostName(word string) bool {
+	return len(word) > 1 && word[0] == '@' && !strings.ContainsAny(word, ":/")
 }
 
 // escapeShell returns s as it is typed in a shell word that has the given
@@ -127,16 +153,44 @@ type shellCompletion struct {
 // completions returns the completions of the word that ends at the end of
 // the given shell command line: the files of its directory whose names
 // start with its base (hidden files only if its base starts with a .),
-// and the commands, if it is the name of the command. The text that they
-// add continues the word as it is typed, escaped or quoted, and ends with
-// a / for a directory, and otherwise with the closing quote, if any, and a
-// space. In math mode, they are those of [mathCompletions].
+// and the commands, if it is the name of the command. The files are those
+// of the host that the command runs on, as for @name at the start of the
+// command or the active ssh host (see [Goal.SSHActive]), or those of the
+// host of a word that is @name:path, and the names of the hosts complete
+// an @name that starts the command. The text that they add continues the
+// word as it is typed, escaped or quoted, and ends with a / for a
+// directory, and otherwise with the closing quote, if any, and a space.
+// In math mode, they are those of [mathCompletions].
 func (gl *Goal) completions(line string) (w shellWord, comps []shellCompletion) {
 	if ml, ok := gl.mathLine(line); ok {
 		return mathCompletions(ml)
 	}
 	w = lastShellWord(line)
-	dir, base := filepath.Split(w.value)
+	value := w.value
+	host := w.host
+	if host == "" && gl.SSHActive != "" && !localBuiltins[w.cmd] {
+		host = gl.SSHActive
+	}
+	if strings.HasPrefix(value, "@") {
+		if h, p, ok := strings.Cut(value[1:], ":"); ok {
+			host, value = h, p
+		} else if w.first && w.host == "" {
+			return w, gl.hostCompletions(value[1:])
+		}
+	}
+	var cl *sshclient.Client
+	if host != "" && host != "0" {
+		cl = gl.SSHClients[host]
+		if cl == nil {
+			return w, nil
+		}
+	}
+	var dir, base string
+	if cl != nil {
+		dir, base = path.Split(value)
+	} else {
+		dir, base = filepath.Split(value)
+	}
 	end := " "
 	if w.quote != 0 {
 		end = string(w.quote) + end
@@ -147,38 +201,29 @@ func (gl *Goal) completions(line string) (w shellWord, comps []shellCompletion) 
 		}
 		e := end
 		if isDir {
-			e = string(filepath.Separator)
+			e = "/"
+			if cl == nil {
+				e = string(filepath.Separator)
+			}
 		}
 		comps = append(comps, shellCompletion{add: escapeShell(name[len(base):], w.quote) + e, name: name, icon: icon})
 	}
 
-	path := dir
-	if path == "" {
-		path = "."
+	var entries []dirEntry
+	if cl != nil {
+		entries = remoteDirEntries(cl, dir)
+	} else {
+		entries = gl.localDirEntries(dir)
 	}
-	if p, err := homedir.Expand(path); err == nil {
-		path = p
-	}
-	if !filepath.IsAbs(path) && gl.Config.Dir != "" {
-		path = filepath.Join(gl.Config.Dir, path)
-	}
-	entries, _ := os.ReadDir(path)
 	for _, entry := range entries {
-		name := entry.Name()
-		if strings.HasPrefix(name, ".") && !strings.HasPrefix(base, ".") {
+		if strings.HasPrefix(entry.name, ".") && !strings.HasPrefix(base, ".") {
 			continue
 		}
-		isDir := entry.IsDir()
-		if !isDir && entry.Type()&os.ModeSymlink != 0 {
-			if fi, err := os.Stat(filepath.Join(path, name)); err == nil {
-				isDir = fi.IsDir()
-			}
-		}
 		icon := icons.File
-		if isDir {
+		if entry.isDir {
 			icon = icons.Folder
 		}
-		add(name, icon, isDir)
+		add(entry.name, icon, entry.isDir)
 	}
 	if w.first && dir == "" {
 		for cmd := range gl.Builtins {
@@ -191,6 +236,93 @@ func (gl *Goal) completions(line string) (w shellWord, comps []shellCompletion) 
 	slices.SortFunc(comps, func(a, b shellCompletion) int { return strings.Compare(a.name, b.name) })
 	comps = slices.CompactFunc(comps, func(a, b shellCompletion) bool { return a.name == b.name })
 	return w, comps
+}
+
+// hostCompletions returns the completions of the name of an ssh host,
+// as @name, that starts with the given prefix, with 0 for the local host.
+func (gl *Goal) hostCompletions(prefix string) []shellCompletion {
+	var comps []shellCompletion
+	for _, name := range append(slices.Sorted(maps.Keys(gl.SSHClients)), "0") {
+		if strings.HasPrefix(name, prefix) {
+			comps = append(comps, shellCompletion{add: name[len(prefix):] + " ", name: "@" + name, icon: icons.Cloud})
+		}
+	}
+	return comps
+}
+
+// dirEntry is a file in a directory, for completion.
+type dirEntry struct {
+	name  string
+	isDir bool
+}
+
+// localDirEntries returns the files in the given local directory, relative
+// to the current directory, with symbolic links to directories as such.
+func (gl *Goal) localDirEntries(dir string) []dirEntry {
+	if dir == "" {
+		dir = "."
+	}
+	if p, err := homedir.Expand(dir); err == nil {
+		dir = p
+	}
+	if !filepath.IsAbs(dir) && gl.Config.Dir != "" {
+		dir = filepath.Join(gl.Config.Dir, dir)
+	}
+	entries, _ := os.ReadDir(dir)
+	des := make([]dirEntry, len(entries))
+	for i, entry := range entries {
+		isDir := entry.IsDir()
+		if !isDir && entry.Type()&os.ModeSymlink != 0 {
+			if fi, err := os.Stat(filepath.Join(dir, entry.Name())); err == nil {
+				isDir = fi.IsDir()
+			}
+		}
+		des[i] = dirEntry{name: entry.Name(), isDir: isDir}
+	}
+	return des
+}
+
+// remoteTimeout is how long completion waits for the files on an ssh host,
+// as when the network is down.
+var remoteTimeout = 2 * time.Second
+
+// remoteDirEntries returns the files in the given directory on the host of
+// the given ssh client, relative to its current directory, with symbolic
+// links to directories as such, read with SFTP. It returns nil if they
+// could not be read within [remoteTimeout].
+func remoteDirEntries(cl *sshclient.Client, dir string) []dirEntry {
+	switch {
+	case dir == "~" || strings.HasPrefix(dir, "~/"):
+		dir = cl.HomeDir + dir[1:]
+	case !path.IsAbs(dir):
+		dir = path.Join(cl.Dir, dir)
+	}
+	result := make(chan []dirEntry, 1)
+	go func() {
+		sc, err := cl.SFTP()
+		if err != nil {
+			result <- nil
+			return
+		}
+		infos, _ := sc.ReadDir(dir)
+		des := make([]dirEntry, len(infos))
+		for i, fi := range infos {
+			isDir := fi.IsDir()
+			if !isDir && fi.Mode()&os.ModeSymlink != 0 {
+				if st, err := sc.Stat(path.Join(dir, fi.Name())); err == nil {
+					isDir = st.IsDir()
+				}
+			}
+			des[i] = dirEntry{name: fi.Name(), isDir: isDir}
+		}
+		result <- des
+	}()
+	select {
+	case des := <-result:
+		return des
+	case <-time.After(remoteTimeout):
+		return nil
+	}
 }
 
 // mathLine returns the given line without the # that starts a line of math

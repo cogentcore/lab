@@ -78,6 +78,19 @@ func projectFile(path string) string {
 	return filepath.Join(path, ProjectFilename)
 }
 
+// gitVersion returns the version of the git repository of the given
+// directory, from git describe --tags, or "" if it is not in one, without
+// the error output of git, which would go to the terminal of the app.
+func gitVersion(dir string) string {
+	cmd := exec.Command("git", "describe", "--tags")
+	cmd.Dir = dir
+	out, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
 // isDir returns whether the given path is a directory, without logging
 // an error if it does not exist.
 func isDir(path string) bool {

@@ -22,8 +22,8 @@ import (
 )
 
 // TestInteractiveTerminal tests the goal shell in a terminal, with the
-// data of the app in tensorfs, completing its names, interrupting code,
-// and ending and restarting the shell.
+// data of the app in tensorfs, completing its names, interrupting code
+// and commands, and ending and restarting the shell.
 func TestInteractiveTerminal(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("not supported")
@@ -101,6 +101,17 @@ func TestInteractiveTerminal(t *testing.T) {
 	b.AsyncUnlock()
 	run(`fmt.Println("after", "interrupt")`)
 	waitFor("the interrupt", func(s string) bool { return strings.Contains(s, "after interrupt\n") })
+
+	// and commands that are running
+	start := time.Now()
+	run("sleep 10")
+	time.Sleep(300 * time.Millisecond)
+	b.AsyncLock()
+	tm.SendText("\x03")
+	b.AsyncUnlock()
+	run(`fmt.Println("after", "sleep")`)
+	waitFor("the interrupt of the command", func(s string) bool { return strings.Contains(s, "after sleep\n") })
+	assert.Less(t, time.Since(start), 5*time.Second)
 
 	// the shell ends with Control+D, and runs again when restarted
 	b.AsyncLock()

@@ -9,7 +9,6 @@ package main
 import (
 	"os"
 	"path/filepath"
-	"strings"
 
 	"cogentcore.org/lab/table"
 )
@@ -206,7 +205,7 @@ func (cf *Project) Defaults() {
 	goalrun.Run("@0")
 	goalrun.Run("cd")
 	goalrun.Run("cd", cf.StartDir)
-	cf.Version = strings.TrimSpace(goalrun.OutputErrOK("git", "describe", "--tags")) // ok if not a git repository
+	cf.Version = gitVersion(cf.StartDir)
 	goalrun.Run("cd", cf.DataRoot)
 	cf.User = os.Getenv("USER")
 	_, pj := filepath.Split(cf.StartDir)

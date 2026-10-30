@@ -23,12 +23,16 @@ import (
 )
 
 // TestTerminalServer tests that the terminal of simmer runs the goal shell,
-// with the server of the project connected as @1.
+// with the server of the project connected as @1, including interactive
+// commands and a shell on it.
 func TestTerminalServer(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("not supported")
 	}
 	s := sshtest.NewServer(t)
+	s.Pty.Store(true) // as on a real server, for the interactive commands
+	s0 := s.Root
+	require.NoError(t, os.Mkdir(filepath.Join(s0, "sub"), 0755))
 	require.NoError(t, os.WriteFile(filepath.Join(s.Root, "onserver.txt"), []byte("hello from server"), 0644))
 	t.Setenv("HOME", t.TempDir())
 	homedir.Reset()
@@ -80,8 +84,34 @@ func TestTerminalServer(t *testing.T) {
 		b.AsyncUnlock()
 	}
 	waitFor("the prompt", func(s string) bool { return strings.Contains(s, "> ") })
+	// the input of the terminal goes to the command on the server while it
+	// runs, so the prompt after it is waited for
+	prompt := func(n int) func(s string) bool {
+		return func(s string) bool { return strings.Count(s, "> ") >= n }
+	}
 	run("@1 cat onserver.txt")
 	waitFor("the server output", func(s string) bool { return strings.Contains(s, "hello from server") })
+	waitFor("the prompt after it", prompt(2))
+
+	// an interactive command on the server gets the input of the terminal
+	run("@1 head -1")
+	time.Sleep(300 * time.Millisecond)
+	run("to the server")
+	waitFor("the prompt after head", prompt(3))
+	run(`fmt.Println("after", "head")`)
+	waitFor("the output after head", func(s string) bool { return strings.Contains(s, "after head\n") })
+
+	// an interactive shell on the server, in the directory of @1
+	run("@1 cd sub")
+	waitFor("the prompt after cd", prompt(5))
+	run("ssh @1")
+	time.Sleep(300 * time.Millisecond)
+	run("pwd")
+	waitFor("the directory in the shell", func(s string) bool { return strings.Contains(s, filepath.Join(s0, "sub")+"\n") })
+	run("exit")
+	waitFor("the prompt after the shell", prompt(6))
+	run(`fmt.Println("after", "shell")`)
+	waitFor("the output after the shell", func(s string) bool { return strings.Contains(s, "after shell\n") })
 	t.Log(text())
 	b.AsyncLock()
 	tm.SendText("\x04")
