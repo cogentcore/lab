@@ -95,6 +95,10 @@ func (jp *JobParams) Defaults() {
 // ServerParams are parameters for the server.
 type ServerParams struct {
 
+	// SSH is the user@host of the server, for the ssh connection to it,
+	// which is @1 in goal commands.
+	SSH string
+
 	// Name is the name of current server using to run jobs;
 	// gets recorded with each job.
 	Name string
@@ -105,10 +109,6 @@ type ServerParams struct {
 
 	// Slurm uses the slurm job manager. Otherwise uses a bare job manager.
 	Slurm bool
-
-	// SSH is the user@host of the server, for the ssh connection to it,
-	// which is @1 in goal commands.
-	SSH string
 }
 
 func (sp *ServerParams) Defaults() {
@@ -119,19 +119,6 @@ func (sp *ServerParams) Defaults() {
 // (see [ProjectFilename]).
 type Project struct {
 
-	// DataRoot is the path to the root of the data to browse.
-	DataRoot string
-
-	// StartDir is the starting directory, where the app was originally started.
-	StartDir string
-
-	// User id as in system login name (i.e., user@system).
-	User string
-
-	// UserShort is the first 3 letters of User,
-	// for naming jobs (auto-set from User).
-	UserShort string
-
 	// Name is the name of simulation project, lowercase
 	// (should be name of source dir).
 	Name string
@@ -140,14 +127,14 @@ type Project struct {
 	// This is used to update the go.mod, along with the Version.
 	Package string
 
+	// Server has server parameters.
+	Server ServerParams
+
 	// Version is the current git version string, from git describe --tags.
 	Version string
 
 	// Job has the parameters for job resources etc.
 	Job JobParams `display:"inline"`
-
-	// Server has server parameters.
-	Server ServerParams
 
 	// GroupColumns are the column(s) to use for grouping result data, for PlotMean.
 	// e.g., Epoch for epoch-level results.
@@ -199,6 +186,19 @@ type Project struct {
 
 	// Submit has parameters for submitting jobs; set from last job run.
 	Submit SubmitParams
+
+	// DataRoot is the path to the root of the data to browse.
+	DataRoot string `edit:"-"`
+
+	// StartDir is the starting directory, where the app was originally started.
+	StartDir string `edit:"-"`
+
+	// User id as in system login name (i.e., user@system).
+	User string `edit:"-"`
+
+	// UserShort is the first 3 letters of User,
+	// for naming jobs (auto-set from User).
+	UserShort string `edit:"-"`
 }
 
 func (cf *Project) Defaults() {

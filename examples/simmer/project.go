@@ -22,7 +22,6 @@ import (
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
 	"cogentcore.org/core/styles"
-	"cogentcore.org/lab/goal/goalib"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/lab"
 	"cogentcore.org/lab/table"
@@ -53,13 +52,44 @@ func openRecentProjects() {
 
 // projectFile returns the project file for the given path, which is the
 // path itself if it is a simmer.json file, and otherwise the simmer.json
-// file in that directory.
+// file in the directory of the project of the path: the path itself if it
+// is a directory, or the directory of any other file, or the nearest
+// directory above it with a simmer.json file or simdata directory, if any.
+// A project that does not have a simmer.json file yet is opened in this
+// way, by any file in it.
 func projectFile(path string) string {
 	path = errors.Log1(filepath.Abs(path))
 	if filepath.Base(path) == ProjectFilename {
 		return path
 	}
+	if !isDir(path) {
+		path = filepath.Dir(path)
+	}
+	for dir := path; ; {
+		if isFile(filepath.Join(dir, ProjectFilename)) || isDir(filepath.Join(dir, "simdata")) {
+			return filepath.Join(dir, ProjectFilename)
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
 	return filepath.Join(path, ProjectFilename)
+}
+
+// isDir returns whether the given path is a directory, without logging
+// an error if it does not exist.
+func isDir(path string) bool {
+	fi, err := os.Stat(path)
+	return err == nil && fi.IsDir()
+}
+
+// isFile returns whether the given path is a file, without logging
+// an error if it does not exist.
+func isFile(path string) bool {
+	fi, err := os.Stat(path)
+	return err == nil && !fi.IsDir()
 }
 
 // projectArg removes and returns the project of the command line, if the
@@ -74,7 +104,7 @@ func projectArg() string {
 	if strings.HasPrefix(arg, "-") || arg == "run" || arg == "build" || arg == "help" {
 		return ""
 	}
-	if filepath.Base(arg) != ProjectFilename && !goalib.DirExists(arg) {
+	if filepath.Base(arg) != ProjectFilename && !isDir(arg) {
 		return ""
 	}
 	os.Args = append(os.Args[:1], os.Args[2:]...)
@@ -87,8 +117,10 @@ func (sr *Simmer) isOpen() bool {
 }
 
 // OpenProject opens the simulation project of the given simmer.json file,
-// or of the directory with it. If a project is already open, the project
-// is opened in a new simmer app, as each app has one project.
+// or of the directory with it, which can be given by any file in it, as
+// for a project that does not have that file yet (see [Simmer.openProject]).
+// If a project is already open, the project is opened in a new simmer app,
+// as each app has one project.
 func (sr *Simmer) OpenProject(path core.Filename) { //types:add
 	fn := projectFile(string(path))
 	if sr.isOpen() {
@@ -120,8 +152,8 @@ func openInNewApp(fn string) error {
 // defaults.goal script (see [Simmer.migrateProject]).
 func (sr *Simmer) openProject(fn string) error {
 	dir := filepath.Dir(fn)
-	hasFile := goalib.FileExists(fn)
-	if !hasFile && !goalib.DirExists(filepath.Join(dir, "simdata")) {
+	hasFile := isFile(fn)
+	if !hasFile && !isDir(filepath.Join(dir, "simdata")) {
 		return fmt.Errorf("%s is not a simmer project: it has no %s file, or simdata directory (see New project)", dir, ProjectFilename)
 	}
 	sr.StartDir = dir
@@ -195,7 +227,7 @@ func (sr *Simmer) newProject(dir string) error {
 	if err != nil {
 		return err
 	}
-	if !goalib.DirExists(dir) {
+	if !isDir(dir) {
 		return fmt.Errorf("NewProject: the simulation directory %s does not exist", dir)
 	}
 	usr, err := user.Current()
@@ -218,7 +250,7 @@ func (sr *Simmer) newProject(dir string) error {
 		}
 	}
 	fn := filepath.Join(dir, ProjectFilename)
-	if !goalib.FileExists(fn) {
+	if !isFile(fn) {
 		if sr.isOpen() { // Defaults changes the directory
 			defer goalrun.Run("cd", sr.StartDir)
 		}

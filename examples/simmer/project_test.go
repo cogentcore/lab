@@ -85,7 +85,14 @@ defaults()
 	dfn := filepath.Join(scripts, "defaults.goal")
 	require.NoError(t, os.WriteFile(dfn, []byte(defaults), 0644))
 
-	require.NoError(t, sr.openProject(projectFile(sim)))
+	// opened by any file in it
+	require.NoError(t, os.WriteFile(filepath.Join(sim, "main.go"), nil, 0644))
+	fn := projectFile(filepath.Join(sim, "main.go"))
+	assert.Equal(t, filepath.Join(sim, ProjectFilename), fn)
+	assert.Equal(t, fn, projectFile(sim))
+	assert.Equal(t, fn, projectFile(fn))
+	assert.Equal(t, fn, projectFile(scripts), "in a directory of the project")
+	require.NoError(t, sr.openProject(fn))
 	pr := &sr.Project
 	assert.Equal(t, "oldsim", pr.Name)
 	assert.Equal(t, "ubuntu@127.0.0.1:1", pr.Server.SSH)

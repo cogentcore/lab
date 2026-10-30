@@ -23,7 +23,6 @@ import (
 	"cogentcore.org/core/tree"
 	"cogentcore.org/lab/examples/baremetal"
 	"cogentcore.org/lab/goal"
-	"cogentcore.org/lab/goal/goalib"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/lab"
 	"cogentcore.org/lab/lab/labscripts"
@@ -118,7 +117,7 @@ func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 	path := startProject
 	if path == "" {
 		wd, _ := os.Getwd()
-		if goalib.FileExists(filepath.Join(wd, ProjectFilename)) || goalib.DirExists(filepath.Join(wd, "simdata")) {
+		if isFile(filepath.Join(wd, ProjectFilename)) || isDir(filepath.Join(wd, "simdata")) {
 			path = wd
 		}
 	}
