@@ -5,6 +5,7 @@
 package baremetal
 
 import (
+	"errors"
 	"time"
 )
 
@@ -74,9 +75,10 @@ func (bm *BareMetal) UpdateJobs() (nrun, nfinished int, err error) {
 	bm.Lock()
 	defer bm.Unlock()
 
-	nfinished, err = bm.pollJobs()
-	nrun, err = bm.runPendingJobs()
+	nfinished, perr := bm.pollJobs()
+	nrun, rerr := bm.runPendingJobs()
 	bm.saveState()
+	err = errors.Join(perr, rerr)
 	return
 }
 

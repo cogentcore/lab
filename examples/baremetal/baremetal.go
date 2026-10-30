@@ -46,6 +46,10 @@ type BareMetal struct {
 	// The unique key is the bare metal job ID (int).
 	Done Jobs
 
+	// DataDir is the directory with the BareMetal directory of the config
+	// and state files, which is ~/Library by default.
+	DataDir string `json:"-" toml:"-"`
+
 	// interp is the goal interpreter that we exclusively control.
 	interp *interpreter.Interpreter `json:"-" toml:"-"`
 
@@ -78,8 +82,12 @@ func (bm *BareMetal) Init() {
 
 // todo: should have this logic in fsx presumably
 
-// dataDir returns the app data dir
+// dataDir returns the app data dir: [BareMetal.DataDir] if set,
+// and otherwise ~/Library.
 func (bm *BareMetal) dataDir() string {
+	if bm.DataDir != "" {
+		return bm.DataDir
+	}
 	usr, err := user.Current()
 	if errors.Log(err) != nil {
 		return "/tmp"
@@ -171,6 +179,16 @@ func (bm *BareMetal) newInterpreter() {
 // Interactive runs the interpreter in interactive mode.
 func (bm *BareMetal) Interactive() {
 	bm.interp.Interactive()
+}
+
+// clearErrors clears the errors of the goal commands, which are logged
+// when they happen. After a command fails, goal runs no more commands
+// until they are cleared, as in a script, but the job operations of
+// baremetal are independent: a command that fails, as when the network to
+// a server is lost, must not stop the operations after it, such as on
+// other servers, or when the network comes back.
+func clearErrors() {
+	goalrun.Errors = nil
 }
 
 // bgLoop is the background update loop

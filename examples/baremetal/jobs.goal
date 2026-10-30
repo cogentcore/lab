@@ -115,7 +115,9 @@ func (bm *BareMetal) submit(src, path, script, results string, files []byte) *Jo
 
 // runJob runs the given job on the given server on given gpu number.
 func (bm *BareMetal) runJob(job *Job, sv *Server, gpu int) error {
+	clearErrors()
 	defer func() {
+		clearErrors() // to go back after a failure
 		cd
 		@0
 	}()
@@ -244,6 +246,11 @@ func (bm *BareMetal) cancelJob(job *Job) error {
 	if errors.Log(err) != nil {
 		return err
 	}
+	clearErrors()
+	// a job is only canceled when its process can be killed
+	if err := sv.CheckConnection(); err != nil {
+		return errors.Log(fmt.Errorf("CancelJob: Job %d not canceled: %w", job.ID, err))
+	}
 	@0
 	job.Status = Canceled // always mark job as canceled, even if other stuff fails
 	bm.jobDone(job, sv)
@@ -270,7 +277,10 @@ func (bm *BareMetal) pollJobs() (int, error) {
 	@0
 	// todo: this screws up parsing:
 	{var errs []error}
+	// the connection errors of servers, checked once per poll
+	{conns := map[string]error{}}
 	for ji := njobs-1; ji >= 0; ji-- { // reverse b/c moves jobs to Done
+		clearErrors()
 		job := bm.Active.Values[ji]
 		// fmt.Println("job status:", job.Status, "jobno:", job.ID)
 		if job.Status != Pending && job.Status != Running { // stray job for active
@@ -286,6 +296,20 @@ func (bm *BareMetal) pollJobs() (int, error) {
 		sv, err := bm.Server(job.ServerName)
 		if errors.Log(err) != nil {
 			errs = append(errs, err)
+			continue
+		}
+		// the jobs of a server that is not connected are polled when it is
+		// connected again, so that they are not marked done when its
+		// commands fail
+		cerr, checked := conns[sv.Name]
+		if !checked {
+			cerr = sv.CheckConnection()
+			conns[sv.Name] = cerr
+			if cerr != nil {
+				errs = append(errs, cerr)
+			}
+		}
+		if cerr != nil {
 			continue
 		}
 		sv.Use()
@@ -361,7 +385,9 @@ func (bm *BareMetal) fetchResults(resultsGlob string, ids ...int) ([]*Job, error
 
 // fetchResultsJob gets job results back from server.
 func (bm *BareMetal) fetchResultsJob(job *Job, sv *Server) error {
+	clearErrors()
 	defer func() {
+		clearErrors() // to go back after a failure
 		cd
 		@0
 	}()
