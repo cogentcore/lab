@@ -37,8 +37,20 @@ Here's a transcript of something you can do in the terminal, using the **math mo
 data # cd Planets/Data
 data/Planets/Data # ls
 method number orbital_period mass distance year
-data/Planets/Data # stats.Mean(get("orbital_period"))
+data/Planets/Data # a := get("orbital_period")
+a
+data/Planets/Data # stats.Mean(a)
 2002.917596
-data/Planets/Data #
+data/Planets/Data # sum := 0.0
+sum
+data/Planets/Data # n := 0.0
+n
+data/Planets/Data # for i, v := range a { if !math.IsNaN(v) { sum += v; n++} }
+data/Planets/Data # sum
+1986894.255
+data/Planets/Data # n
+992
+data/Planets/Data # sum / n
+2002.917596
 ```
 
