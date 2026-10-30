@@ -119,6 +119,18 @@ gossh @name
 
 uses the given host for all subsequent commands (unless explicitly specified), until the default is changed.  Use `@0` or `gossh @0` to return to localhost.  The builtins that act on the shell itself always run on the local host: `gossh`, `scp`, `exit`, `jobs` and `source`.
 
+### Interactive commands and shells on a host
+
+Each command on a host runs in a terminal there, which gets the input of the terminal of the shell while the command runs, so interactive programs such as `more`, `less`, `top` and editors work, and Ctrl-C interrupts the command on the host. Tab completion of file names completes the files on the host of the command: `@name ls da` and `ls da` with `@name` as the default host complete the files on `@name`, as does `@name:da` in `scp` and redirections, and `@` at the start of a command completes the names of the hosts.
+
+The commands get the environment of an interactive login shell of the user on the host, such as the PATH set in `~/.bashrc`, which is read once when the connection is made.
+
+The commands are still run by the shell one at a time. For a full interactive shell on a host, use:
+```sh
+ssh @name
+```
+which runs the login shell of the user on that host, on the existing connection, in its current directory, until it ends with `exit` or Ctrl-D. Other uses of `ssh` run the standard `ssh` command.
+
 ### Redirect input / output among hosts
 
 The output of a remote host command can be sent to a file on the local host:

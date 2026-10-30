@@ -4,7 +4,13 @@
 
 package baremetal
 
-import "fmt"
+import (
+	"fmt"
+	"log/slog"
+	"time"
+
+	"cogentcore.org/core/base/sshclient"
+)
 
 // Server specifies a bare metal Server.
 type Server struct {
@@ -19,6 +25,10 @@ type Server struct {
 
 	// Used is a map of GPUs current being used.
 	Used map[int]bool `edit:"-" toml:"-"`
+
+	// lastConnect is the time of the last try to connect,
+	// for a server that could not be connected at the start.
+	lastConnect time.Time
 }
 
 // ServerAvail is used to report the number of available gpus per server.
@@ -27,12 +37,44 @@ type ServerAvail struct {
 	Avail int
 }
 
-// OpenSSH opens the SSH connection for this server.
+// OpenSSH opens the SSH connection for this server, logging an error if
+// it fails, as when the network is down, in which case
+// [Server.CheckConnection] tries again later.
 func (sv *Server) OpenSSH() {
 	if sv.Used == nil {
 		sv.Used = make(map[int]bool)
 	}
-	gossh {sv.SSH} {sv.Name}
+	if err := sv.connect(); err != nil {
+		slog.Error("BareMetal: could not connect to server", "Server", sv.Name, "Error", err)
+	}
+}
+
+// connect makes the SSH connection of the server, named as the server,
+// as gossh does, without making it the active host.
+func (sv *Server) connect() error {
+	sv.lastConnect = time.Now()
+	cl := sshclient.NewClient(goalrun.SSH)
+	if err := cl.Connect(sv.SSH); err != nil {
+		return err
+	}
+	goalrun.SSHClients[sv.Name] = cl
+	return nil
+}
+
+// CheckConnection returns nil if the SSH connection of the server is up,
+// and otherwise tries to connect again, as when the network comes back,
+// returning an error if it is still lost (see [sshclient.Client.CheckConnection]).
+// A server that could not be connected at the start is tried again
+// every [sshclient.Client.Timeout].
+func (sv *Server) CheckConnection() error {
+	cl, err := goalrun.SSHByHost(sv.Name)
+	if err == nil {
+		return cl.CheckConnection()
+	}
+	if time.Since(sv.lastConnect) < sshclient.NewClient(goalrun.SSH).Timeout {
+		return fmt.Errorf("BareMetal: server %s is not connected", sv.Name)
+	}
+	return sv.connect()
 }
 
 // ID returns the server SSH ID string: @Name
@@ -60,10 +102,18 @@ func (bm *BareMetal) Server(name string) (*Server, error) {
 }
 
 // availableGPUs returns the number of GPUs available on servers.
-// Only includes servers with availability (nil if nothing avail).
+// Only includes servers with availability (nil if nothing avail),
+// and that are connected.
 func (bm *BareMetal) availableGPUs() []ServerAvail {
 	var avail []ServerAvail
 	for _, sv := range bm.Servers.Values {
+		if sv.Avail() == 0 {
+			continue
+		}
+		if err := sv.CheckConnection(); err != nil {
+			slog.Error("BareMetal: server not connected", "Server", sv.Name, "Error", err)
+			continue
+		}
 		na := sv.Avail()
 		if na > 0 {
 			avail = append(avail, ServerAvail{Name: sv.Name, Avail: na})

@@ -6,6 +6,7 @@ package goal
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -56,6 +57,14 @@ func (gl *Goal) Exec(errOk, start, output bool, cmd any, args ...any) string {
 		gl.runBuiltinOrCommandToPipe(cmdIO, errOk, scmd, sargs...)
 		return out
 	}
+	if scmd == "ssh" && !start && !output && len(sargs) == 1 && isHostName(sargs[0]) {
+		err := gl.sshShell(cmdIO, sargs[0][1:])
+		if !errOk {
+			gl.AddError(err)
+		}
+		cmdIO.PopToStart()
+		return out
+	}
 	if localBuiltins[scmd] { // not on the active ssh host
 		cl = nil
 	}
@@ -75,9 +84,9 @@ func (gl *Goal) Exec(errOk, start, output bool, cmd any, args ...any) string {
 			err = cl.Start(&cmdIO.StdIOState, scmd, sargs...)
 		case output:
 			cmdIO.PushOut(nil)
-			out, err = cl.Output(&cmdIO.StdIOState, scmd, sargs...)
+			out, err = cl.OutputContext(gl.cmdContext(), &cmdIO.StdIOState, scmd, sargs...)
 		default:
-			err = cl.Run(&cmdIO.StdIOState, scmd, sargs...)
+			err = cl.RunContext(gl.cmdContext(), &cmdIO.StdIOState, scmd, sargs...)
 		}
 		if !errOk {
 			gl.AddError(err)
@@ -105,10 +114,10 @@ func (gl *Goal) Exec(errOk, start, output bool, cmd any, args ...any) string {
 				}()
 			case output:
 				cmdIO.PushOut(nil)
-				out, err = gl.Config.OutputIO(cmdIO, scmd, sargs...)
+				out, err = gl.Config.OutputIOContext(gl.cmdContext(), cmdIO, scmd, sargs...)
 			default:
 				// fmt.Fprintf(gl.debugTrace, "run exe %s in: %#v  out: %#v  %v\n  ", scmd, cmdIO.In, cmdIO.Out, cmdIO.OutIsPipe())
-				err = gl.Config.RunIO(cmdIO, scmd, sargs...)
+				err = gl.Config.RunIOContext(gl.cmdContext(), cmdIO, scmd, sargs...)
 			}
 			if !errOk {
 				gl.AddError(err)
@@ -145,6 +154,17 @@ func (gl *Goal) runBuiltinOrCommandToPipe(cmdIO *exec.CmdIO, errOk bool, cmd str
 		pipe.Write(buf.Bytes())
 		cmdIO.PopToStart()
 	}()
+}
+
+// sshShell runs an interactive shell on the ssh host of the given name,
+// for ssh @name, in its current directory, until it ends (see
+// [sshclient.Client.Shell]). Other uses of ssh run the ssh command.
+func (gl *Goal) sshShell(cmdIO *exec.CmdIO, host string) error {
+	cl, err := gl.SSHByHost(host)
+	if err != nil {
+		return fmt.Errorf("ssh: %w", err)
+	}
+	return cl.Shell(&cmdIO.StdIOState)
 }
 
 // localBuiltins are the builtins that run on the local host even when the
@@ -508,6 +528,18 @@ func (gl *Goal) CmdArgs(errOk bool, sargs []string, i int) []string {
 	}
 
 	return sargs
+}
+
+// cmdContext returns the context with which the commands are run, which
+// interrupts them when the execution is canceled while they run, as for
+// Control+C (see [Goal.CancelExecution]). It is nil when there is none,
+// or it is already done, as it is after an error ([Goal.AddError]), for
+// the commands that run after it, which do not stop on errors.
+func (gl *Goal) cmdContext() context.Context {
+	if gl.Ctx == nil || gl.Ctx.Err() != nil {
+		return nil
+	}
+	return gl.Ctx
 }
 
 // CancelExecution calls the Cancel() function if set.

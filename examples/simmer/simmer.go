@@ -7,13 +7,14 @@ package main
 //go:generate core generate -add-types -add-funcs
 
 import (
+	"image"
 	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
+	"time"
 
 	"cogentcore.org/core/base/errors"
-	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/cli"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/events"
@@ -35,6 +36,16 @@ import (
 // goalrun is needed for running goal commands.
 var goalrun *goal.Goal
 
+// clearErrors clears the errors of the goal commands, which are logged
+// when they happen. After a command fails, goal runs no more commands
+// until they are cleared, as in a script, but the operations of simmer,
+// and those on each job, are independent: a command that fails, as when
+// the network to the server is lost, must not stop the operations after
+// it, such as when the network comes back.
+func clearErrors() {
+	goalrun.Errors = nil
+}
+
 var defaultJobFormat = `Name, Type
 JobID, string
 Status, string
@@ -52,13 +63,15 @@ End, string
 
 // Simmer manages the running and data analysis of results from simulations
 // that are run on remote server(s), within a Cogent Lab browser environment,
-// with the files as the left panel, and the Tabber as the right panel.
+// with the files as the left panel, and the Tabber as the right panel,
+// with the terminal running the goal shell below it.
 type Simmer struct {
 	core.Frame
 	lab.Browser
 
-	// Config holds all the configuration settings.
-	Config Configuration
+	// Project has the settings of the open simulation project,
+	// which are saved in its simmer.json file.
+	Project Project
 
 	// JobsTableView is the view of the jobs table.
 	JobsTableView *tensorcore.Table
@@ -78,11 +91,17 @@ type Simmer struct {
 	// Status info from BareMetal
 	BareMetalActive      []*baremetal.Job
 	BareMetalActiveTable *core.Table
+
+	// lastConnect is the time of the last try to connect to the server
+	// (see [Simmer.connectServer]).
+	lastConnect time.Time
 }
 
-// important: must be run from an interactive terminal.
-// Will quit immediately if not!
+// startProject is the project given on the command line, if any.
+var startProject string
+
 func main() {
+	startProject = projectArg()
 	opts := cli.DefaultOptions("simmer", "interactive simulation running and data analysis.")
 	cfg := &interpreter.Config{}
 	cfg.InteractiveFunc = Interactive
@@ -90,28 +109,34 @@ func main() {
 }
 
 // Interactive is the cli function that gets called by default at gui startup.
+// It opens the project given on the command line, or the one in the
+// current directory, if any, and otherwise shows the recent projects,
+// and runs the goal shell in the terminal of the window.
 func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
-	b, _ := NewSimmerWindow(in)
-	b.OnShow(func(e events.Event) {
-		// note: comment out if not running interactively (e.g., debugger)
-		go func() {
-			if c.Expr != "" {
-				in.Eval(c.Expr)
-			}
-			in.Interactive()
-		}()
-	})
-	b.RunWindow()
-	core.Wait()
+	b, sr := NewSimmerWindow(in)
+	path := startProject
+	if path == "" {
+		wd, _ := os.Getwd()
+		if isFile(filepath.Join(wd, ProjectFilename)) || isDir(filepath.Join(wd, "simdata")) {
+			path = wd
+		}
+	}
+	if path != "" {
+		sr.OpenProject(core.Filename(path))
+	}
+	if !sr.isOpen() {
+		sr.projectsTab()
+	}
+	mvmlab.InteractiveTerminal(c, in, sr.Terminal)
+	b.RunMainWindow()
 	return nil
 }
 
-// NewSimmerWindow returns a new Simmer window using given interpreter.
+// NewSimmerWindow returns a new Simmer window using given interpreter,
+// without a project (see [Simmer.OpenProject]).
 // do RunWindow on resulting [core.Body] to open the window.
 func NewSimmerWindow(in *interpreter.Interpreter) (*core.Body, *Simmer) {
-	startDir, _ := os.Getwd()
-	startDir = errors.Log1(filepath.Abs(startDir))
-	b := core.NewBody("Simmer: " + fsx.DirAndFile(startDir))
+	b := core.NewBody("Simmer")
 	sr := NewSimmer(b)
 	sr.Interpreter = in
 	b.AddTopBar(func(bar *core.Frame) {
@@ -119,23 +144,20 @@ func NewSimmerWindow(in *interpreter.Interpreter) (*core.Body, *Simmer) {
 		sr.Toolbar = tb
 		tb.Maker(sr.MakeToolbar)
 	})
-	sr.InitSimmer(startDir)
+	sr.Update() // makes the widgets, such as the Tabs and Terminal
+	sr.InitSimmer()
 	return b, sr
 }
 
-// InitSimmer initializes the simmer configuration and data
-// for given starting directory, which should be the main github
-// current working directory for the simulation being run.
-// All the simmer data is contained within a "simdata" directory
-// under the startDir: this dir is typically a symbolic link
-// to a common collection of such simdata directories for all
-// the different simulations being run.
-// The goal Interpreter is typically already set by this point
-// but will be created if not.
-func (sr *Simmer) InitSimmer(startDir string) {
-	sr.StartDir = startDir
-	ddr := errors.Log1(filepath.Abs("simdata"))
-	sr.SetDataRoot(ddr)
+// InitSimmer initializes simmer, without a project: the goal Interpreter,
+// which is typically already set by this point but will be created if not,
+// and the BareMetal client.
+// All the simmer data of a project is contained within a "simdata"
+// directory in the directory of the simulation: this dir is typically a
+// symbolic link to a common collection of such simdata directories for
+// all the different simulations being run (see [Simmer.NewProject]).
+func (sr *Simmer) InitSimmer() {
+	openRecentProjects()
 	labscripts.InitInterpreter(&sr.Browser)
 	in, _ := labscripts.Interpreter(&sr.Browser)
 	// our Simmer is available as lab.LabBrowser
@@ -144,22 +166,16 @@ func (sr *Simmer) InitSimmer(startDir string) {
 	labValues["LabBrowser"] = reflect.ValueOf(&sr)
 	mvmlab.UseGUI(in, map[string]map[string]reflect.Value{"cogentcore.org/lab/lab": labValues})
 	in.Config()
-	sr.SetScriptsDir(filepath.Join(sr.DataRoot, "labscripts"))
 	lab.LabBrowser = &sr.Browser
 	lab.Lab = sr.Browser.Tabs
 	goalrun = in.Goal
-	sr.Config.StartDir = sr.StartDir
-	sr.Config.DataRoot = sr.DataRoot
-	sr.Config.Defaults()
 	sr.JobsTable = table.New()
-	sr.UpdateScripts() // automatically runs lowercase init scripts
 
-	if !sr.IsSlurm() {
-		sr.BareMetal = baremetal.NewClient()
-		err := sr.BareMetal.Connect()
-		if errors.Log(err) != nil {
-			sr.BareMetal = nil
-		}
+	// used for the projects that are not slurm
+	sr.BareMetal = baremetal.NewClient()
+	err := sr.BareMetal.Connect()
+	if errors.Log(err) != nil {
+		sr.BareMetal = nil
 	}
 }
 
@@ -169,6 +185,9 @@ func (sr *Simmer) Init() {
 		s.Grow.Set(1, 1)
 	})
 	sr.OnShow(func(e events.Event) {
+		if !sr.isOpen() {
+			return
+		}
 		sr.UpdateFiles()
 	})
 	tree.AddChildAt(sr, "splits", func(w *core.Splits) {
@@ -184,9 +203,7 @@ func (sr *Simmer) Init() {
 				sr.Files = w
 			})
 		})
-		tree.AddChildAt(w, "tabs", func(w *lab.Tabs) {
-			sr.Tabs = w
-		})
+		sr.AddTabsTerminal(w)
 	})
 	sr.Updater(func() {
 		if sr.Files != nil {
@@ -204,13 +221,34 @@ func (sr *Simmer) AsyncMessageSnackbar(message string) {
 
 // IsSlurm returns true if using slurm (vs. baremetal)
 func (sr *Simmer) IsSlurm() bool {
-	return sr.Config.Server.Slurm
+	return sr.Project.Server.Slurm
 }
 
 func (sr *Simmer) MakeToolbar(p *tree.Plan) {
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(sr.UpdateFiles).SetText("").SetIcon(icons.Refresh)
 	})
+	tree.Add(p, func(w *core.Button) {
+		w.SetText("Open recent").SetIcon(icons.History).SetMenu(func(m *core.Scene, pos image.Point) {
+			for _, rp := range RecentProjects {
+				core.NewButton(m).SetText(filepath.Dir(rp)).OnClick(func(e events.Event) {
+					sr.OpenProject(core.Filename(rp))
+				})
+			}
+			core.NewSeparator(m)
+			core.NewButton(m).SetText("Clear recent projects").OnClick(func(e events.Event) {
+				RecentProjects = nil
+				saveRecentProjects()
+			})
+		})
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(sr.OpenProject).SetText("Open").SetIcon(icons.Open)
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(sr.NewProject).SetText("New project").SetIcon(icons.Add)
+	})
+	tree.Add(p, func(w *core.Separator) {})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(sr.UpdateSims).SetText("Jobs").SetIcon(icons.ViewList).SetShortcut("Command+U")
 	})
@@ -263,7 +301,7 @@ func (sr *Simmer) MakeToolbar(p *tree.Plan) {
 		w.SetFunc(sr.Recover).SetIcon(icons.Archive)
 	})
 	tree.Add(p, func(w *core.FuncButton) {
-		w.SetFunc(sr.EditConfig).SetIcon(icons.Edit)
+		w.SetFunc(sr.EditProject).SetIcon(icons.Edit)
 	})
 	tree.Add(p, func(w *core.Button) {
 		w.SetText("README").SetIcon(icons.FileMarkdown).

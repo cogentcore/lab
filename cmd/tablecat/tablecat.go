@@ -159,8 +159,7 @@ func AvgByColumn(files []string, column string) {
 			cols = append(cols, dt.Columns.Keys[ci])
 		}
 		stats.TableGroupStats(dir, stats.StatMean, dt, cols...)
-		std := dir.Node("Stats")
-		avgdt := tensorfs.DirTable(std, nil) // todo: has stat name slash
+		avgdt := stats.GroupStatsAsTableNoStatName(dir)
 		tensor.SetPrecision(avgdt, LogPrec)
 		avgdt.SaveCSV(core.Filename(Output), tensor.Tab, table.Headers)
 	}

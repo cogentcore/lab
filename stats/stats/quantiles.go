@@ -43,7 +43,7 @@ func QuantilesOut(in, qs tensor.Tensor, out tensor.Values) error {
 	sin.ExcludeMissing()
 	sin.Sort(tensor.Ascending)
 	sz := len(sin.Indexes) - 1 // length of our own index list
-	if sz <= 0 {
+	if sz < 0 { // no values; one value is all of the quantiles
 		out.(tensor.Values).SetZeros()
 		return nil
 	}

@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/core"
 	"cogentcore.org/lab/goal/goalib"
 	"cogentcore.org/lab/table"
@@ -22,20 +23,20 @@ import (
 // that is common across all three scripts.
 // IMPORTANT: set the job parameters here!
 func (sr *Simmer) WriteSBatchHeader(w io.Writer, jid string) {
-	fmt.Fprintf(w, "#SBATCH --job-name=%s_%s\n", sr.Config.Project, jid)
-	fmt.Fprintf(w, "#SBATCH --mem-per-cpu=%dG\n", sr.Config.Job.Memory)
-	fmt.Fprintf(w, "#SBATCH --time=%d:00:00\n", sr.Config.Job.Hours)
-	fmt.Fprintf(w, "#SBATCH --ntasks=%d\n", sr.Config.Job.Tasks)
-	fmt.Fprintf(w, "#SBATCH --cpus-per-task=%d\n", sr.Config.Job.CPUsPerTask)
-	fmt.Fprintf(w, "#SBATCH --ntasks-per-node=%d\n", sr.Config.Job.TasksPerNode)
-	if sr.Config.ExcludeNodes != "" {
-		fmt.Fprintf(w, "#SBATCH --exclude=%s\n", sr.Config.ExcludeNodes)
+	fmt.Fprintf(w, "#SBATCH --job-name=%s_%s\n", sr.Project.Name, jid)
+	fmt.Fprintf(w, "#SBATCH --mem-per-cpu=%dG\n", sr.Project.Job.Memory)
+	fmt.Fprintf(w, "#SBATCH --time=%d:00:00\n", sr.Project.Job.Hours)
+	fmt.Fprintf(w, "#SBATCH --ntasks=%d\n", sr.Project.Job.Tasks)
+	fmt.Fprintf(w, "#SBATCH --cpus-per-task=%d\n", sr.Project.Job.CPUsPerTask)
+	fmt.Fprintf(w, "#SBATCH --ntasks-per-node=%d\n", sr.Project.Job.TasksPerNode)
+	if sr.Project.ExcludeNodes != "" {
+		fmt.Fprintf(w, "#SBATCH --exclude=%s\n", sr.Project.ExcludeNodes)
 	}
 	// fmt.Fprint(w, "#SBATCH --nodelist=agate-[2,19]\n")
 	// fmt.Fprintf(w, "#SBATCH --qos=%s\n", qos)
 	// fmt.Fprintf(w, "#SBATCH --partition=%s\n", qosShort)
 	fmt.Fprintf(w, "#SBATCH --mail-type=FAIL\n")
-	fmt.Fprintf(w, "#SBATCH --mail-user=%s\n", sr.Config.User)
+	fmt.Fprintf(w, "#SBATCH --mail-user=%s\n", sr.Project.User)
 	// these might be needed depending on environment in head node vs. compute nodes
 	// fmt.Fprintf(w, "#SBATCH --export=NONE\n")
 	// fmt.Fprintf(w, "unset SLURM_EXPORT_ENV\n")
@@ -61,7 +62,7 @@ func (sr *Simmer) WriteSBatchSetup(w io.Writer, jid string) {
 
 func (sr *Simmer) WriteSBatchArray(w io.Writer, jid, setup_id, args string) {
 	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
-	fmt.Fprintf(w, "#SBATCH --array=0-%d\n", sr.Config.Job.NRuns-1)
+	fmt.Fprintf(w, "#SBATCH --array=0-%d\n", sr.Project.Job.NRuns-1)
 	fmt.Fprint(w, "#SBATCH --output=job.%A_%a.out\n")
 	// fmt.Fprint(w, "#SBATCH --error=job.%A_%a.err\n")
 	fmt.Fprintf(w, "#SBATCH --dependency=afterany:%s\n", setup_id)
@@ -73,7 +74,7 @@ func (sr *Simmer) WriteSBatchArray(w io.Writer, jid, setup_id, args string) {
 	fmt.Fprintf(w, "echo $SLURM_ARRAY_JOB_ID\n")
 	fmt.Fprintf(w, "\n\n")
 	// note: could use srun to run job; -runs = 1 is number to run from run start
-	fmt.Fprintf(w, "./%s -nogui -cfg config_job.toml -run $SLURM_ARRAY_TASK_ID -runs 1 %s\n", sr.Config.Project, args)
+	fmt.Fprintf(w, "./%s -nogui -cfg config_job.toml -run $SLURM_ARRAY_TASK_ID -runs 1 %s\n", sr.Project.Name, args)
 }
 
 func (sr *Simmer) WriteSBatchCleanup(w io.Writer, jid, array_id string) {
@@ -102,6 +103,9 @@ func (sr *Simmer) WriteSBatchCleanup(w io.Writer, jid, array_id string) {
 }
 
 func (sr *Simmer) SubmitSBatch(jid, args string) string {
+	clearErrors()
+	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	goalrun.Run("@0")
 	f, _ := os.Create("job.setup.sbatch")
 	sr.WriteSBatchSetup(f, jid)
@@ -127,6 +131,9 @@ func (sr *Simmer) SubmitSBatch(jid, args string) string {
 // RunSBatch runs sbatch on the given sbatch file,
 // returning the resulting job id.
 func (sr *Simmer) RunSBatch(sbatch string) string {
+	clearErrors()
+	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	goalrun.Run("@1")
 	goalrun.Run("sbatch", sbatch, ">", "job.slurm")
 	goalrun.Run("@0")
@@ -144,6 +151,9 @@ func (sr *Simmer) RunSBatch(sbatch string) string {
 
 // QueueSlurm runs a queue query command on the server and shows the results.
 func (sr *Simmer) QueueSlurm() {
+	clearErrors()
+	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	ts := sr.Tabs.AsLab()
 	goalrun.Run("@1")
 	goalrun.Run("cd")
@@ -163,6 +173,9 @@ func (sr *Simmer) QueueSlurm() {
 }
 
 func (sr *Simmer) FetchJobSlurm(jid string, force bool) {
+	clearErrors()
+	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	spath := sr.ServerJobPath(jid)
 	jpath := sr.JobPath(jid)
 	goalrun.Run("@1")
@@ -175,7 +188,7 @@ func (sr *Simmer) FetchJobSlurm(jid string, force bool) {
 	}
 	goalrun.Run("@1", "cd", spath)
 	goalrun.Run("@0")
-	ffiles := goalrun.Output("@1", "/bin/ls", "-1", sr.Config.FetchFiles)
+	ffiles := goalrun.Output("@1", "/bin/ls", "-1", sr.Project.FetchFiles)
 	if len(ffiles) > 0 {
 		core.MessageSnackbar(sr, fmt.Sprintf("Fetching %d data files for job: %s", len(ffiles), jid))
 	}
@@ -208,12 +221,31 @@ func (sr *Simmer) FetchJobSlurm(jid string, force bool) {
 }
 
 // CancelJobsSlurm cancels the given jobs, for slurm
+// activeJobsSlurm returns those of the given jobs that are still pending
+// or running on slurm, and the others, from the status in the jobs table,
+// as of the last Status update (Running:n or Pending:n from squeue).
+func (sr *Simmer) activeJobsSlurm(jobs []string) (active, others []string) {
+	for _, jid := range jobs {
+		st := sr.ValueForJob(jid, "Status")
+		if strings.HasPrefix(st, "Running") || strings.HasPrefix(st, "Pending") {
+			active = append(active, jid)
+		} else {
+			others = append(others, jid)
+		}
+	}
+	return
+}
+
 func (sr *Simmer) CancelJobsSlurm(jobs []string) {
+	clearErrors()
+	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	goalrun.Run("@0")
 	filepath.Join(sr.DataRoot, "jobs")
-	filepath.Join(sr.Config.Server.Root, "jobs")
+	filepath.Join(sr.Project.Server.Root, "jobs")
 	goalrun.Run("@1")
 	for _, jid := range jobs {
+		clearErrors() // each job is independent
 		sjob := sr.ValueForJob(jid, "ServerJob")
 		if sjob != "" {
 			goalrun.Run("scancel", sjob)

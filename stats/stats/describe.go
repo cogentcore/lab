@@ -23,6 +23,8 @@ var DescriptiveStats = []Stats{StatCount, StatMean, StatStd, StatSem, StatMin, S
 // This is an easy way to provide a comprehensive description of data.
 // The [DescriptiveStats] list is: [Count], [Mean], [Std], [Sem],
 // [Min], [Q1], [Median], [Q3], [Max]
+// The stats are computed on float64 values, converting other types of
+// data, so that the results of integer data are not truncated.
 func Describe(dir *tensorfs.Node, tsrs ...tensor.Tensor) {
 	dd := dir.Dir("Describe")
 	for i, tsr := range tsrs {
@@ -35,10 +37,11 @@ func Describe(dir *tensorfs.Node, tsrs ...tensor.Tensor) {
 			nm = strconv.Itoa(i)
 		}
 		td := dd.Dir(nm)
+		ftsr := tensor.AsFloat64(tsr)
 		for _, st := range DescriptiveStats {
 			stnm := st.String()
 			sv := tensorfs.Scalar[float64](td, stnm)
-			stout := st.Call(tsr)
+			stout := st.Call(ftsr)
 			sv.CopyFrom(stout)
 		}
 	}
@@ -50,12 +53,14 @@ func DescribeTable(dir *tensorfs.Node, dt *table.Table, columns ...string) {
 }
 
 // DescribeTableAll runs [Describe] on all numeric columns in given table.
-func DescribeTableAll(dir *tensorfs.Node, dt *table.Table) {
+// returns the list of column names used.
+func DescribeTableAll(dir *tensorfs.Node, dt *table.Table) []string {
 	var cols []string
 	for i, cl := range dt.Columns.Values {
 		if !cl.IsString() {
 			cols = append(cols, dt.ColumnName(i))
 		}
 	}
-	Describe(dir, dt.ColumnList(cols...)...)
+	DescribeTable(dir, dt, cols...)
+	return cols
 }

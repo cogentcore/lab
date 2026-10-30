@@ -86,12 +86,6 @@ func (sr *Simmer) Jobs() { //types:add
 		}
 	}
 	tv.Table.Sequential()
-	nrows := dt.NumRows()
-	if nrows > 0 && sr.Config.Submit.Message == "" {
-		sr.Config.Submit.Message = dt.Column("Message").String1D(nrows - 1)
-		sr.Config.Submit.Args = dt.Column("Args").String1D(nrows - 1)
-		sr.Config.Submit.Label = dt.Column("Label").String1D(nrows - 1)
-	}
 }
 
 // Jobs updates the Jobs tab with a Table showing all the Jobs
@@ -115,7 +109,7 @@ func (sr *Simmer) JobPath(jid string) string {
 }
 
 func (sr *Simmer) ServerJobPath(jid string) string {
-	return filepath.Join(sr.Config.Server.Root, "jobs", jid)
+	return filepath.Join(sr.Project.Server.Root, "jobs", jid)
 }
 
 func (sr *Simmer) JobRow(jid string) int {
@@ -150,6 +144,9 @@ func (sr *Simmer) Queue() { //types:add
 // JobStatus gets job status from server for given job id.
 // jobs that are already Finalized are skipped, unless force is true.
 func (sr *Simmer) JobStatus(jid string, force bool) {
+	clearErrors()
+	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	// fmt.Println("############\nStatus of Job:", jid)
 	spath := sr.ServerJobPath(jid)
 	jpath := sr.JobPath(jid)
@@ -221,10 +218,10 @@ func (sr *Simmer) JobStatus(jid string, force bool) {
 				goalib.WriteFile("job.status", sstat)
 				goalib.WriteFile("job.squeue", sstat)
 				if !job.Start.IsZero() {
-					goalib.WriteFile("job.start", job.Start.Format(sr.Config.TimeFormat))
+					goalib.WriteFile("job.start", job.Start.Format(sr.Project.TimeFormat))
 				}
 				if !job.End.IsZero() {
-					goalib.WriteFile("job.end", job.End.Format(sr.Config.TimeFormat))
+					goalib.WriteFile("job.end", job.End.Format(sr.Project.TimeFormat))
 				}
 				// fmt.Println(jid, sstat)
 			}
@@ -255,13 +252,14 @@ func (sr *Simmer) JobStatus(jid string, force bool) {
 
 // GetMeta gets the dbmeta.toml file from all job.* files in job dir.
 func (sr *Simmer) GetMeta(jid string) {
+	clearErrors()
 	goalrun.Run("@0")
 	goalrun.Run("cd")
 	jpath := sr.JobPath(jid)
 	goalrun.Run("cd", jpath)
 	// fmt.Println("getting meta for", jid)
 	jfiles := goalrun.Output("/bin/ls", "-1", "job.*") // local
-	meta := fmt.Sprintf("%s = %q\n", "Server", sr.Config.Server.Name)
+	meta := fmt.Sprintf("%s = %q\n", "Server", sr.Project.Server.Name)
 	for _, jf := range goalib.SplitLines(jfiles) {
 		if strings.Contains(jf, "sbatch") || strings.HasSuffix(jf, ".out") || strings.HasSuffix(jf, ".gz") {
 			continue
@@ -290,6 +288,7 @@ func (sr *Simmer) GetMeta(jid string) {
 // status of Finalized if job is done.  Updates the dbmeta.toml
 // data based on current job data.
 func (sr *Simmer) Status() { //types:add
+	clearErrors()
 	goalrun.Run("@0")
 	sr.UpdateFiles()
 	sr.Jobs()
@@ -318,6 +317,7 @@ func (sr *Simmer) FetchJob(jid string, force bool) {
 // Operates on the jobs selected in the Jobs table,
 // or on all jobs if none selected.
 func (sr *Simmer) Fetch() { //types:add
+	clearErrors()
 	goalrun.Run("@0")
 	tv := sr.JobsTableView
 	jobs := tv.SelectedColumnStrings("JobID")
@@ -345,18 +345,55 @@ func (sr *Simmer) Cancel() { //types:add
 		if sr.IsSlurm() {
 			sr.CancelJobsSlurm(jobs)
 		} else {
-			sr.CancelJobsBare(jobs)
+			if err := sr.CancelJobsBare(jobs); err != nil {
+				core.ErrorSnackbar(sr, err)
+			}
 		}
 		sr.UpdateSims()
 	})
 }
 
-// DeleteJobs deletes the given jobs
+// cancelActiveJobs cancels those of the given jobs that are still pending
+// or running, instead of the given action on them, such as "deleted",
+// which would break the syncing of their files: they can have the action
+// once they are canceled. It returns the other jobs, and a message about
+// the canceled jobs, if any.
+func (sr *Simmer) cancelActiveJobs(jobs []string, action string) (others []string, msg string) {
+	var active []string
+	if sr.IsSlurm() {
+		active, others = sr.activeJobsSlurm(jobs)
+	} else {
+		active, others = sr.activeJobsBare(jobs)
+	}
+	if len(active) == 0 {
+		return others, ""
+	}
+	if sr.IsSlurm() {
+		sr.CancelJobsSlurm(active)
+	} else if err := sr.CancelJobsBare(active); err != nil {
+		msg = fmt.Sprintf("Running jobs were not %s, and could not be canceled: %s: %v", action, strings.Join(active, " "), err)
+		return others, msg
+	}
+	msg = fmt.Sprintf("Running jobs were canceled instead of %s (do it once they are canceled): %s", action, strings.Join(active, " "))
+	return others, msg
+}
+
+// DeleteJobs deletes the given jobs. Jobs that are still pending or
+// running are canceled instead, as deleting them would break
+// the syncing of their files: they can be deleted once they are canceled.
 func (sr *Simmer) DeleteJobs(jobs []string) {
+	clearErrors()
+	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
+	jobs, msg := sr.cancelActiveJobs(jobs, "deleted")
+	if msg != "" {
+		defer core.MessageSnackbar(sr, msg) // after the message of the deleted jobs
+	}
 	goalrun.Run("@0")
 	dpath := filepath.Join(sr.DataRoot, "jobs")
-	spath := filepath.Join(sr.Config.Server.Root, "jobs")
+	spath := filepath.Join(sr.Project.Server.Root, "jobs")
 	for _, jid := range jobs {
+		clearErrors() // each job is independent
 		goalrun.Run("@0")
 		goalrun.Run("cd", dpath)
 		goalrun.RunErrOK("/bin/rm", "-rf", jid)
@@ -386,14 +423,25 @@ func (sr *Simmer) Delete() { //types:add
 	})
 }
 
-// ArchiveJobs archives the given jobs
+// ArchiveJobs archives the given jobs, deleting them from the server.
+// Jobs that are still pending or running are canceled instead,
+// as deleting them would break the syncing of their files: they can be
+// archived once they are canceled.
 func (sr *Simmer) ArchiveJobs(jobs []string) {
+	clearErrors()
+	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
+	jobs, msg := sr.cancelActiveJobs(jobs, "archived")
+	if msg != "" {
+		defer core.MessageSnackbar(sr, msg) // after the message of the archived jobs
+	}
 	goalrun.Run("@0")
 	dpath := filepath.Join(sr.DataRoot, "jobs")
 	apath := filepath.Join(sr.DataRoot, "archive", "jobs")
 	goalrun.Run("mkdir", "-p", apath)
-	spath := filepath.Join(sr.Config.Server.Root, "jobs")
+	spath := filepath.Join(sr.Project.Server.Root, "jobs")
 	for _, jid := range jobs {
+		clearErrors() // each job is independent
 		goalrun.Run("@1")
 		goalrun.Run("cd")
 		goalrun.Run("cd", spath)
@@ -435,9 +483,9 @@ func (sr *Simmer) Recover() { //types:add
 		return
 	}
 	lab.PromptOKCancel(sr, "Ok to recover these jobs: "+strings.Join(jobs, " "), func() {
-		//	if sr.IsSlurm() {
-		//		sr.CancelJobsSlurm(jobs)
-		//	} else {
+		// if sr.IsSlurm() {
+		// 	sr.CancelJobsSlurm(jobs)
+		// } else {
 		sr.RecoverJobsBare(jobs)
 		// }
 		sr.UpdateSims()

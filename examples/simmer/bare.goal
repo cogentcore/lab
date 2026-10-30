@@ -23,6 +23,7 @@ import (
 
 // SubmitBare submits a bare metal run job, returning the pid of the resulting process.
 func (sr *Simmer) SubmitBare(jid, args string) string {
+	clearErrors()
 	@0
 	script := "job.sbatch"
 	f, _ := os.Create(script)
@@ -44,7 +45,7 @@ func (sr *Simmer) SubmitBare(jid, args string) string {
 	bm := sr.BareMetal
 	
 	spath := sr.ServerJobPath(jid)
-	job, err := bm.Submit(sr.Config.Project, spath, script, sr.Config.FetchFiles, b.Bytes())
+	job, err := bm.Submit(sr.Project.Name, spath, script, sr.Project.FetchFiles, b.Bytes())
 	@0
 	if err != nil {
 		core.ErrorSnackbar(sr, err)
@@ -59,8 +60,8 @@ func (sr *Simmer) SubmitBare(jid, args string) string {
 
 // WriteBare writes the bash script to run a "bare metal" run.
 func (sr *Simmer) WriteBare(w io.Writer, jid, args string) {
-	if sr.Config.JobScript != "" {
-		js := sr.Config.JobScript
+	if sr.Project.JobScript != "" {
+		js := sr.Project.JobScript
 		strings.ReplaceAll(js, "$JOB_ARGS", args)
 		fmt.Fprintln(w, js)
 		return
@@ -68,19 +69,19 @@ func (sr *Simmer) WriteBare(w io.Writer, jid, args string) {
 	fmt.Fprintf(w, "#!/bin/bash -l\n") //  -l = login session, sources your .bash_profile
 
 	fmt.Fprintf(w, "\n\n")
-	if sr.Config.SetupScript != "" {
-		fmt.Fprintln(w, sr.Config.SetupScript)
+	if sr.Project.SetupScript != "" {
+		fmt.Fprintln(w, sr.Project.SetupScript)
 	}
 	
-	exe := sr.Config.Project
-	if sr.Config.Job.SubCmd {
+	exe := sr.Project.Name
+	if sr.Project.Job.SubCmd {
 		projname := exe
 		exe += "/" + exe
 		fmt.Fprintf(w, "cd %s\n", projname)
-		fmt.Fprintf(w, "go build -mod=mod %s\n", sr.Config.Job.BuildArgs)
+		fmt.Fprintf(w, "go build -mod=mod %s\n", sr.Project.Job.BuildArgs)
 		fmt.Fprintf(w, "cd ../\n")
 	} else {
-		fmt.Fprintf(w, "go build -mod=mod %s\n", sr.Config.Job.BuildArgs)
+		fmt.Fprintf(w, "go build -mod=mod %s\n", sr.Project.Job.BuildArgs)
 	}
 	cmd := `date '+%Y-%m-%d %T %Z' > job.start`
 	fmt.Fprintln(w, cmd)
@@ -89,6 +90,9 @@ func (sr *Simmer) WriteBare(w io.Writer, jid, args string) {
 }
 
 func (sr *Simmer) QueueBare() {
+	clearErrors()
+	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	sr.UpdateBare()
 	ts := sr.Tabs.AsLab()
 	@1
@@ -106,6 +110,7 @@ func (sr *Simmer) UpdateBare() { //types:add
 
 // FetchJobBare downloads results files from bare metal server.
 func (sr *Simmer) FetchJobBare(jid string, force bool) {
+	clearErrors()
 	jpath := sr.JobPath(jid)
 	@0
 	cd {jpath}
@@ -115,7 +120,7 @@ func (sr *Simmer) FetchJobBare(jid string, force bool) {
 	}
 	sjob := sr.ValueForJob(jid, "ServerJob")
 	sj := errors.Log1(strconv.Atoi(sjob))
-	jobs, err := sr.BareMetal.FetchResults(sr.Config.FetchFiles, sj)
+	jobs, err := sr.BareMetal.FetchResults(sr.Project.FetchFiles, sj)
 	if err != nil {
 		core.ErrorSnackbar(sr, err)
 		return
@@ -135,7 +140,11 @@ func (sr *Simmer) FetchJobBare(jid string, force bool) {
 	}
 }
 
-func (sr *Simmer) CancelJobsBare(jobs []string) {
+// CancelJobsBare cancels the given jobs on bare metal.
+func (sr *Simmer) CancelJobsBare(jobs []string) error {
+	if sr.BareMetal == nil {
+		return errors.New("BareMetal is not connected")
+	}
 	jnos := make([]int, 0, len(jobs))
 	for _, jid := range jobs {
 		sjob := sr.ValueForJob(jid, "ServerJob")
@@ -144,7 +153,49 @@ func (sr *Simmer) CancelJobsBare(jobs []string) {
 			jnos = append(jnos, jno)
 		}
 	}
-	sr.BareMetal.CancelJobs(jnos...)
+	return sr.BareMetal.CancelJobs(jnos...)
+}
+
+// activeJobsBare returns those of the given jobs that are still pending
+// or running on bare metal, and the others. The status is from bare metal,
+// or from the jobs table if bare metal cannot be reached.
+func (sr *Simmer) activeJobsBare(jobs []string) (active, others []string) {
+	jids := map[int]string{} // by bare metal job
+	var jnos []int
+	for _, jid := range jobs {
+		if jno, err := strconv.Atoi(sr.ValueForJob(jid, "ServerJob")); err == nil {
+			jids[jno] = jid
+			jnos = append(jnos, jno)
+		}
+	}
+	isActive := map[string]bool{}
+	var bjobs []*baremetal.Job
+	err := errors.New("BareMetal is not connected")
+	if sr.BareMetal != nil && len(jnos) > 0 {
+		bjobs, err = sr.BareMetal.JobStatus(jnos...)
+	}
+	if err == nil {
+		for _, job := range bjobs {
+			if job.Status == baremetal.Pending || job.Status == baremetal.Running {
+				isActive[jids[job.ID]] = true
+			}
+		}
+	} else {
+		for _, jid := range jobs {
+			st := sr.ValueForJob(jid, "Status")
+			if st == baremetal.Pending.String() || st == baremetal.Running.String() {
+				isActive[jid] = true
+			}
+		}
+	}
+	for _, jid := range jobs {
+		if isActive[jid] {
+			active = append(active, jid)
+		} else {
+			others = append(others, jid)
+		}
+	}
+	return
 }
 
 func (sr *Simmer) RecoverJobsBare(jobs []string) {
@@ -159,12 +210,12 @@ func (sr *Simmer) RecoverJobsBare(jobs []string) {
 		job := &baremetal.Job{ID: jno}
 		job.Status.SetString(sr.ValueForJob(jid, "Status"))
 		job.Path = sr.ServerJobPath(jid)
-		job.Source = sr.Config.Project
+		job.Source = sr.Project.Name
 		job.Script = "job.sbatch"
-		job.ResultsGlob = sr.Config.FetchFiles
-		job.Submit = errors.Log1(time.Parse(sr.Config.TimeFormat, sr.ValueForJob(jid, "Submit")))
-		job.Start = errors.Log1(time.Parse(sr.Config.TimeFormat, sr.ValueForJob(jid, "Start")))
-		job.End = errors.Log1(time.Parse(sr.Config.TimeFormat, sr.ValueForJob(jid, "End")))
+		job.ResultsGlob = sr.Project.FetchFiles
+		job.Submit = errors.Log1(time.Parse(sr.Project.TimeFormat, sr.ValueForJob(jid, "Submit")))
+		job.Start = errors.Log1(time.Parse(sr.Project.TimeFormat, sr.ValueForJob(jid, "Start")))
+		job.End = errors.Log1(time.Parse(sr.Project.TimeFormat, sr.ValueForJob(jid, "End")))
 		job.ServerName = sr.ValueForJob(jid, "Server")
 		// todo: PID
 		// jpath := sr.JobPath(jid)

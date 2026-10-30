@@ -86,6 +86,34 @@ func (dir *Node) Value(name string) tensor.Tensor {
 	return dir.nodes.At(name).Tensor
 }
 
+// HasOnlyDirs returns true if this is a directory that has nodes,
+// which are all directories. See also [Node.HasOnlyData].
+func (dir *Node) HasOnlyDirs() bool {
+	if !dir.IsDir() || dir.nodes.Len() == 0 {
+		return false
+	}
+	for _, it := range dir.nodes.Values {
+		if !it.IsDir() {
+			return false
+		}
+	}
+	return true
+}
+
+// HasOnlyData returns true if this is a directory that has nodes,
+// which are all data (not directories). See also [Node.HasOnlyDirs].
+func (dir *Node) HasOnlyData() bool {
+	if !dir.IsDir() || dir.nodes.Len() == 0 {
+		return false
+	}
+	for _, it := range dir.nodes.Values {
+		if it.IsDir() {
+			return false
+		}
+	}
+	return true
+}
+
 // Nodes returns a slice of Nodes in given directory by names variadic list.
 // If list is empty, then all nodes in the directory are returned.
 // returned error reports any nodes not found, or if not a directory.

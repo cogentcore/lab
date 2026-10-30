@@ -23,8 +23,6 @@ import (
 	"cogentcore.org/lab/tensorfs"
 )
 
-// important: must be run from an interactive terminal.
-// Will quit immediately if not!
 func main() {
 	opts := cli.DefaultOptions("iris", "interactive data analysis.")
 	cfg := &interpreter.Config{}
@@ -38,6 +36,7 @@ func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 	mvmlab.UseGUI(in)
 	in.Config()
 	br.Interpreter = in
+	mvmlab.InteractiveTerminal(c, in, br.Terminal)
 	b.AddTopBar(func(bar *core.Frame) {
 		tb := core.NewToolbar(bar)
 		// tb.Maker(tbv.MakeToolbar)
@@ -51,17 +50,9 @@ func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 		})
 	})
 	b.OnShow(func(e events.Event) {
-		go func() {
-			if c.Expr != "" {
-				in.Eval(c.Expr)
-			}
-			AnalyzeIris(dir, br)
-			in.Interactive()
-		}()
+		go AnalyzeIris(dir, br)
 	})
-
-	b.RunWindow()
-	core.Wait()
+	b.RunMainWindow()
 	return nil
 }
 

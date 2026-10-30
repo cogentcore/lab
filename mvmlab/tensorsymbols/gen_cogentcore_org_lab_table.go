@@ -33,6 +33,8 @@ func InsertColumn[T tensor.DataTypes](dt *Table, name string, idx int, cellSizes
 `, []string{"Table"})
 	add(map[string]map[string]reflect.Value{
 		"cogentcore.org/lab/table": {
+			"AllNA":                  reflect.ValueOf(p_cogentcore_org_lab_table.AllNA),
+			"AnyNA":                  reflect.ValueOf(p_cogentcore_org_lab_table.AnyNA),
 			"CleanCatTSV":            reflect.ValueOf(p_cogentcore_org_lab_table.CleanCatTSV),
 			"Columns":                reflect.ValueOf((*p_cogentcore_org_lab_table.Columns)(nil)),
 			"ConfigFromDataValues":   reflect.ValueOf(p_cogentcore_org_lab_table.ConfigFromDataValues),

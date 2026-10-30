@@ -6,8 +6,10 @@ package tensorfs
 
 import (
 	"io/fs"
+	"math"
 	"path"
 	"reflect"
+	"slices"
 	"time"
 
 	"cogentcore.org/core/base/errors"
@@ -182,6 +184,95 @@ func DirTable(dir *Node, fun func(node *Node) bool) *table.Table {
 		dt.AddColumn(nm, tsr.AsValues())
 	}
 	dir.DirTable = dt
+	return dt
+}
+
+// DirTableMatrix returns a [table.Table] for a two-level directory, such
+// as the result of stats.Describe, which has subdirectories with the same
+// data elements in each (e.g., Count, Mean, etc). The first column has the
+// names of the data elements, and the following columns have the values
+// for each subdirectory, with the subdirectory name. This gives a matrix
+// of values, like the output of describe() in pandas.
+// Each cell has all of the values of its data element: if any element has
+// more than one value, the cells are 1D tensors with the size of the
+// largest element (as for the results of stats.GroupDescribe, with a
+// value for each group), and otherwise they are scalars. The column of a
+// subdirectory is a String column if any of its elements is a String
+// tensor, with the numbers as strings, and otherwise it is a Float64 column.
+// Missing values are NaN or empty strings. Data elements directly in the
+// given directory are ignored. The given filter function, if non-nil,
+// selects the subdirectories and data elements.
+// The table is constructed anew each time, with a copy of the values.
+func DirTableMatrix(dir *Node, fun func(node *Node) bool) *table.Table {
+	if err := dir.mustDir("DirTableMatrix", ""); err != nil {
+		return nil
+	}
+	include := func(nd *Node) bool { return fun == nil || fun(nd) }
+	element := func(sd *Node, name string) *Node {
+		it := sd.nodes.At(name)
+		if it == nil || it.IsDir() || it.Tensor == nil || !include(it) {
+			return nil
+		}
+		return it
+	}
+	var subs []*Node
+	var names []string
+	cells := 1
+	for _, sd := range dir.nodes.Values {
+		if !sd.IsDir() || !include(sd) {
+			continue
+		}
+		subs = append(subs, sd)
+		for _, nm := range sd.nodes.Keys {
+			it := element(sd, nm)
+			if it == nil {
+				continue
+			}
+			cells = max(cells, it.Tensor.Len())
+			if !slices.Contains(names, nm) {
+				names = append(names, nm)
+			}
+		}
+	}
+	var cellSizes []int
+	if cells > 1 {
+		cellSizes = []int{cells}
+	}
+	dt := table.New(fsx.DirAndFile(string(dir.Path())))
+	dt.SetNumRows(len(names))
+	nc := dt.AddStringColumn("Name")
+	for i, nm := range names {
+		nc.SetString1D(nm, i)
+	}
+	for _, sd := range subs {
+		isString := slices.ContainsFunc(names, func(nm string) bool {
+			it := element(sd, nm)
+			return it != nil && it.Tensor.IsString()
+		})
+		if isString {
+			cl := dt.AddStringColumn(sd.name, cellSizes...)
+			for i, nm := range names {
+				it := element(sd, nm)
+				for c := range cells {
+					if it != nil && c < it.Tensor.Len() {
+						cl.SetStringRow(it.Tensor.String1D(c), i, c)
+					}
+				}
+			}
+			continue
+		}
+		cl := dt.AddFloat64Column(sd.name, cellSizes...)
+		for i, nm := range names {
+			it := element(sd, nm)
+			for c := range cells {
+				v := math.NaN()
+				if it != nil && c < it.Tensor.Len() {
+					v = it.Tensor.Float1D(c)
+				}
+				cl.SetFloatRow(v, i, c)
+			}
+		}
+	}
 	return dt
 }
 

@@ -7,10 +7,9 @@
 package main
 
 import (
+	"os"
 	"path/filepath"
-	"strings"
 
-	"cogentcore.org/lab/lab"
 	"cogentcore.org/lab/table"
 )
 
@@ -42,8 +41,7 @@ type SubmitParams struct {
 	// Label is brief, unique label used for plots to label this job
 	Label string `width:"80"`
 
-	//	arguments to pass on the command line.
-	//
+	// Args are the arguments to pass on the command line.
 	// -nogui is already passed by default
 	Args string `width:"80"`
 }
@@ -75,7 +73,7 @@ type JobParams struct {
 	// Qos is the queue "quality of service" name.
 	Qos string
 
-	// If true, the executable is in a subdirectory with the same name as [Config.Project],
+	// If true, the executable is in a subdirectory with the same name as [Project.Name],
 	// filename main.go, to allow the primary directory to be imported into other apps.
 	// Manages the copying and building of this sub-command.
 	SubCmd bool
@@ -96,6 +94,10 @@ func (jp *JobParams) Defaults() {
 // ServerParams are parameters for the server.
 type ServerParams struct {
 
+	// SSH is the user@host of the server, for the ssh connection to it,
+	// which is @1 in goal commands.
+	SSH string
+
 	// Name is the name of current server using to run jobs;
 	// gets recorded with each job.
 	Name string
@@ -111,38 +113,27 @@ type ServerParams struct {
 func (sp *ServerParams) Defaults() {
 }
 
-// Configuration holds all of the user-settable parameters
-type Configuration struct {
+// Project holds all of the user-settable parameters of a simulation
+// project, which are saved in the simmer.json file in its directory
+// (see [ProjectFilename]).
+type Project struct {
 
-	// DataRoot is the path to the root of the data to browse.
-	DataRoot string
-
-	// StartDir is the starting directory, where the app was originally started.
-	StartDir string
-
-	// User id as in system login name (i.e., user@system).
-	User string
-
-	// UserShort is the first 3 letters of User,
-	// for naming jobs (auto-set from User).
-	UserShort string
-
-	// Project is the name of simulation project, lowercase
+	// Name is the name of simulation project, lowercase
 	// (should be name of source dir).
-	Project string
+	Name string
 
 	// Package is the parent package: e.g., github.com/emer/axon/v2
 	// This is used to update the go.mod, along with the Version.
 	Package string
+
+	// Server has server parameters.
+	Server ServerParams
 
 	// Version is the current git version string, from git describe --tags.
 	Version string
 
 	// Job has the parameters for job resources etc.
 	Job JobParams `display:"inline"`
-
-	// Server has server parameters.
-	Server ServerParams
 
 	// GroupColumns are the column(s) to use for grouping result data, for PlotMean.
 	// e.g., Epoch for epoch-level results.
@@ -194,17 +185,31 @@ type Configuration struct {
 
 	// Submit has parameters for submitting jobs; set from last job run.
 	Submit SubmitParams
+
+	// DataRoot is the path to the root of the data to browse.
+	DataRoot string `edit:"-"`
+
+	// StartDir is the starting directory, where the app was originally started.
+	StartDir string `edit:"-"`
+
+	// User id as in system login name (i.e., user@system).
+	User string `edit:"-"`
+
+	// UserShort is the first 3 letters of User,
+	// for naming jobs (auto-set from User).
+	UserShort string `edit:"-"`
 }
 
-func (cf *Configuration) Defaults() {
+func (cf *Project) Defaults() {
+	clearErrors()
 	goalrun.Run("@0")
 	goalrun.Run("cd")
 	goalrun.Run("cd", cf.StartDir)
-	cf.Version = strings.TrimSpace(goalrun.Output("git", "describe", "--tags"))
+	cf.Version = gitVersion(cf.StartDir)
 	goalrun.Run("cd", cf.DataRoot)
-	cf.User = strings.TrimSpace(goalrun.Output("echo", "$USER"))
+	cf.User = os.Getenv("USER")
 	_, pj := filepath.Split(cf.StartDir)
-	cf.Project = pj
+	cf.Name = pj
 	cf.Job.Defaults()
 	cf.Server.Defaults()
 	cf.FetchFiles = "*.tsv job.label"
@@ -213,9 +218,9 @@ func (cf *Configuration) Defaults() {
 	cf.GroupColumns = []string{"Epoch"}
 }
 
-func (cf *Configuration) Update() {
-	cf.UserShort = cf.User[:3]
-	cf.Server.Root = filepath.Join("simserver", cf.Project, cf.User)
+func (cf *Project) Update() {
+	cf.UserShort = cf.User[:min(3, len(cf.User))]
+	cf.Server.Root = filepath.Join("simserver", cf.Name, cf.User)
 }
 
 // Result has info for one loaded result, as a table.Table
@@ -238,9 +243,4 @@ type Result struct {
 
 	// result data
 	Table *table.Table
-}
-
-// EditConfig edits the configuration
-func (sr *Simmer) EditConfig() { //types:add
-	lab.PromptStruct(sr, &sr.Config, "Configuration parameters", nil)
 }

@@ -37,7 +37,7 @@ func (sr *Simmer) NextJobNumber() int {
 
 func (sr *Simmer) NextJobID() string {
 	jn := sr.NextJobNumber()
-	jstr := fmt.Sprintf("%s%05d", sr.Config.UserShort, jn)
+	jstr := fmt.Sprintf("%s%05d", sr.Project.UserShort, jn)
 	return jstr
 }
 
@@ -61,6 +61,9 @@ func (sr *Simmer) FindGoMod(dir string) string {
 // If origProjPath and projPath are non-empty, and file is .go file, then the
 // origProjPath -> projPath replacement.
 func (sr *Simmer) CopyFilesToJob(localSrc, localJob, hostJob, origProjPath, projPath string, exts ...string) {
+	clearErrors()
+	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	goalrun.Run("@0")
 	goalrun.Run("mkdir", "-p", localJob)
 	goalrun.Run("cd", localJob)
@@ -87,6 +90,9 @@ func (sr *Simmer) CopyFilesToJob(localSrc, localJob, hostJob, origProjPath, proj
 // NewJob runs a new job with given parameters.
 // This is run as a separate goroutine!
 func (sr *Simmer) NewJob(jp SubmitParams) {
+	clearErrors()
+	errors.Log(sr.connectServer())
+	defer sr.restoreServerDir()()
 	message := jp.Message
 	args := jp.Args
 	label := jp.Label
@@ -103,7 +109,7 @@ func (sr *Simmer) NewJob(jp SubmitParams) {
 	gomodDir := sr.FindGoMod(sr.StartDir)
 	subDir := strings.TrimPrefix(sr.StartDir, gomodDir)
 	projPath := path.Join("emer", subDir)
-	origProjPath := path.Join(sr.Config.Package, subDir)
+	origProjPath := path.Join(sr.Project.Package, subDir)
 	// fmt.Println("gmd:", gomodDir, "sd:", subDir, "pp:", projPath, "opp:", origProjPath)
 
 	// fmt.Println(jpath)
@@ -112,14 +118,14 @@ func (sr *Simmer) NewJob(jp SubmitParams) {
 	goalib.WriteFile("job.message", message)
 	goalib.WriteFile("job.args", args)
 	goalib.WriteFile("job.label", label)
-	goalib.WriteFile("job.version", sr.Config.Version)
-	goalib.WriteFile("job.submit", time.Now().Format(sr.Config.TimeFormat))
+	goalib.WriteFile("job.version", sr.Project.Version)
+	goalib.WriteFile("job.submit", time.Now().Format(sr.Project.TimeFormat))
 	goalib.WriteFile("job.status", "Submitted")
 
 	// need to do sub-code first and update paths in copied files
-	cdirs := sr.Config.CodeDirs
-	if sr.Config.Job.SubCmd {
-		cdirs = append(cdirs, sr.Config.Project)
+	cdirs := sr.Project.CodeDirs
+	if sr.Project.Job.SubCmd {
+		cdirs = append(cdirs, sr.Project.Name)
 	}
 	for _, ed := range cdirs {
 		goalrun.Run("@0")
@@ -146,14 +152,14 @@ func (sr *Simmer) NewJob(jp SubmitParams) {
 			goalrun.Run("scp", f, "@1:"+f)
 		}
 	}
-	for _, f := range sr.Config.ExtraFiles {
+	for _, f := range sr.Project.ExtraFiles {
 		sfn := filepath.Join(sr.StartDir, f)
 		goalrun.Run("/bin/cp", sfn, f)
 		if isSlurm {
 			goalrun.Run("scp", sfn, "@1:"+f)
 		}
 	}
-	for _, ed := range sr.Config.ExtraDirs {
+	for _, ed := range sr.Project.ExtraDirs {
 		jpathe := filepath.Join(jpath, ed)
 		spathe := filepath.Join(spath, ed)
 		loce := filepath.Join(sr.StartDir, ed)
@@ -184,11 +190,11 @@ func (sr *Simmer) NewJob(jp SubmitParams) {
 		}
 		// note: using local go here for baremetal
 		goalrun.Run("go", "mod", "edit", "-module", projPath)
-		if sr.Config.Package != "" {
-			goalrun.Run("go", "get", sr.Config.Package+"@"+sr.Config.Version)
+		if sr.Project.Package != "" {
+			goalrun.Run("go", "get", sr.Project.Package+"@"+sr.Project.Version)
 		}
-		if sr.Config.ExtraGoGet != "" {
-			goalrun.Run("go", "get", sr.Config.ExtraGoGet)
+		if sr.Project.ExtraGoGet != "" {
+			goalrun.Run("go", "get", sr.Project.ExtraGoGet)
 		}
 		goalrun.Run("go", "mod", "tidy")
 		if isSlurm {
@@ -219,10 +225,12 @@ func (sr *Simmer) NewJob(jp SubmitParams) {
 
 // Submit submits a job on the server.
 // Creates a new job dir based on incrementing counter,
-// synchronizing the job files.
+// synchronizing the job files. The parameters start from those of
+// the last job, and are saved in the project.
 func (sr *Simmer) Submit() { //types:add
-	lab.PromptStruct(sr, &sr.Config.Submit, "Submit a new job", func() {
-		go sr.NewJob(sr.Config.Submit)
+	lab.PromptStruct(sr, &sr.Project.Submit, "Submit a new job", func() {
+		sr.SaveProject() // the parameters of the last job
+		go sr.NewJob(sr.Project.Submit)
 	})
 }
 
@@ -234,17 +242,19 @@ func (sr *Simmer) Submit() { //types:add
 // Then, it launches that number of jobs with -search-at values from 1..n.
 // The jobs should write a job.label file for the searched parameter.
 func (sr *Simmer) ParamSearch() { //types:add
-	lab.PromptStruct(sr, &sr.Config.Submit, "Submit a new param search: make sure local sim has been built with search configured!", func() {
-		go sr.NewSearch(sr.Config.Submit)
+	lab.PromptStruct(sr, &sr.Project.Submit, "Submit a new param search: make sure local sim has been built with search configured!", func() {
+		sr.SaveProject() // the parameters of the last job
+		go sr.NewSearch(sr.Project.Submit)
 	})
 }
 
 // NewSearch runs a new parameter search with given parameters.
 // This is run as a separate goroutine!
 func (sr *Simmer) NewSearch(jp SubmitParams) {
+	clearErrors()
 	goalrun.Run("@0")
 	goalrun.Run("cd", sr.StartDir)
-	proj := sr.Config.Project
+	proj := sr.Project.Name
 	lsim := filepath.Join(proj, proj)
 	nss := goalrun.Output(lsim, "-nogui", "-search-n")
 	sl := goalib.SplitLines(nss)

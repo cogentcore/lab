@@ -8,6 +8,10 @@ There is no attempt to prioritize jobs: it is just FIFO. The main function is ju
 
 Each job consumes one GPU, as key a simplification to minimize resource management complexity.
 
+## Lost connections
+
+The ssh connections to the servers recover from the loss of the network, as when the laptop sleeps or moves to another network: commands fail instead of hanging when a connection is lost (see [sshclient](https://github.com/cogentcore/core/tree/main/base/sshclient)), and the connection is made again when the network comes back, including for a server that could not be reached when baremetal started. While a server is not connected, its jobs are not polled, canceled or started, so their state stays as it was, and they are updated when it is connected again.
+
 ## State and config files
 
 The baremetal program itself uses a `config.html` file for configuration, and saves a record of all jobs and active state in a `state.json` file, both of which are saved in the "app data" location for the app (e.g., `~/Library/BareMetal` on mac). The state file allows the baremetal program to be fully restartable.

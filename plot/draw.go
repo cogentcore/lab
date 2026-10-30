@@ -180,27 +180,22 @@ func (ax *Axis) sizeX(pt *Plot, yw, yrw, axw float32) (ht, lpad, rpad int) {
 		if ax.drawTicks() {
 			h += ax.Style.TickLength.Dots
 		}
-		ftk := ax.firstTickLabel()
-		if ftk.Label != "" {
-			px, _ := ax.tickPosX(pt, ftk, axw)
-			if px < -yw {
-				lpad += int(math32.Ceil(-px - yw))
+		// any label can extend the furthest, as when rotated
+		minX, maxX := float32(0), axw
+		for _, tk := range ax.ticks {
+			if tk.Label == "" {
+				continue
 			}
-			tht = max(tht, ax.TickText.Size().Y)
+			px, wd := ax.tickPosX(pt, tk, axw)
+			minX, maxX = min(minX, px), max(maxX, px+wd)
 		}
-		ltk := ax.lastTickLabel()
-		if ltk.Label != "" {
-			px, wd := ax.tickPosX(pt, ltk, axw)
-			if px+wd > axw+yrw {
-				rpad += int(math32.Ceil((px + wd) - (axw + yrw)))
-			}
-			tht = max(tht, ax.TickText.Size().Y)
+		if minX < -yw {
+			lpad += int(math32.Ceil(-minX - yw))
 		}
-		ax.TickText.Text = ax.longestTickLabel()
-		if ax.TickText.Text != "" {
-			ax.TickText.Config(pt)
-			tht = max(tht, ax.TickText.Size().Y)
+		if maxX > axw+yrw {
+			rpad += int(math32.Ceil(maxX - (axw + yrw)))
 		}
+		tht = max(tht, ax.tickHeightX(pt))
 		h += ax.TickText.Style.Padding.Dots
 	}
 	h += tht + lw + ax.Style.Padding.Dots
@@ -218,30 +213,34 @@ func (ax *Axis) tickPosX(pt *Plot, t Tick, axw float32) (px, wd float32) {
 	}
 	ax.TickText.Text = t.Label
 	ax.TickText.Config(pt)
+	if ax.TickText.Rotated() {
+		_, left, right, _ := ax.TickText.TickPosX(x, 0)
+		return x + left, right - left
+	}
 	pos := ax.TickText.PosX(0)
 	px = pos.X + x
 	wd = ax.TickText.Size().X
 	return
 }
 
-func (ax *Axis) firstTickLabel() Tick {
-	for _, tk := range ax.ticks {
-		if tk.Label != "" {
-			return tk
+// tickHeightX returns the height of the tick labels of the X axis,
+// which is that of the tallest label, rotated or not.
+func (ax *Axis) tickHeightX(pt *Plot) float32 {
+	ht := float32(0)
+	for _, t := range ax.ticks {
+		if t.Label == "" || t.IsMinor() {
+			continue
+		}
+		ax.TickText.Text = t.Label
+		ax.TickText.Config(pt)
+		if ax.TickText.Rotated() {
+			_, _, _, h := ax.TickText.TickPosX(0, 0)
+			ht = max(ht, h)
+		} else {
+			ht = max(ht, ax.TickText.Size().Y)
 		}
 	}
-	return Tick{}
-}
-
-func (ax *Axis) lastTickLabel() Tick {
-	n := len(ax.ticks)
-	for i := n - 1; i >= 0; i-- {
-		tk := ax.ticks[i]
-		if tk.Label != "" {
-			return tk
-		}
-	}
-	return Tick{}
+	return ht
 }
 
 func (ax *Axis) longestTickLabel() string {
@@ -313,7 +312,9 @@ func (ax *Axis) drawX(pt *Plot, ab image.Rectangle, lpad, rpad int) {
 		ab.Max.Y -= int(math32.Ceil(th + ax.Label.Style.Padding.Dots))
 	}
 
-	tickHt := float32(0)
+	// all of the labels start at the same top, below the axis
+	tickHt := ax.tickHeightX(pt) + ax.TickText.Style.Padding.Dots
+	top := float32(ab.Max.Y) - tickHt
 	for _, t := range ax.ticks {
 		x := axw * float32(ax.Norm(t.Value))
 		if x < 0 || x > axw || t.IsMinor() {
@@ -321,10 +322,14 @@ func (ax *Axis) drawX(pt *Plot, ab image.Rectangle, lpad, rpad int) {
 		}
 		ax.TickText.Text = t.Label
 		ax.TickText.Config(pt)
-		pos := ax.TickText.PosX(0)
-		pos.X += x + float32(ab.Min.X)
-		tickHt = ax.TickText.Size().Y + ax.TickText.Style.Padding.Dots
-		pos.Y += float32(ab.Max.Y) - tickHt
+		var pos math32.Vector2
+		if ax.TickText.Rotated() {
+			pos, _, _, _ = ax.TickText.TickPosX(x+float32(ab.Min.X), top)
+		} else {
+			pos = ax.TickText.PosX(0)
+			pos.X += x + float32(ab.Min.X)
+			pos.Y += top
+		}
 		ax.TickText.Draw(pt, pos)
 	}
 

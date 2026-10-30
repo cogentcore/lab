@@ -19,8 +19,6 @@ import (
 	"cogentcore.org/lab/tensorfs"
 )
 
-// important: must be run from an interactive terminal.
-// Will quit immediately if not!
 func main() {
 	tensorfs.Mkdir("Data")
 	opts := cli.DefaultOptions("basic", "basic Cogent Lab browser.")
@@ -34,6 +32,7 @@ func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 	br.Interpreter = in
 	mvmlab.UseGUI(in)
 	in.Config()
+	mvmlab.InteractiveTerminal(c, in, br.Terminal)
 	b.AddTopBar(func(bar *core.Frame) {
 		tb := core.NewToolbar(bar)
 		// tb.Maker(tbv.MakeToolbar)
@@ -46,15 +45,6 @@ func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
 			})
 		})
 	})
-	b.OnShow(func(e events.Event) {
-		go func() {
-			if c.Expr != "" {
-				in.Eval(c.Expr)
-			}
-			in.Interactive()
-		}()
-	})
-	b.RunWindow()
-	core.Wait()
+	b.RunMainWindow()
 	return nil
 }
