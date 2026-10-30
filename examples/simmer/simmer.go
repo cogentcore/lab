@@ -52,7 +52,8 @@ End, string
 
 // Simmer manages the running and data analysis of results from simulations
 // that are run on remote server(s), within a Cogent Lab browser environment,
-// with the files as the left panel, and the Tabber as the right panel.
+// with the files as the left panel, and the Tabber as the right panel,
+// with the terminal running the goal shell below it.
 type Simmer struct {
 	core.Frame
 	lab.Browser
@@ -80,8 +81,6 @@ type Simmer struct {
 	BareMetalActiveTable *core.Table
 }
 
-// important: must be run from an interactive terminal.
-// Will quit immediately if not!
 func main() {
 	opts := cli.DefaultOptions("simmer", "interactive simulation running and data analysis.")
 	cfg := &interpreter.Config{}
@@ -90,19 +89,11 @@ func main() {
 }
 
 // Interactive is the cli function that gets called by default at gui startup.
+// It runs the goal shell in the terminal of the window.
 func Interactive(c *interpreter.Config, in *interpreter.Interpreter) error {
-	b, _ := NewSimmerWindow(in)
-	b.OnShow(func(e events.Event) {
-		// note: comment out if not running interactively (e.g., debugger)
-		go func() {
-			if c.Expr != "" {
-				in.Eval(c.Expr)
-			}
-			in.Interactive()
-		}()
-	})
-	b.RunWindow()
-	core.Wait()
+	b, sr := NewSimmerWindow(in)
+	mvmlab.InteractiveTerminal(c, in, sr.Terminal)
+	b.RunMainWindow()
 	return nil
 }
 
@@ -119,6 +110,7 @@ func NewSimmerWindow(in *interpreter.Interpreter) (*core.Body, *Simmer) {
 		sr.Toolbar = tb
 		tb.Maker(sr.MakeToolbar)
 	})
+	sr.Update() // makes the widgets, such as the Tabs and Terminal
 	sr.InitSimmer(startDir)
 	return b, sr
 }
@@ -184,9 +176,7 @@ func (sr *Simmer) Init() {
 				sr.Files = w
 			})
 		})
-		tree.AddChildAt(w, "tabs", func(w *lab.Tabs) {
-			sr.Tabs = w
-		})
+		sr.AddTabsTerminal(w)
 	})
 	sr.Updater(func() {
 		if sr.Files != nil {

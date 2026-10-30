@@ -6,6 +6,8 @@ TODO: plot mean function on consat is losing the TrainEpoch fields
 
 Simmer provides a Cogent Lab based GUI for running simulation jobs, and managing and analyzing the resulting data, using the plotcore Editor. It supports both slurm and [baremetal](../baremetal) job management systems.
 
+The terminal at the bottom runs the interactive `goal` shell, in the app, with the data and the Simmer itself (as `lab.LabBrowser`), so you can work with them directly there.
+
 The local data goes into paths like this:
 
 `~/simdata/simname/user` with `jobs` and `labscripts` subdirectories

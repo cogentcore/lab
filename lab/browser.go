@@ -90,6 +90,28 @@ type Browser struct { //types:add -setters
 	Splits *core.Splits
 }
 
+// AddTabsTerminal adds the [Browser.Tabs] and the [Browser.Terminal]
+// below them, in a column [core.Splits], to the given parent, typically
+// the main splits, as the right panel. It also sets [Lab] to the Tabs.
+// The Terminal runs the user's shell unless it is configured otherwise,
+// such as to run the goal shell of the app with
+// cogentcore.org/lab/mvmlab.InteractiveTerminal.
+func (br *Browser) AddTabsTerminal(parent tree.Node) {
+	tree.AddChildAt(parent, "tabs-terminal", func(w *core.Splits) {
+		w.Styler(func(s *styles.Style) {
+			s.Direction = styles.Column
+		})
+		w.SetSplits(.7, .3)
+		tree.AddChildAt(w, "tabs", func(w *Tabs) {
+			br.Tabs = w
+			Lab = br.Tabs.AsLab()
+		})
+		tree.AddChildAt(w, "terminal", func(w *terminal.Terminal) {
+			br.Terminal = w
+		})
+	})
+}
+
 // UpdateFiles Updates the files list.
 func (br *Browser) UpdateFiles() { //types:add
 	if br.Files == nil {

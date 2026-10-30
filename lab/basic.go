@@ -14,7 +14,6 @@ import (
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/styles"
-	"cogentcore.org/core/text/terminal"
 	"cogentcore.org/core/tree"
 )
 
@@ -49,19 +48,7 @@ func (br *Basic) Init() {
 				br.Files = w
 			})
 		})
-		tree.AddChildAt(w, "tabs-terminal", func(w *core.Splits) {
-			w.Styler(func(s *styles.Style) {
-				s.Direction = styles.Column
-			})
-			w.SetSplits(.7, .3)
-			tree.AddChildAt(w, "tabs", func(w *Tabs) {
-				br.Tabs = w
-				Lab = br.Tabs.AsLab()
-			})
-			tree.AddChildAt(w, "terminal", func(w *terminal.Terminal) {
-				br.Terminal = w
-			})
-		})
+		br.AddTabsTerminal(w)
 	})
 	br.Updater(func() {
 		if br.Files != nil {
