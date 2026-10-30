@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"image"
 	"log"
+	"maps"
 	"strconv"
 	"strings"
 
@@ -133,8 +134,12 @@ func (tb *Table) StyleValue(w core.Widget, s *styles.Style, row, col int) {
 }
 
 // SetTable sets the source table that we are viewing, using a sequential view,
-// and then configures the display
+// and then configures the display. If it is the table that is already
+// viewed, as when its data are updated, the scroll position and the
+// selection are kept.
 func (tb *Table) SetTable(dt *table.Table) *Table {
+	same := dt != nil && tb.Table != nil && tb.Table.Columns == dt.Columns
+	start, selected, selection := tb.StartIndex, tb.SelectedIndex, maps.Clone(tb.SelectedIndexes)
 	if dt == nil {
 		tb.Table = nil
 	} else {
@@ -143,6 +148,9 @@ func (tb *Table) SetTable(dt *table.Table) *Table {
 	}
 	tb.This.(core.Lister).UpdateSliceSize()
 	tb.SetSliceBase()
+	if same {
+		tb.StartIndex, tb.SelectedIndex, tb.SelectedIndexes = start, selected, selection
+	}
 	tb.Update()
 	return tb
 }
