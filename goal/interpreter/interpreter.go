@@ -504,8 +504,14 @@ func (in *Interpreter) interactiveLines(tty *os.File) error {
 
 // configTerminal configures the line reader for the given terminal, which
 // is not that of the process (the default), for which it has no signals.
+// Its size is that of the standard output, if it is a file, as the input
+// and output of a console are separate on Windows.
 func (in *Interpreter) configTerminal(cfg *readline.Config, tty *os.File) {
 	fd := int(tty.Fd())
+	sizeFd := fd
+	if out, ok := cfg.Stdout.(*os.File); ok {
+		sizeFd = int(out.Fd())
+	}
 	var restore func() error
 	var mu sync.Mutex // the line reader also exits raw mode when it closes
 	cfg.FuncIsTerminal = func() bool {
@@ -531,7 +537,7 @@ func (in *Interpreter) configTerminal(cfg *readline.Config, tty *os.File) {
 		return err
 	}
 	cfg.FuncGetSize = func() (int, int) {
-		w, h, err := term.GetSize(fd)
+		w, h, err := term.GetSize(sizeFd)
 		if err != nil {
 			return -1, -1
 		}
