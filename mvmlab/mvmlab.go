@@ -90,14 +90,13 @@ func (in *Interpreter) Eval(src string) (res reflect.Value, err error) {
 // the first time, if any, and again when the terminal is restarted after it
 // ends (Control+D). Control+C interrupts the code and commands that are
 // running. Call [UseGUI] and [interpreter.Interpreter.Config] first.
-// It is not supported on Windows.
 func InteractiveTerminal(c *interpreter.Config, in *interpreter.Interpreter, tm *terminal.Terminal) {
 	expr := ""
 	if c != nil {
 		expr = c.Expr
 	}
-	tm.Func = func(tty *os.File) error {
-		in.SetIO(tty, tty, tty)
+	tm.Func = func(tin, tout *os.File) error {
+		in.SetIO(tin, tout, tout)
 		if expr != "" {
 			in.Eval(expr)
 			expr = ""

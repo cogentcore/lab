@@ -5,9 +5,33 @@
 package transpile
 
 import (
+	"runtime"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
+
+// BackslashLiteral is whether a backslash outside of quotes and Go code is
+// a literal char, unless it escapes a char that the shell gives a meaning
+// (see [Escapes]), such that it is the path separator, as in C:\Users
+// and cmd\goal. It is set on Windows, where backslash is the path
+// separator.
+var BackslashLiteral = runtime.GOOS == "windows"
+
+// ShellSpecial are the chars, other than spaces, that the shell gives a
+// meaning outside of quotes, which a backslash escapes.
+const ShellSpecial = "\\\"'`{}[]|&;<>$*?#()"
+
+// Escapes returns whether a backslash outside of quotes and Go code
+// escapes the given char that follows it (0 if none), as it always does,
+// except with [BackslashLiteral], when it only escapes spaces and the
+// other [ShellSpecial] chars than backslash, and is otherwise literal.
+func Escapes(next rune) bool {
+	if !BackslashLiteral {
+		return true
+	}
+	return next != 0 && next != '\\' && (unicode.IsSpace(next) || strings.ContainsRune(ShellSpecial, next))
+}
 
 // WordsError is an error of [ExecWords], such as an unterminated string,
 // at a byte offset in the line.
@@ -123,6 +147,8 @@ func ExecWords(ln string) ([]string, error) {
 			}
 			word += string(r)
 			esc = false
+		case r == '\\' && !quote && brace == 0 && !Escapes(nextRune(ln[i+1:])):
+			word += string(r) // literal (see BackslashLiteral)
 		case r == '\\':
 			esc = true
 			word += string(r)
@@ -204,6 +230,15 @@ func ExecWords(ln string) ([]string, error) {
 		return words, &WordsError{Pos: brackStart, Msg: "missing closing ]"}
 	}
 	return words, nil
+}
+
+// nextRune returns the first rune of s, or 0 if it is empty.
+func nextRune(s string) rune {
+	if s == "" {
+		return 0
+	}
+	r, _ := utf8.DecodeRuneInString(s)
+	return r
 }
 
 // ExecWordIsCommand returns true if given exec word is a command-like string

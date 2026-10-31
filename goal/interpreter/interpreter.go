@@ -5,6 +5,7 @@
 package interpreter
 
 import (
+	"bufio"
 	"context"
 	"io"
 	"log"
@@ -31,6 +32,7 @@ import (
 	"github.com/cogentcore/mvm/stdlib"
 	_ "github.com/cogentcore/mvm/stdlib/core" // the core standard library
 	"github.com/cogentcore/readline"
+	"github.com/mattn/go-isatty"
 	"golang.org/x/term"
 )
 
@@ -400,6 +402,9 @@ func (in *Interpreter) Interactive() error {
 	}
 	tty, ok := stdio.In.(*os.File)
 	processTerminal := !ok || tty == os.Stdin
+	if ok && isatty.IsCygwinTerminal(tty.Fd()) {
+		return in.interactiveLines(tty)
+	}
 	if !processTerminal {
 		in.configTerminal(cfg, tty)
 	}
@@ -438,34 +443,75 @@ func (in *Interpreter) Interactive() error {
 			in.SaveHistory()
 			return err
 		}
-		if len(line) > 0 && line[0] == '!' { // history command
-			hl, err := strconv.Atoi(line[1:])
-			nh := len(in.Goal.Hist)
-			if err != nil {
-				in.Goal.Config.StdIO.ErrPrintf("history number: %q not a number: %s", line[1:], err.Error())
-				line = ""
-			} else if hl >= nh {
-				in.Goal.Config.StdIO.ErrPrintf("history number: %d not in range: [0:%d]", hl, nh)
-				line = ""
-			} else {
-				line = in.Goal.Hist[hl]
-				in.Goal.Config.StdIO.Printf("h:%d\t%s\n", hl, line)
+		in.runLine(line)
+	}
+}
+
+// runLine runs a line of input of [Interpreter.Interactive]: a history
+// command (!n), or code, whose value is printed.
+func (in *Interpreter) runLine(line string) {
+	if len(line) > 0 && line[0] == '!' { // history command
+		hl, err := strconv.Atoi(line[1:])
+		nh := len(in.Goal.Hist)
+		if err != nil {
+			in.Goal.Config.StdIO.ErrPrintf("history number: %q not a number: %s", line[1:], err.Error())
+			line = ""
+		} else if hl >= nh {
+			in.Goal.Config.StdIO.ErrPrintf("history number: %d not in range: [0:%d]", hl, nh)
+			line = ""
+		} else {
+			line = in.Goal.Hist[hl]
+			in.Goal.Config.StdIO.Printf("h:%d\t%s\n", hl, line)
+		}
+	} else if line != "" && !strings.HasPrefix(line, "history") && line != "h" {
+		in.Goal.AddHistory(line)
+	}
+	in.Goal.Errors = nil
+	v, hasPrint, err := in.Eval(line)
+	if err == nil && !hasPrint && v.IsValid() && !v.IsZero() && v.Kind() != reflect.Func {
+		in.Goal.Config.StdIO.Println(v.Interface())
+	}
+}
+
+// interactiveLines runs [Interpreter.Interactive] with plain line input,
+// without line editing or completion, for the terminal of Git Bash and
+// other Cygwin and MSYS2 terminals (mintty) on Windows, which are not
+// consoles: their input and output are pipes, which the line reader cannot
+// use as a terminal. It tells the user to run goal with winpty instead,
+// which makes a console for it.
+func (in *Interpreter) interactiveLines(tty *os.File) error {
+	stdio := &in.Goal.Config.StdIO
+	stdio.ErrPrintln("goal: this terminal (such as that of Git Bash) is not a Windows console, so line editing, completion, and interactive programs do not work: run \"winpty goal\" for them. Using plain line input.")
+	in.Goal.OpenHistory(in.HistFile)
+	r := bufio.NewReader(tty)
+	for {
+		stdio.Print(in.Prompt())
+		line, err := r.ReadString('\n')
+		if in.isClosed() {
+			in.SaveHistory()
+			return nil
+		}
+		if err != nil && line == "" { // end of the input (Control+D)
+			in.SaveHistory()
+			if err == io.EOF {
+				os.Exit(0)
 			}
-		} else if line != "" && !strings.HasPrefix(line, "history") && line != "h" {
-			in.Goal.AddHistory(line)
+			return err
 		}
-		in.Goal.Errors = nil
-		v, hasPrint, err := in.Eval(line)
-		if err == nil && !hasPrint && v.IsValid() && !v.IsZero() && v.Kind() != reflect.Func {
-			in.Goal.Config.StdIO.Println(v.Interface())
-		}
+		in.runLine(strings.TrimRight(line, "\r\n"))
 	}
 }
 
 // configTerminal configures the line reader for the given terminal, which
 // is not that of the process (the default), for which it has no signals.
+// Its size is that of the standard output, if it is a file, as the input
+// and output of a console are separate on Windows.
 func (in *Interpreter) configTerminal(cfg *readline.Config, tty *os.File) {
 	fd := int(tty.Fd())
+	sizeFd := fd
+	if out, ok := cfg.Stdout.(*os.File); ok {
+		sizeFd = int(out.Fd())
+	}
 	var restore func() error
 	var mu sync.Mutex // the line reader also exits raw mode when it closes
 	cfg.FuncIsTerminal = func() bool {
@@ -491,7 +537,7 @@ func (in *Interpreter) configTerminal(cfg *readline.Config, tty *os.File) {
 		return err
 	}
 	cfg.FuncGetSize = func() (int, int) {
-		w, h, err := term.GetSize(fd)
+		w, h, err := term.GetSize(sizeFd)
 		if err != nil {
 			return -1, -1
 		}
