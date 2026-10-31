@@ -13,6 +13,7 @@ import (
 
 	"cogentcore.org/core/base/sshclient"
 	"cogentcore.org/core/base/sshclient/sshtest"
+	"cogentcore.org/lab/goal/transpile"
 	"cogentcore.org/lab/tensorfs"
 )
 
@@ -86,6 +87,33 @@ func TestComplete(t *testing.T) {
 	newLine, n := rc.Do(line, len(line))
 	if len(newLine) != 1 || string(newLine[0]) != `ile.txt" ` || n != 5 {
 		t.Errorf("readline: %q %d", newLine, n)
+	}
+}
+
+// TestCompleteBackslash checks the words for completion with
+// [transpile.BackslashLiteral] (Windows), where a backslash is the path
+// separator unless it escapes a char that the shell gives a meaning.
+func TestCompleteBackslash(t *testing.T) {
+	defer func(b bool) { transpile.BackslashLiteral = b }(transpile.BackslashLiteral)
+	transpile.BackslashLiteral = true
+	tests := []struct {
+		line, value string
+		baseLen     int
+	}{
+		{`cd cmd\go`, `cmd\go`, 2},
+		{`cd cmd\`, `cmd\`, 0},
+		{`ls My\ Documents\in`, `My Documents\in`, 2},
+		{`ls a\\$x`, `a\$x`, 3},
+		{`ls "a\\b`, `a\b`, 5},
+	}
+	for _, test := range tests {
+		w := lastShellWord(test.line)
+		if w.value != test.value || w.baseLen != test.baseLen {
+			t.Errorf("%s: %q, base %d, want %q, %d", test.line, w.value, w.baseLen, test.value, test.baseLen)
+		}
+	}
+	if s := escapeShell(`a\b $x`, 0); s != `a\b\ \$x` {
+		t.Errorf("escapeShell: %q", s)
 	}
 }
 

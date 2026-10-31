@@ -60,6 +60,7 @@ func lastShellWord(line string) shellWord {
 	words := 0          // number of words before this one in the command
 	rs := []rune(line)
 	for i, r := range rs {
+		sep := r == '/'
 		switch {
 		case esc:
 			value = append(value, r)
@@ -70,6 +71,9 @@ func lastShellWord(line string) shellWord {
 			} else {
 				value = append(value, r)
 			}
+		case r == '\\' && w.quote == 0 && !transpile.Escapes(nextRune(rs[i+1:])):
+			value = append(value, r) // the path separator on Windows
+			sep = true
 		case r == '\\':
 			esc = true
 		case w.quote == '"':
@@ -102,7 +106,7 @@ func lastShellWord(line string) shellWord {
 		default:
 			value = append(value, r)
 		}
-		if r == '/' || (r == ':' && isHostName(string(value[:len(value)-1]))) { // @name:path
+		if sep || (r == ':' && isHostName(string(value[:len(value)-1]))) { // @name:path
 			base = i + 1
 		}
 	}
@@ -110,6 +114,14 @@ func lastShellWord(line string) shellWord {
 	w.first = words == 0
 	w.baseLen = len(rs) - base
 	return w
+}
+
+// nextRune returns the first rune of rs, or 0 if it is empty.
+func nextRune(rs []rune) rune {
+	if len(rs) == 0 {
+		return 0
+	}
+	return rs[0]
 }
 
 // isHostName returns whether the given word is the name of an ssh host,
@@ -123,6 +135,8 @@ func isHostName(word string) bool {
 // transpile.ExecWords): outside of quotes, spaces and the other chars that
 // the shell gives a meaning are escaped with a backslash; inside " quotes,
 // which are Go strings, " and \ are; inside ' quotes, nothing is.
+// With [transpile.BackslashLiteral] (Windows), a backslash is not
+// escaped outside of quotes, as it is the path separator.
 func escapeShell(s string, quote rune) string {
 	var b strings.Builder
 	for _, r := range s {
@@ -133,7 +147,7 @@ func escapeShell(s string, quote rune) string {
 				b.WriteRune('\\')
 			}
 		default:
-			if unicode.IsSpace(r) || strings.ContainsRune("\\\"'`{}[]|&;<>$*?#()", r) {
+			if unicode.IsSpace(r) || (strings.ContainsRune(transpile.ShellSpecial, r) && !(r == '\\' && transpile.BackslashLiteral)) {
 				b.WriteRune('\\')
 			}
 		}

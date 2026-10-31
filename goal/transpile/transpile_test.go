@@ -438,3 +438,27 @@ func TestMathGo(t *testing.T) {
 		assert.Equal(t, test.e, o, test.i)
 	}
 }
+
+// TestBackslashLiteral tests that a backslash is the path separator with
+// [BackslashLiteral] (Windows), unless it escapes a char that the shell
+// gives a meaning.
+func TestBackslashLiteral(t *testing.T) {
+	defer func(b bool) { BackslashLiteral = b }(BackslashLiteral)
+	BackslashLiteral = true
+	words := []wexIn{
+		{`cd cmd\goal`, false, []string{`cd`, `cmd\goal`}},
+		{`cd cmd\`, false, []string{`cd`, `cmd\`}},
+		{`ls C:\Users\me`, false, []string{`ls`, `C:\Users\me`}},
+		{`ls \\server\share`, false, []string{`ls`, `\\server\share`}},
+		{`ls My\ Documents\a\ b.txt`, false, []string{`ls`, `My Documents\a b.txt`}},
+		{`ls a\\$x`, false, []string{`ls`, `a\$x`}},
+		{`echo "a\tb"`, false, []string{`echo`, `"a\tb"`}},
+	}
+	for _, test := range words {
+		o, err := ExecWords(test.i)
+		assert.NoError(t, err)
+		assert.Equal(t, test.e, o, test.i)
+	}
+	st := NewState()
+	assert.Equal(t, `goalrun.Run("cd", "cmd\\goal")`, st.TranspileLine(`cd cmd\goal`))
+}
