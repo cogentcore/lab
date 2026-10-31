@@ -1,0 +1,24 @@
+<svg
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+  xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+    id="namedview3"
+    style="inkscape:current-layer:;inkscape:cx:0;inkscape:cy:0;inkscape:zoom:1;inkscape:document-units:px;">
+    <inkscape:grid
+      id="grid465"
+      style="spacingx:32;spacingy:32;type:xygrid;units:px;" />
+  </sodipodi:namedview>
+  <path
+    id="path191"
+    style="fill:#005bc0;"
+    d="M18 23H6C3.200001 23 1 20.8 1 18V5.999999C1 3.199999 3.200001 .9999993 6 .9999993H18C20.8 .9999993 23 3.199999 23 5.999999V18C23 20.8 20.8 23 18 23z" />
+  <path
+    id="path852"
+    style="fill:#FBBD0E;fill-opacity:1;fill-rule:nonzero;"
+    d="M9 21V18H2V16H9Q9.83 16 10.41 16.59Q11 17.18 11 18V21zM13 21V18Q13 17.18 13.59 16.59Q14.18 16 15 16H22V18H15V21zM6 15Q4.75 15 3.87 14.12Q2.99 13.24 3 12V8H21V12Q21 13.25 20.12 14.13Q19.24 15.01 18 15zM6 13H18Q18.43 13 18.71 12.71Q19 12.43 19 12V10H5V12Q5 12.42 5.29 12.71Q5.58 13 6 13zM3 7V5H9V4Q9 3.57 9.29 3.29Q9.58 3 10 3H14Q14.43 3 14.71 3.29Q14.99 3.58 15 4V5H21V7zM5 13z" />
+</svg>
