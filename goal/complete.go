@@ -216,7 +216,7 @@ func (gl *Goal) completions(line string) (w shellWord, comps []shellCompletion) 
 		e := end
 		if isDir {
 			e = "/"
-			if cl == nil {
+			if cl == nil && w.quote != '"' { // where \ is an escape
 				e = string(filepath.Separator)
 			}
 		}
@@ -271,7 +271,8 @@ type dirEntry struct {
 }
 
 // localDirEntries returns the files in the given local directory, relative
-// to the current directory, with symbolic links to directories as such.
+// to the current directory, with symbolic links to directories as such,
+// and junctions on Windows, which are irregular files.
 func (gl *Goal) localDirEntries(dir string) []dirEntry {
 	if dir == "" {
 		dir = "."
@@ -286,7 +287,7 @@ func (gl *Goal) localDirEntries(dir string) []dirEntry {
 	des := make([]dirEntry, len(entries))
 	for i, entry := range entries {
 		isDir := entry.IsDir()
-		if !isDir && entry.Type()&os.ModeSymlink != 0 {
+		if !isDir && entry.Type()&(os.ModeSymlink|os.ModeIrregular) != 0 {
 			if fi, err := os.Stat(filepath.Join(dir, entry.Name())); err == nil {
 				isDir = fi.IsDir()
 			}

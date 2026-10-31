@@ -57,25 +57,31 @@ func TestComplete(t *testing.T) {
 	}
 	for _, test := range tests {
 		w, comps := gl.completions(test.line)
-		var adds []string
+		var adds, wantAdds []string
 		for _, c := range comps {
 			adds = append(adds, c.add)
 		}
-		if !slices.Equal(adds, test.adds) || w.baseLen != test.baseLen {
-			t.Errorf("%s: completions %q, base %d, want %q, %d", test.line, adds, w.baseLen, test.adds, test.baseLen)
+		for _, a := range test.adds { // a directory ends with the separator, \ on Windows, except in "
+			if s, ok := strings.CutSuffix(a, "/"); ok && !strings.Contains(test.line, `"`) {
+				a = s + string(filepath.Separator)
+			}
+			wantAdds = append(wantAdds, a)
+		}
+		if !slices.Equal(adds, wantAdds) || w.baseLen != test.baseLen {
+			t.Errorf("%s: completions %q, base %d, want %q, %d", test.line, adds, w.baseLen, wantAdds, test.baseLen)
 			continue
 		}
 		// the completed word is read as the path of the name
 		for _, c := range comps {
 			got := lastShellWord(strings.TrimSuffix(test.line+c.add, " ")).value
 			want := filepath.Join(filepath.Dir(w.value+"x"), c.name)
-			if strings.HasSuffix(c.add, "/") {
-				want += "/"
+			if strings.HasSuffix(c.add, "/") || strings.HasSuffix(c.add, string(filepath.Separator)) {
+				want += string(filepath.Separator)
 			}
 			if strings.HasPrefix(want, "./") {
 				want = want[2:]
 			}
-			if c.icon != "terminal" && got != want {
+			if c.icon != "terminal" && filepath.FromSlash(got) != want {
 				t.Errorf("%s + %s: read as %q, want %q", test.line, c.add, got, want)
 			}
 		}
