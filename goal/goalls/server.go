@@ -25,8 +25,8 @@ import (
 	"sync"
 
 	"cogentcore.org/lab/goal/goalfmt"
-	"github.com/pmezard/go-difflib/difflib"
 	"cogentcore.org/lab/goal/transpile"
+	"github.com/pmezard/go-difflib/difflib"
 )
 
 // Server is a language server for Goal files, which is a proxy for gopls
