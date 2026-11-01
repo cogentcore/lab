@@ -139,20 +139,7 @@ func (st *State) TranspileFile(in string, out string) error {
 		return err
 	}
 
-	hdr := `package main
-import (
-	"cogentcore.org/lab/goal"
-	"cogentcore.org/lab/goal/goalib"
-	"cogentcore.org/lab/tensor"
-	_ "cogentcore.org/lab/tensor/tmath"
-	_ "cogentcore.org/lab/stats/stats"
-	_ "cogentcore.org/lab/stats/metric"
-)
-
-func main() {
-	goalrun := goal.NewGoal()
-	_ = goalrun
-`
+	hdr := strings.Join(scriptHeader(ScriptImports), "\n") + "\n"
 
 	src := st.Code()
 	res := []byte(src)
