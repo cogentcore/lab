@@ -330,7 +330,8 @@ func labelText(label any) string {
 }
 
 // TestServerHints tests that the inlay hints of the lines of a Goal file
-// whose Go code is not the same as their source are omitted.
+// whose Go code is not the same as their source are omitted, and their
+// semantic tokens, except those with the same text.
 func TestServerHints(t *testing.T) {
 	c := newTestClient(t)
 	dir := t.TempDir()
@@ -342,7 +343,7 @@ func TestServerHints(t *testing.T) {
 	os.WriteFile(fname, []byte(src), 0644)
 	uri := filenameURI(fname)
 	c.call("initialize", map[string]any{"processId": nil, "rootUri": filenameURI(dir), "capabilities": capabilities,
-		"initializationOptions": map[string]any{"hints": map[string]any{"parameterNames": true}}}, nil)
+		"initializationOptions": map[string]any{"semanticTokens": true, "hints": map[string]any{"parameterNames": true}}}, nil)
 	c.notify("initialized", map[string]any{})
 	c.notify("textDocument/didOpen", map[string]any{"textDocument": map[string]any{"uri": uri, "languageId": "goal", "version": 1, "text": src}})
 	c.waitDiags(uri, func(ds []diagnostic) bool { return true })
@@ -360,4 +361,19 @@ func TestServerHints(t *testing.T) {
 	}
 	// the hint of show, but not that of Run, in the Go code of ls -la
 	assert.Equal(t, map[position]string{{12, 6}: "msg:"}, got)
+
+	// the tokens of the Go code of ls -la are not in it, as their text is
+	// not, but those of show("hi") are
+	var toks struct {
+		Data []int `json:"data"`
+	}
+	c.call("textDocument/semanticTokens/full", map[string]any{"textDocument": map[string]any{"uri": uri}}, &toks)
+	tokLines := map[int]int{}
+	ln := 0
+	for i := 0; i+4 < len(toks.Data); i += 5 {
+		ln += toks.Data[i]
+		tokLines[ln]++
+	}
+	assert.Zero(t, tokLines[11], "ls -la")
+	assert.Equal(t, 2, tokLines[12], "show(\"hi\")")
 }

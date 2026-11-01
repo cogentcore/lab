@@ -186,6 +186,12 @@ func (s *Server) semanticTokens(d *doc, result json.RawMessage) json.RawMessage 
 		if !ok {
 			continue
 		}
+		// On a line whose Go code is not the same as its source, only the
+		// tokens with the same text in it are kept: not those of the code
+		// that the transpiler adds, such as the calls of tensor indexing.
+		if !d.sameCode(l) && !d.sameText(s.enc, ln, ch, t[2], l, c) {
+			continue
+		}
 		toks = append(toks, [5]int{l, c, t[2], t[3], t[4]})
 	}
 	s.mu.Unlock()
@@ -194,6 +200,9 @@ func (s *Server) semanticTokens(d *doc, result json.RawMessage) json.RawMessage 
 			return a[0] - b[0]
 		}
 		return a[1] - b[1]
+	})
+	toks = slices.CompactFunc(toks, func(a, b [5]int) bool { // at the same position
+		return a[0] == b[0] && a[1] == b[1]
 	})
 	out := make([]int, 0, 5*len(toks))
 	pl, pc := 0, 0
