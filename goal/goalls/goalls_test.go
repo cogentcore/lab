@@ -251,14 +251,15 @@ func TestServer(t *testing.T) {
 	}
 	assert.ElementsMatch(t, []position{{5, 1}, {6, 13}}, starts)
 
-	// formatting formats the Goal code
+	// formatting formats the Goal code, with an edit of the line that changes
 	var edits []struct {
 		Range   lspRangeT `json:"range"`
 		NewText string    `json:"newText"`
 	}
 	c.call("textDocument/formatting", map[string]any{"textDocument": doc, "options": map[string]any{"tabSize": 4, "insertSpaces": false}}, &edits)
 	if assert.Len(t, edits, 1) {
-		assert.Contains(t, edits[0].NewText, "\tx := 1\n\tfmt.Println(x, y)\n\tls -la\n")
+		assert.Equal(t, lspRangeT{Start: position{5, 0}, End: position{6, 0}}, edits[0].Range)
+		assert.Equal(t, "\tx := 1\n", edits[0].NewText)
 	}
 
 	// completion, after a change (a line with just fmt.Pr is a command)
@@ -309,4 +310,20 @@ func TestApplyChange(t *testing.T) {
 	assert.Equal(t, "aQyz\n", applyChange(text, utf16Encoding, 0, 1, 1, 1, "Q"))
 	assert.Equal(t, 4, utf16Encoding.fromRune("aé😀b", 3))
 	assert.Equal(t, 3, utf16Encoding.toRune("aé😀b", 4))
+}
+
+func TestLineEdits(t *testing.T) {
+	text := "a\n  b\nc\n\n\nd\n"
+	res := "a\n\tb\nc\n\nd\ne\n"
+	edits := lineEdits(text, res)
+	// applied in reverse order, they make the new text
+	got := text
+	for i := len(edits) - 1; i >= 0; i-- {
+		e := edits[i].(map[string]any)
+		r := e["range"].(map[string]any)
+		st, ed := r["start"].(map[string]any), r["end"].(map[string]any)
+		got = applyChange(got, utf16Encoding, st["line"].(int), st["character"].(int), ed["line"].(int), ed["character"].(int), e["newText"].(string))
+	}
+	assert.Equal(t, res, got)
+	assert.Empty(t, lineEdits(res, res))
 }
