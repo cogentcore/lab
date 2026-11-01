@@ -148,6 +148,28 @@ func line(lines []string, ln int) string {
 	return lines[ln]
 }
 
+// sameCode returns whether the Go code of the given line of the Goal
+// file is the same as its source, apart from spaces.
+func (d *doc) sameCode(ln int) bool {
+	gl := d.code.GoLine(ln)
+	return gl >= 0 && stripSpaces(line(d.lines, ln)) == stripSpaces(d.code.Lines[gl])
+}
+
+// sameText returns whether the text of the Go code at the given line and
+// character, of the given length, in the given encoding, is the same as
+// that of the Goal file at the given line and character.
+func (d *doc) sameText(enc encoding, gl, gc, n, sl, sc int) bool {
+	gtxt := []rune(line(d.code.Lines, gl))
+	gst, ged := enc.toRune(string(gtxt), gc), enc.toRune(string(gtxt), gc+n)
+	stxt := []rune(line(d.lines, sl))
+	sst := enc.toRune(string(stxt), sc)
+	sed := sst + ged - gst
+	if ged <= gst || sed > len(stxt) {
+		return false
+	}
+	return string(gtxt[gst:ged]) == string(stxt[sst:sed])
+}
+
 // toGo returns the position in the Go code of the given position in the
 // Goal file, in the given encoding, and whether it has one.
 func (d *doc) toGo(enc encoding, ln, ch int) (int, int, bool) {

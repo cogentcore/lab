@@ -26,6 +26,7 @@ import (
 
 	"cogentcore.org/lab/goal/goalfmt"
 	"cogentcore.org/lab/goal/transpile"
+	"github.com/pmezard/go-difflib/difflib"
 )
 
 // Server is a language server for Goal files, which is a proxy for gopls
@@ -313,27 +314,36 @@ func (s *Server) writeGo(d *doc) {
 }
 
 // format responds to the given formatting request for the given Goal
-// file with its text formatted by goalfmt, which also fixes its imports.
+// file with the edits of formatting it with goalfmt, which also fixes its
+// imports: one for each range of lines that changed, as gopls does, so
+// that editors can apply the edits within a range of lines (to indent them).
 func (s *Server) format(d *doc, m *message) error {
 	s.mu.Lock()
-	text, filename, lines, enc := d.text, d.filename, d.lines, s.enc
+	text, filename := d.text, d.filename
 	s.mu.Unlock()
 	res, err := goalfmt.Source(filename, []byte(text), nil)
 	if err != nil {
 		e, _ := json.Marshal(map[string]any{"code": -32803, "message": err.Error()})
 		return s.client.write(&message{ID: m.ID, Error: e})
 	}
-	if bytes.Equal(res, []byte(text)) {
-		return s.client.write(&message{ID: m.ID, Result: json.RawMessage("[]")})
-	}
-	last := len(lines) - 1
-	edit := map[string]any{
-		"range": map[string]any{
-			"start": map[string]any{"line": 0, "character": 0},
-			"end":   map[string]any{"line": last, "character": enc.fromRune(lines[last], len([]rune(lines[last])))}},
-		"newText": string(res)}
-	b, _ := json.Marshal([]any{edit})
+	b, _ := json.Marshal(lineEdits(text, string(res)))
 	return s.client.write(&message{ID: m.ID, Result: b})
+}
+
+// lineEdits returns the edits that change the given text to the given new
+// text, replacing whole lines, one for each range of lines that changed.
+func lineEdits(text, res string) []any {
+	a, b := strings.SplitAfter(text, "\n"), strings.SplitAfter(res, "\n")
+	edits := []any{}
+	for _, op := range difflib.NewMatcher(a, b).GetOpCodes() {
+		if op.Tag == 'e' {
+			continue
+		}
+		edits = append(edits, map[string]any{
+			"range":   lspRange(op.I1, 0, op.I2, 0),
+			"newText": strings.Join(b[op.J1:op.J2], "")})
+	}
+	return edits
 }
 
 // goplsMessage handles the given message from gopls.
@@ -467,7 +477,7 @@ func (s *Server) diagnostics(d *doc, params json.RawMessage) error {
 			// the Go code of a line that is not the same as its source
 			if sl := d.code.SourceLine(goLine); sl >= 0 {
 				goCode := strings.TrimSpace(d.code.Lines[goLine])
-				if stripSpaces(goCode) != stripSpaces(line(d.lines, sl)) {
+				if !d.sameCode(sl) {
 					dm["message"] = toString(dm["message"]) + "\nGo: " + goCode
 					if fmt.Sprint(dm["severity"]) == "1" { // an error
 						d.goCode[sl] = goCode

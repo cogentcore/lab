@@ -186,6 +186,12 @@ func (s *Server) semanticTokens(d *doc, result json.RawMessage) json.RawMessage 
 		if !ok {
 			continue
 		}
+		// On a line whose Go code is not the same as its source, only the
+		// tokens with the same text in it are kept: not those of the code
+		// that the transpiler adds, such as the calls of tensor indexing.
+		if !d.sameCode(l) && !d.sameText(s.enc, ln, ch, t[2], l, c) {
+			continue
+		}
 		toks = append(toks, [5]int{l, c, t[2], t[3], t[4]})
 	}
 	s.mu.Unlock()
@@ -194,6 +200,9 @@ func (s *Server) semanticTokens(d *doc, result json.RawMessage) json.RawMessage 
 			return a[0] - b[0]
 		}
 		return a[1] - b[1]
+	})
+	toks = slices.CompactFunc(toks, func(a, b [5]int) bool { // at the same position
+		return a[0] == b[0] && a[1] == b[1]
 	})
 	out := make([]int, 0, 5*len(toks))
 	pl, pc := 0, 0
@@ -215,16 +224,29 @@ func (s *Server) semanticTokens(d *doc, result json.RawMessage) json.RawMessage 
 // inlayHints returns the given inlay hints of the Go code of the given
 // Goal file at their positions in the Goal file, with the Go code of the
 // lines with errors, when it is not the same as their source, after them.
+// The hints of the lines whose Go code is not the same as their source,
+// such as tensor indexing, are omitted, as they are about the Go code.
 func (s *Server) inlayHints(d *doc, result json.RawMessage) json.RawMessage {
 	res, ok := s.mapJSON(result, d, false)
 	if !ok {
 		res = json.RawMessage("[]")
 	}
-	var hints []any
+	var all []any
 	dec := json.NewDecoder(bytes.NewReader(res))
 	dec.UseNumber()
-	dec.Decode(&hints)
+	dec.Decode(&all)
 	s.mu.Lock()
+	hints := make([]any, 0, len(all))
+	for _, h := range all {
+		if hm, ok := h.(map[string]any); ok {
+			if p, ok := hm["position"].(map[string]any); ok {
+				if ln, ok := toInt(p["line"]); ok && !d.sameCode(ln) {
+					continue
+				}
+			}
+		}
+		hints = append(hints, h)
+	}
 	for sl, code := range d.goCode {
 		src := line(d.lines, sl)
 		hints = append(hints, map[string]any{
