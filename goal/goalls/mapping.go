@@ -215,16 +215,29 @@ func (s *Server) semanticTokens(d *doc, result json.RawMessage) json.RawMessage 
 // inlayHints returns the given inlay hints of the Go code of the given
 // Goal file at their positions in the Goal file, with the Go code of the
 // lines with errors, when it is not the same as their source, after them.
+// The hints of the lines whose Go code is not the same as their source,
+// such as tensor indexing, are omitted, as they are about the Go code.
 func (s *Server) inlayHints(d *doc, result json.RawMessage) json.RawMessage {
 	res, ok := s.mapJSON(result, d, false)
 	if !ok {
 		res = json.RawMessage("[]")
 	}
-	var hints []any
+	var all []any
 	dec := json.NewDecoder(bytes.NewReader(res))
 	dec.UseNumber()
-	dec.Decode(&hints)
+	dec.Decode(&all)
 	s.mu.Lock()
+	hints := make([]any, 0, len(all))
+	for _, h := range all {
+		if hm, ok := h.(map[string]any); ok {
+			if p, ok := hm["position"].(map[string]any); ok {
+				if ln, ok := toInt(p["line"]); ok && !d.sameCode(ln) {
+					continue
+				}
+			}
+		}
+		hints = append(hints, h)
+	}
 	for sl, code := range d.goCode {
 		src := line(d.lines, sl)
 		hints = append(hints, map[string]any{

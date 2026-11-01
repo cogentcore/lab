@@ -167,7 +167,7 @@ func TestServer(t *testing.T) {
 	doc := map[string]any{"uri": uri}
 
 	c.call("initialize", map[string]any{"processId": nil, "rootUri": filenameURI(dir), "capabilities": capabilities,
-		"initializationOptions": map[string]any{"semanticTokens": true, "hints": map[string]any{"assignVariableTypes": true}}}, nil)
+		"initializationOptions": map[string]any{"semanticTokens": true, "hints": map[string]any{"assignVariableTypes": true, "parameterNames": true}}}, nil)
 	c.notify("initialized", map[string]any{})
 	c.notify("textDocument/didOpen", map[string]any{"textDocument": map[string]any{"uri": uri, "languageId": "goal", "version": 1, "text": src}})
 
@@ -204,12 +204,14 @@ func TestServer(t *testing.T) {
 		Label    any      `json:"label"`
 	}
 	c.call("textDocument/inlayHint", map[string]any{"textDocument": doc, "range": lspRangeT{End: position{9, 0}}}, &hints)
-	// the type of x, and the Go code of the command with an error
-	if assert.Len(t, hints, 2) {
-		assert.Equal(t, position{5, 2}, hints[0].Position)
-		assert.Equal(t, position{7, 7}, hints[1].Position)
-		assert.Equal(t, `Go: goalrun.Run("ls", "-la")`, hints[1].Label)
+	// the type of x, the parameter of Println, and the Go code of the
+	// command with an error, without the hints of the Go code of the
+	// command, which is not the same as its source
+	got := map[position]string{}
+	for _, h := range hints {
+		got[h.Position] = labelText(h.Label)
 	}
+	assert.Equal(t, map[position]string{{5, 2}: "int", {6, 13}: "a...:", {7, 7}: `Go: goalrun.Run("ls", "-la")`}, got)
 
 	var toks struct {
 		Data []int `json:"data"`
@@ -309,4 +311,53 @@ func TestApplyChange(t *testing.T) {
 	assert.Equal(t, "aQyz\n", applyChange(text, utf16Encoding, 0, 1, 1, 1, "Q"))
 	assert.Equal(t, 4, utf16Encoding.fromRune("aé😀b", 3))
 	assert.Equal(t, 3, utf16Encoding.toRune("aé😀b", 4))
+}
+
+// labelText returns the text of the given label of an inlay hint,
+// which is a string or a list of parts with values.
+func labelText(label any) string {
+	if s, ok := label.(string); ok {
+		return s
+	}
+	parts, _ := label.([]any)
+	txt := ""
+	for _, p := range parts {
+		if pm, ok := p.(map[string]any); ok {
+			txt += toString(pm["value"])
+		}
+	}
+	return txt
+}
+
+// TestServerHints tests that the inlay hints of the lines of a Goal file
+// whose Go code is not the same as their source are omitted.
+func TestServerHints(t *testing.T) {
+	c := newTestClient(t)
+	dir := t.TempDir()
+	t.Setenv("GOWORK", "off")
+	os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module demo\n\ngo 1.21\n"), 0644)
+	// goalrun is defined, so that the Go code of the command has hints
+	src := "package main\n\ntype runner struct{}\n\nfunc (runner) Run(cmd ...any) {}\n\nvar goalrun runner\n\nfunc show(msg string) {}\n\nfunc main() {\n\tls -la\n\tshow(\"hi\")\n}\n"
+	fname := filepath.Join(dir, "main.goal")
+	os.WriteFile(fname, []byte(src), 0644)
+	uri := filenameURI(fname)
+	c.call("initialize", map[string]any{"processId": nil, "rootUri": filenameURI(dir), "capabilities": capabilities,
+		"initializationOptions": map[string]any{"hints": map[string]any{"parameterNames": true}}}, nil)
+	c.notify("initialized", map[string]any{})
+	c.notify("textDocument/didOpen", map[string]any{"textDocument": map[string]any{"uri": uri, "languageId": "goal", "version": 1, "text": src}})
+	c.waitDiags(uri, func(ds []diagnostic) bool { return true })
+	var hints []struct {
+		Position position `json:"position"`
+		Label    any      `json:"label"`
+	}
+	deadline := time.Now().Add(30 * time.Second)
+	for len(hints) == 0 && time.Now().Before(deadline) {
+		c.call("textDocument/inlayHint", map[string]any{"textDocument": map[string]any{"uri": uri}, "range": lspRangeT{End: position{14, 0}}}, &hints)
+	}
+	got := map[position]string{}
+	for _, h := range hints {
+		got[h.Position] = labelText(h.Label)
+	}
+	// the hint of show, but not that of Run, in the Go code of ls -la
+	assert.Equal(t, map[position]string{{12, 6}: "msg:"}, got)
 }
