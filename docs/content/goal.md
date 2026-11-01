@@ -38,6 +38,20 @@ Goal can also be used in conjunction with [[gosl]] to build programs that transp
 go install cogentcore.org/lab/goal/cmd/goal@latest
 ```
 
+## Editor support
+
+The `goalimports` tool (in [goalimports](goal/cmd/goalimports)) reformats a Goal file in the same way that the [goimports](https://pkg.go.dev/golang.org/x/tools/cmd/goimports) tool does, fixing the imports section and reformatting the code into the standard Go format style. You can configure your editor to run this on `.goal` files. It uses the offical Go version, run on the transpiled Go code, and projects any changes back to the .goal file, thus avoiding the need for a full Goal reformatting / parsing system.
+
+The `goalls` is a version of the [gopls](https://pkg.go.dev/golang.org/x/tools/gopls) language server implementing the [LSP](https://microsoft.github.io/language-server-protocol/) language server protocol for Goal files. It directly uses gopls, operating on the transpiled Go code, and projects everything back into the Goal source, again avoiding the need for a full Goal language version. It should be updated whenever gopls is updated, and can be used as a replacement for gopls because it handless both Go and Goal files.
+
+To install:
+
+```sh
+go install cogentcore.org/lab/goal/cmd/goalimports@latest
+go install cogentcore.org/lab/goal/cmd/goalls@latest
+```
+
+These are also installed by the `core` tool in the [CogentCore](https://cogentcore.org/core) system.
 
 ## Goal pages
 

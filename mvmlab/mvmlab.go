@@ -14,12 +14,15 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"strings"
 
+	"cogentcore.org/core/content"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/mvmcore"
 	"cogentcore.org/core/mvmcore/coresymbols"
 	"cogentcore.org/core/text/terminal"
 	"cogentcore.org/core/text/textcore"
+	"cogentcore.org/lab/goal/goalfmt"
 	"cogentcore.org/lab/goal/interpreter"
 	"cogentcore.org/lab/mvmlab/labsymbols"
 	"cogentcore.org/lab/tensorfs"
@@ -29,6 +32,23 @@ func init() {
 	mvmcore.Interpreters["Goal"] = func(out io.Writer) (mvmcore.Interpreter, error) {
 		return NewInterpreter(out)
 	}
+	content.FormatCode["Goal"] = FormatGoal
+}
+
+// FormatGoal formats the given Goal code of a code block, as gofmt
+// formats Go code, with goalfmt. It is the function for Goal code in
+// [content.FormatCode], which formats the code of code blocks when it is
+// edited. The code is a script, whose imports are not in its source.
+func FormatGoal(src string) (string, error) {
+	res, err := goalfmt.Source("code.goal", []byte(src), &goalfmt.Options{FormatOnly: true})
+	if err != nil {
+		return src, err
+	}
+	out := string(res)
+	if !strings.HasSuffix(src, "\n") {
+		out = strings.TrimSuffix(out, "\n")
+	}
+	return out, nil
 }
 
 // BindTextEditor is [mvmcore.BindTextEditor], with the Goal interpreter

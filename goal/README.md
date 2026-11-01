@@ -56,3 +56,11 @@ The rationale and mnemonics for using `$` and `#` are as follows:
 
 * `#` is commonly used to refer to numbers. It is also often used as a comment syntax, but on balance the number semantics and uniqueness relative to Go syntax outweigh that issue.
 
+
+## Tools for Goal files
+
+Goal code is transpiled to Go code with each line of Goal code on its own line, with a map between the positions of the two (see `transpile.TranspileGo`), so that the standard tools for Go code can be used for Goal code, without ever parsing Goal:
+
+* `goalimports` formats Goal files as `gofmt` does, and fixes their imports as `goimports` does, using them on the Go code and mapping their changes back (see package `goalfmt`). Its usage is that of `goimports`: `go install cogentcore.org/lab/goal/cmd/goalimports@latest`.
+
+* `goalls` is a language server for editors, which is a proxy for `gopls` that works for both Go and Goal files, so it is used instead of `gopls`: errors, completion, hover, go to definition, references, rename, inlay hints, semantic tokens, and formatting (with `goalimports`) all work in Goal files. It also writes the Go file of a Goal file when it is saved, as `goal build` does (unless `-nowrite` is given). Install it with `go install cogentcore.org/lab/goal/cmd/goalls@latest`, and configure your editor to use it for `.go` and `.goal` files, instead of `gopls`. Cogent Code uses it automatically when it is installed.

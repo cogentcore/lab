@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"cogentcore.org/core/content"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/styles"
@@ -131,4 +132,15 @@ func TestInteractiveTerminal(t *testing.T) {
 	tm.SendText("\x04")
 	b.AsyncUnlock()
 	waitFor("the second end", func(s string) bool { return strings.Count(s, "[process exited]") == 2 })
+}
+
+func TestFormatGoal(t *testing.T) {
+	// the Goal code of a code block is formatted when it is edited
+	f := content.FormatCode["Goal"]
+	if !assert.NotNil(t, f) {
+		return
+	}
+	res, err := f("x:=1\n  for i := range 3 {\nfmt.Println(i, x)\n}\nls -la\n##\ny := zeros(3)\n##")
+	assert.NoError(t, err)
+	assert.Equal(t, "x := 1\nfor i := range 3 {\n\tfmt.Println(i, x)\n}\nls -la\n##\ny := zeros(3)\n##", res)
 }
