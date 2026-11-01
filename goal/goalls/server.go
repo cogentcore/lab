@@ -477,7 +477,7 @@ func (s *Server) diagnostics(d *doc, params json.RawMessage) error {
 			// the Go code of a line that is not the same as its source
 			if sl := d.code.SourceLine(goLine); sl >= 0 {
 				goCode := strings.TrimSpace(d.code.Lines[goLine])
-				if stripSpaces(goCode) != stripSpaces(line(d.lines, sl)) {
+				if !d.sameCode(sl) {
 					dm["message"] = toString(dm["message"]) + "\nGo: " + goCode
 					if fmt.Sprint(dm["severity"]) == "1" { // an error
 						d.goCode[sl] = goCode
