@@ -27,6 +27,10 @@ type Client struct {
 	conn *grpc.ClientConn
 
 	client pb.BareMetalClient
+
+	// started is when [Client.StartServer] started the server,
+	// so that it is not started again while it is starting.
+	started time.Time
 }
 
 func NewClient() *Client {

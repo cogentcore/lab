@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"testing"
 	"time"
 
 	"cogentcore.org/core/base/errors"
@@ -197,6 +198,11 @@ func (sr *Simmer) openProject(fn string) error {
 	sr.UpdateScripts() // automatically runs lowercase init scripts
 	if err := sr.connectServer(); err != nil {
 		core.ErrorSnackbar(sr, err)
+	}
+	if !sr.IsSlurm() && sr.BareMetal != nil && !testing.Testing() {
+		if err := sr.BareMetal.StartServer(); err != nil {
+			core.ErrorSnackbar(sr, err)
+		}
 	}
 	RecentProjects.AddPath(fn, core.SystemSettings.SavedPathsMax)
 	saveRecentProjects()

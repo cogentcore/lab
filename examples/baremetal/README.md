@@ -2,7 +2,7 @@
 
 Bare metal is a simple compute job manager for bare metal machines, with the manager running on a local "client" (laptop), using the goal language ssh facilities to connect to the servers and execute all the management through that connection, so that nothing needs to be installed on the server.
 
-Jobs are submitted through an RPC connection (e.g., from `simrun`) also running on the local client typically.  The job itself consists of a gzipped tar file ("job blob") containing an executable script (chmod +x) that is run on a server, along with relevant metadata.
+Jobs are submitted through an RPC connection (e.g., from `simrun`) also running on the local client typically. When simmer opens a project that is not slurm, it starts the `baremetal` server if it is not already running (found on the `PATH` or in the Go bin directory), as `baremetal -window`: a separate process that runs the server in a terminal in its own window, and keeps running after simmer quits. Closing that window stops the server.  The job itself consists of a gzipped tar file ("job blob") containing an executable script (chmod +x) that is run on a server, along with relevant metadata.
 
 There is no attempt to prioritize jobs: it is just FIFO. The main function is just to manage a queue of jobs so that the compute resources are not overloaded, along with basic job monitoring for completion, canceling, etc.
 

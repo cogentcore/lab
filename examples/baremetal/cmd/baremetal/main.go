@@ -10,10 +10,14 @@ import (
 	"log"
 	"log/slog"
 	"net"
+	"os"
+	"strconv"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/logx"
 	"cogentcore.org/core/cli"
+	"cogentcore.org/core/core"
+	"cogentcore.org/core/text/terminal"
 	"cogentcore.org/lab/examples/baremetal"
 	pb "cogentcore.org/lab/examples/baremetal/baremetal"
 	"google.golang.org/grpc"
@@ -23,6 +27,10 @@ import (
 type Config struct {
 	// The server port number.
 	Port int `default:"8585"`
+
+	// Window runs the server in a terminal in its own window, which
+	// stops the server when it is closed. Simmer starts it this way.
+	Window bool
 }
 
 type server struct {
@@ -89,6 +97,9 @@ func main() {
 }
 
 func Run(cfg *Config) error {
+	if cfg.Window {
+		return runWindow(cfg)
+	}
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
 	if err != nil {
 		return errors.Log(fmt.Errorf("failed to listen: %v", err))
@@ -104,5 +115,26 @@ func Run(cfg *Config) error {
 		return errors.Log(fmt.Errorf("failed to serve: %v", err))
 	}
 	bms.bm.Interactive()
+	return nil
+}
+
+// runWindow runs the server, as this executable without -window, in a
+// terminal in its own window, unless the server is running already.
+func runWindow(cfg *Config) error {
+	cl := baremetal.NewClient()
+	cl.Host = fmt.Sprintf("localhost:%d", cfg.Port)
+	if cl.Running() {
+		return nil
+	}
+	exe, err := os.Executable()
+	if err != nil {
+		return errors.Log(err)
+	}
+	b := core.NewBody("BareMetal")
+	tm := terminal.NewTerminal(b).SetCommand(exe, "-port", strconv.Itoa(cfg.Port))
+	tm.OnExit(func(err error) {
+		core.MessageSnackbar(tm, "the baremetal server has exited: press a key to restart it")
+	})
+	b.RunMainWindow()
 	return nil
 }
