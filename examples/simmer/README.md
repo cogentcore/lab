@@ -1,7 +1,5 @@
 # Simmer: simulation running and monitoring infrastructure
 
-TODO: plot mean function on consat is losing the TrainEpoch fields
-
 "Watch your sims simmer on the GPU burners.."
 
 Simmer provides a Cogent Lab based GUI for running simulation jobs, and managing and analyzing the resulting data, using the plotcore Editor. It supports both slurm and [baremetal](../baremetal) job management systems.
@@ -10,7 +8,7 @@ The terminal at the bottom runs the interactive `goal` shell, in the app, with t
 
 # Projects
 
-Simmer works on one simulation project at a time, which you open from the `Open recent` menu, or the list of recent projects that it shows when it starts without one, or with `Open`. Each project opens in its own simmer app, so you can run the app from `/Applications` and open the projects of different simulations. Running `simmer` in the directory of a project opens it.
+Simmer works on one simulation project at a time, which you open from the `Open recent` menu, or the list of recent projects that it shows when it starts without one, or with `Open`. Each project opens in its own simmer app, so you can run the app once, and open the projects of different simulations. Running `simmer` in the directory of a project opens it.
 
 The settings of a project are in the `simmer.json` file in the directory of the simulation, which `Edit project` edits and saves. They include the `Server.SSH` user@host of the server, which is connected as `@1` in goal commands, and connected again after the network is lost.
 
@@ -22,8 +20,6 @@ with a `simdata` symbolic link to it in the directory of the simulation, and a `
 
 The server data goes into similar paths but starting with `~/simserver` instead.
 
-A project made before `simmer.json` has its settings moved to it from its `labscripts/defaults.goal` script when it is first opened, including the server from its `gossh` command. The script is then renamed to `defaults.goal.old`.
-
 # Server types
 
 ## Slurm
@@ -32,7 +28,7 @@ The slurm backend uses array jobs to distribute computation over many CPU nodes.
 
 ## Bare metal
 
-If not using slurm, then the [baremetal](../baremetal) system manages jobs itself, maintaining a record of the jobs launched relative to the resources available.
+If not using slurm, then the [baremetal](../baremetal) system manages jobs itself, maintaining a record of the jobs launched relative to the resources available. Simmer auto-launches and reconnects with baremetal, which runs in its own terminal window.
 
 baremetal can be run on localhost to manage jobs on your own local machine, using this config:
 
@@ -58,5 +54,9 @@ baremetal can be run on localhost to manage jobs on your own local machine, usin
 * `Plot` plots combined data across any selected files in `Results` tab, allowing you to compare them, using the `JobLabel` as a legend so each job has its own line color.
 
 * `Diff` shows a diff browser for any two selected Jobs, or one selected job vs. the current sim working directory -- key for tracking changes made across jobs.
+
+# TODO
+
+* consat: plot mean function on test epoch is losing the TrainEpoch fields
 
 

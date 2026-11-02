@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"testing"
 	"time"
 
 	"cogentcore.org/core/base/errors"
@@ -347,8 +348,25 @@ func (sr *Simmer) migrateProject() {
 // be connected, as when the network is down, it tries again every
 // [sshclient.Config.Timeout], and if the connection was lost, it connects
 // again (see [sshclient.Client.CheckConnection]). It is called before the
-// commands on the server.
+// commands on the server. For the projects that are not slurm, it also
+// starts the baremetal server if it is not running (see [Simmer.connectBareMetal]).
 func (sr *Simmer) connectServer() error {
+	return errors.Join(sr.connectBareMetal(), sr.connectSSH())
+}
+
+// connectBareMetal starts the baremetal server, for the projects that are
+// not slurm, if it is not running, as when it has been stopped, so that
+// the client connects to it (see [baremetal.Client.StartServer]). It is
+// called before the operations on the baremetal server.
+func (sr *Simmer) connectBareMetal() error {
+	if sr.IsSlurm() || sr.BareMetal == nil || testing.Testing() {
+		return nil
+	}
+	return sr.BareMetal.StartServer()
+}
+
+// connectSSH connects to the server of the project (see [Simmer.connectServer]).
+func (sr *Simmer) connectSSH() error {
 	ssh := sr.Project.Server.SSH
 	if ssh == "" {
 		return nil

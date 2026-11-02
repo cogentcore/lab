@@ -5,24 +5,46 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	_ "embed"
 	"fmt"
+	"image"
+	"io/fs"
 	"log"
 	"log/slog"
 	"net"
+	"os"
+	"path/filepath"
+	"strconv"
+	"sync/atomic"
+	"time"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/logx"
 	"cogentcore.org/core/cli"
+	"cogentcore.org/core/core"
+	"cogentcore.org/core/events"
+	"cogentcore.org/core/icons"
+	"cogentcore.org/core/text/terminal"
 	"cogentcore.org/lab/examples/baremetal"
 	pb "cogentcore.org/lab/examples/baremetal/baremetal"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+// appIcon is the icon of the window, and of the app in the Dock on macOS.
+//
+//go:embed icon.svg
+var appIcon string
+
 type Config struct {
 	// The server port number.
 	Port int `default:"8585"`
+
+	// Window runs the server in a terminal in its own window, which
+	// stops the server when it is closed. Simmer starts it this way.
+	Window bool
 }
 
 type server struct {
@@ -82,13 +104,18 @@ func (s *server) RecoverJob(_ context.Context, in *pb.Job) (*pb.Job, error) {
 }
 
 func main() {
-	logx.UserLevel = slog.LevelInfo
 	opts := cli.DefaultOptions("baremetal", "Bare metal server for job running on bare servers over ssh")
 	cfg := &Config{}
 	cli.Run(opts, cfg, Run)
 }
 
 func Run(cfg *Config) error {
+	if cfg.Window {
+		return runWindow(cfg)
+	}
+	// the log is the output of the server, so it shows the info messages,
+	// which cli does not by default (see [logx.LevelFromFlags]).
+	logx.UserLevel = min(logx.UserLevel, slog.LevelInfo)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Port))
 	if err != nil {
 		return errors.Log(fmt.Errorf("failed to listen: %v", err))
@@ -105,4 +132,94 @@ func Run(cfg *Config) error {
 	}
 	bms.bm.Interactive()
 	return nil
+}
+
+// runWindow runs the server, as this executable without -window, in a
+// terminal in its own window, unless the server is running already.
+// The context menu of the terminal has items to edit the config of
+// the servers and to restart the server.
+func runWindow(cfg *Config) error {
+	cl := baremetal.NewClient()
+	cl.Host = fmt.Sprintf("localhost:%d", cfg.Port)
+	if cl.Running() {
+		return nil
+	}
+	exe, err := os.Executable()
+	if err != nil {
+		return errors.Log(err)
+	}
+	core.AppIcon = appIcon
+	b := core.NewBody("BareMetal")
+	tm := terminal.NewTerminal(b).SetCommand(exe, "-port", strconv.Itoa(cfg.Port))
+	var restarting atomic.Bool // no exit message while restarting
+	tm.OnExit(func(err error) {
+		if !restarting.Load() {
+			core.MessageSnackbar(tm, "the baremetal server has exited: press a key to restart it")
+		}
+	})
+	tm.AddContextMenu(func(m *core.Scene, pos image.Point) {
+		core.NewButton(m).SetText("Config").SetIcon(icons.Settings).
+			OnClick(func(e events.Event) {
+				editConfig(tm)
+			})
+		core.NewButton(m).SetText("Restart").SetIcon(icons.Refresh).
+			OnClick(func(e events.Event) {
+				restarting.Store(true)
+				restartServer(tm, cl, func() { restarting.Store(false) })
+			})
+	})
+	b.RunMainWindow()
+	return nil
+}
+
+// editConfig edits the config of the servers in a form,
+// saving it to the config.toml file when the form is closed,
+// if it has been changed.
+func editConfig(tm *terminal.Terminal) {
+	file := baremetal.NewBareMetal().ConfigFile()
+	cf := &baremetal.Config{}
+	if err := cf.Open(file); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		core.ErrorSnackbar(tm, err)
+	}
+	orig, _ := cf.Bytes() // to save only when changed
+	d := core.NewBody("BareMetal config")
+	core.NewText(d).SetType(core.TextSupporting).SetText(file + ": restart the server to use the changes")
+	core.NewForm(d).SetStruct(cf)
+	d.OnClose(func(e events.Event) {
+		if b, err := cf.Bytes(); err == nil && bytes.Equal(b, orig) {
+			return
+		}
+		if err := os.MkdirAll(filepath.Dir(file), 0777); err != nil {
+			core.ErrorSnackbar(tm, err)
+			return
+		}
+		if err := cf.Save(file); err != nil {
+			core.ErrorSnackbar(tm, err)
+			return
+		}
+		core.MessageSnackbar(tm, "Saved the config: restart the server to use it")
+	})
+	d.RunWindowDialog(tm)
+}
+
+// restartServer restarts the server in the given terminal, after the
+// running one has ended and closed its port, calling done after.
+func restartServer(tm *terminal.Terminal, cl *baremetal.Client, done func()) {
+	tm.Stop()
+	go func() {
+		defer done()
+		for range 50 {
+			if !tm.IsRunning() && !cl.Running() {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		em := tm.Emulator() // after the exit message, as on a key
+		em.Lock()
+		em.WriteString("\r\n")
+		em.Unlock()
+		tm.AsyncLock()
+		errors.Log(tm.Restart())
+		tm.AsyncUnlock()
+	}()
 }

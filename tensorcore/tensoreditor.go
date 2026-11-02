@@ -404,7 +404,7 @@ func (tb *TensorEditor) MakeToolbar(p *tree.Plan) {
 }
 
 func (tb *TensorEditor) MimeDataType() string {
-	return fileinfo.DataCsv
+	return fileinfo.DataCSV
 }
 
 // CopySelectToMime copies selected rows to mime data
@@ -426,7 +426,7 @@ func (tb *TensorEditor) CopySelectToMime() mimedata.Mimes {
 func (tb *TensorEditor) FromMimeData(md mimedata.Mimes) [][]string {
 	var recs [][]string
 	for _, d := range md {
-		if d.Type == fileinfo.DataCsv {
+		if d.Type == fileinfo.DataCSV {
 			// b := bytes.NewBuffer(d.Data)
 			// cr := csv.NewReader(b)
 			// cr.Comma = tensor.Tab.Rune()

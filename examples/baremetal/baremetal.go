@@ -95,13 +95,17 @@ func (bm *BareMetal) dataDir() string {
 	return filepath.Join(usr.HomeDir, "Library")
 }
 
+// ConfigFile returns the path of the config.toml file with the servers.
+func (bm *BareMetal) ConfigFile() string {
+	return filepath.Join(bm.dataDir(), "BareMetal", "config.toml")
+}
+
 // config loads a toml format config file from
 // TheApp.DataDir()/BareMetal/config.toml to load the servers.
 // Use [[Servers.Values]] header for each server.
 func (bm *BareMetal) config() {
-	dir := filepath.Join(bm.dataDir(), "BareMetal")
-	os.MkdirAll(dir, 0777)
-	file := filepath.Join(dir, "config.toml")
+	file := bm.ConfigFile()
+	os.MkdirAll(filepath.Dir(file), 0777)
 	if !goalib.FileExists(file) {
 		slog.Error("BareMetal config file not found: no servers will be configured", "File location:", file)
 		return

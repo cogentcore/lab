@@ -1,0 +1,24 @@
+<svg
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+  xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+    id="namedview716"
+    style="inkscape:current-layer:;inkscape:cx:0;inkscape:cy:0;inkscape:zoom:1;inkscape:document-units:px;">
+    <inkscape:grid
+      id="grid259"
+      style="spacingx:32;spacingy:32;type:xygrid;units:px;" />
+  </sodipodi:namedview>
+  <path
+    id="path188"
+    style="fill:#005bc0;"
+    d="M18 23H6C3.2 23 1 20.8 1 18V6C1 3.2 3.2 1 6 1H18C20.8 1 23 3.2 23 6V18C23 20.8 20.8 23 18 23z" />
+  <path
+    id="path133"
+    style="fill:#FBBD0E;fill-opacity:1;fill-rule:nonzero;"
+    d="M18.48 21.91Q18.3 21.85 18.16 21.7L13.06 16.6Q12.91 16.45 12.85 16.27Q12.79 16.09 12.78 15.9Q12.77 15.71 12.84 15.52Q12.91 15.33 13.05 15.19L15.18 13.06Q15.33 12.91 15.5 12.85Q15.67 12.79 15.88 12.79Q16.09 12.79 16.26 12.85Q16.43 12.91 16.58 13.06L21.68 18.16Q21.83 18.31 21.89 18.48Q21.95 18.65 21.95 18.86Q21.95 19.07 21.89 19.24Q21.83 19.41 21.68 19.56L19.55 21.7Q19.4 21.85 19.23 21.91Q19.06 21.97 18.85 21.97Q18.64 21.97 18.47 21.91zM18.86 19.6L19.59 18.87L15.9 15.2L15.18 15.92zM4.74 21.93Q4.55 21.85 4.4 21.7L2.3 19.6Q2.15 19.45 2.07 19.26Q1.99 19.07 2 18.88Q2.01 18.69 2.08 18.5Q2.15 18.31 2.3 18.18L7.6 12.88H9.73L10.58 12.03L6.45 7.9H5.03L2 4.88L4.83 2.05L7.85 5.07V6.5L11.98 10.63L14.88 7.73L13.8 6.65L15.2 5.25H12.38L11.68 4.55L15.23 1L15.93 1.7V4.52L17.33 3.12L20.88 6.67Q21.3 7.1 21.53 7.64Q21.75 8.18 21.75 8.78Q21.75 9.38 21.53 9.929999Q21.3 10.48 20.88 10.9L18.75 8.77L17.35 10.17L16.3 9.13L11.13 14.3V16.4L5.83 21.7Q5.68 21.85 5.5 21.93Q5.33 22 5.13 22Q4.93 22 4.74 21.93zM5.13 19.6L9.38 15.35V14.63H8.65L4.4 18.88zM5.13 19.6L4.4 18.88L4.78 19.23zM18.86 19.6L19.59 18.87L18.85 19.6z" />
+</svg>
