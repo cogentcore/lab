@@ -1,8 +1,14 @@
 # Bare Metal
 
-Bare metal is a simple compute job manager for bare metal machines, with the manager running on a local "client" (laptop), using the goal language ssh facilities to connect to the servers and execute all the management through that connection, so that nothing needs to be installed on the server.
+Bare metal is a simple compute job manager for bare metal machines, with the manager running on a local "client" (laptop), using the [goal](https://cogentcore.org/lab/goal) language ssh facilities to connect to the servers and execute all the management through that connection, so that nothing needs to be installed on the server (other than whatever software is needed to actually compile and run the simulations themselves, of course!).
 
-Jobs are submitted through an RPC connection (e.g., from `simrun`) also running on the local client typically. When simmer opens a project that is not slurm, it starts the `baremetal` server if it is not already running (found on the `PATH` or in the Go bin directory), as `baremetal -window`: a separate process that runs the server in a terminal in its own window, and keeps running after simmer quits. Closing that window stops the server. The context menu of its terminal has a Config item, to edit the servers in the `config.toml` file (saved when its window is closed), and a Restart item, to restart the server, as for the changes in the config.  The job itself consists of a gzipped tar file ("job blob") containing an executable script (chmod +x) that is run on a server, along with relevant metadata.
+`baremetal -window`: opens a separate process that runs the server in a terminal in its own window, and keeps running after simmer quits. Closing that window stops the server.
+
+The context menu of its terminal has a `Config` item, to edit the servers in the `config.toml` file (saved when its window is closed), and a `Restart` item, to restart the server, as for the changes in the config or if the baremetal process somehow terminates.
+
+Jobs are submitted through an RPC connection (e.g., from [simmer](../simmer)) also running on the local client typically. When simmer opens a project that is not slurm, it starts the `baremetal` server if it is not already running (found on the `PATH` or in the Go bin directory).
+
+The job itself consists of a gzipped tar file ("job blob") containing an executable script (chmod +x) that is run on a server, along with relevant metadata.
 
 There is no attempt to prioritize jobs: it is just FIFO. The main function is just to manage a queue of jobs so that the compute resources are not overloaded, along with basic job monitoring for completion, canceling, etc.
 
