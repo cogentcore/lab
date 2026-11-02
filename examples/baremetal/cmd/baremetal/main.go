@@ -7,6 +7,7 @@ package main
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"fmt"
 	"image"
 	"io/fs"
@@ -31,6 +32,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
+
+// appIcon is the icon of the window, and of the app in the Dock on macOS.
+//
+//go:embed icon.svg
+var appIcon string
 
 type Config struct {
 	// The server port number.
@@ -142,6 +148,7 @@ func runWindow(cfg *Config) error {
 	if err != nil {
 		return errors.Log(err)
 	}
+	core.AppIcon = appIcon
 	b := core.NewBody("BareMetal")
 	tm := terminal.NewTerminal(b).SetCommand(exe, "-port", strconv.Itoa(cfg.Port))
 	var restarting atomic.Bool // no exit message while restarting
