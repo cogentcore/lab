@@ -256,7 +256,7 @@ func (fn *FileNode) OpenFile() error {
 				})
 			})
 			d.RunDialog(fn)
-		case fileinfo.Toml:
+		case fileinfo.TOML:
 			ts.AsLab().EditorFile(df, string(fn.Filepath))
 
 		default:

@@ -659,7 +659,7 @@ func (tb *Table) MakeToolbar(p *tree.Plan) {
 }
 
 func (tb *Table) MimeDataType() string {
-	return fileinfo.DataCsv
+	return fileinfo.DataCSV
 }
 
 // CopySelectToMime copies selected rows to mime data
@@ -678,7 +678,7 @@ func (tb *Table) CopySelectToMime() mimedata.Mimes {
 	var b bytes.Buffer
 	ix.WriteCSV(&b, tensor.Tab, table.Headers)
 	md := mimedata.NewTextBytes(b.Bytes())
-	md[0].Type = fileinfo.DataCsv
+	md[0].Type = fileinfo.DataCSV
 	return md
 }
 
@@ -686,7 +686,7 @@ func (tb *Table) CopySelectToMime() mimedata.Mimes {
 func (tb *Table) FromMimeData(md mimedata.Mimes) [][]string {
 	var recs [][]string
 	for _, d := range md {
-		if d.Type == fileinfo.DataCsv {
+		if d.Type == fileinfo.DataCSV {
 			b := bytes.NewBuffer(d.Data)
 			cr := csv.NewReader(b)
 			cr.Comma = tensor.Tab.Rune()
