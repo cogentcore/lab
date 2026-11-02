@@ -5,6 +5,7 @@
 package baremetal
 
 import (
+	"context"
 	"fmt"
 	"go/build"
 	"net"
@@ -13,6 +14,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
+
+	"google.golang.org/grpc/connectivity"
 )
 
 // Running returns whether the server is listening at [Client.Host].
@@ -26,12 +29,18 @@ func (cl *Client) Running() bool {
 }
 
 // StartServer starts the baremetal server in a terminal in its own window
-// if it is not running, as a separate process that keeps running after
-// this one ends (see the -window option of the baremetal command). The
-// client connects to it when it is up (see [Client.Connect]).
+// if it is not running, as when it has been stopped, as a separate process
+// that keeps running after this one ends (see the -window option of the
+// baremetal command). It waits a few seconds for the server to be up, and
+// then has the client connect to it right away, instead of after the
+// backoff of its connection (see [Client.Connect]).
 func (cl *Client) StartServer() error {
-	if cl.Running() || time.Since(cl.started) < time.Minute {
+	if cl.Running() {
+		cl.started = time.Time{}
 		return nil
+	}
+	if time.Since(cl.started) < time.Minute {
+		return nil // still starting, or it failed to start
 	}
 	exe, err := ServerExecutable()
 	if err != nil {
@@ -48,7 +57,31 @@ func (cl *Client) StartServer() error {
 	}
 	cl.started = time.Now()
 	go cmd.Wait()
+	cl.waitServer(10 * time.Second)
 	return nil
+}
+
+// waitServer waits up to the given time for the server to be up and the
+// client to be connected to it, connecting right away, instead of after
+// the backoff of its connection, which fails the calls while it lasts.
+func (cl *Client) waitServer(wait time.Duration) {
+	ctx, cancel := context.WithTimeout(context.Background(), wait)
+	defer cancel()
+	for !cl.Running() && ctx.Err() == nil {
+		time.Sleep(100 * time.Millisecond)
+	}
+	if cl.conn == nil {
+		return
+	}
+	cl.conn.ResetConnectBackoff()
+	for st := cl.conn.GetState(); st != connectivity.Ready; st = cl.conn.GetState() {
+		if st == connectivity.Idle {
+			cl.conn.Connect()
+		}
+		if !cl.conn.WaitForStateChange(ctx, st) {
+			return
+		}
+	}
 }
 
 // ServerExecutable returns the path of the baremetal executable: on the

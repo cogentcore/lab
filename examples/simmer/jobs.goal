@@ -31,6 +31,7 @@ func (sr *Simmer) Jobs() { //types:add
 	ts := sr.Tabs.AsLab()
 	if !sr.IsSlurm() {
 		// todo: get data back from server
+		errors.Log(sr.connectBareMetal())
 		sr.BareMetalActive = errors.Log1(sr.BareMetal.JobStatus())
 	 	at := ts.SliceTable("Bare", &sr.BareMetalActive)
 		if sr.BareMetalActiveTable != at {
