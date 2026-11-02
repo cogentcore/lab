@@ -55,11 +55,13 @@ func (sv *Server) OpenSSH() {
 // as gossh does, without making it the active host.
 func (sv *Server) connect() error {
 	sv.lastConnect = time.Now()
+	slog.Info("BareMetal: connecting to server", "Server", sv.Name, "SSH", sv.SSH)
 	cl := sshclient.NewClient(goalrun.SSH)
 	if err := cl.Connect(sv.SSH); err != nil {
 		return err
 	}
 	goalrun.SSHClients[sv.Name] = cl
+	slog.Info("BareMetal: connected to server", "Server", sv.Name, "SSH", sv.SSH)
 	return nil
 }
 
