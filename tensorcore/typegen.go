@@ -96,7 +96,7 @@ func (t *Table) SetSortDescending(v bool) *Table { t.SortDescending = v; return 
 // The other columns have automatic widths.
 func (t *Table) SetColumnWidths(v map[string]float32) *Table { t.ColumnWidths = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/tensorcore.TensorEditor", IDName: "tensor-editor", Doc: "TensorEditor provides a GUI widget for representing [tensor.Tensor] values.", Methods: []types.Method{{Name: "SaveCSV", Doc: "SaveTSV writes a tensor to a tab-separated-values (TSV) file.\nOuter-most dims are rows in the file, and inner-most is column --\nReading just grabs all values and doesn't care about shape.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}, Args: []string{"filename"}, Returns: []string{"error"}}, {Name: "OpenCSV", Doc: "OpenTSV reads a tensor from a tab-separated-values (TSV) file.\nusing the Go standard encoding/csv reader conforming\nto the official CSV standard.\nReads all values and assigns as many as fit.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}, Args: []string{"filename"}, Returns: []string{"error"}}}, Embeds: []types.Field{{Name: "ListBase"}}, Fields: []types.Field{{Name: "Tensor", Doc: "the tensor that we're a view of"}, {Name: "Layout", Doc: "overall layout options for tensor display"}, {Name: "NCols", Doc: "number of columns in table (as of last update)"}, {Name: "headerWidths", Doc: "headerWidths has number of characters in each header, per visfields"}, {Name: "colMaxWidths", Doc: "colMaxWidths records maximum width in chars of string type fields"}, {Name: "BlankString", Doc: "blank values for out-of-range rows"}, {Name: "BlankFloat"}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/tensorcore.TensorEditor", IDName: "tensor-editor", Doc: "TensorEditor provides a GUI widget for representing [tensor.Tensor] values.", Methods: []types.Method{{Name: "SaveCSV", Doc: "SaveTSV writes a tensor to a tab-separated-values (TSV) file.\nOuter-most dims are rows in the file, and inner-most is column --\nReading just grabs all values and doesn't care about shape.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}, Args: []string{"filename"}, Returns: []string{"error"}}, {Name: "OpenCSV", Doc: "OpenTSV reads a tensor from a tab-separated-values (TSV) file.\nusing the Go standard encoding/csv reader conforming\nto the official CSV standard.\nReads all values and assigns as many as fit.", Directives: []types.Directive{{Tool: "types", Directive: "add"}}, Args: []string{"filename"}, Returns: []string{"error"}}}, Embeds: []types.Field{{Name: "ListBase"}}, Fields: []types.Field{{Name: "Tensor", Doc: "the tensor that we're a view of"}, {Name: "Layout", Doc: "overall layout options for tensor display"}, {Name: "NCols", Doc: "number of columns in table (as of last update)"}, {Name: "headerWidths", Doc: "headerWidths has number of characters in each header, per visfields"}, {Name: "colMaxWidths", Doc: "colMaxWidths records maximum width in chars of string type fields"}, {Name: "ColumnWidths", Doc: "ColumnWidths are the widths of the columns, in Dp, by column header,\nfor those whose widths are set, as the user does by dragging the\nhandles between the column headers, which sends a change event.\nThe other columns have automatic widths."}, {Name: "BlankString", Doc: "blank values for out-of-range rows"}, {Name: "BlankFloat"}}})
 
 // NewTensorEditor returns a new [TensorEditor] with the given optional parent:
 // TensorEditor provides a GUI widget for representing [tensor.Tensor] values.
@@ -105,6 +105,16 @@ func NewTensorEditor(parent ...tree.Node) *TensorEditor { return tree.New[Tensor
 // SetNCols sets the [TensorEditor.NCols]:
 // number of columns in table (as of last update)
 func (t *TensorEditor) SetNCols(v int) *TensorEditor { t.NCols = v; return t }
+
+// SetColumnWidths sets the [TensorEditor.ColumnWidths]:
+// ColumnWidths are the widths of the columns, in Dp, by column header,
+// for those whose widths are set, as the user does by dragging the
+// handles between the column headers, which sends a change event.
+// The other columns have automatic widths.
+func (t *TensorEditor) SetColumnWidths(v map[string]float32) *TensorEditor {
+	t.ColumnWidths = v
+	return t
+}
 
 // SetBlankString sets the [TensorEditor.BlankString]:
 // blank values for out-of-range rows
