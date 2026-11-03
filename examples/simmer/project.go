@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"maps"
 	"os"
 	"os/exec"
 	"os/user"
@@ -243,6 +244,17 @@ func (sr *Simmer) SaveProject() {
 		return
 	}
 	errors.Log(jsonx.Save(&sr.Project, filepath.Join(sr.StartDir, ProjectFilename)))
+}
+
+// saveColumnWidths saves the given column widths of a table, set by
+// dragging the handles in its header, in the given widths of the project,
+// if they are changed, as the table also sends a change when it is sorted.
+func (sr *Simmer) saveColumnWidths(project *map[string]float32, widths map[string]float32) {
+	if maps.Equal(*project, widths) {
+		return
+	}
+	*project = maps.Clone(widths)
+	sr.SaveProject()
 }
 
 // EditProject edits the settings of the project, saving them.

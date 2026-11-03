@@ -174,3 +174,30 @@ func TestServerDataDir(t *testing.T) {
 	}()
 	assert.Equal(t, jobs, cl.Dir)
 }
+
+// TestColumnWidths tests that the column widths of the results table that
+// are set by dragging are saved in the project, and shown again.
+func TestColumnWidths(t *testing.T) {
+	sr := newTestSimmer(t)
+	sim := filepath.Join(t.TempDir(), "widthsim")
+	require.NoError(t, os.MkdirAll(filepath.Join(sim, "simdata", "jobs"), 0755))
+	fn := filepath.Join(sim, ProjectFilename)
+	require.NoError(t, jsonx.Save(&Project{Name: "widthsim", ResultsColumnWidths: map[string]float32{"Label": 90}}, fn))
+	require.NoError(t, sr.openProject(fn))
+
+	sr.Reset()
+	tv := sr.ResultsTableView
+	require.NotNil(t, tv)
+	assert.Equal(t, map[string]float32{"Label": 90}, tv.ColumnWidths, "shown from the project")
+	tv.ColumnWidths["Message"] = 200 // as by dragging its handle
+	tv.SendChange()
+	var pr Project
+	require.NoError(t, jsonx.Open(&pr, fn))
+	assert.Equal(t, map[string]float32{"Label": 90, "Message": 200}, pr.ResultsColumnWidths, "saved")
+
+	sr.Project.ResultsColumnWidths["Message"] = 150 // the view has a copy
+	assert.Equal(t, float32(200), tv.ColumnWidths["Message"])
+	sr.saveColumnWidths(&sr.Project.JobsColumnWidths, map[string]float32{"JobID": 80})
+	require.NoError(t, jsonx.Open(&pr, fn))
+	assert.Equal(t, map[string]float32{"JobID": 80}, pr.JobsColumnWidths)
+}
