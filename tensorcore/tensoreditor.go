@@ -43,13 +43,22 @@ type TensorEditor struct {
 	// colMaxWidths records maximum width in chars of string type fields
 	colMaxWidths []int `set:"-" copier:"-" json:"-" xml:"-"`
 
+	// ColumnWidths are the widths of the columns, in Dp, by column header,
+	// for those whose widths are set, as the user does by dragging the
+	// handles between the column headers, which sends a change event.
+	// The other columns have automatic widths.
+	ColumnWidths map[string]float32
+
 	// blank values for out-of-range rows
 	BlankString string
 	BlankFloat  float64
 }
 
 // check for interface impl
-var _ core.Lister = (*TensorEditor)(nil)
+var (
+	_ core.Lister        = (*TensorEditor)(nil)
+	_ core.ColumnWidther = (*TensorEditor)(nil)
+)
 
 func (tb *TensorEditor) Init() {
 	tb.ListBase.Init()
@@ -99,7 +108,15 @@ func (tb *TensorEditor) SliceIndex(i int) (si, vi int, invis bool) {
 
 // StyleValue performs additional value widget styling
 func (tb *TensorEditor) StyleValue(w core.Widget, s *styles.Style, row, col int) {
-	hw := float32(tb.headerWidths[col])
+	if tb.columnWidth(col) > 0 { // see [core.ColumnWidther]
+		s.SetTextWrap(false)
+		return
+	}
+	if col >= len(tb.headerWidths) {
+		return
+	}
+	// the header button has padding, and the handle after it
+	hw := float32(tb.headerWidths[col]) + 4
 	if len(tb.colMaxWidths) > col {
 		hw = max(float32(tb.colMaxWidths[col]), hw)
 	}
@@ -161,7 +178,7 @@ func (tb *TensorEditor) MakeHeader(p *tree.Plan) {
 		w.FinalStyler(func(s *styles.Style) {
 			s.Padding.Zero()
 			s.Grow.Set(0, 0)
-			s.Gap.Set(units.Em(0.5)) // matches grid default
+			s.Gap.Zero() // the widths of the columns include the gaps (see SizeFinal)
 		})
 		w.Maker(func(p *tree.Plan) {
 			if tb.ShowIndexes {
@@ -175,7 +192,7 @@ func (tb *TensorEditor) MakeHeader(p *tree.Plan) {
 			}
 			for fli := range tb.NCols {
 				hdr := tb.ColumnHeader(fli)
-				tree.AddAt(p, "head-"+hdr, func(w *core.Button) {
+				tree.AddAt(p, headerName(fli, hdr), func(w *core.Button) {
 					w.SetType(core.ButtonAction)
 					w.Styler(func(s *styles.Style) {
 						s.Justify.Content = styles.Start
@@ -186,6 +203,7 @@ func (tb *TensorEditor) MakeHeader(p *tree.Plan) {
 						tb.headerWidths[fli] = len(hdr)
 					})
 				})
+				makeColumnHandle(p, &tb.ListBase, &tb.ColumnWidths, fli, hdr)
 			}
 		})
 	})
@@ -201,6 +219,21 @@ func (tb *TensorEditor) ColumnHeader(col int) string {
 		}
 	}
 	return sitxt
+}
+
+// columnWidth returns the width of the given column, in Dp,
+// if it is set, or else 0, for the automatic width.
+func (tb *TensorEditor) columnWidth(col int) float32 {
+	if tb.Tensor == nil || col < 0 || col >= tb.NCols {
+		return 0
+	}
+	return tb.ColumnWidths[tb.ColumnHeader(col)]
+}
+
+// ColumnWidthDots returns the width of the given column in dots,
+// or 0 if it is automatic (see [core.ColumnWidther]).
+func (tb *TensorEditor) ColumnWidthDots(col int) float32 {
+	return columnWidthDots(&tb.ListBase, tb.columnWidth(col))
 }
 
 // SliceHeader returns the Frame header for slice grid
@@ -349,19 +382,7 @@ func (tb *TensorEditor) SizeFinal() {
 	tb.ListBase.SizeFinal()
 	lg := tb.ListGrid
 	sh := tb.SliceHeader()
-	sh.ForWidgetChildren(func(i int, cw core.Widget, cwb *core.WidgetBase) bool {
-		sgb := core.AsWidget(lg.Child(i))
-		gsz := &sgb.Geom.Size
-		if gsz.Actual.Total.X == 0 {
-			return tree.Continue
-		}
-		ksz := &cwb.Geom.Size
-		ksz.Actual.Total.X = gsz.Actual.Total.X
-		ksz.Actual.Content.X = gsz.Actual.Content.X
-		ksz.Alloc.Total.X = gsz.Alloc.Total.X
-		ksz.Alloc.Content.X = gsz.Alloc.Content.X
-		return tree.Continue
-	})
+	sizeHeader(&tb.ListBase, sh, tb.NCols)
 	gsz := &lg.Geom.Size
 	ksz := &sh.Geom.Size
 	if gsz.Actual.Total.X > 0 {

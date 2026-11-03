@@ -183,6 +183,14 @@ type Project struct {
 
 	// Submit has parameters for submitting jobs; set from last job run.
 	Submit SubmitParams
+
+	// JobsColumnWidths are the widths of the columns of the jobs table
+	// that are set by dragging the handles in its header, in Dp, by name.
+	JobsColumnWidths map[string]float32 `display:"-"`
+
+	// ResultsColumnWidths are the widths of the columns of the results
+	// table that are set by dragging the handles in its header, in Dp, by name.
+	ResultsColumnWidths map[string]float32 `display:"-"`
 	
 	// DataRoot is the path to the root of the data to browse.
 	DataRoot string  `edit:"-"`

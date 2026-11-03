@@ -52,6 +52,12 @@ type Table struct {
 	// whether current sort order is descending.
 	SortDescending bool
 
+	// ColumnWidths are the widths of the columns, in Dp, by column name,
+	// for those whose widths are set, as the user does by dragging the
+	// handles between the column headers, which sends a change event.
+	// The other columns have automatic widths.
+	ColumnWidths map[string]float32
+
 	// number of columns in table (as of last update).
 	nCols int `edit:"-"`
 
@@ -70,7 +76,10 @@ type Table struct {
 }
 
 // check for interface impl
-var _ core.Lister = (*Table)(nil)
+var (
+	_ core.Lister        = (*Table)(nil)
+	_ core.ColumnWidther = (*Table)(nil)
+)
 
 func (tb *Table) Init() {
 	tb.ListBase.Init()
@@ -121,10 +130,16 @@ func (tb *Table) SliceIndex(i int) (si, vi int, invis bool) {
 
 // StyleValue performs additional value widget styling
 func (tb *Table) StyleValue(w core.Widget, s *styles.Style, row, col int) {
-	hw := float32(tb.headerWidths[col])
-	if col == tb.SortIndex {
-		hw += 6
+	if tb.columnWidth(col) > 0 { // see [core.ColumnWidther]
+		s.SetTextWrap(false)
+		return
 	}
+	if col >= len(tb.headerWidths) {
+		return
+	}
+	// the header button has padding, the space of the sort indicator,
+	// and the handle after it
+	hw := float32(tb.headerWidths[col]) + 7
 	if len(tb.colMaxWidths) > col {
 		hw = max(float32(tb.colMaxWidths[col]), hw)
 	}
@@ -215,7 +230,7 @@ func (tb *Table) MakeHeader(p *tree.Plan) {
 			s.Display = styles.Flex // note: ToolbarStyles sets to None if no children, which can happen transiently in tables -- it doesn't recover from that.
 			s.Padding.Zero()
 			s.Grow.Set(0, 0)
-			s.Gap.Set(units.Em(0.5)) // matches grid default
+			s.Gap.Zero() // the widths of the columns include the gaps (see SizeFinal)
 		})
 		w.Maker(func(p *tree.Plan) {
 			if tb.ShowIndexes {
@@ -229,7 +244,7 @@ func (tb *Table) MakeHeader(p *tree.Plan) {
 			}
 			for fli := range tb.nCols {
 				field := tb.Table.Columns.Keys[fli]
-				tree.AddAt(p, "head-"+field, func(w *core.Button) {
+				tree.AddAt(p, headerName(fli, field), func(w *core.Button) {
 					w.SetType(core.ButtonAction)
 					w.Styler(func(s *styles.Style) {
 						s.Justify.Content = styles.Start
@@ -260,9 +275,25 @@ func (tb *Table) MakeHeader(p *tree.Plan) {
 						}
 					})
 				})
+				makeColumnHandle(p, &tb.ListBase, &tb.ColumnWidths, fli, field)
 			}
 		})
 	})
+}
+
+// columnWidth returns the width of the given column, in Dp,
+// if it is set, or else 0, for the automatic width.
+func (tb *Table) columnWidth(col int) float32 {
+	if tb.Table == nil || col < 0 || col >= tb.nCols {
+		return 0
+	}
+	return tb.ColumnWidths[tb.Table.Columns.Keys[col]]
+}
+
+// ColumnWidthDots returns the width of the given column in dots,
+// or 0 if it is automatic (see [core.ColumnWidther]).
+func (tb *Table) ColumnWidthDots(col int) float32 {
+	return columnWidthDots(&tb.ListBase, tb.columnWidth(col))
 }
 
 // SliceHeader returns the Frame header for slice grid
@@ -433,7 +464,7 @@ func (tb *Table) SortColumn(fldIndex int) {
 	_, idxOff := tb.RowWidgetNs()
 
 	for fli := range tb.nCols {
-		hdr := sgh.Child(idxOff + fli).(*core.Button)
+		hdr := sgh.Child(idxOff + 2*fli).(*core.Button) // with the handles after them
 		hdr.SetType(core.ButtonAction)
 		if fli == fldIndex {
 			if tb.SortIndex == fli {
@@ -587,19 +618,7 @@ func (tb *Table) SizeFinal() {
 	tb.ListBase.SizeFinal()
 	lg := tb.ListGrid
 	sh := tb.SliceHeader()
-	sh.ForWidgetChildren(func(i int, cw core.Widget, cwb *core.WidgetBase) bool {
-		sgb := core.AsWidget(lg.Child(i))
-		gsz := &sgb.Geom.Size
-		if gsz.Actual.Total.X == 0 {
-			return tree.Continue
-		}
-		ksz := &cwb.Geom.Size
-		ksz.Actual.Total.X = gsz.Actual.Total.X
-		ksz.Actual.Content.X = gsz.Actual.Content.X
-		ksz.Alloc.Total.X = gsz.Alloc.Total.X
-		ksz.Alloc.Content.X = gsz.Alloc.Content.X
-		return tree.Continue
-	})
+	sizeHeader(&tb.ListBase, sh, tb.nCols)
 	gsz := &lg.Geom.Size
 	ksz := &sh.Geom.Size
 	if gsz.Actual.Total.X > 0 {

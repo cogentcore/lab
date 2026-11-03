@@ -8,12 +8,14 @@ package main
 
 import (
 	"fmt"
+	"maps"
 	"path/filepath"
 	"reflect"
 	"strings"
 
 	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/core"
+	"cogentcore.org/core/events"
 	"cogentcore.org/core/styles"
 	"cogentcore.org/lab/lab"
 	"cogentcore.org/lab/plot"
@@ -71,6 +73,7 @@ func (sr *Simmer) OpenResultFiles(jobs []string, filter FilterResults) {
 		sr.ResultsTableView = tv
 		sr.styleResults()
 	}
+	sr.ResultsTableView.ColumnWidths = maps.Clone(sr.Project.ResultsColumnWidths)
 	sr.ResultsTableView.Update()
 	sr.UpdateSims()
 }
@@ -214,6 +217,9 @@ func (sr *Simmer) styleResults() {
 	tv.Styler(func(s *styles.Style) {
 		s.SetReadOnly(true)
 	})
+	tv.OnChange(func(e events.Event) {
+		sr.saveColumnWidths(&sr.Project.ResultsColumnWidths, tv.ColumnWidths)
+	})
 }
 
 // Reset resets the Results table
@@ -225,5 +231,6 @@ func (sr *Simmer) Reset() { //types:add
 		sr.ResultsTableView = tv
 		sr.styleResults()
 	}
+	tv.ColumnWidths = maps.Clone(sr.Project.ResultsColumnWidths)
 	sr.UpdateSims()
 }
