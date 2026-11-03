@@ -5,12 +5,16 @@
 package tensorcore
 
 import (
+	"image"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/events"
+	"cogentcore.org/core/styles"
+	"cogentcore.org/core/styles/units"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 )
@@ -103,4 +107,43 @@ func TestTableKeepScroll(t *testing.T) {
 	other.SetNumRows(100)
 	tw.SetTable(other)
 	assert.Equal(t, 0, tw.StartIndex)
+}
+
+// TestTableColumnWidths tests setting the widths of columns, including
+// a tensor column, and dragging the handle after a header, after
+// holding the mouse down.
+func TestTableColumnWidths(t *testing.T) {
+	b := core.NewBody()
+	b.Styler(func(s *styles.Style) { s.Min.Set(units.Dp(800), units.Dp(400)) })
+	pats := table.New()
+	assert.NoError(t, pats.OpenCSV("testdata/random_5x5_25.tsv", tensor.Tab))
+	tw := NewTable(b)
+	tw.SetTable(pats)
+	name, input := pats.Columns.Keys[0], pats.Columns.Keys[1]
+	tw.ColumnWidths = map[string]float32{input: 200}
+	changes := 0
+	tw.OnChange(func(e events.Event) { changes++ })
+	b.AssertRender(t, "table-column-widths", func() {
+		b.AsyncLock()
+		dots := tw.Styles.UnitContext.Dots(units.UnitDp)
+		assert.InDelta(t, 200*dots, tw.columnDots(1), 1, "the tensor column")
+		auto := tw.columnDots(0)
+		hb := core.AsWidget(tw.SliceHeader().Child(1)).Geom.TotalBBox // the handle of the first
+		b.AsyncUnlock()
+		src := b.Scene.RenderWindow().SystemWindow.Events()
+		pt := hb.Min.Add(hb.Size().Div(2))
+		src.MouseButton(events.MouseDown, events.Left, pt, 0)
+		time.Sleep(2 * core.TimingSettings.DragStartTime)
+		for i := 1; i <= 10; i++ {
+			src.MouseMove(pt.Add(image.Pt(4*i, 0)))
+			time.Sleep(20 * time.Millisecond)
+		}
+		src.MouseButton(events.MouseUp, events.Left, pt.Add(image.Pt(40, 0)), 0)
+		time.Sleep(200 * time.Millisecond)
+		b.AsyncLock()
+		defer b.AsyncUnlock()
+		assert.InDelta(t, (auto+40)/dots, tw.ColumnWidths[name], 1)
+		assert.InDelta(t, auto+40, tw.columnDots(0), 2)
+		assert.Equal(t, 1, changes)
+	})
 }
