@@ -8,11 +8,14 @@ import (
 	"testing"
 	"time"
 
+	"cogentcore.org/core/base/fileinfo/mimedata"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/events"
+	"cogentcore.org/core/filetree"
 	"cogentcore.org/lab/tensorcore"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestFileNodeDoubleClick tests that double clicking a tensorfs directory
@@ -118,4 +121,103 @@ func TestFileNodeDoubleClick(t *testing.T) {
 	assert.NotEqual(t, closed, parent.Closed, "toggled")
 	assert.Nil(t, br.Tabs.TabByName("Sims/Parent"), "no edit tab")
 	b.AsyncUnlock()
+}
+
+// TestFileTreeOps tests the file operations of the tree of a tensorfs:
+// renaming, deleting, and moving and copying values and directories with
+// drag and drop, which keep the order of the directories, by time, and
+// the New folder item of the context menu.
+func TestFileTreeOps(t *testing.T) {
+	root, _ := tensorfs.NewDir("root")
+	sims := root.Dir("Sims")
+	tensorfs.Value[float64](sims, "B", 3)
+	tensorfs.Value[float64](sims, "A", 3).SetFloat1D(2.5, 1)
+	tensorfs.Value[float64](sims.Dir("Run"), "Y", 2)
+	sims.Dir("Other")
+	b, br := NewBasicWindow(root, "Sims")
+	b.RunWindow()
+	defer func() {
+		b.AsyncLock()
+		b.Close()
+		b.AsyncUnlock()
+	}()
+	waitFor := func(what string, cond func() bool) {
+		t.Helper()
+		deadline := time.Now().Add(5 * time.Second)
+		for {
+			b.AsyncLock()
+			ok := cond()
+			b.AsyncUnlock()
+			if ok {
+				return
+			}
+			if time.Now().After(deadline) {
+				t.Fatalf("timeout waiting for %s", what)
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+	}
+	node := func(p string) *filetree.Node {
+		n, ok := br.Files.FindFile(p)
+		if !ok || string(n.Filepath) != p {
+			return nil
+		}
+		return n
+	}
+	names := func(dir string) []string {
+		var ns []string
+		for _, kid := range node(dir).Children {
+			ns = append(ns, kid.AsTree().Name)
+		}
+		return ns
+	}
+	waitFor("the tree", func() bool { return node("Sims/A") != nil })
+	b.AsyncLock()
+	assert.Equal(t, []string{"Run", "Other", "B", "A"}, names("Sims"), "directories first, by time")
+
+	b.AsyncUnlock()
+
+	// rename, keeping the order
+	b.AsyncLock()
+	require.NoError(t, node("Sims/B").RenameFile("C"))
+	b.AsyncUnlock()
+	waitFor("the renamed value", func() bool { return node("Sims/C") != nil })
+	b.AsyncLock()
+	assert.Equal(t, []string{"Run", "Other", "C", "A"}, names("Sims"), "in place")
+	b.AsyncUnlock()
+	assert.NotNil(t, sims.Node("C"))
+
+	// move a value and a directory into Other with drag and drop
+	drop := func(src, dst string, mod events.DropMods) {
+		b.AsyncLock()
+		defer b.AsyncUnlock()
+		var md mimedata.Mimes
+		sn := node(src)
+		sn.MimeData(&md)
+		de := &events.DragDrop{DropMod: mod, Data: md, Source: sn.This}
+		de.Typ = events.Drop
+		node(dst).DragDrop(de)
+	}
+	drop("Sims/A", "Sims/Other", events.DropMove)
+	drop("Sims/Run", "Sims/Other", events.DropMove)
+	waitFor("the moves", func() bool { return sims.Node("A") == nil && sims.Node("Run") == nil })
+	other := sims.Dir("Other")
+	if a := other.Node("A"); assert.NotNil(t, a) {
+		assert.Equal(t, 2.5, a.Tensor.Float1D(1))
+	}
+	y, err := root.NodeAtPath("Sims/Other/Run/Y")
+	require.NoError(t, err)
+	assert.Equal(t, "root/Sims/Other/Run/Y", y.Path())
+
+	// copy a value with drag and drop
+	drop("Sims/C", "Sims/Other", events.DropCopy)
+	waitFor("the copy", func() bool { return other.Node("C") != nil })
+	assert.NotNil(t, sims.Node("C"), "still there")
+
+	// delete
+	b.AsyncLock()
+	require.NoError(t, node("Sims/C").DeleteFile())
+	b.AsyncUnlock()
+	assert.Nil(t, sims.Node("C"))
+	waitFor("the deleted node", func() bool { return node("Sims/C") == nil })
 }

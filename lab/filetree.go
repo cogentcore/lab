@@ -27,6 +27,9 @@ import (
 	"cogentcore.org/lab/tensorfs"
 )
 
+// the files of a tensorfs can be changed in a [DataTree]
+var _ filetree.WriteFS = (*tensorfs.Node)(nil)
+
 // Treer is an interface for getting the Root node as a DataTree struct.
 type Treer interface {
 	AsDataTree() *DataTree
