@@ -648,3 +648,37 @@ func TestBinary(t *testing.T) {
 		assert.Equal(t, tsr.Values, nt.Values)
 	}
 }
+
+func TestSliced1D(t *testing.T) {
+	src := NewFloat64(4, 3, 5)
+	for i := range src.Len() {
+		src.Values[i] = float64(i)
+	}
+	rows := NewRows(src, 3, 0, 2) // a wrapper view as the source too
+	for _, base := range []Tensor{src, rows} {
+		sl := NewSliced(base, []int{2, 0}, nil, []int{4, 1, 3})
+		assert.Equal(t, 2*3*3, sl.Len())
+		n := sl.Len()
+		i := 0
+		for a := range sl.DimSize(0) {
+			for b := range sl.DimSize(1) {
+				for c := range sl.DimSize(2) {
+					assert.Equal(t, sl.Float(a, b, c), sl.Float1D(i))
+					assert.Equal(t, sl.Int(a, b, c), sl.Int1D(i))
+					assert.Equal(t, sl.StringValue(a, b, c), sl.String1D(i))
+					i++
+				}
+			}
+		}
+		assert.Equal(t, sl.Float(1, 2, 2), sl.Float1D(-1)) // last
+		sl.SetFloat1D(-7, n-2)
+		assert.Equal(t, -7.0, sl.Float(1, 2, 1))
+		sl.SetInt1D(-8, 0)
+		assert.Equal(t, -8, sl.Int(0, 0, 0))
+		sl.SetString1D("-9", 1)
+		assert.Equal(t, -9.0, sl.Float(0, 0, 1))
+	}
+	sl := NewSliced(src, []int{2, 0}, nil, []int{4, 1, 3})
+	allocs := testing.AllocsPerRun(100, func() { sl.Float1D(7); sl.SetFloat1D(1, 7) })
+	assert.Equal(t, 0.0, allocs)
+}
