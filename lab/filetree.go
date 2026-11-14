@@ -25,6 +25,17 @@ import (
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
+	"github.com/hack-pad/hackpadfs"
+)
+
+// the files of a tensorfs can be changed in a [DataTree], with the
+// hackpadfs interfaces of the operations, and copied as clones of their
+// tensors (see [filetree.CopyFS])
+var (
+	_ hackpadfs.MkdirAllFS  = (*tensorfs.Node)(nil)
+	_ hackpadfs.RenameFS    = (*tensorfs.Node)(nil)
+	_ hackpadfs.RemoveAllFS = (*tensorfs.Node)(nil)
+	_ filetree.CopyFS       = (*tensorfs.Node)(nil)
 )
 
 // Treer is an interface for getting the Root node as a DataTree struct.

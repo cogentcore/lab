@@ -7,6 +7,7 @@ package lab
 //go:generate core generate
 
 import (
+	"cogentcore.org/core/base/dirsort"
 	"fmt"
 	"io/fs"
 	"log/slog"
@@ -119,7 +120,7 @@ func (br *Browser) UpdateFiles() { //types:add
 	}
 	files := br.Files
 	if br.FS != nil {
-		files.SortByModTime = true
+		files.FSSort = dirsort.Sort{By: dirsort.ModTime} // (the order they were made in)
 		files.OpenPathFS(br.FS, br.DataRoot)
 	} else {
 		files.OpenPath(br.DataRoot)

@@ -5,6 +5,9 @@
 package metric
 
 import (
+	"math"
+	"reflect"
+
 	"cogentcore.org/lab/matrix"
 	"cogentcore.org/lab/tensor"
 )
@@ -130,6 +133,11 @@ func CrossMatrix(fun any, a, b tensor.Tensor) tensor.Values {
 // which is typical in neural network models, and use
 // Correlation if they are on very different scales, because it effectively rescales).
 // The resulting matrix can be used as the input to PCA or SVD eigenvalue decomposition.
+//
+// The input data is first copied into contiguous per-cell vectors, so the
+// metric function operates on plain 1D tensors. [Covariance] and [Correlation]
+// on data without NaN values are computed directly from per-cell means
+// computed once, which is much faster than calling the metric per pair.
 func CovarianceMatrixOut(fun any, in tensor.Tensor, out tensor.Values) error {
 	mfun, err := AsMetricFunc(fun)
 	if err != nil {
@@ -140,7 +148,32 @@ func CovarianceMatrixOut(fun any, in tensor.Tensor, out tensor.Values) error {
 		return nil
 	}
 	out.SetShapeSizes(cells, cells)
-	flatvw := tensor.NewReshaped(in, rows, cells)
+
+	// cols has the data transposed into one contiguous vector per cell,
+	// read once from the input in row-major order.
+	cols := tensor.NewFloat64(cells, rows)
+	hasNaN := false
+	for r := range rows {
+		for c := range cells {
+			v := in.Float1D(r*cells + c)
+			if math.IsNaN(v) {
+				hasNaN = true
+			}
+			cols.Values[c*rows+r] = v
+		}
+	}
+
+	if !hasNaN {
+		fp := reflect.ValueOf(mfun).Pointer()
+		switch fp {
+		case reflect.ValueOf(Covariance).Pointer():
+			covarianceMatrixDirect(cols.Values, rows, cells, false, out)
+			return nil
+		case reflect.ValueOf(Correlation).Pointer():
+			covarianceMatrixDirect(cols.Values, rows, cells, true, out)
+			return nil
+		}
+	}
 
 	coords := matrix.TriLIndicies(cells)
 	nc := coords.DimSize(0)
@@ -149,11 +182,11 @@ func CovarianceMatrixOut(fun any, in tensor.Tensor, out tensor.Values) error {
 		func(idx int, tsr ...tensor.Tensor) {
 			cx := coords.Int(idx, 0)
 			cy := coords.Int(idx, 1)
-			av := tensor.Reslice(tsr[0], tensor.FullAxis, cx)
-			bv := tensor.Reslice(tsr[0], tensor.FullAxis, cy)
+			av := tensor.Cells1D(cols, cx)
+			bv := tensor.Cells1D(cols, cy)
 			mout := mfun(av, bv)
-			tsr[1].SetFloat(mout.Float1D(0), cx, cy)
-		}, flatvw, out)
+			tsr[0].SetFloat(mout.Float1D(0), cx, cy)
+		}, out)
 	for idx := range nc { // copy to upper
 		cx := coords.Int(idx, 0)
 		cy := coords.Int(idx, 1)
@@ -163,6 +196,61 @@ func CovarianceMatrixOut(fun any, in tensor.Tensor, out tensor.Values) error {
 		out.SetFloat(out.Float(cx, cy), cy, cx)
 	}
 	return nil
+}
+
+// covarianceMatrixDirect computes the covariance matrix (or the correlation
+// matrix if corr) of the per-cell vectors in cols ([cells][rows], without NaNs)
+// into out, giving the same values as [Covariance] or [Correlation] per pair.
+// Centers each cell vector once, then computes the lower triangle of
+// dot products, threaded over output rows.
+func covarianceMatrixDirect(cols []float64, rows, cells int, corr bool, out tensor.Values) {
+	for c := range cells {
+		x := cols[c*rows : (c+1)*rows]
+		mean := 0.0
+		for _, v := range x {
+			mean += v
+		}
+		mean /= float64(rows)
+		for r := range x {
+			x[r] -= mean
+		}
+	}
+	res := make([]float64, cells*cells)
+	n := float64(rows)
+	tensor.VectorizeThreaded(rows*cells/2, func(tsr ...tensor.Tensor) int { return cells },
+		func(i int, tsr ...tensor.Tensor) {
+			xi := cols[i*rows : (i+1)*rows]
+			for j := 0; j <= i; j++ {
+				xj := cols[j*rows : (j+1)*rows]
+				s := 0.0
+				for r, v := range xi {
+					s += v * xj[r]
+				}
+				res[i*cells+j] = s / n
+			}
+		}, out)
+	if corr {
+		for i := range cells {
+			for j := 0; j < i; j++ {
+				vp := math.Sqrt(res[i*cells+i] * res[j*cells+j])
+				if vp > 0 {
+					res[i*cells+j] /= vp
+				}
+			}
+		}
+		for i := range cells { // after off-diagonals, which use the variances
+			if res[i*cells+i] > 0 {
+				res[i*cells+i] = 1
+			}
+		}
+	}
+	for i := range cells {
+		for j := 0; j <= i; j++ {
+			v := res[i*cells+j]
+			out.SetFloat1D(v, i*cells+j)
+			out.SetFloat1D(v, j*cells+i)
+		}
+	}
 }
 
 // CovarianceMatrix generates the cells x cells square covariance matrix

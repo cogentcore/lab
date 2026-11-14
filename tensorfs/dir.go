@@ -39,7 +39,7 @@ func NewDir(name string, parent ...*Node) (*Node, error) {
 		par = parent[0]
 	}
 	dir, err := newNode(par, name)
-	if dir != nil && dir.nodes == nil {
+	if dir != nil && dir.nodes == nil && err == nil { // (not an existing value)
 		dir.nodes = &Nodes{}
 	}
 	return dir, err
@@ -358,7 +358,7 @@ func (dir *Node) mustDir(op, path string) error {
 	return nil
 }
 
-// Add adds an node to this directory data node.
+// Add adds an node to this directory data node, which becomes its Parent.
 // The only errors are if this node is not a directory,
 // or the name already exists, in which case an [fs.ErrExist] is returned.
 // Names must be unique within a directory.
@@ -370,5 +370,6 @@ func (dir *Node) Add(it *Node) error {
 	if err != nil {
 		return fs.ErrExist
 	}
+	it.Parent = dir
 	return nil
 }
