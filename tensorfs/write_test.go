@@ -20,12 +20,12 @@ func TestWrite(t *testing.T) {
 	Value[float64](root.Dir("Sims"), "X", 3).SetFloat1D(1.5, 1)
 	Value[float64](root.Dir("Sims/Run"), "Y", 2)
 
-	require.NoError(t, root.MkdirAll("root/Sims/New/Deep"))
+	require.NoError(t, root.MkdirAll("root/Sims/New/Deep", 0o755))
 	d, err := root.DirAtPath("Sims/New/Deep")
 	require.NoError(t, err)
 	assert.Equal(t, "root/Sims/New/Deep", d.Path())
-	require.NoError(t, root.MkdirAll("Sims/New"), "exists")
-	assert.Error(t, root.MkdirAll("Sims/X/Z"), "not a directory")
+	require.NoError(t, root.MkdirAll("Sims/New", 0o755), "exists")
+	assert.Error(t, root.MkdirAll("Sims/X/Z", 0o755), "not a directory")
 
 	// rename a value, and move a directory, keeping its time
 	require.NoError(t, root.Rename("root/Sims/X", "Sims/Z"))

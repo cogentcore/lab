@@ -6,6 +6,7 @@ package lab
 
 import (
 	"image"
+	"io/fs"
 	"slices"
 	"strings"
 
@@ -27,8 +28,17 @@ import (
 	"cogentcore.org/lab/tensorfs"
 )
 
-// the files of a tensorfs can be changed in a [DataTree]
-var _ filetree.WriteFS = (*tensorfs.Node)(nil)
+// the files of a tensorfs can be changed in a [DataTree], with the
+// methods of the hackpadfs interfaces of the operations, and copied as
+// clones of their tensors
+var (
+	_ interface {
+		MkdirAll(path string, perm fs.FileMode) error
+		Rename(oldpath, newpath string) error
+		RemoveAll(path string) error
+	} = (*tensorfs.Node)(nil)
+	_ filetree.CopyFS = (*tensorfs.Node)(nil)
+)
 
 // Treer is an interface for getting the Root node as a DataTree struct.
 type Treer interface {

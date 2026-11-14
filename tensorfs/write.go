@@ -11,9 +11,10 @@ import (
 	"strings"
 )
 
-// write.go has the operations that change the filesystem by paths, as a
-// filetree.WriteFS, so that its files can be changed in a file tree:
-// made, renamed (moved), removed, and copied.
+// write.go has the operations that change the filesystem by paths, with
+// the methods of the hackpadfs interfaces of those operations (MkdirAllFS,
+// RenameFS, RemoveAllFS) and of filetree.CopyFS, so that its files can be
+// changed in a file tree: made, renamed (moved), removed, and copied.
 
 // pathNames returns the names of the nodes of the given path within this
 // directory, without that of this directory itself, if it starts with it
@@ -69,8 +70,9 @@ func (dir *Node) nodeAt(op, p string) (*Node, error) {
 }
 
 // MkdirAll makes the directory at the given path within this directory,
-// with any of its parent directories that do not exist yet.
-func (dir *Node) MkdirAll(p string) error {
+// with any of its parent directories that do not exist yet. The
+// permissions are not used.
+func (dir *Node) MkdirAll(p string, perm fs.FileMode) error {
 	if err := dir.mustDir("MkdirAll", p); err != nil {
 		return err
 	}
