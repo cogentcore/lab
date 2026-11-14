@@ -11,10 +11,10 @@ import (
 	"strings"
 )
 
-// write.go has the operations that change the filesystem by paths, with
-// the methods of the hackpadfs interfaces of those operations (MkdirAllFS,
-// RenameFS, RemoveAllFS) and of filetree.CopyFS, so that its files can be
-// changed in a file tree: made, renamed (moved), removed, and copied.
+// write.go has the operations that change the filesystem by paths, as the
+// hackpadfs interfaces of those operations (MkdirAllFS, RenameFS,
+// RemoveAllFS) and filetree.CopyFS, so that its files can be changed in a
+// file tree: made, renamed (moved), removed, and copied.
 
 // pathNames returns the names of the nodes of the given path within this
 // directory, without that of this directory itself, if it starts with it
