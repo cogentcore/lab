@@ -40,7 +40,7 @@ func TestTableEditor(t *testing.T) {
 	b.AddTopBar(func(bar *core.Frame) {
 		core.NewToolbar(bar).Maker(pl.MakeToolbar)
 	})
-	b.AssertRender(t, "table")
+	core.AssertRender(t, b, "table")
 }
 
 func TestSliceEditor(t *testing.T) {
@@ -66,5 +66,5 @@ func TestSliceEditor(t *testing.T) {
 		core.NewToolbar(bar).Maker(pl.MakeToolbar)
 	})
 
-	b.AssertRender(t, "slice")
+	core.AssertRender(t, b, "slice")
 }
