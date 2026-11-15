@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"image"
 	"strconv"
+	"strings"
 
 	"cogentcore.org/core/base/fileinfo"
 	"cogentcore.org/core/base/fileinfo/mimedata"
@@ -211,14 +212,14 @@ func (tb *TensorEditor) MakeHeader(p *tree.Plan) {
 
 func (tb *TensorEditor) ColumnHeader(col int) string {
 	_, cc := tensor.Projection2DCoords(tb.Tensor.Shape(), tb.Layout.OddRow, 0, col)
-	sitxt := ""
+	var sitxt strings.Builder
 	for i, ccc := range cc {
-		sitxt += fmt.Sprintf("%03d", ccc)
+		fmt.Fprintf(&sitxt, "%03d", ccc)
 		if i < len(cc)-1 {
-			sitxt += ","
+			sitxt.WriteString(",")
 		}
 	}
-	return sitxt
+	return sitxt.String()
 }
 
 // columnWidth returns the width of the given column, in Dp,
@@ -395,14 +396,14 @@ func (tb *TensorEditor) SizeFinal() {
 
 ////////    Copy / Cut / Paste
 
-// SaveTSV writes a tensor to a tab-separated-values (TSV) file.
+// SaveCSV writes a tensor to a tab-separated-values (TSV) file.
 // Outer-most dims are rows in the file, and inner-most is column --
 // Reading just grabs all values and doesn't care about shape.
 func (tb *TensorEditor) SaveCSV(filename core.Filename) error { //types:add
 	return tensor.SaveCSV(tb.Tensor, fsx.Filename(filename), tensor.Tab)
 }
 
-// OpenTSV reads a tensor from a tab-separated-values (TSV) file.
+// OpenCSV reads a tensor from a tab-separated-values (TSV) file.
 // using the Go standard encoding/csv reader conforming
 // to the official CSV standard.
 // Reads all values and assigns as many as fit.
@@ -446,19 +447,19 @@ func (tb *TensorEditor) CopySelectToMime() mimedata.Mimes {
 // FromMimeData returns records from csv of mime data
 func (tb *TensorEditor) FromMimeData(md mimedata.Mimes) [][]string {
 	var recs [][]string
-	for _, d := range md {
-		if d.Type == fileinfo.DataCSV {
-			// b := bytes.NewBuffer(d.Data)
-			// cr := csv.NewReader(b)
-			// cr.Comma = tensor.Tab.Rune()
-			// rec, err := cr.ReadAll()
-			// if err != nil || len(rec) == 0 {
-			// 	log.Printf("Error reading CSV from clipboard: %s\n", err)
-			// 	return nil
-			// }
-			// recs = append(recs, rec...)
-		}
-	}
+	// for _, d := range md {
+	// 	if d.Type == fileinfo.DataCSV {
+	// 		b := bytes.NewBuffer(d.Data)
+	// 		cr := csv.NewReader(b)
+	// 		cr.Comma = tensor.Tab.Rune()
+	// 		rec, err := cr.ReadAll()
+	// 		if err != nil || len(rec) == 0 {
+	// 			log.Printf("Error reading CSV from clipboard: %s\n", err)
+	// 			return nil
+	// 		}
+	// 		recs = append(recs, rec...)
+	// 	}
+	// }
 	return recs
 }
 
@@ -507,7 +508,11 @@ func (tb *TensorEditor) TextRunes() []rune {
 func (tb *TensorEditor) Search(find string, useCase bool) ([]textpos.Match, bool) {
 	var results []textpos.Match
 	_, isstr := tb.Tensor.(*tensor.String)
-	for rw := range tb.SliceSize {
+	for si := range tb.SliceSize { // the rows of the display
+		rw := si
+		if !tb.Layout.TopZero {
+			rw = (tb.SliceSize - 1) - si
+		}
 		for fli := range tb.NCols {
 			var str string
 			if isstr {
@@ -520,7 +525,7 @@ func (tb *TensorEditor) Search(find string, useCase bool) ([]textpos.Match, bool
 			if len(m) == 0 {
 				continue
 			}
-			ln := rw*tb.NCols + fli
+			ln := si*tb.NCols + fli
 			for i := range m {
 				m[i].Region.Start.Line = ln
 				m[i].Region.End.Line = ln

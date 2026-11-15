@@ -416,7 +416,7 @@ func (tb *Table) blankCell(cidx int, col tensor.Tensor) *tensor.Float64 {
 	if ctb, has := tb.blankCells[cidx]; has {
 		return ctb
 	}
-	ctb := tensor.New[float64](col.ShapeSizes()...).(*tensor.Float64)
+	ctb := tensor.New[float64](col.ShapeSizes()[1:]...).(*tensor.Float64) // the shape of a cell
 	tb.blankCells[cidx] = ctb
 	return ctb
 }
@@ -487,15 +487,36 @@ func (tb *Table) SortColumn(fldIndex int) {
 	tb.Update() // requires full update due to sort button icon
 }
 
+// updateFrom runs the given function, which updates the given widget,
+// from the event handling of the given other widget, as of a dialog. A
+// dialog can be in a new window, whose event loop does not have the lock
+// of the window of the widget: the function then runs with that lock in
+// another goroutine, so that neither window waits on the other.
+func updateFrom(w, from core.Widget, f func()) {
+	wb, fb := w.AsWidget(), from.AsWidget()
+	if wb.Scene == nil || fb.Scene == nil || wb.Scene.RenderWindow() == fb.Scene.RenderWindow() {
+		f()
+		return
+	}
+	go func() {
+		if wb.AsyncLockIfShown() {
+			defer wb.AsyncUnlock()
+			f()
+		}
+	}()
+}
+
 // EditGridStyle shows an editor dialog for grid style for given column index.
 func (tb *Table) EditGridStyle(col int) {
 	ctd := tb.GetColumnGridStyle(col)
 	d := core.NewBody("Tensor grid style")
-	core.NewForm(d).SetStruct(ctd).
-		OnChange(func(e events.Event) {
+	fm := core.NewForm(d).SetStruct(ctd)
+	fm.OnChange(func(e events.Event) {
+		updateFrom(tb, fm, func() {
 			tb.ColumnGridStyle[col] = ctd
 			tb.Update()
 		})
+	})
 	core.NewButton(d).SetText("Edit global style").SetIcon(icons.Edit).
 		OnClick(func(e events.Event) {
 			tb.EditGlobalGridStyle()
@@ -506,10 +527,10 @@ func (tb *Table) EditGridStyle(col int) {
 // EditGlobalGridStyle shows an editor dialog for global grid styles.
 func (tb *Table) EditGlobalGridStyle() {
 	d := core.NewBody("Tensor grid style")
-	core.NewForm(d).SetStruct(&tb.GridStyle).
-		OnChange(func(e events.Event) {
-			tb.Update()
-		})
+	fm := core.NewForm(d).SetStruct(&tb.GridStyle)
+	fm.OnChange(func(e events.Event) {
+		updateFrom(tb, fm, tb.Update)
+	})
 	d.RunWindowDialog(tb)
 }
 
@@ -532,7 +553,7 @@ func (tb *Table) SortFieldName() string {
 	return ""
 }
 
-// SetSortField sets sorting to happen on given field and direction -- see
+// SetSortFieldName sets sorting to happen on given field and direction -- see
 // SortFieldName for details
 func (tb *Table) SetSortFieldName(nm string) {
 	if nm == "" {
@@ -739,7 +760,7 @@ func (tb *Table) PasteAtIndex(md mimedata.Mimes, idx int) {
 		return
 	}
 	tb.Table.InsertRows(idx, nr)
-	for ri := 0; ri < nr; ri++ {
+	for ri := range nr {
 		rec := recs[1+ri]
 		rw := tb.Table.RowIndex(idx + ri)
 		tb.Table.ReadCSVRow(rec, rw)
@@ -767,7 +788,7 @@ func (tb *Table) Search(find string, useCase bool) ([]textpos.Match, bool) {
 	nr := tb.Table.NumRows()
 	for rw := range nr {
 		for fli := range tb.nCols {
-			str := tb.Table.Columns.Values[fli].StringRow(rw, 0)
+			str := tb.Table.Columns.Values[fli].StringRow(tb.Table.RowIndex(rw), 0) // the row of the view
 			m := core.SearchRunes([]rune(str), find, useCase)
 			if len(m) == 0 {
 				continue

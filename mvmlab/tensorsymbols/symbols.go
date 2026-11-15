@@ -11,6 +11,7 @@ package tensorsymbols
 //go:generate ./make
 
 import (
+	"maps"
 	"reflect"
 	"sync"
 )
@@ -38,9 +39,7 @@ func register(loader func()) bool {
 
 // add adds the symbols of the given packages to [Values].
 func add(pkgs map[string]map[string]reflect.Value) {
-	for path, values := range pkgs {
-		Values[path] = values
-	}
+	maps.Copy(Values, pkgs)
 }
 
 // Load adds the symbols of all packages to [Values], once. Natively, it is
