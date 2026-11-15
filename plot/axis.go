@@ -147,7 +147,7 @@ type Axis struct {
 	ticks []Tick
 }
 
-// Sets Defaults, range is (∞, ­∞), and thus any finite
+// Defaults sets defaults, range is (∞, ­∞), and thus any finite
 // value is less than Min and greater than Max.
 func (ax *Axis) Defaults(dim math32.Dims) {
 	ax.Style.Defaults()

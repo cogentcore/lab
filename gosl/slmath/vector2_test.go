@@ -26,7 +26,7 @@ func TestVector2VsMath32(t *testing.T) {
 		eq2(t, v.Rot90CW(), Rot90CW2(v), "Rot90CW2")
 		eq2(t, v.Rot90CCW(), Rot90CCW2(v), "Rot90CCW2")
 
-		for d := int32(0); d < 2; d++ {
+		for d := range int32(2) {
 			dim := math32.Dims(d)
 			eqf(t, v.Dim(dim), Dim2(v, d), "Dim2")
 			for _, s := range testScalars {

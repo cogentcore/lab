@@ -13,6 +13,7 @@ package plot
 
 import (
 	"image"
+	"slices"
 	"sync"
 
 	"cogentcore.org/core/colors"
@@ -346,7 +347,13 @@ func (pt *Plot) applyStyle() {
 // When drawing the plot, Plotters are drawn in the
 // order in which they were added to the plot.
 func (pt *Plot) Add(ps ...Plotter) {
-	pt.Plotters = append(pt.Plotters, ps...)
+	for _, p := range ps {
+		// (a plotter is added once: the New functions of the plotters add
+		// them, as NewTablePlot then also does)
+		if !slices.Contains(pt.Plotters, p) {
+			pt.Plotters = append(pt.Plotters, p)
+		}
+	}
 }
 
 // CurBounds returns the current render bounds from Paint

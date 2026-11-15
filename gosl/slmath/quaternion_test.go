@@ -38,7 +38,7 @@ func TestQuatVsMath32(t *testing.T) {
 		ev.SetEulerAnglesFromQuat(q)
 		eq3(t, ev, EulerAnglesFromQuat(q), "EulerAnglesFromQuat")
 
-		for d := int32(0); d < 4; d++ {
+		for d := range int32(4) {
 			eqf(t, qdim(q, d), QuatDim(q, d), "QuatDim")
 			for _, s := range testScalars {
 				eqQ(t, qsetdim(q, d, s), QuatSetDim(q, d, s), "QuatSetDim")

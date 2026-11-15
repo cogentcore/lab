@@ -118,7 +118,7 @@ func (t LogTicks) Ticks(mn, mx float64, nticks int) []Tick {
 		return nil
 	}
 
-	val := math.Pow10(int(math.Log10(mn)))
+	val := math.Pow10(int(math.Floor(math.Log10(mn))))
 	mx = math.Pow10(int(math.Ceil(math.Log10(mx))))
 	var ticks []Tick
 	for val < mx {

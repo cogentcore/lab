@@ -45,12 +45,12 @@ func (sr *Simmer) FindGoMod(dir string) string {
 		if goalib.FileExists(filepath.Join(dir, "go.mod")) {
 			return dir
 		}
-		dir = filepath.Dir(dir)
-		if dir == "" {
+		parent := filepath.Dir(dir)
+		if parent == dir { // the root
 			return ""
 		}
+		dir = parent
 	}
-	return ""
 }
 
 // CopyFilesToJob copies files with given extensions (none for all),

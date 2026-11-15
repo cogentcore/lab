@@ -34,12 +34,16 @@ const (
 	DynQuatZ
 	DynQuatW
 
-	// Linear velocity.
+	// Linear velocity, computed after each step from the change in
+	// position (see StepBodyKinetics). It is an output: setting it does not
+	// change the motion, which is integrated from DynDelta.
 	DynVelX
 	DynVelY
 	DynVelZ
 
-	// Angular velocity.
+	// Angular velocity, computed after each step from the change in
+	// orientation (see StepBodyKinetics). It is an output: setting it does
+	// not change the motion, which is integrated from DynAngDelta.
 	DynAngVelX
 	DynAngVelY
 	DynAngVelZ
@@ -65,11 +69,16 @@ const (
 	DynTorqueZ
 
 	// Linear deltas. These accumulate over time via StepBodyDeltas.
+	// This is the linear velocity state that StepIntegrateBodies integrates:
+	// set it (in Next, between steps) to give a body an initial velocity.
 	DynDeltaX
 	DynDeltaY
 	DynDeltaZ
 
 	// Angular deltas. These accumulate over time via StepBodyDeltas.
+	// This is the angular velocity state that StepIntegrateBodies
+	// integrates: set it (in Next, between steps) to give a body an initial
+	// angular velocity.
 	DynAngDeltaX
 	DynAngDeltaY
 	DynAngDeltaZ
@@ -111,10 +120,17 @@ func SetDynamicQuat(idx, cni int32, rot math32.Quat) {
 	Dynamics.Set3D(rot.W, int(idx), int(cni), int(DynQuatW))
 }
 
+// DynamicVel returns the linear velocity of the given dynamic body in the
+// given Cur or Next state, which is computed after each step from the
+// change in position (see [DynVelX]).
 func DynamicVel(idx, cni int32) math32.Vector3 {
 	return math32.Vec3(Dynamics.Value3D(int(idx), int(cni), int(DynVelX)), Dynamics.Value3D(int(idx), int(cni), int(DynVelY)), Dynamics.Value3D(int(idx), int(cni), int(DynVelZ)))
 }
 
+// SetDynamicVel sets the linear velocity of the given dynamic body in the
+// given Cur or Next state. The velocity is an output, which is computed
+// after each step: setting it does not change the motion. To give a body
+// an initial velocity, use [SetDynamicDelta] instead.
 func SetDynamicVel(idx, cni int32, vel math32.Vector3) {
 	Dynamics.Set3D(vel.X, int(idx), int(cni), int(DynVelX))
 	Dynamics.Set3D(vel.Y, int(idx), int(cni), int(DynVelY))
@@ -151,10 +167,17 @@ func SetDynamicTorque(idx, cni int32, torque math32.Vector3) {
 	Dynamics.Set3D(torque.Z, int(idx), int(cni), int(DynTorqueZ))
 }
 
+// DynamicAngVel returns the angular velocity of the given dynamic body in
+// the given Cur or Next state, which is computed after each step from the
+// change in orientation (see [DynAngVelX]).
 func DynamicAngVel(idx, cni int32) math32.Vector3 {
 	return math32.Vec3(Dynamics.Value3D(int(idx), int(cni), int(DynAngVelX)), Dynamics.Value3D(int(idx), int(cni), int(DynAngVelY)), Dynamics.Value3D(int(idx), int(cni), int(DynAngVelZ)))
 }
 
+// SetDynamicAngVel sets the angular velocity of the given dynamic body in
+// the given Cur or Next state. The angular velocity is an output, which is
+// computed after each step: setting it does not change the motion. To
+// give a body an initial angular velocity, use [SetDynamicAngDelta].
 func SetDynamicAngVel(idx, cni int32, angVel math32.Vector3) {
 	Dynamics.Set3D(angVel.X, int(idx), int(cni), int(DynAngVelX))
 	Dynamics.Set3D(angVel.Y, int(idx), int(cni), int(DynAngVelY))
@@ -173,20 +196,34 @@ func SetDynamicAngAcc(idx, cni int32, angAcc math32.Vector3) {
 
 //////// Accumulating deltas
 
+// DynamicDelta returns the linear delta of the given dynamic body in the
+// given Cur or Next state, which is the linear velocity state that is
+// integrated in each step (see [DynDeltaX]).
 func DynamicDelta(idx, cni int32) math32.Vector3 {
 	return math32.Vec3(Dynamics.Value3D(int(idx), int(cni), int(DynDeltaX)), Dynamics.Value3D(int(idx), int(cni), int(DynDeltaY)), Dynamics.Value3D(int(idx), int(cni), int(DynDeltaZ)))
 }
 
+// SetDynamicDelta sets the linear delta of the given dynamic body in the
+// given Cur or Next state, which is the linear velocity state that is
+// integrated in each step: set it in Next (where the state is between
+// steps) to give a body an initial velocity.
 func SetDynamicDelta(idx, cni int32, delta math32.Vector3) {
 	Dynamics.Set3D(delta.X, int(idx), int(cni), int(DynDeltaX))
 	Dynamics.Set3D(delta.Y, int(idx), int(cni), int(DynDeltaY))
 	Dynamics.Set3D(delta.Z, int(idx), int(cni), int(DynDeltaZ))
 }
 
+// DynamicAngDelta returns the angular delta of the given dynamic body in
+// the given Cur or Next state, which is the angular velocity state that is
+// integrated in each step (see [DynAngDeltaX]).
 func DynamicAngDelta(idx, cni int32) math32.Vector3 {
 	return math32.Vec3(Dynamics.Value3D(int(idx), int(cni), int(DynAngDeltaX)), Dynamics.Value3D(int(idx), int(cni), int(DynAngDeltaY)), Dynamics.Value3D(int(idx), int(cni), int(DynAngDeltaZ)))
 }
 
+// SetDynamicAngDelta sets the angular delta of the given dynamic body in
+// the given Cur or Next state, which is the angular velocity state that is
+// integrated in each step: set it in Next (where the state is between
+// steps) to give a body an initial angular velocity.
 func SetDynamicAngDelta(idx, cni int32, angDelta math32.Vector3) {
 	Dynamics.Set3D(angDelta.X, int(idx), int(cni), int(DynAngDeltaX))
 	Dynamics.Set3D(angDelta.Y, int(idx), int(cni), int(DynAngDeltaY))
@@ -207,7 +244,14 @@ func (ml *Model) SetMass(idx int32, shape Shapes, size math32.Vector3, mass floa
 	Bodies.Set2D(invm, int(idx), int(BodyInvMass))
 	inertia := shape.Inertia(size, mass)
 	SetBodyInertia(idx, inertia)
-	SetBodyInvInertia(idx, inertia.Inverse())
+	// A static body (mass 0) has no inverse inertia, as it has no inverse
+	// mass: the inverse of its zero inertia would otherwise be the identity,
+	// which makes it seem to rotate in the contact constraints.
+	var invInertia math32.Matrix3
+	if mass > 0 {
+		invInertia = inertia.Inverse()
+	}
+	SetBodyInvInertia(idx, invInertia)
 }
 
 // TotalKineticEnergy returns the total kinetic energy of the dynamic bodies,

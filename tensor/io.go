@@ -22,7 +22,7 @@ import (
 	"cogentcore.org/core/base/reflectx"
 )
 
-// Delim are standard CSV delimiter options (Tab, Comma, Space)
+// Delims are standard CSV delimiter options (Tab, Comma, Space)
 type Delims int32 //enums:enum
 
 const (
@@ -70,11 +70,11 @@ func Precision(obj any) (int, error) {
 // Reading just grabs all values and doesn't care about shape.
 func SaveCSV(tsr Tensor, filename fsx.Filename, delim Delims) error {
 	fp, err := os.Create(string(filename))
-	defer fp.Close()
 	if err != nil {
 		log.Println(err)
 		return err
 	}
+	defer fp.Close()
 	bw := bufio.NewWriter(fp)
 	WriteCSV(tsr, bw, delim)
 	bw.Flush()
@@ -122,8 +122,8 @@ func WriteCSV(tsr Tensor, w io.Writer, delim Delims) error {
 	nin := tsr.Len() / nrow
 	rec := make([]string, nin)
 	str := tsr.IsString()
-	for ri := 0; ri < nrow; ri++ {
-		for ci := 0; ci < nin; ci++ {
+	for ri := range nrow {
+		for ci := range nin {
 			idx := ri*nin + ci
 			if str {
 				rec[ci] = tsr.String1D(idx)
@@ -157,8 +157,8 @@ func ReadCSV(tsr Tensor, r io.Reader, delim Delims) error {
 	cols := len(rec[0])
 	sz := tsr.Len()
 	idx := 0
-	for ri := 0; ri < rows; ri++ {
-		for ci := 0; ci < cols; ci++ {
+	for ri := range rows {
+		for ci := range cols {
 			str := rec[ri][ci]
 			tsr.SetString1D(str, idx)
 			idx++
@@ -278,11 +278,12 @@ func Sprintf(format string, tsr Tensor, maxLen int) string {
 		colWd = max(colWd, hdrWd)
 		b.WriteString(padToLength(legend, rowWd))
 		totWd := rowWd
-		for c := 0; c < cols; c++ {
+		for c := range cols {
 			_, cc := Projection2DCoords(shp, onedRow, 0, c)
 			s := prepadToLength(fmt.Sprintf("%v", cc), colWd)
 			if totWd+len(s) > MaxPrintLineWidth {
-				b.WriteString("\n" + strings.Repeat(" ", rowWd))
+				b.WriteString("\n")
+				b.WriteString(strings.Repeat(" ", rowWd))
 				totWd = rowWd
 			}
 			b.WriteString(s)
@@ -298,7 +299,7 @@ func Sprintf(format string, tsr Tensor, maxLen int) string {
 		}
 		ri := r
 		totWd := rowWd
-		for c := 0; c < cols; c++ {
+		for c := range cols {
 			s := ""
 			if tsr.IsString() {
 				s = padToLength(fmt.Sprintf(format, Projection2DString(tsr, onedRow, ri, c)), colWd)
@@ -306,7 +307,8 @@ func Sprintf(format string, tsr Tensor, maxLen int) string {
 				s = prepadToLength(fmt.Sprintf(format, Projection2DValue(tsr, onedRow, ri, c)), colWd)
 			}
 			if totWd+len(s) > MaxPrintLineWidth {
-				b.WriteString("\n" + strings.Repeat(" ", rowWd))
+				b.WriteString("\n")
+				b.WriteString(strings.Repeat(" ", rowWd))
 				totWd = rowWd
 			}
 			b.WriteString(s)

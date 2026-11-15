@@ -11,12 +11,12 @@ import (
 	"cogentcore.org/lab/base/mpi"
 )
 
-// Alloc allocates n items to current mpi proc based on WorldSize and WorldRank.
+// AllocN allocates n items to current mpi proc based on WorldSize and WorldRank.
 // Returns start and end (exclusive) range for current proc.
 func AllocN(n int) (st, end int, err error) {
 	nproc := mpi.WorldSize()
 	if n%nproc != 0 {
-		err = fmt.Errorf("tensormpi.AllocN: number: %d is not an even multiple of number of MPI procs: %d -- must be!", n, nproc)
+		err = fmt.Errorf("tensormpi.AllocN: number: %d is not an even multiple of number of MPI procs: %d -- must be", n, nproc)
 		log.Println(err)
 	}
 	pt := n / nproc

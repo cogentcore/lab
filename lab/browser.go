@@ -211,15 +211,15 @@ func FirstComment(sc string) string {
 // TrimOrderPrefix trims any optional #- prefix from given string,
 // used for ordering items by name.
 func TrimOrderPrefix(s string) string {
-	i := strings.Index(s, "-")
-	if i < 0 {
+	before, after, ok := strings.Cut(s, "-")
+	if !ok {
 		return s
 	}
-	ds := s[:i]
+	ds := before
 	if _, err := strconv.Atoi(ds); err != nil {
 		return s
 	}
-	return s[i+1:]
+	return after
 }
 
 // PromptOKCancel prompts the user for whether to do something,

@@ -99,7 +99,7 @@ fn RandFloat32(counter: su64, funcIndex: u32, key: u32) -> f32 {
 	return Uint32ToFloat32(RandUint32(counter, funcIndex, key));
 }
 fn RandFloat32Range11Vec2(counter: su64, funcIndex: u32, key: u32) -> vec2<f32> {
-	return Uint32ToFloat32Vec2(RandUint32Vec2(counter, funcIndex, key));
+	return Uint32ToFloat32Range11Vec2(RandUint32Vec2(counter, funcIndex, key));
 }
 fn RandFloat32Range11(counter: su64, funcIndex: u32, key: u32) -> f32 { 
 	return Uint32ToFloat32Range11(RandUint32(counter, funcIndex, key));
@@ -121,7 +121,7 @@ fn RandFloat32NormVec2(counter: su64, funcIndex: u32, key: u32) -> vec2<f32> {
 	return f * r;
 }
 fn RandFloat32Norm(counter: su64, funcIndex: u32, key: u32) -> f32 { 
-	return RandFloat32Vec2(counter, funcIndex, key).x;
+	return RandFloat32NormVec2(counter, funcIndex, key).x;
 }
 fn RandUint32N(counter: su64, funcIndex: u32, key: u32, n: u32) -> u32 { 
 	let v = RandFloat32(counter, funcIndex, key);

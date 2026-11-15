@@ -194,10 +194,10 @@ func (st *State) DepthError() error {
 		str += fmt.Sprintf("Incomplete parentheses (), remaining depth: %d\n", st.ParenDepth)
 	}
 	if st.BraceDepth != 0 {
-		str += fmt.Sprintf("Incomplete braces [], remaining depth: %d\n", st.BraceDepth)
+		str += fmt.Sprintf("Incomplete braces {}, remaining depth: %d\n", st.BraceDepth)
 	}
 	if st.BrackDepth != 0 {
-		str += fmt.Sprintf("Incomplete brackets {}, remaining depth: %d\n", st.BrackDepth)
+		str += fmt.Sprintf("Incomplete brackets [], remaining depth: %d\n", st.BrackDepth)
 	}
 	if str != "" {
 		slog.Error(str)

@@ -98,6 +98,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		if st.Role == Split {
 			if split != nil {
 				errs = append(errs, errors.New("NewTablePlot: Only 1 Split role can be defined, using the first one"))
+				continue
 			}
 			split = cl
 			continue

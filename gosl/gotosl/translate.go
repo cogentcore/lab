@@ -28,18 +28,17 @@ func (st *State) TranslateDir(pf string) error {
 		return errors.Log(err)
 	}
 	if len(pkgs) != 1 {
-		err := fmt.Errorf("More than one package for path: %v", pf)
+		err := fmt.Errorf("more than one package for path: %v", pf)
 		return errors.Log(err)
 	}
 	pkg := pkgs[0]
 	if len(pkg.GoFiles) == 0 {
-		err := fmt.Errorf("No Go files found in package: %+v", pkg)
+		err := fmt.Errorf("no Go files found in package: %+v", pkg)
 		return errors.Log(err)
 	}
 
 	// fmt.Printf("go files: %+v", pkg.GoFiles)
 	// return nil, err
-	files := pkg.GoFiles
 
 	st.FuncGraph = make(map[string]*Function)
 	st.GetFuncGraph = true
@@ -96,7 +95,7 @@ func (st *State) TranslateDir(pf string) error {
 		return errors.Join(append(errs, errors.Log(fmt.Errorf("no package found for path: %v", pf)))...)
 	}
 	pkg = pkgs[0]
-	files = pkg.GoFiles
+	files := pkg.GoFiles
 
 	for _, gofp := range files {
 		_, gofn := filepath.Split(gofp)
@@ -128,7 +127,7 @@ func (st *State) TranslateDir(pf string) error {
 		slfix = SlRemoveComments(slfix)
 		exsl := st.ExtractWGSL(slfix)
 		lines = append(lines, []byte(""))
-		lines = append(lines, []byte(fmt.Sprintf("//////// import: %q", gofn)))
+		lines = append(lines, fmt.Appendf(nil, "//////// import: %q", gofn))
 		lines = append(lines, exsl...)
 		return lines, hasSlrand, hasSltype
 	}
@@ -202,7 +201,7 @@ func (st *State) TranslateDir(pf string) error {
 					continue
 				}
 				lines = append(lines, []byte(""))
-				lines = append(lines, []byte(fmt.Sprintf("//////// import: %q", im.Name)))
+				lines = append(lines, fmt.Appendf(nil, "//////// import: %q", im.Name))
 				lines = append(lines, im.Lines...)
 			}
 			kn.Lines = lines

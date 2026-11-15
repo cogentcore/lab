@@ -57,12 +57,12 @@ func EigOut(a tensor.Tensor, vecs, vals *tensor.Float64) error {
 		}
 	}
 	if na == 2 {
-		if a.DimSize(0) != a.DimSize(1) {
+		if ea.DimSize(0) != ea.DimSize(1) {
 			return mat.ErrShape
 		}
-		ma, _ := NewMatrix(a)
-		vecs.SetShapeSizes(a.DimSize(0), a.DimSize(1))
-		vals.SetShapeSizes(a.DimSize(0))
+		ma, _ := NewMatrix(ea)
+		vecs.SetShapeSizes(ea.DimSize(0), ea.DimSize(1))
+		vals.SetShapeSizes(ea.DimSize(0))
 		do, _ := NewDense(vecs)
 		var eig mat.Eigen
 		ok := eig.Factorize(ma, mat.EigenRight)
@@ -146,12 +146,12 @@ func EigSymOut(a tensor.Tensor, vecs, vals *tensor.Float64) error {
 		}
 	}
 	if na == 2 {
-		if a.DimSize(0) != a.DimSize(1) {
+		if ea.DimSize(0) != ea.DimSize(1) {
 			return mat.ErrShape
 		}
-		ma, _ := NewSymmetric(a)
-		vecs.SetShapeSizes(a.DimSize(0), a.DimSize(1))
-		vals.SetShapeSizes(a.DimSize(0))
+		ma, _ := NewSymmetric(ea)
+		vecs.SetShapeSizes(ea.DimSize(0), ea.DimSize(1))
+		vals.SetShapeSizes(ea.DimSize(0))
 		do, _ := NewDense(vecs)
 		var eig mat.EigenSym
 		ok := eig.Factorize(ma, true)
@@ -233,12 +233,12 @@ func SVDOut(a tensor.Tensor, vecs, vals *tensor.Float64) error {
 		}
 	}
 	if na == 2 {
-		if a.DimSize(0) != a.DimSize(1) {
+		if ea.DimSize(0) != ea.DimSize(1) {
 			return mat.ErrShape
 		}
-		ma, _ := NewSymmetric(a)
-		vecs.SetShapeSizes(a.DimSize(0), a.DimSize(1))
-		vals.SetShapeSizes(a.DimSize(0))
+		ma, _ := NewSymmetric(ea)
+		vecs.SetShapeSizes(ea.DimSize(0), ea.DimSize(1))
+		vals.SetShapeSizes(ea.DimSize(0))
 		do, _ := NewDense(vecs)
 		var eig mat.SVD
 		ok := eig.Factorize(ma, mat.SVDFull)
@@ -315,11 +315,11 @@ func SVDValuesOut(a tensor.Tensor, vals *tensor.Float64) error {
 		}
 	}
 	if na == 2 {
-		if a.DimSize(0) != a.DimSize(1) {
+		if ea.DimSize(0) != ea.DimSize(1) {
 			return mat.ErrShape
 		}
-		ma, _ := NewSymmetric(a)
-		vals.SetShapeSizes(a.DimSize(0))
+		ma, _ := NewSymmetric(ea)
+		vals.SetShapeSizes(ea.DimSize(0))
 		var eig mat.SVD
 		ok := eig.Factorize(ma, mat.SVDNone)
 		if !ok {

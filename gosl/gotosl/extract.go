@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"slices"
-
 	"cogentcore.org/core/base/errors"
 )
 
@@ -122,9 +120,9 @@ func (st *State) ExtractGosl(lines [][]byte) (outLines [][]byte, hasVars bool) {
 				nf := len(flds)
 				if nf > 0 && strings.HasPrefix(flds[nf-1], rw) {
 					rwf := flds[nf-1]
-					slices.Delete(flds, nf-1, nf)
-					varlist := strings.Split(rwf[len(rw):], ",")
-					for _, v := range varlist {
+					flds = flds[:nf-1]
+					varlist := strings.SplitSeq(rwf[len(rw):], ",")
+					for v := range varlist {
 						rwvars[v] = true
 					}
 				}
@@ -138,15 +136,16 @@ func (st *State) ExtractGosl(lines [][]byte) (outLines [][]byte, hasVars bool) {
 				rp := strings.LastIndex(fcall, ")")
 				args := fcall[lp+1 : rp]
 				fnm := fcall[:lp]
-				funcode := ""
+				var funcode strings.Builder
 				for ki := li + 1; ki < len(lines); ki++ {
 					kl := lines[ki]
 					if len(kl) > 0 && kl[0] == '}' {
 						break
 					}
-					funcode += string(kl) + "\n"
+					funcode.Write(kl)
+					funcode.WriteString("\n")
 				}
-				kn := &Kernel{Name: fnm, Args: args, FuncCode: funcode, ReadWriteVars: rwvars}
+				kn := &Kernel{Name: fnm, Args: args, FuncCode: funcode.String(), ReadWriteVars: rwvars}
 				sy.Kernels[fnm] = kn
 				if st.Config.Debug {
 					fmt.Println("\tAdded kernel:", fnm, "args:", args, "system:", sy.Name)
@@ -197,7 +196,7 @@ func (st *State) ExtractWGSL(lines [][]byte) [][]byte {
 	mx := min(10, len(lines))
 	stln := 0
 	gotImp := false
-	for li := 0; li < mx; li++ {
+	for li := range mx {
 		ln := lines[li]
 		switch {
 		case bytes.HasPrefix(ln, pack):

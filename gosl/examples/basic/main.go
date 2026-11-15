@@ -27,7 +27,7 @@ func main() {
 	gpu.Debug = true
 	GPUInit()
 
-	rand.Seed(0)
+	rnd := rand.New(rand.NewSource(0))
 	// gpu.NumThreads = 1 // to restrict to sequential for loop
 	n := 160_000_000 // nbuffs = 8
 	// n := 16_000_000 // fits in 1 buffer
@@ -45,7 +45,7 @@ func main() {
 	IntData.SetShapeSizes(n, 3)
 
 	for i := range nt {
-		Data.Set1D(rand.Float32(), i)
+		Data.Set1D(rnd.Float32(), i)
 	}
 
 	sid := tensor.NewInt32()
@@ -88,11 +88,11 @@ func main() {
 	gpuFullTmr.Stop()
 
 	mx := min(n, 5)
-	for i := 0; i < mx; i++ {
+	for i := range mx {
 		fmt.Printf("%d\t CPU IntData: %d\t GPU: %d\n", i, cid.Value(1, Integ), sid.Value(i, Integ))
 	}
 	fmt.Println()
-	for i := 0; i < mx; i++ {
+	for i := range mx {
 		d := cd.Value(i, Exp) - sd.Value(i, Exp)
 		fmt.Printf("CPU:\t%d\t Raw: %6.4g\t Integ: %6.4g\t Exp: %6.4g\tGPU: %6.4g\tDiff: %g\n", i, cd.Value(i, Raw), cd.Value(i, Integ), cd.Value(i, Exp), sd.Value(i, Exp), d)
 		fmt.Printf("GPU:\t%d\t Raw: %6.4g\t Integ: %6.4g\t Exp: %6.4g\tCPU: %6.4g\tDiff: %g\n\n", i, sd.Value(i, Raw), sd.Value(i, Integ), sd.Value(i, Exp), cd.Value(i, Exp), d)

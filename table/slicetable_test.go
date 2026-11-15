@@ -27,4 +27,8 @@ func TestSliceTable(t *testing.T) {
 		t.Error(err.Error())
 	}
 	assert.Equal(t, 2, dt.NumRows())
+	// the string fields are columns too
+	assert.Equal(t, 3, dt.NumColumns())
+	assert.Equal(t, "Boulder", dt.Column("City").StringRow(1, 0))
+	assert.Equal(t, 85000.0, dt.Column("Population").FloatRow(1, 0))
 }

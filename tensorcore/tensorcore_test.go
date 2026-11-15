@@ -31,7 +31,7 @@ func TestTable(t *testing.T) {
 	b.AddTopBar(func(bar *core.Frame) {
 		core.NewToolbar(bar).Maker(tw.MakeToolbar)
 	})
-	b.AssertRender(t, "table")
+	core.AssertRender(t, b, "table")
 }
 
 func TestGrid(t *testing.T) {
@@ -52,7 +52,7 @@ func TestGrid(t *testing.T) {
 	b.AddTopBar(func(bar *core.Frame) {
 		core.NewToolbar(bar).Maker(gv.MakeToolbar)
 	})
-	b.AssertRender(t, "grid")
+	core.AssertRender(t, b, "grid")
 }
 
 func TestTensor(t *testing.T) {
@@ -68,7 +68,7 @@ func TestTensor(t *testing.T) {
 	b.AddTopBar(func(bar *core.Frame) {
 		core.NewToolbar(bar).Maker(te.MakeToolbar)
 	})
-	b.AssertRender(t, "tensor")
+	core.AssertRender(t, b, "tensor")
 }
 
 // TestTableKeepScroll tests that setting the table that is already viewed,
@@ -123,7 +123,7 @@ func TestTableColumnWidths(t *testing.T) {
 	tw.ColumnWidths = map[string]float32{input: 200}
 	changes := 0
 	tw.OnChange(func(e events.Event) { changes++ })
-	b.AssertRender(t, "table-column-widths", func() {
+	core.AssertRender(t, b, "table-column-widths", func() {
 		b.AsyncLock()
 		dots := tw.Styles.UnitContext.Dots(units.UnitDp)
 		assert.InDelta(t, 200*dots, columnDots(&tw.ListBase, 1), 1, "the tensor column")
@@ -161,7 +161,7 @@ func TestTensorEditorColumnWidths(t *testing.T) {
 	te.ColumnWidths = map[string]float32{second: 150}
 	changes := 0
 	te.OnChange(func(e events.Event) { changes++ })
-	b.AssertRender(t, "tensor-column-widths", func() {
+	core.AssertRender(t, b, "tensor-column-widths", func() {
 		b.AsyncLock()
 		dots := te.Styles.UnitContext.Dots(units.UnitDp)
 		assert.InDelta(t, 150*dots, columnDots(&te.ListBase, 1), 1)

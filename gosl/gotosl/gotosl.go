@@ -267,8 +267,8 @@ func (st *State) Init(cfg *Config) {
 	st.GoImports = make(map[string]map[string]*File)
 	st.Systems = make(map[string]*System)
 	st.ExcludeMap = make(map[string]bool)
-	ex := strings.Split(cfg.Exclude, ",")
-	for _, fn := range ex {
+	ex := strings.SplitSeq(cfg.Exclude, ",")
+	for fn := range ex {
 		st.ExcludeMap[fn] = true
 	}
 	st.Systems["Default"] = NewSystem("Default")

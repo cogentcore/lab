@@ -113,7 +113,7 @@ func (ps *Pose) RotateEuler(x, y, z float32) { //types:add
 }
 
 // RotateEulerRad rotates by given Euler angles (in radians) relative to existing rotation.
-func (ps *Pose) RotateEulerRad(x, y, z, angle float32) {
+func (ps *Pose) RotateEulerRad(x, y, z float32) {
 	ps.Quat.SetMul(math32.NewQuatEuler(math32.Vec3(x, y, z)))
 }
 

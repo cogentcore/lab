@@ -137,6 +137,6 @@ func SetShapeNames(md *metadata.Data, names ...string) {
 
 // ShapeNames gets the tensor shape dimension names from given metadata.
 func ShapeNames(md *metadata.Data) []string {
-	names, _ := metadata.Get[[]string](*md, "ShapeNames")
+	names, _ := metadata.GetFromData[[]string](*md, "ShapeNames")
 	return names
 }

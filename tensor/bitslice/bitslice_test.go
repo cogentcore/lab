@@ -170,3 +170,27 @@ func TestBitSlice7(t *testing.T) {
 		t.Errorf("append false != %v", out)
 	}
 }
+
+// TestSetLenGrow tests growing a slice beyond its capacity, which keeps
+// its bits and has the new length.
+func TestSetLenGrow(t *testing.T) {
+	bs := Make(3, 0)
+	bs.Set(true, 1)
+	bs.SetLen(20)
+	if bs.Len() != 20 {
+		t.Errorf("length %d, not 20", bs.Len())
+	}
+	if !bs.Index(1) || bs.Index(0) {
+		t.Errorf("bits not kept: %v", bs.String())
+	}
+}
+
+// TestToBools tests the bools of a slice, one for each bit.
+func TestToBools(t *testing.T) {
+	bs := Make(10, 0)
+	bs.Set(true, 9)
+	bb := bs.ToBools()
+	if len(bb) != 10 || !bb[9] || bb[0] {
+		t.Errorf("bools %v", bb)
+	}
+}

@@ -123,7 +123,6 @@ func (cl *Client) FetchResults(resultsGlob string, ids ...int) ([]*Job, error) {
 // UpdateJobs pings the server to run its updates.
 // This happens automatically very 10 seconds but this is for the impatient.
 func (cl *Client) UpdateJobs() {
-	return
 }
 
 // RecoverJob recovers a job which has been lost somehow.

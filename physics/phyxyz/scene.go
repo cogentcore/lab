@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// package phyxyz implements visualization of [physics] using [xyz]
+// Package phyxyz implements visualization of [physics] using [xyz]
 // 3D graphics.
 package phyxyz
 
@@ -160,5 +160,5 @@ func (sc *Scene) NewSkin(shape physics.Shapes, name, clr string, hsize math32.Ve
 func (sc *Scene) AddSkinClone(sk *Skin) {
 	nsk := &Skin{}
 	*nsk = *sk
-	sc.Skins = append(sc.Skins, sk)
+	sc.Skins = append(sc.Skins, nsk)
 }

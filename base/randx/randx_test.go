@@ -17,7 +17,7 @@ func TestPoisson(t *testing.T) {
 	mi := 30
 	rnd := NewGlobalRand()
 	pd := make([]int, mi)
-	for i := 0; i < 100000; i++ {
+	for range 100000 {
 		kv := int(PoissonGen(vr, rnd))
 		// fmt.Printf("poisson: %d\n", kv)
 		if kv < mi {
@@ -29,7 +29,7 @@ func TestPoisson(t *testing.T) {
 	li := 0
 	ep := math.Exp(-vr)
 	p := 1.0
-	for i := 0; i < 1000000; i++ {
+	for i := range 1000000 {
 		p *= rnd.Float64()
 		if p <= ep {
 			d := i - li
@@ -45,7 +45,7 @@ func TestPoisson(t *testing.T) {
 	mxe := 0
 	im := 0
 	em := 0
-	for i := 0; i < mi; i++ {
+	for i := range mi {
 		v := pd[i]
 		if v > mxi {
 			mxi = v

@@ -6,6 +6,7 @@ package gotosl
 
 import (
 	"fmt"
+	maps0 "maps"
 	"sort"
 
 	"golang.org/x/exp/maps"
@@ -37,7 +38,7 @@ func (fn *Function) AddVarUsed(vr *Var) {
 	fn.VarsUsed[vr.Name] = vr
 }
 
-// get or add a function of given name
+// RecycleFunc gets or adds a function of given name
 func (st *State) RecycleFunc(name string) *Function {
 	fn, ok := st.FuncGraph[name]
 	if !ok {
@@ -83,12 +84,8 @@ func (st *State) VarsUsed(funcs map[string]*Function) (avars, uvars map[string]*
 	avars = make(map[string]*Var)
 	uvars = make(map[string]*Var)
 	for _, fn := range funcs {
-		for vn, v := range fn.Atomics {
-			avars[vn] = v
-		}
-		for vn, v := range fn.VarsUsed {
-			uvars[vn] = v
-		}
+		maps0.Copy(avars, fn.Atomics)
+		maps0.Copy(uvars, fn.VarsUsed)
 	}
 	nvars = 1 // assume TensorStrides always
 	for _, vr := range uvars {

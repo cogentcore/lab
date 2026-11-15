@@ -45,7 +45,7 @@ func Println(fs ...any) {
 // AllPrintln does fmt.Println on all nodes, with node rank printed first
 // This is best for debugging MPI itself.
 func AllPrintln(fs ...any) {
-	fsa := make([]any, len(fs))
+	fsa := make([]any, len(fs)+1) // the rank, then fs
 	copy(fsa[1:], fs)
 	fsa[0] = fmt.Sprintf("P%d: ", WorldRank())
 	fmt.Println(fsa...)

@@ -88,10 +88,7 @@ func (ls *LineStyle) HasFill() bool {
 		return false
 	}
 	clr := colors.ToUniform(ls.Fill)
-	if clr == colors.Transparent {
-		return false
-	}
-	return true
+	return clr != colors.Transparent
 }
 
 // Draw draws a line between given coordinates, setting the stroke style

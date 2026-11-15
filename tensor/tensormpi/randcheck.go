@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strings"
 
 	"cogentcore.org/lab/base/mpi"
 )
@@ -15,6 +16,9 @@ import (
 // RandCheck checks that the current random numbers generated across each
 // MPI processor are identical.
 func RandCheck(comm *mpi.Comm) error {
+	if !mpi.IsOn() { // one process, without MPI
+		return nil
+	}
 	ws := comm.Size()
 	rnd := rand.Int()
 	src := []int{rnd}
@@ -23,14 +27,14 @@ func RandCheck(comm *mpi.Comm) error {
 	if err != nil {
 		return err
 	}
-	errs := ""
+	var errs strings.Builder
 	for i := range agg {
 		if agg[i] != rnd {
-			errs += fmt.Sprintf("%d ", i)
+			fmt.Fprintf(&errs, "%d ", i)
 		}
 	}
-	if errs != "" {
-		err = errors.New("tensormpi.RandCheck: random numbers differ in procs: " + errs)
+	if errs.String() != "" {
+		err = errors.New("tensormpi.RandCheck: random numbers differ in procs: " + errs.String())
 		mpi.Printf("%s\n", err)
 	}
 	return err

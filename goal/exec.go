@@ -109,8 +109,11 @@ func (gl *Goal) Exec(errOk, start, output bool, cmd any, args ...any) string {
 					if cmdIO.Cmd != nil {
 						cmdIO.Cmd.Wait()
 					}
-					cmdIO.PopToStart()
-					gl.DeleteJob(job)
+					// The job's IO is restored by whoever removes the job,
+					// once: here, or DeleteAllJobs.
+					if gl.DeleteJob(job) {
+						cmdIO.PopToStart()
+					}
 				}()
 			case output:
 				cmdIO.PushOut(nil)
@@ -500,10 +503,7 @@ func (gl *Goal) InFromFile(cl *sshclient.Client, cmdIO *exec.CmdIO, errOk bool, 
 func (gl *Goal) OutToPipe(cl *sshclient.Client, cmdIO *exec.CmdIO, errOk bool, sargs []string, i int) []string {
 	s := sargs[i]
 	sn := len(s)
-	errf := false
-	if sn > 1 && s[1] == '&' {
-		errf = true
-	}
+	errf := sn > 1 && s[1] == '&'
 	sargs = slices.Delete(sargs, i, i+1)
 	cmdIO.PushOutPipe()
 	if errf {
@@ -521,8 +521,8 @@ func (gl *Goal) CmdArgs(errOk bool, sargs []string, i int) []string {
 
 	// fmt.Println("command args:", args)
 
-	switch {
-	case sargs[i] == "args...":
+	switch sargs[i] {
+	case "args...":
 		sargs = slices.Delete(sargs, i, i+1)
 		sargs = slices.Insert(sargs, i, args...)
 	}

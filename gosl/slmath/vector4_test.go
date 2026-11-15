@@ -25,7 +25,7 @@ func TestVector4VsMath32(t *testing.T) {
 			eq3(t, v.PerspDiv(), PerspDiv4(v), "PerspDiv4")
 		}
 
-		for d := int32(0); d < 4; d++ {
+		for d := range int32(4) {
 			dim := math32.Dims(d)
 			eqf(t, v.Dim(dim), Dim4(v, d), "Dim4")
 			for _, s := range testScalars {

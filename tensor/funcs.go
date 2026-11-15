@@ -7,6 +7,7 @@ package tensor
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/metadata"
@@ -87,23 +88,25 @@ func (fn *Func) GetArgs() {
 }
 
 func (fn *Func) String() string {
-	s := fn.Name + "("
+	var s strings.Builder
+	s.WriteString(fn.Name)
+	s.WriteString("(")
 	na := len(fn.Args)
 	for i, a := range fn.Args {
 		if a.IsVariadic {
-			s += "..."
+			s.WriteString("...")
 		}
 		ts := a.Type.String()
 		if ts == "interface {}" {
 			ts = "any"
 		}
-		s += ts
+		s.WriteString(ts)
 		if i < na-1 {
-			s += ", "
+			s.WriteString(", ")
 		}
 	}
-	s += ")"
-	return s
+	s.WriteString(")")
+	return s.String()
 }
 
 // Funcs is the global tensor named function registry.
@@ -245,7 +248,7 @@ func SetCalcFunc(tsr Tensor, fun func() error) {
 // given tensor. Returns an error if func not set, or any error from func itself.
 // Function is stored as CalcFunc in Metadata.
 func Calc(tsr Tensor) error {
-	fun, err := metadata.Get[func() error](*tsr.Metadata(), "CalcFunc")
+	fun, err := metadata.GetFromData[func() error](*tsr.Metadata(), "CalcFunc")
 	if err != nil {
 		return err
 	}

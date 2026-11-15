@@ -27,5 +27,10 @@ func (fc *PlotterChooser) Init() {
 	fc.Chooser.Init()
 	pnms := maps.Keys(plot.Plotters)
 	slices.Sort(pnms)
-	fc.SetStrings(pnms...)
+	// the items are PlotterNames, as the value, so that it is found in them
+	items := make([]core.ChooserItem, len(pnms))
+	for i, nm := range pnms {
+		items[i].Value = plot.PlotterName(nm)
+	}
+	fc.SetItems(items...)
 }

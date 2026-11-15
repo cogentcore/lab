@@ -77,15 +77,15 @@ var shaders embed.FS`, st.Config.Output)
 		shaders = `var shaders embed.FS`
 		pkg = "imports"
 	}
-	b.WriteString(fmt.Sprintf(header, pkg, shaders))
+	fmt.Fprintf(&b, header, pkg, shaders)
 
 	sys := maps.Keys(st.Systems)
 	slices.Sort(sys)
 
 	for _, synm := range sys {
 		sy := st.Systems[synm]
-		b.WriteString(fmt.Sprintf("// %s is a GPU compute System with kernels operating on the\n// same set of data variables.\n", st.genSysVar(sy)))
-		b.WriteString(fmt.Sprintf("var %s *gpu.ComputeSystem\n", st.genSysVar(sy)))
+		fmt.Fprintf(&b, "// %s is a GPU compute System with kernels operating on the\n// same set of data variables.\n", st.genSysVar(sy))
+		fmt.Fprintf(&b, "var %s *gpu.ComputeSystem\n", st.genSysVar(sy))
 	}
 
 	venum := `
@@ -107,7 +107,7 @@ const (
 		}
 		for _, gp := range sy.Groups {
 			for _, vr := range gp.Vars {
-				b.WriteString(fmt.Sprintf("\t%sVar GPUVars = %d\n", vr.Name, vidx))
+				fmt.Fprintf(&b, "\t%sVar GPUVars = %d\n", vr.Name, vidx)
 				vidx++
 			}
 		}
@@ -119,7 +119,7 @@ const (
 		for _, synm := range sys {
 			sy := st.Systems[synm]
 			genSynm := st.genSysName(sy)
-			b.WriteString(fmt.Sprintf("var %sTensorStrides tensor.Uint32\n", genSynm))
+			fmt.Fprintf(&b, "var %sTensorStrides tensor.Uint32\n", genSynm)
 		}
 	} else {
 		b.WriteString("\n// Dummy tensor stride variable to avoid import error\n")
@@ -169,7 +169,7 @@ func GPURelease() {
 
 	for _, synm := range sys {
 		sy := st.Systems[synm]
-		b.WriteString(fmt.Sprintf(sysRelease, st.genSysVar(sy)))
+		fmt.Fprintf(&b, sysRelease, st.genSysVar(sy))
 	}
 
 	gpuRelease := `
@@ -205,8 +205,8 @@ func (st *State) GenGPUSystemInit(sy *System) string {
 	syvar := st.genSysVar(sy)
 
 	b.WriteString("\t{\n")
-	b.WriteString(fmt.Sprintf("\t\tsy := gpu.NewComputeSystem(gp, %q)\n", sy.Name))
-	b.WriteString(fmt.Sprintf("\t\t%s = sy\n", syvar))
+	fmt.Fprintf(&b, "\t\tsy := gpu.NewComputeSystem(gp, %q)\n", sy.Name)
+	fmt.Fprintf(&b, "\t\t%s = sy\n", syvar)
 
 	kns := maps.Keys(sy.Kernels)
 	slices.Sort(kns)
@@ -217,10 +217,10 @@ func (st *State) GenGPUSystemInit(sy *System) string {
 		if gp.Uniform {
 			gtyp = "gpu.Uniform"
 		}
-		b.WriteString(fmt.Sprintf("\t\t\tsgp := vars.AddGroup(%s, %q)\n", gtyp, gp.Name))
+		fmt.Fprintf(&b, "\t\t\tsgp := vars.AddGroup(%s, %q)\n", gtyp, gp.Name)
 		b.WriteString("\t\t\tvar vr *gpu.Var\n\t\t\t_ = vr\n")
 		if sy.NTensors > 0 && gi == 0 {
-			b.WriteString(fmt.Sprintf("\t\t\tvr = sgp.Add(%q, gpu.%s, 1, gpu.ComputeShader)\n", "TensorStrides", "Uint32"))
+			fmt.Fprintf(&b, "\t\t\tvr = sgp.Add(%q, gpu.%s, 1, gpu.ComputeShader)\n", "TensorStrides", "Uint32")
 			b.WriteString("\t\t\tvr.ReadOnly = true\n")
 		}
 		for _, vr := range gp.Vars {
@@ -228,13 +228,13 @@ func (st *State) GenGPUSystemInit(sy *System) string {
 				typ := strings.TrimPrefix(vr.Type, "tensor.")
 				if vr.NBuffs > 1 {
 					for bi := range vr.NBuffs {
-						b.WriteString(fmt.Sprintf("\t\t\tvr = sgp.Add(\"%s%d\", gpu.%s, 1, gpu.ComputeShader)\n", vr.Name, bi, typ))
+						fmt.Fprintf(&b, "\t\t\tvr = sgp.Add(\"%s%d\", gpu.%s, 1, gpu.ComputeShader)\n", vr.Name, bi, typ)
 					}
 				} else {
-					b.WriteString(fmt.Sprintf("\t\t\tvr = sgp.Add(%q, gpu.%s, 1, gpu.ComputeShader)\n", vr.Name, typ))
+					fmt.Fprintf(&b, "\t\t\tvr = sgp.Add(%q, gpu.%s, 1, gpu.ComputeShader)\n", vr.Name, typ)
 				}
 			} else {
-				b.WriteString(fmt.Sprintf("\t\t\tvr = sgp.AddStruct(%q, int(unsafe.Sizeof(%s{})), 1, gpu.ComputeShader)\n", vr.Name, vr.SLType()))
+				fmt.Fprintf(&b, "\t\t\tvr = sgp.AddStruct(%q, int(unsafe.Sizeof(%s{})), 1, gpu.ComputeShader)\n", vr.Name, vr.SLType())
 			}
 			if vr.ReadOnly && !vr.ReadOrWrite {
 				b.WriteString("\t\t\tvr.ReadOnly = true\n")
@@ -246,9 +246,9 @@ func (st *State) GenGPUSystemInit(sy *System) string {
 	b.WriteString("\t\tvar pl *gpu.ComputePipeline\n")
 	for _, knm := range kns {
 		kn := sy.Kernels[knm]
-		b.WriteString(fmt.Sprintf("\t\tpl = gpu.NewComputePipelineShaderFS(shaders, %q, sy)\n", kn.Filename))
+		fmt.Fprintf(&b, "\t\tpl = gpu.NewComputePipelineShaderFS(shaders, %q, sy)\n", kn.Filename)
 		if sy.NTensors > 0 {
-			b.WriteString(fmt.Sprintf("\t\tpl.AddVarUsed(%d, %q)\n", 0, "TensorStrides"))
+			fmt.Fprintf(&b, "\t\tpl.AddVarUsed(%d, %q)\n", 0, "TensorStrides")
 		}
 		vnms := maps.Keys(kn.VarsUsed)
 		slices.Sort(vnms)
@@ -256,10 +256,10 @@ func (st *State) GenGPUSystemInit(sy *System) string {
 			vr := kn.VarsUsed[vnm]
 			if vr.NBuffs > 1 {
 				for bi := range vr.NBuffs {
-					b.WriteString(fmt.Sprintf("\t\tpl.AddVarUsed(%d, \"%s%d\")\n", vr.Group, vr.Name, bi))
+					fmt.Fprintf(&b, "\t\tpl.AddVarUsed(%d, \"%s%d\")\n", vr.Group, vr.Name, bi)
 				}
 			} else {
-				b.WriteString(fmt.Sprintf("\t\tpl.AddVarUsed(%d, %q)\n", vr.Group, vr.Name))
+				fmt.Fprintf(&b, "\t\tpl.AddVarUsed(%d, %q)\n", vr.Group, vr.Name)
 			}
 		}
 	}
@@ -351,9 +351,9 @@ func %[1]sToGPU(vars ...GPUVars) {
 	slices.Sort(kns)
 	for _, knm := range kns {
 		kn := sy.Kernels[knm]
-		b.WriteString(fmt.Sprintf(run, kn.Name, syvar, synm))
+		fmt.Fprintf(&b, run, kn.Name, syvar, synm)
 	}
-	b.WriteString(fmt.Sprintf(runDone, synm, syvar))
+	fmt.Fprintf(&b, runDone, synm, syvar)
 
 	for gi, gp := range sy.Groups {
 		for _, vr := range gp.Vars {
@@ -361,21 +361,21 @@ func %[1]sToGPU(vars ...GPUVars) {
 			if vr.Tensor {
 				vv += ".Values"
 			}
-			b.WriteString(fmt.Sprintf("\t\tcase %sVar:\n", vr.Name))
+			fmt.Fprintf(&b, "\t\tcase %sVar:\n", vr.Name)
 			if vr.NBuffs > 1 {
 				bsz := st.Config.MaxBufferSize / 4
-				b.WriteString(fmt.Sprintf("\t\t\tbsz := %d\n", bsz))
-				b.WriteString(fmt.Sprintf("\t\t\tn := %s.Len()\n", vr.Name))
+				fmt.Fprintf(&b, "\t\t\tbsz := %d\n", bsz)
+				fmt.Fprintf(&b, "\t\t\tn := %s.Len()\n", vr.Name)
 				b.WriteString("\t\t\tnb := int(math.Ceil(float64(n) / float64(bsz)))\n")
 				b.WriteString("\t\t\tfor bi := range nb {\n")
-				b.WriteString(fmt.Sprintf("\t\t\t\tv, _ := syVars.ValueByIndex(%d, fmt.Sprintf(\"%s%%d\", bi), 0)\n", gi, vr.Name))
+				fmt.Fprintf(&b, "\t\t\t\tv, _ := syVars.ValueByIndex(%d, fmt.Sprintf(\"%s%%d\", bi), 0)\n", gi, vr.Name)
 				b.WriteString("\t\t\t\tst := bsz * bi\n")
 				b.WriteString("\t\t\t\ted := min(bsz * (bi+1), n)\n")
-				b.WriteString(fmt.Sprintf("\t\t\t\tgpu.SetValueFrom(v, %s[st:ed])\n", vv))
+				fmt.Fprintf(&b, "\t\t\t\tgpu.SetValueFrom(v, %s[st:ed])\n", vv)
 				b.WriteString("\t\t\t}\n")
 			} else {
-				b.WriteString(fmt.Sprintf("\t\t\tv, _ := syVars.ValueByIndex(%d, %q, 0)\n", gi, vr.Name))
-				b.WriteString(fmt.Sprintf("\t\t\tgpu.SetValueFrom(v, %s)\n", vv))
+				fmt.Fprintf(&b, "\t\t\tv, _ := syVars.ValueByIndex(%d, %q, 0)\n", gi, vr.Name)
+				fmt.Fprintf(&b, "\t\t\tgpu.SetValueFrom(v, %s)\n", vv)
 			}
 		}
 	}
@@ -392,7 +392,7 @@ func Run%[1]sGPUSync() {
 	sy.BeginComputePass()
 }
 `
-	b.WriteString(fmt.Sprintf(runSync, synm, syvar))
+	fmt.Fprintf(&b, runSync, synm, syvar)
 
 	if sy.NTensors > 0 {
 		tensorStrides := `
@@ -404,11 +404,11 @@ func %[1]sToGPUTensorStrides() {
 	sy := %[2]s
 	syVars := sy.Vars()
 `
-		b.WriteString(fmt.Sprintf(tensorStrides, synm, syvar))
+		fmt.Fprintf(&b, tensorStrides, synm, syvar)
 
 		strvar := synm + "TensorStrides"
 
-		b.WriteString(fmt.Sprintf("\t%s.SetShapeSizes(%d)\n", strvar, sy.NTensors*10))
+		fmt.Fprintf(&b, "\t%s.SetShapeSizes(%d)\n", strvar, sy.NTensors*10)
 
 		for _, gp := range sy.Groups {
 			for _, vr := range gp.Vars {
@@ -416,12 +416,12 @@ func %[1]sToGPUTensorStrides() {
 					continue
 				}
 				for d := range vr.TensorDims {
-					b.WriteString(fmt.Sprintf("\t%sTensorStrides.SetInt1D(%s.Shape().Strides[%d], %d)\n", synm, vr.Name, d, vr.TensorIndex*10+d))
+					fmt.Fprintf(&b, "\t%sTensorStrides.SetInt1D(%s.Shape().Strides[%d], %d)\n", synm, vr.Name, d, vr.TensorIndex*10+d)
 				}
 			}
 		}
-		b.WriteString(fmt.Sprintf("\tv, _ := syVars.ValueByIndex(0, %q, 0)\n", strvar))
-		b.WriteString(fmt.Sprintf("\tgpu.SetValueFrom(v, %s.Values)\n", strvar))
+		fmt.Fprintf(&b, "\tv, _ := syVars.ValueByIndex(0, %q, 0)\n", strvar)
+		fmt.Fprintf(&b, "\tgpu.SetValueFrom(v, %s.Values)\n", strvar)
 		b.WriteString("}\n")
 	}
 
@@ -434,22 +434,22 @@ func %[1]sReadFromGPU(vars ...GPUVars) {
 		switch vr {
 `
 
-	b.WriteString(fmt.Sprintf(fmGPU, synm, syvar))
+	fmt.Fprintf(&b, fmGPU, synm, syvar)
 
 	for gi, gp := range sy.Groups {
 		for _, vr := range gp.Vars {
-			b.WriteString(fmt.Sprintf("\t\tcase %sVar:\n", vr.Name))
+			fmt.Fprintf(&b, "\t\tcase %sVar:\n", vr.Name)
 			if vr.NBuffs > 1 {
 				bsz := st.Config.MaxBufferSize / 4
-				b.WriteString(fmt.Sprintf("\t\t\tbsz := %d\n", bsz))
-				b.WriteString(fmt.Sprintf("\t\t\tn := %s.Len()\n", vr.Name))
+				fmt.Fprintf(&b, "\t\t\tbsz := %d\n", bsz)
+				fmt.Fprintf(&b, "\t\t\tn := %s.Len()\n", vr.Name)
 				b.WriteString("\t\t\tnb := int(math.Ceil(float64(n) / float64(bsz)))\n")
 				b.WriteString("\t\t\tfor bi := range nb {\n")
-				b.WriteString(fmt.Sprintf("\t\t\t\tv, _ := syVars.ValueByIndex(%d, fmt.Sprintf(\"%s%%d\", bi), 0)\n", gi, vr.Name))
+				fmt.Fprintf(&b, "\t\t\t\tv, _ := syVars.ValueByIndex(%d, fmt.Sprintf(\"%s%%d\", bi), 0)\n", gi, vr.Name)
 				b.WriteString("\t\t\t\tv.GPUToRead(sy.CommandEncoder)\n")
 				b.WriteString("\t\t\t}\n")
 			} else {
-				b.WriteString(fmt.Sprintf("\t\t\tv, _ := syVars.ValueByIndex(%d, %q, 0)\n", gi, vr.Name))
+				fmt.Fprintf(&b, "\t\t\tv, _ := syVars.ValueByIndex(%d, %q, 0)\n", gi, vr.Name)
 				b.WriteString("\t\t\tv.GPUToRead(sy.CommandEncoder)\n")
 			}
 		}
@@ -465,7 +465,7 @@ func %[1]sSyncFromGPU(vars ...GPUVars) {
 		switch vr {
 `
 
-	b.WriteString(fmt.Sprintf(syncGPU, synm, syvar))
+	fmt.Fprintf(&b, syncGPU, synm, syvar)
 
 	for gi, gp := range sy.Groups {
 		for _, vr := range gp.Vars {
@@ -473,23 +473,23 @@ func %[1]sSyncFromGPU(vars ...GPUVars) {
 			if vr.Tensor {
 				vv += ".Values"
 			}
-			b.WriteString(fmt.Sprintf("\t\tcase %sVar:\n", vr.Name))
+			fmt.Fprintf(&b, "\t\tcase %sVar:\n", vr.Name)
 			if vr.NBuffs > 1 {
 				bsz := st.Config.MaxBufferSize / 4
-				b.WriteString(fmt.Sprintf("\t\t\tbsz := %d\n", bsz))
-				b.WriteString(fmt.Sprintf("\t\t\tn := %s.Len()\n", vr.Name))
+				fmt.Fprintf(&b, "\t\t\tbsz := %d\n", bsz)
+				fmt.Fprintf(&b, "\t\t\tn := %s.Len()\n", vr.Name)
 				b.WriteString("\t\t\tnb := int(math.Ceil(float64(n) / float64(bsz)))\n")
 				b.WriteString("\t\t\tfor bi := range nb {\n")
-				b.WriteString(fmt.Sprintf("\t\t\t\tv, _ := syVars.ValueByIndex(%d, fmt.Sprintf(\"%s%%d\", bi), 0)\n", gi, vr.Name))
-				b.WriteString(fmt.Sprintf("\t\t\t\tv.ReadSync()\n"))
+				fmt.Fprintf(&b, "\t\t\t\tv, _ := syVars.ValueByIndex(%d, fmt.Sprintf(\"%s%%d\", bi), 0)\n", gi, vr.Name)
+				b.WriteString("\t\t\t\tv.ReadSync()\n")
 				b.WriteString("\t\t\t\tst := bsz * bi\n")
 				b.WriteString("\t\t\t\ted := min(bsz * (bi+1), n)\n")
-				b.WriteString(fmt.Sprintf("\t\t\t\tgpu.ReadToBytes(v, %s[st:ed])\n", vv))
+				fmt.Fprintf(&b, "\t\t\t\tgpu.ReadToBytes(v, %s[st:ed])\n", vv)
 				b.WriteString("\t\t\t}\n")
 			} else {
-				b.WriteString(fmt.Sprintf("\t\t\tv, _ := syVars.ValueByIndex(%d, %q, 0)\n", gi, vr.Name))
-				b.WriteString(fmt.Sprintf("\t\t\tv.ReadSync()\n"))
-				b.WriteString(fmt.Sprintf("\t\t\tgpu.ReadToBytes(v, %s)\n", vv))
+				fmt.Fprintf(&b, "\t\t\tv, _ := syVars.ValueByIndex(%d, %q, 0)\n", gi, vr.Name)
+				b.WriteString("\t\t\tv.ReadSync()\n")
+				fmt.Fprintf(&b, "\t\t\tgpu.ReadToBytes(v, %s)\n", vv)
 			}
 		}
 	}
@@ -508,7 +508,7 @@ func Get%[1]s(idx uint32) *%[2]s {
 			if vr.Tensor {
 				continue
 			}
-			b.WriteString(fmt.Sprintf(getFun, vr.Name, vr.SLType()))
+			fmt.Fprintf(&b, getFun, vr.Name, vr.SLType())
 		}
 	}
 

@@ -83,14 +83,14 @@ func ExampleStyler() {
 }
 
 func ExampleTable() {
-	rand.Seed(1)
+	rnd := rand.New(rand.NewSource(1))
 	n := 21
 	tx, ty, th := tensor.NewFloat64(n), tensor.NewFloat64(n), tensor.NewFloat64(n)
 	lbls := tensor.NewString(n)
 	for i := range n {
 		tx.SetFloat1D(float64(i*5), i)
 		ty.SetFloat1D(50.0+40*math.Sin((float64(i)/8)*math.Pi), i)
-		th.SetFloat1D(5*rand.Float64(), i)
+		th.SetFloat1D(5*rnd.Float64(), i)
 		lbls.SetString1D(strconv.Itoa(i), i)
 	}
 	genst := func(s *plot.Style) {

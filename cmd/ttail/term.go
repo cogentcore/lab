@@ -89,7 +89,7 @@ func (tm *Term) Draw() error {
 
 	nf := len(TheFiles)
 	if nf == 0 {
-		return fmt.Errorf("No files")
+		return fmt.Errorf("no files")
 	}
 	ysz := tm.Size.Y - 1 // status line
 	tm.YPer = ysz / nf
@@ -299,7 +299,7 @@ func (tm *Term) DrawFile(fl *File, sty int) {
 	rst = max(0, rst)
 	stx := 0
 	for ci, hs := range fl.Heads {
-		if !(ci < tm.FixCols || ci >= tm.FixCols+tm.ColSt) {
+		if ci >= tm.FixCols && ci < tm.FixCols+tm.ColSt {
 			continue
 		}
 		my := sty

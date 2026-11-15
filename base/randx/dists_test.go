@@ -23,7 +23,7 @@ func TestGaussianGen(t *testing.T) {
 	sig := 0.25
 	tol := 1e-2
 
-	for i := 0; i < nsamp; i++ {
+	for i := range nsamp {
 		vl := GaussianGen(mean, sig)
 		dt.Column("Val").SetFloatRow(vl, i, 0)
 	}
@@ -53,7 +53,7 @@ func TestBinomialGen(t *testing.T) {
 	p := 0.5
 	tol := 1e-2
 
-	for i := 0; i < nsamp; i++ {
+	for i := range nsamp {
 		vl := BinomialGen(n, p)
 		dt.Column("Val").SetFloat(vl, i)
 	}
@@ -89,7 +89,7 @@ func TestPoissonGen(t *testing.T) {
 	lambda := 10.0
 	tol := 1e-2
 
-	for i := 0; i < nsamp; i++ {
+	for i := range nsamp {
 		vl := PoissonGen(lambda)
 		dt.Column("Val").SetFloatRow(vl, i, 0)
 	}
@@ -127,7 +127,7 @@ func TestGammaGen(t *testing.T) {
 	beta := 0.8
 	tol := 1e-2
 
-	for i := 0; i < nsamp; i++ {
+	for i := range nsamp {
 		vl := GammaGen(alpha, beta)
 		dt.Column("Val").SetFloatRow(vl, i, 0)
 	}
@@ -158,7 +158,7 @@ func TestBetaGen(t *testing.T) {
 	beta := 0.8
 	tol := 1e-2
 
-	for i := 0; i < nsamp; i++ {
+	for i := range nsamp {
 		vl := BetaGen(alpha, beta)
 		dt.Column("Val").SetFloatRow(vl, i, 0)
 	}

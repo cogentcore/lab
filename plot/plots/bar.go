@@ -94,7 +94,7 @@ func (bc *Bar) SetData(data any) error {
 	}
 	bc.Y = plot.MustCopyRole(dt, plot.Y)
 	if bc.Y == nil {
-		return fmt.Errorf("Y is nil")
+		return fmt.Errorf("nil Y data")
 	}
 	bc.XLabels = plot.CopyRoleLabels(dt, plot.X)
 	bc.stylers = plot.GetStylersFromData(dt, plot.X, plot.Y)
@@ -321,12 +321,12 @@ func (bc *Bar) UpdateRange(plt *plot.Plot) {
 		}
 	}
 	if bc.Horizontal {
-		yax.Range.FitInRange(minmax.F64{catMin, catMax})
+		yax.Range.FitInRange(minmax.F64{Min: catMin, Max: catMax})
 		if ticks != nil {
 			plt.Y.Ticker = ticks
 		}
 	} else {
-		plt.X.Range.FitInRange(minmax.F64{catMin, catMax})
+		plt.X.Range.FitInRange(minmax.F64{Min: catMin, Max: catMax})
 		if ticks != nil {
 			plt.X.Ticker = ticks
 		}

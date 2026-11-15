@@ -127,7 +127,7 @@ func ContrastFunc(aix, bix []int, ntot int, maxd float64, dmat tensor.Tensor) fl
 	}
 	oix := make([]int, ntot-nab)
 	octr := 0
-	for ix := 0; ix < ntot; ix++ {
+	for ix := range ntot {
 		if _, has := abmap[ix]; !has {
 			oix[octr] = ix
 			octr++

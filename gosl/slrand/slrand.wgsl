@@ -104,7 +104,7 @@ fn RandFloat32(counter: su64, funcIndex: u32, key: u32) -> f32 {
 // counter for this specific random number call, and key as unique
 // index of the item being processed.
 fn RandFloat32Range11Vec2(counter: su64, funcIndex: u32, key: u32) -> vec2<f32> {
-	return Uint32ToFloat32Vec2(RandUint32Vec2(counter, funcIndex, key));
+	return Uint32ToFloat32Range11Vec2(RandUint32Vec2(counter, funcIndex, key));
 }
 
 // RandFloat32Range11 returns a uniformly distributed float32 value in range [-1,1],
@@ -153,7 +153,7 @@ fn RandFloat32NormVec2(counter: su64, funcIndex: u32, key: u32) -> vec2<f32> {
 // counter for this specific random number call, and key as unique
 // index of the item being processed.
 fn RandFloat32Norm(counter: su64, funcIndex: u32, key: u32) -> f32 { 
-	return RandFloat32Vec2(counter, funcIndex, key).x;
+	return RandFloat32NormVec2(counter, funcIndex, key).x;
 }
 
 // RandUint32N returns a uint32 in the range [0,N).

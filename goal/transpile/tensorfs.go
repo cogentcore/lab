@@ -51,6 +51,9 @@ func ls(mp *mathParse) error {
 	mp.out.Add(token.IDENT, "tensorfs.List")
 	mp.out.Add(token.LPAREN)
 	for i := 1; i < len(mp.ewords); i++ {
+		if i > 1 {
+			mp.out.Add(token.COMMA)
+		}
 		mp.out.Add(token.STRING, `"`+mp.ewords[i]+`"`)
 	}
 	mp.out.Add(token.RPAREN)

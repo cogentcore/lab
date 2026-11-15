@@ -135,11 +135,7 @@ type Stylers []func(s *Style)
 
 // Add Adds a styling function to the list.
 func (st *Stylers) Add(f func(s *Style)) {
-	if st == nil {
-		*st = append(Stylers{}, f)
-	} else {
-		*st = append(*st, f)
-	}
+	*st = append(*st, f)
 }
 
 // Run runs the list of styling functions on given [Style] object.

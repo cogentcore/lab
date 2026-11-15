@@ -24,7 +24,7 @@ func (nd *Node) Open(name string) (fs.File, error) {
 		return nil, err
 	}
 	if itm.IsDir() {
-		return &DirFile{File: File{Reader: *bytes.NewReader(itm.Bytes()), Node: itm}}, nil
+		return &DirFile{Reader: *bytes.NewReader(itm.Bytes()), Node: itm}, nil
 	}
 	return &File{Reader: *bytes.NewReader(itm.Bytes()), Node: itm}, nil
 }

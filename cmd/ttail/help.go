@@ -44,6 +44,5 @@ func (tm *Term) Help() {
 	tm.DrawStringDef(0, ln, "c       toggle display of column numbers instead of names")
 	ln++
 	tm.DrawStringDef(0, ln, "q       quit")
-	ln++
 	termbox.Flush()
 }

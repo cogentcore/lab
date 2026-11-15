@@ -9,7 +9,7 @@ import "cogentcore.org/core/math32"
 // Int32Vec2 is a length 2 vector of int32
 type Int32Vec2 = math32.Vector2i
 
-// Int32Vec3 is a length 3 vector of int32
+// IntVec3 is a length 3 vector of int32
 type IntVec3 = math32.Vector3i
 
 // Int32Vec4 is a length 4 vector of int32

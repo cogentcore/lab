@@ -16,7 +16,7 @@ func ZScore(a tensor.Tensor) tensor.Values {
 	return tensor.CallOut1(ZScoreOut, a)
 }
 
-// ZScore computes Z-normalized values into given output tensor,
+// ZScoreOut computes Z-normalized values into given output tensor,
 // subtracting the Mean and dividing by the standard deviation.
 func ZScoreOut(a tensor.Tensor, out tensor.Values) error {
 	mout := tensor.NewFloat64()
@@ -50,7 +50,7 @@ func UnitNormOut(a tensor.Tensor, out tensor.Values) error {
 // values to those bounds if they exceed them.  min and max args are
 // treated as scalars (first value used).
 func Clamp(in, minv, maxv tensor.Tensor) tensor.Values {
-	return tensor.CallOut3(ClampOut, in, minv, minv)
+	return tensor.CallOut3(ClampOut, in, minv, maxv)
 }
 
 // ClampOut ensures that all values are within min, max limits, clamping

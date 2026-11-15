@@ -5,7 +5,6 @@
 package sltype
 
 import (
-	"fmt"
 	"math"
 	"testing"
 )
@@ -26,7 +25,7 @@ func TestFloat01KAT(t *testing.T) {
 	for _, tv := range kats {
 		r := Uint32ToFloat32(tv.base + tv.add)
 		if r != tv.res {
-			fmt.Printf("base: %x  add: %x != result: %g -- got: %g\n", tv.base, tv.add, tv.res, r)
+			t.Errorf("base: %x  add: %x != result: %g -- got: %g", tv.base, tv.add, tv.res, r)
 		}
 	}
 }
@@ -47,7 +46,7 @@ func TestFloat11KAT(t *testing.T) {
 	for _, tv := range kats {
 		r := Uint32ToFloat32Range11(tv.base + tv.add)
 		if r != tv.res {
-			fmt.Printf("base: %x  add: %x != result: %g -- got: %g\n", tv.base, tv.add, tv.res, r)
+			t.Errorf("base: %x  add: %x != result: %g -- got: %g", tv.base, tv.add, tv.res, r)
 		}
 	}
 }

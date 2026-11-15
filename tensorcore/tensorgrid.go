@@ -116,7 +116,7 @@ func (tg *TensorGrid) TensorEditor() { //types:add
 	tb := core.NewToolbar(d)
 	te := NewTensorEditor(d).SetTensor(tg.Tensor)
 	te.OnChange(func(e events.Event) {
-		tg.NeedsRender()
+		updateFrom(tg, te, tg.NeedsRender)
 	})
 	tb.Maker(te.MakeToolbar)
 	d.RunWindowDialog(tg)
@@ -124,10 +124,10 @@ func (tg *TensorGrid) TensorEditor() { //types:add
 
 func (tg *TensorGrid) EditStyle() { //types:add
 	d := core.NewBody("Tensor grid style")
-	core.NewForm(d).SetStruct(&tg.GridStyle).
-		OnChange(func(e events.Event) {
-			tg.Restyle()
-		})
+	fm := core.NewForm(d).SetStruct(&tg.GridStyle)
+	fm.OnChange(func(e events.Event) {
+		updateFrom(tg, fm, tg.Restyle)
+	})
 	d.RunWindowDialog(tg)
 }
 
@@ -152,7 +152,7 @@ func (tg *TensorGrid) MinSize() math32.Vector2 {
 		tg.RowLabels = slicesx.SetLength(tg.RowLabels, rows)
 	}
 	if len(tg.ColumnLabels) > 0 {
-		tg.ColumnLabels = slicesx.SetLength(tg.ColumnLabels, rows)
+		tg.ColumnLabels = slicesx.SetLength(tg.ColumnLabels, cols)
 	}
 	tg.rowMinBlank, tg.rowNGps, tg.rowMaxSz = tg.SizeLabel(tg.RowLabels, false)
 	tg.colMinBlank, tg.colNGps, tg.colMaxSz = tg.SizeLabel(tg.ColumnLabels, true)
@@ -303,7 +303,7 @@ func (tg *TensorGrid) Render() {
 		mx := min(nr, rows)
 		ygp := 0
 		prvyblk := false
-		for y := 0; y < mx; y++ {
+		for y := range mx {
 			lb := tg.RowLabels[y]
 			if len(lb) == 0 {
 				prvyblk = true
@@ -332,7 +332,7 @@ func (tg *TensorGrid) Render() {
 		mx := min(nc, cols)
 		xgp := 0
 		prvxblk := false
-		for x := 0; x < mx; x++ {
+		for x := range mx {
 			lb := tg.ColumnLabels[x]
 			if len(lb) == 0 {
 				prvxblk = true
@@ -352,10 +352,10 @@ func (tg *TensorGrid) Render() {
 				pr.Y += tg.colMaxSz.Y
 			}
 			rotx := math32.Rotate2DAround(math32.DegToRad(rot), pr)
-			m := pc.Paint.Transform
-			pc.Paint.Transform = m.Mul(rotx)
+			m := pc.Transform
+			pc.Transform = m.Mul(rotx)
 			pc.DrawText(lns, pr)
-			pc.Paint.Transform = m
+			pc.Transform = m
 		}
 		pos.Y += tg.colMaxSz.Y + LabelSpace
 	}
@@ -363,7 +363,7 @@ func (tg *TensorGrid) Render() {
 	ssz := gsz.MulScalar(tg.GridStyle.GridFill) // smaller size with margin
 	prvyblk := false
 	ygp := 0
-	for y := 0; y < rows; y++ {
+	for y := range rows {
 		yex := float32(int(y/rowsInner)) * dimEx
 		if len(tg.RowLabels) > 0 {
 			ylb := tg.RowLabels[y]
@@ -377,7 +377,7 @@ func (tg *TensorGrid) Render() {
 		}
 		prvxblk := false
 		xgp := 0
-		for x := 0; x < cols; x++ {
+		for x := range cols {
 			xex := float32(int(x/colsInner)) * dimEx
 			ey := y
 			if !tg.GridStyle.TopZero {

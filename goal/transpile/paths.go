@@ -51,7 +51,7 @@ func (tk Tokens) Path(idx0 bool) (string, int) {
 		if idx0 {
 			tindelim = tk[tin].Tok == token.QUO
 		}
-		if (int(tk[tin].Pos) > lastEnd+len(tid)) || !(tk[tin].Tok == token.COLON || tindelim) {
+		if (int(tk[tin].Pos) > lastEnd+len(tid)) || (tk[tin].Tok != token.COLON && !tindelim) {
 			return "", 0
 		}
 		ci += tin + 1

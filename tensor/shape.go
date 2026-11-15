@@ -77,7 +77,7 @@ func (sh *Shape) DimSize(i int) int {
 	return sh.Sizes[i]
 }
 
-// IndexIsValid() returns true if given index is valid (within ranges for all dimensions)
+// IndexIsValid returns true if given index is valid (within ranges for all dimensions)
 func (sh *Shape) IndexIsValid(idx ...int) bool {
 	if len(idx) != sh.NumDims() {
 		return false
@@ -197,6 +197,7 @@ func RowMajorStrides(sizes ...int) []int {
 	if len(sizes) == 0 {
 		return nil
 	}
+	sizes = slices.Clone(sizes) // do not modify the caller's sizes
 	sizes[0] = max(1, sizes[0]) // critical for strides to not be nil due to rows = 0
 	rem := int(1)
 	for _, v := range sizes {
@@ -223,14 +224,12 @@ func RowMajorStrides(sizes ...int) []int {
 // and subsequent dimensions are progressively outer
 func ColumnMajorStrides(sizes ...int) []int {
 	total := int(1)
-	for _, v := range sizes {
-		if v == 0 {
-			strides := make([]int, len(sizes))
-			for i := range strides {
-				strides[i] = total
-			}
-			return strides
+	if slices.Contains(sizes, 0) {
+		strides := make([]int, len(sizes))
+		for i := range strides {
+			strides[i] = total
 		}
+		return strides
 	}
 
 	strides := make([]int, len(sizes))
@@ -252,7 +251,7 @@ func AddShapes(shape1, shape2 *Shape) *Shape {
 	return sh
 }
 
-// CellsSizes returns the sizes of inner cells dimensions given
+// CellsSize returns the sizes of inner cells dimensions given
 // overall tensor sizes.  It returns []int{1} for the 1D case.
 // Used for ensuring cell-wise outputs are the right size.
 func CellsSize(sizes []int) []int {

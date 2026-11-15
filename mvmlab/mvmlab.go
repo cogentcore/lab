@@ -97,8 +97,8 @@ func UseGUI(in *interpreter.Interpreter, values ...map[string]map[string]reflect
 // Eval runs the given Goal code.
 func (in *Interpreter) Eval(src string) (res reflect.Value, err error) {
 	tensorfs.ListOutput = in.Goal.Config.StdIO.Out
-	in.Interpreter.Goal.TrState.MathRecord = true
-	res, _, err = in.Interpreter.EvalCode(src)
+	in.Goal.TrState.MathRecord = true
+	res, _, err = in.EvalCode(src)
 	tensorfs.ListOutput = nil
 	return
 }

@@ -8,6 +8,7 @@ package patterns
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 
 	"cogentcore.org/core/base/errors"
@@ -19,7 +20,7 @@ import (
 
 // NOnInTensor returns the number of bits active in given tensor
 func NOnInTensor(trow tensor.Values) int {
-	return stats.Sum(trow).Int1D(0)
+	return stats.Sum(tensor.As1D(trow)).Int1D(0) // Sum reduces over the outer dim only
 }
 
 // PctActInTensor returns the percent activity in given tensor (NOn / size)
@@ -72,7 +73,7 @@ func SplitRows(dir *tensorfs.Node, src tensor.Values, names []string, rows ...in
 		err := errors.Log(fmt.Errorf("patterns.SplitRows: must pass one more name than number of rows to split on"))
 		return err
 	}
-	all := append(rows, src.DimSize(0)) // final row
+	all := append(slices.Clone(rows), src.DimSize(0)) // final row; do not write into rows
 	srcName := metadata.Name(src)
 	srcShape := src.ShapeSizes()
 
@@ -95,6 +96,7 @@ func SplitRows(dir *tensorfs.Node, src tensor.Values, names []string, rows ...in
 		nrows := cur - prev
 		srcShape[0] = nrows
 		spl := tensorfs.ValueType(dir, name, dtype, srcShape...)
+		spl.SetShapeSizes(srcShape...) // an existing value is returned as-is
 		for rw := range nrows {
 			spl.SubSpace(rw).CopyFrom(src.SubSpace(prev + rw))
 		}

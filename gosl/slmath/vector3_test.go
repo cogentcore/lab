@@ -23,7 +23,7 @@ func TestVector3VsMath32(t *testing.T) {
 		eq3(t, v.Round(), Round3(v), "Round3")
 		eq3(t, v.Normal(), Normal3(v), "Normal3")
 
-		for d := int32(0); d < 3; d++ {
+		for d := range int32(3) {
 			dim := math32.Dims(d)
 			eqf(t, v.Dim(dim), Dim3(v, d), "Dim3")
 			for _, s := range testScalars {

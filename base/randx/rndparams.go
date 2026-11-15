@@ -35,7 +35,7 @@ func (rp *RandParams) ShouldDisplay(field string) bool {
 }
 
 // Gen generates a random variable according to current parameters.
-
+//
 // Optionally can pass a single Rand interface to use --
 // otherwise uses system global Rand source.
 func (rp *RandParams) Gen(randOpt ...Rand) float64 {
@@ -105,7 +105,7 @@ func IntZeroN(n int64, randOpt ...Rand) int64 {
 }
 
 // IntMinMax returns uniform random integer in range between min and max, exclusive of max: [min,max).
-
+//
 // Optionally can pass a single Rand interface to use --
 // otherwise uses system global Rand source.
 func IntMinMax(min, max int64, randOpt ...Rand) int64 {
@@ -120,7 +120,7 @@ func IntMinMax(min, max int64, randOpt ...Rand) int64 {
 
 // IntMeanRange returns uniform random integer with given range on either side of the mean:
 // [mean - range, mean + range]
-
+//
 // Optionally can pass a single Rand interface to use --
 // otherwise uses system global Rand source.
 func IntMeanRange(mean, rnge int64, randOpt ...Rand) int64 {
@@ -134,7 +134,7 @@ func IntMeanRange(mean, rnge int64, randOpt ...Rand) int64 {
 }
 
 // ZeroOne returns a uniform random number between zero and one (exclusive of 1)
-
+//
 // Optionally can pass a single Rand interface to use --
 // otherwise uses system global Rand source.
 func ZeroOne(randOpt ...Rand) float64 {
@@ -149,7 +149,7 @@ func ZeroOne(randOpt ...Rand) float64 {
 
 // UniformMinMax returns uniform random number between min and max values inclusive
 // (Do not use for generating integers - will not include max!)
-
+//
 // Optionally can pass a single Rand interface to use --
 // otherwise uses system global Rand source.
 func UniformMinMax(min, max float64, randOpt ...Rand) float64 {
@@ -164,7 +164,7 @@ func UniformMinMax(min, max float64, randOpt ...Rand) float64 {
 
 // UniformMeanRange returns uniform random number with given range on either size of the mean:
 // [mean - range, mean + range]
-
+//
 // Optionally can pass a single Rand interface to use --
 // otherwise uses system global Rand source.
 func UniformMeanRange(mean, rnge float64, randOpt ...Rand) float64 {

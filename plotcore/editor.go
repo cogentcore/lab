@@ -109,7 +109,7 @@ func (pl *Editor) Init() {
 
 	pl.Updater(func() {
 		if pl.table != nil {
-			pl.plotStyleFromTable(pl.table)
+			pl.plotStyleFromTable()
 		}
 	})
 	tree.AddChildAt(pl, "columns", func(w *core.Frame) {
@@ -175,7 +175,7 @@ func (pl *Editor) SaveSVG(fname core.Filename) { //types:add
 	mp := plt.PaintBox.Min
 	plt.PaintBox = plt.PaintBox.Sub(mp)
 	ptr := paint.NewPainter(math32.FromPoint(plt.PaintBox.Size()))
-	ptr.Paint.UnitContext = pl.Styles.UnitContext // preserve DPI from current
+	ptr.UnitContext = pl.Styles.UnitContext // preserve DPI from current
 	sv := paint.RenderToSVG(plt.Draw(ptr))
 	err := os.WriteFile(string(fname), sv, 0666)
 	plt.PaintBox = plt.PaintBox.Add(mp)
@@ -191,7 +191,7 @@ func (pl *Editor) SavePDF(fname core.Filename) { //types:add
 	mp := plt.PaintBox.Min
 	plt.PaintBox = plt.PaintBox.Sub(mp)
 	ptr := paint.NewPainter(math32.FromPoint(plt.PaintBox.Size()))
-	ptr.Paint.UnitContext = pl.Styles.UnitContext // preserve DPI from current
+	ptr.UnitContext = pl.Styles.UnitContext // preserve DPI from current
 	pd := paint.RenderToPDF(plt.Draw(ptr))
 	err := os.WriteFile(string(fname), pd, 0666)
 	plt.PaintBox = plt.PaintBox.Add(mp)
@@ -320,7 +320,9 @@ func (pl *Editor) genPlot() {
 	pl.inPlot = false
 }
 
-const plotColumnsHeaderN = 3
+// plotColumnsHeaderN is the number of children of the columns frame
+// before the columns: the frame of the buttons and the separator.
+const plotColumnsHeaderN = 2
 
 // allColumnsOff turns all columns off.
 func (pl *Editor) allColumnsOff() {
@@ -384,7 +386,7 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 		cnm := pl.table.Columns.Keys[ci]
 		tree.AddAt(p, cnm, func(w *core.Frame) {
 			psty := plot.GetStylers(cl)
-			cst, mods, clr := pl.defaultColumnStyle(cl, ci, &colorIdx, &hasSplit, psty)
+			cst, mods, clr := pl.defaultColumnStyle(cl, &colorIdx, &hasSplit, psty)
 			isSplit := cst.Role == plot.Split
 			stys := psty
 			stys.Add(func(s *plot.Style) {
@@ -484,7 +486,7 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 
 // defaultColumnStyle initializes the column style with any existing stylers
 // plus additional general defaults, returning the initially modified field names.
-func (pl *Editor) defaultColumnStyle(cl tensor.Values, ci int, colorIdx *int, hasSplit *bool, psty plot.Stylers) (*plot.Style, map[string]bool, image.Image) {
+func (pl *Editor) defaultColumnStyle(cl tensor.Values, colorIdx *int, hasSplit *bool, psty plot.Stylers) (*plot.Style, map[string]bool, image.Image) {
 	cst := &plot.Style{}
 	cst.Defaults()
 	if psty != nil {
@@ -536,7 +538,7 @@ func (pl *Editor) defaultColumnStyle(cl tensor.Values, ci int, colorIdx *int, ha
 	return cst, mods, clr
 }
 
-func (pl *Editor) plotStyleFromTable(dt *table.Table) {
+func (pl *Editor) plotStyleFromTable() {
 	if pl.plotStyleModified != nil { // already set
 		return
 	}
@@ -571,7 +573,7 @@ func modFields(mods map[string]bool) []string {
 	fns := maps.Keys(mods)
 	rf := make([]string, 0, len(fns))
 	for _, f := range fns {
-		if mods[f] == false {
+		if !mods[f] {
 			continue
 		}
 		fc := strings.ReplaceAll(f, " • ", ".")
@@ -661,7 +663,7 @@ func (pl *Editor) MakeToolbar(p *tree.Plan) {
 	})
 }
 
-func (pt *Editor) SizeFinal() {
-	pt.Frame.SizeFinal()
-	pt.UpdatePlot()
+func (pl *Editor) SizeFinal() {
+	pl.Frame.SizeFinal()
+	pl.UpdatePlot()
 }

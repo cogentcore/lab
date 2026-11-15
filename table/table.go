@@ -103,7 +103,7 @@ func (dt *Table) ColumnTry(name string) (*tensor.Rows, error) {
 	return nil, fmt.Errorf("table.Table: Column named %q not found", name)
 }
 
-// ColumnIndex returns the tensor at the given column index,
+// ColumnByIndex returns the tensor at the given column index,
 // as a [tensor.Rows] with the shared [Table.Indexes] from this table.
 // It is best practice to instead access columns by name using [Table.Column].
 // Direct access through [Table.Columns} does not provide the shared table-wide Indexes.
@@ -235,7 +235,7 @@ func (dt *Table) DeleteColumnName(name string) bool {
 	return dt.Columns.DeleteByKey(name)
 }
 
-// DeleteColumnIndex deletes column within the index range [i:j].
+// DeleteColumnByIndex deletes column within the index range [i:j].
 func (dt *Table) DeleteColumnByIndex(i, j int) {
 	dt.Columns.DeleteByIndex(i, j)
 }
@@ -261,7 +261,7 @@ func (dt *Table) InsertRows(at, n int) *Table {
 	dt.SetNumRows(strow + n) // adds n indexes to end of list
 	// move those indexes to at:at+n in index list
 	dt.Indexes = append(dt.Indexes[:at], append(dt.Indexes[stidx:], dt.Indexes[at:]...)...)
-	dt.Indexes = dt.Indexes[:strow+n]
+	dt.Indexes = dt.Indexes[:stidx+n] // stidx < strow for a filtered view
 	return dt
 }
 

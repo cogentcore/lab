@@ -11,15 +11,15 @@ import (
 	"cogentcore.org/lab/vector"
 )
 
-// offCols is a helper function to process the optional offset_cols args
-func offCols(size int, offset_cols ...int) (off, cols int) {
+// offCols is a helper function to process the optional offsetCols args
+func offCols(size int, offsetCols ...int) (off, cols int) {
 	off = 0
 	cols = size
-	if len(offset_cols) >= 1 {
-		off = offset_cols[0]
+	if len(offsetCols) >= 1 {
+		off = offsetCols[0]
 	}
-	if len(offset_cols) == 2 {
-		cols = offset_cols[1]
+	if len(offsetCols) == 2 {
+		cols = offsetCols[1]
 	}
 	return
 }
@@ -30,8 +30,8 @@ func offCols(size int, offset_cols ...int) (off, cols int) {
 //     to set values above (positive) or below (negative) the diagonal.
 //   - If a second additional parameter is passed, it is the number of columns
 //     for a non-square matrix (first size parameter = number of rows).
-func Identity(size int, offset_cols ...int) *tensor.Float64 {
-	off, cols := offCols(size, offset_cols...)
+func Identity(size int, offsetCols ...int) *tensor.Float64 {
+	off, cols := offCols(size, offsetCols...)
 	tsr := tensor.NewFloat64(size, cols)
 	for r := range size {
 		c := r + off
@@ -49,8 +49,8 @@ func Identity(size int, offset_cols ...int) *tensor.Float64 {
 //     to include values above (positive) or below (negative) the diagonal.
 //   - If a second additional parameter is passed, it is the number of columns
 //     for a non-square matrix (first size parameter = number of rows).
-func DiagonalN(size int, offset_cols ...int) int {
-	off, cols := offCols(size, offset_cols...)
+func DiagonalN(size int, offsetCols ...int) int {
+	off, cols := offCols(size, offsetCols...)
 	rows := size
 	if num.Abs(off) > 0 {
 		oa := num.Abs(off)
@@ -80,8 +80,8 @@ func DiagonalN(size int, offset_cols ...int) int {
 //     to set values above (positive) or below (negative) the diagonal.
 //   - If a second additional parameter is passed, it is the number of columns
 //     for a non-square matrix (first size parameter = number of rows).
-func DiagonalIndices(size int, offset_cols ...int) *tensor.Int {
-	off, cols := offCols(size, offset_cols...)
+func DiagonalIndices(size int, offsetCols ...int) *tensor.Int {
+	off, cols := offCols(size, offsetCols...)
 	dn := DiagonalN(size, off, cols)
 	tsr := tensor.NewInt(dn, 2)
 	idx := 0
@@ -103,7 +103,7 @@ func DiagonalIndices(size int, offset_cols ...int) *tensor.Int {
 // below (negative) the diagonal.
 func Diagonal(tsr tensor.Tensor, offset ...int) *tensor.Indexed {
 	if tsr.NumDims() != 2 {
-		errors.Log(errors.New("matrix.TriLView requires a 2D tensor"))
+		errors.Log(errors.New("matrix.Diagonal requires a 2D tensor"))
 		return nil
 	}
 	off := 0
@@ -128,8 +128,8 @@ func Trace(tsr tensor.Tensor, offset ...int) tensor.Values {
 //     to include values above (positive) or below (negative) the diagonal.
 //   - If a second additional parameter is passed, it is the number of columns
 //     for a non-square matrix (first size parameter = number of rows).
-func Tri(size int, offset_cols ...int) *tensor.Float64 {
-	off, cols := offCols(size, offset_cols...)
+func Tri(size int, offsetCols ...int) *tensor.Float64 {
+	off, cols := offCols(size, offsetCols...)
 	tsr := tensor.NewFloat64(size, cols)
 	for r := range size {
 		for c := range cols {
@@ -147,8 +147,8 @@ func Tri(size int, offset_cols ...int) *tensor.Float64 {
 //     to include values above (positive) or below (negative) the diagonal.
 //   - If a second additional parameter is passed, it is the number of columns
 //     for a non-square matrix (first size parameter = number of rows).
-func TriUpper(size int, offset_cols ...int) *tensor.Float64 {
-	off, cols := offCols(size, offset_cols...)
+func TriUpper(size int, offsetCols ...int) *tensor.Float64 {
+	off, cols := offCols(size, offsetCols...)
 	tsr := tensor.NewFloat64(size, cols)
 	for r := range size {
 		for c := range cols {
@@ -167,8 +167,8 @@ func TriUpper(size int, offset_cols ...int) *tensor.Float64 {
 //     to include values above (positive) or below (negative) the diagonal.
 //   - If a second additional parameter is passed, it is the number of columns
 //     for a non-square matrix (first size parameter = number of rows).
-func TriUNum(size int, offset_cols ...int) int {
-	off, cols := offCols(size, offset_cols...)
+func TriUNum(size int, offsetCols ...int) int {
+	off, cols := offCols(size, offsetCols...)
 	rows := size
 	if off > 0 {
 		if cols > rows {
@@ -192,8 +192,8 @@ func TriUNum(size int, offset_cols ...int) int {
 //     to include values above (positive) or below (negative) the diagonal.
 //   - If a second additional parameter is passed, it is the number of columns
 //     for a non-square matrix (first size parameter = number of rows).
-func TriLNum(size int, offset_cols ...int) int {
-	off, cols := offCols(size, offset_cols...)
+func TriLNum(size int, offsetCols ...int) int {
+	off, cols := offCols(size, offsetCols...)
 	return TriUNum(cols, -off, size)
 }
 
@@ -205,8 +205,8 @@ func TriLNum(size int, offset_cols ...int) int {
 //     to include values above (positive) or below (negative) the diagonal.
 //   - If a second additional parameter is passed, it is the number of columns
 //     for a non-square matrix.
-func TriLIndicies(size int, offset_cols ...int) *tensor.Int {
-	off, cols := offCols(size, offset_cols...)
+func TriLIndicies(size int, offsetCols ...int) *tensor.Int {
+	off, cols := offCols(size, offsetCols...)
 	trin := TriLNum(size, off, cols)
 	coords := tensor.NewInt(trin, 2)
 	i := 0
@@ -230,8 +230,8 @@ func TriLIndicies(size int, offset_cols ...int) *tensor.Int {
 // for a non-square matrix.
 // The result is a 2D list of indices, where the outer (row) dimension
 // is the number of indices, and the inner dimension is 2 for the r, c coords.
-func TriUIndicies(size int, offset_cols ...int) *tensor.Int {
-	off, cols := offCols(size, offset_cols...)
+func TriUIndicies(size int, offsetCols ...int) *tensor.Int {
+	off, cols := offCols(size, offsetCols...)
 	trin := TriUNum(size, off, cols)
 	coords := tensor.NewInt(trin, 2)
 	i := 0

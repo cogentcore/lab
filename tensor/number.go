@@ -408,6 +408,9 @@ func (tsr *Number[T]) CopyCellsFrom(frm Values, to, start, n int) {
 // Use AsValues() method to separate the two.
 func (tsr *Number[T]) SubSpace(offs ...int) Values {
 	b := tsr.subSpaceImpl(offs...)
+	if b == nil {
+		return nil
+	}
 	rt := &Number[T]{Base: *b}
 	return rt
 }

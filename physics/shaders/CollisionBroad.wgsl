@@ -184,7 +184,10 @@ fn CollisionBroad(i: u32) { //gosl:kernel
 		if (szA.x == 0) {
 			infPlane = true;
 		}
-		var queryB = MulSpatialPoint(xwAR, xwAQ, xwBR);
+		var bwAR: vec3<f32>;
+		var bwAQ: vec4<f32>;
+		SpatialTransformInverse(xwAR, xwAQ, &bwAR, &bwAQ);
+		var queryB = MulSpatialPoint(bwAR, bwAQ, xwBR);
 		var closest = ClosestPointPlane(szA.x, szA.z, queryB);
 		var d = Length3(queryB-(closest));
 		if (d > rb+margin) {
@@ -217,7 +220,7 @@ fn AddBroadContacts(biA: i32,biB: i32,nci: i32,ncA: i32,ncB: i32) {
 	for (var i=0; i<ncB; i++) {
 		SetBroadContactA(nci+ncA+i, biB); // flipped
 		SetBroadContactB(nci+ncA+i, biA);
-		SetBroadContactPointIdx(nci+i, i);
+		SetBroadContactPointIdx(nci+ncA+i, i);
 	}
 }
 
@@ -492,6 +495,25 @@ const SLPi = 3.141592653589793;
 //////// import: "slmath-matrix4.go"
 
 //////// import: "slmath-quaternion.go"
+fn QuatLength(q: vec4<f32>) -> f32 {
+	return sqrt(q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w);
+}
+fn QuatNormalize(q: vec4<f32>) -> vec4<f32> {
+	var nq = q;
+	var l = QuatLength(q);
+	if (l == 0) {
+		nq.x = f32(0);
+		nq.y = f32(0);
+		nq.z = f32(0);
+		nq.w = f32(1);
+	} else {
+		l = 1 / l;
+		nq.x *= l;
+		nq.y *= l;
+		nq.z *= l;
+		nq.w *= l;
+	}return nq;
+}
 fn MulQuatVector(q: vec4<f32>, v: vec3<f32>) -> vec3<f32> {
 	var xyz = vec3<f32>(q.x, q.y, q.z);
 	var t = Cross3(xyz, v)*(2);
@@ -501,10 +523,25 @@ fn MulSpatialPoint(xP: vec3<f32>, xQ: vec4<f32>, p: vec3<f32>) -> vec3<f32> {
 	var dp = MulQuatVector(xQ, p);
 return dp+(xP);
 }
+fn SpatialTransformInverse(p: vec3<f32>, q: vec4<f32>, oP: ptr<function,vec3<f32>>, oQ: ptr<function,vec4<f32>>) {
+	var qi = QuatInverse(q);
+	*oP = Negate3(MulQuatVector(qi, p));
+	*oQ = qi;
+}
+fn QuatInverse(q: vec4<f32>) -> vec4<f32> {
+	var nq = q;
+	nq.x *= f32(-1);
+	nq.y *= f32(-1);
+	nq.z *= f32(-1);
+return QuatNormalize(nq);
+}
 
 //////// import: "slmath-vector2.go"
 
 //////// import: "slmath-vector3.go"
+fn Negate3(v: vec3<f32>) -> vec3<f32> {
+	return vec3<f32>(-v.x, -v.y, -v.z);
+}
 fn Length3(v: vec3<f32>) -> f32 {
 	return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
 }

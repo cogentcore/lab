@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// mparse is a hacked version of go/parser:
+// Package mparser is a hacked version of go/parser, for the math mode of
+// goal (as array lists and slices in index expressions).
+//
+// It is a hacked version of go/parser:
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-
 package mparser
 
 import (
@@ -127,8 +129,9 @@ type parser struct {
 	syncCnt int       // number of parser.advance calls without progress
 
 	// Non-syntactic parser control
-	exprLev int  // < 0: in control clause, >= 0: in expression
-	inRhs   bool // if set, the parser is parsing a rhs expression
+	exprLev  int  // < 0: in control clause, >= 0: in expression
+	indexLev int  // > 0: in an index or array list (math)
+	inRhs    bool // if set, the parser is parsing a rhs expression
 
 	imports []*ast.ImportSpec // list of imports
 
@@ -502,13 +505,6 @@ var stmtStart = map[token.Token]bool{
 	token.VAR:         true,
 }
 
-var declStart = map[token.Token]bool{
-	token.IMPORT: true,
-	token.CONST:  true,
-	token.TYPE:   true,
-	token.VAR:    true,
-}
-
 var exprEnd = map[token.Token]bool{
 	token.COMMA:     true,
 	token.COLON:     true,
@@ -598,8 +594,10 @@ func (p *parser) parseArrayList(lbrack token.Pos) *ast.IndexListExpr {
 		defer un(trace(p, "ArrayList"))
 	}
 	p.exprLev++
+	p.indexLev++
 	// x := p.parseRhs()
 	x := p.parseExprList()
+	p.indexLev--
 	p.exprLev--
 	rbrack := p.expect(token.RBRACK)
 	return &ast.IndexListExpr{Lbrack: lbrack, Indices: x, Rbrack: rbrack}
@@ -1206,8 +1204,8 @@ func (p *parser) parseMethodSpec() *ast.Field {
 	var typ ast.Expr
 	x := p.parseTypeName(nil)
 	if ident, _ := x.(*ast.Ident); ident != nil {
-		switch {
-		case p.tok == token.LBRACK:
+		switch p.tok {
+		case token.LBRACK:
 			// generic method or embedded instantiated type
 			lbrack := p.pos
 			p.next()
@@ -1251,7 +1249,7 @@ func (p *parser) parseMethodSpec() *ast.Field {
 				// rbrack := p.expectClosing(token.RBRACK, "type argument list")
 				// typ = typeparams.PackIndexExpr(ident, lbrack, list, rbrack)
 			}
-		case p.tok == token.LPAREN:
+		case token.LPAREN:
 			// ordinary method
 			// TODO(rfindley) refactor to share code with parseFuncType.
 			_, params := p.parseParameters(false)
@@ -1333,15 +1331,15 @@ func (p *parser) parseInterfaceType() *ast.InterfaceType {
 
 parseElements:
 	for {
-		switch {
-		case p.tok == token.IDENT:
+		switch p.tok {
+		case token.IDENT:
 			f := p.parseMethodSpec()
 			if f.Names == nil {
 				f.Type = p.embeddedElem(f.Type)
 			}
 			f.Comment = p.expectSemi()
 			list = append(list, f)
-		case p.tok == token.TILDE:
+		case token.TILDE:
 			typ := p.embeddedElem(nil)
 			comment := p.expectSemi()
 			list = append(list, &ast.Field{Type: typ, Comment: comment})
@@ -1564,11 +1562,12 @@ func (p *parser) parseOperand() ast.Expr {
 		x := &ast.BasicLit{ValuePos: p.pos, Kind: p.tok, Value: p.lit}
 		// fmt.Println("operand lit:", p.lit)
 		p.next()
-		if p.tok == token.COLON {
+		// math: a literal followed by a colon starts a slice (range) in an
+		// index or array list, but not elsewhere (as in case 1: or {1: 2}).
+		if p.tok == token.COLON && p.indexLev > 0 {
 			return p.parseSliceExpr(x)
-		} else {
-			return x
 		}
+		return x
 
 	case token.LPAREN:
 		lparen := p.pos
@@ -1668,7 +1667,6 @@ func (p *parser) parseSliceExpr(ex ast.Expr) *ast.SliceExpr {
 	const N = 3 // change the 3 to 2 to disable 3-index slices
 	var index [N]ast.Expr
 	index[0] = ex
-	var colons [N - 1]token.Pos
 	ncolons := 0
 	if ex == nil {
 		ncolons++
@@ -1678,8 +1676,7 @@ func (p *parser) parseSliceExpr(ex ast.Expr) *ast.SliceExpr {
 	switch p.tok {
 	case token.COLON:
 		// slice expression
-		for p.tok == token.COLON && ncolons < len(colons) {
-			colons[ncolons] = p.pos
+		for p.tok == token.COLON && ncolons < N-1 {
 			ncolons++
 			p.next()
 			if p.tok != token.COMMA && p.tok != token.COLON && p.tok != token.RBRACK && p.tok != token.EOF {
@@ -1723,31 +1720,20 @@ func (p *parser) parseSliceExpr(ex ast.Expr) *ast.SliceExpr {
 	// rbrack := p.expect(token.RBRACK)
 
 	// slice expression
-	slice3 := false
-	if ncolons == 2 {
-		slice3 = true
-		// Check presence of middle and final index here rather than during type-checking
-		// to prevent erroneous programs from passing through gofmt (was go.dev/issue/7305).
-		// if index[1] == nil {
-		// 	p.error(colons[0], "middle index required in 3-index slice")
-		// 	index[1] = &ast.BadExpr{From: colons[0] + 1, To: colons[1]}
-		// }
-		// if index[2] == nil {
-		// 	p.error(colons[1], "final index required in 3-index slice")
-		// 	index[2] = &ast.BadExpr{From: colons[1] + 1} // , To: rbrack
-		// }
-	}
+	slice3 := ncolons == 2
+	// When slice3, check presence of middle and final index here rather than during type-checking
+	// to prevent erroneous programs from passing through gofmt (was go.dev/issue/7305).
+	// if index[1] == nil {
+	// 	p.error(colons[0], "middle index required in 3-index slice")
+	// 	index[1] = &ast.BadExpr{From: colons[0] + 1, To: colons[1]}
+	// }
+	// if index[2] == nil {
+	// 	p.error(colons[1], "final index required in 3-index slice")
+	// 	index[2] = &ast.BadExpr{From: colons[1] + 1} // , To: rbrack
+	// }
 	se := &ast.SliceExpr{Lbrack: lbrack, Low: index[0], High: index[1], Max: index[2], Slice3: slice3, Rbrack: rpos}
 	// fmt.Printf("final: %#v\n", se)
 	return se
-	//
-	// 	if len(args) == 0 {
-	// 		// index expression
-	// 		return &ast.IndexExpr{X: x, Lbrack: lbrack, Index: index[0], Rbrack: rbrack}
-	// 	}
-
-	// instance expression
-	return nil // typeparams.PackIndexExpr(x, lbrack, args, rbrack)
 }
 
 func (p *parser) parseCallOrConversion(fun ast.Expr) *ast.CallExpr {

@@ -573,12 +573,12 @@ return Dot3(diff, *norm);
 fn ColCapsuleCapsule(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
 	var hhA = (*gdA).Size.y - (*gdA).Size.x;
 	var hhB = (*gdB).Size.y - (*gdB).Size.x;
-	var e0 = vec3<f32>(0, 0, hhA*f32(cpi%2));
-	var e1 = vec3<f32>(0, 0, -hhA*f32((cpi+1)%2));
+	var e0 = vec3<f32>(0, hhA*f32(cpi%2), 0);
+	var e1 = vec3<f32>(0, -hhA*f32((cpi+1)%2), 0);
 	var edge0w = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, e0);
 	var edge1w = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, e1);
-	var edge0b = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge0w);
-	var edge1b = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge1w);
+	var edge0b = MulSpatialPoint((*gdB).BwR, (*gdB).BwQ, edge0w);
+	var edge1b = MulSpatialPoint((*gdB).BwR, (*gdB).BwQ, edge1w);
 	var u = ClosestEdgeCapsule((*gdB).Size.x, hhB, edge0b, edge1b, maxIter);
 	var pAw = edge0w*(1 - u)+(edge1w*(u));
 	var p0Bw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0, hhB, 0));
@@ -814,8 +814,12 @@ return cp;
 }
 fn ClosestPointLineSegment(a: vec3<f32>,b: vec3<f32>,pt: vec3<f32>) -> vec3<f32> {
 	var ab = b-(a);
+	var ab2 = Dot3(ab, ab);
+	if (ab2 == 0) { // a point (as the axis of a capsule that is a sphere): not 0/0
+		return a;
+	}
 	var ap = pt-(a);
-	var t = Dot3(ap, ab) / Dot3(ab, ab);
+	var t = Dot3(ap, ab) / ab2;
 	t = clamp(t, 0.0, 1.0);
 return a+(ab*(t));
 }
@@ -836,25 +840,28 @@ fn ClosestPointBox(upper: vec3<f32>,pt: vec3<f32>) -> vec3<f32> {
 		}
 	}return vec3<f32>(x, y, z);
 }
-fn BoxVertex(ptId: i32, upper: vec3<f32>) -> vec3<f32> {
-	var sign_x = f32(ptId%2)*2.0 - 1.0;
-	var sign_y = f32((ptId/2)%2)*2.0 - 1.0;
-	var sign_z = f32((ptId/4)%2)*2.0 - 1.0;
-return vec3<f32>(sign_x*upper.x, sign_y*upper.y, sign_z*upper.z);
+fn BoxVertex(ptID: i32, upper: vec3<f32>) -> vec3<f32> {
+	var signX = f32(ptID%2)*2.0 - 1.0;
+	var signY = f32((ptID/2)%2)*2.0 - 1.0;
+	var signZ = f32((ptID/4)%2)*2.0 - 1.0;
+return vec3<f32>(signX*upper.x, signY*upper.y, signZ*upper.z);
 }
-fn BoxEdge(edgeId: i32, upper: vec3<f32>, edge0: ptr<function,vec3<f32>>,edge1: ptr<function,vec3<f32>>) {
-	var eid = edgeId;
+fn BoxEdge(edgeID: i32, upper: vec3<f32>, edge0: ptr<function,vec3<f32>>,edge1: ptr<function,vec3<f32>>) {
+	var eid = edgeID;
 	if (eid < 4) {
 		var i = eid * 2;
 		var j = i + 1;
 		*edge0 = BoxVertex(i, upper);
 		*edge1 = BoxVertex(j, upper);
-	} else if (eid < 8) {
+	return;
+	}
+	if (eid < 8) {
 		eid -= i32(4);
-		var i = eid%2 + eid; // 2 * 4
+		var i = eid%2 + (eid/2)*4;
 		var j = i + 2;
 		*edge0 = BoxVertex(i, upper);
 		*edge1 = BoxVertex(j, upper);
+	return;
 	}
 	eid -= i32(8);
 	var i = eid;
@@ -862,12 +869,12 @@ fn BoxEdge(edgeId: i32, upper: vec3<f32>, edge0: ptr<function,vec3<f32>>,edge1: 
 	*edge0 = BoxVertex(i, upper);
 	*edge1 = BoxVertex(j, upper);
 }
-fn PlaneEdge(edgeId: i32, width: f32,length: f32, edge0: ptr<function,vec3<f32>>,edge1: ptr<function,vec3<f32>>) {
-	var p0x = (2*f32(edgeId%2) - 1) * width;
-	var p0z = (2*f32(edgeId/2) - 1) * length;
+fn PlaneEdge(edgeID: i32, width: f32,length: f32, edge0: ptr<function,vec3<f32>>,edge1: ptr<function,vec3<f32>>) {
+	var p0x = (2*f32(edgeID%2) - 1) * width;
+	var p0z = (2*f32(edgeID/2) - 1) * length;
 	var p1x: f32;
 	var p1z: f32;
-	if (edgeId == 0 || edgeId == 3) {
+	if (edgeID == 0 || edgeID == 3) {
 		p1x = p0x;
 		p1z = -p0z;
 	} else {

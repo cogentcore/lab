@@ -13,6 +13,7 @@ import (
 	"log/slog"
 	"math"
 	"reflect"
+	"slices"
 	"strconv"
 
 	"cogentcore.org/core/base/errors"
@@ -131,12 +132,7 @@ func CheckFloats(fs ...float64) error {
 
 // CheckNaNs returns true if any of the floats are NaN
 func CheckNaNs(fs ...float64) bool {
-	for _, f := range fs {
-		if math.IsNaN(f) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(fs, math.IsNaN)
 }
 
 // Range updates given Range with values from data.

@@ -5,6 +5,8 @@
 package table
 
 import (
+	"fmt"
+
 	"cogentcore.org/core/base/keylist"
 	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/lab/tensor"
@@ -60,8 +62,12 @@ func (cl *Columns) AddColumn(name string, tsr tensor.Values) error {
 // returning an error and not adding if the name is not unique.
 // Automatically adjusts the shape to fit the current number of rows.
 func (cl *Columns) InsertColumn(idx int, name string, tsr tensor.Values) error {
+	if cl.IndexByKey(name) >= 0 {
+		return fmt.Errorf("table.InsertColumn: column %q is already on the list", name)
+	}
 	cl.Insert(idx, name, tsr)
 	tsr.SetNumRows(cl.Rows)
+	metadata.SetName(tsr, name)
 	return nil
 }
 

@@ -287,7 +287,7 @@ func (tsr *Bool) SetBool1D(val bool, off int) {
 // SetZeros is a convenience function initialize all values to 0 (false).
 func (tsr *Bool) SetZeros() {
 	ln := tsr.Len()
-	for j := 0; j < ln; j++ {
+	for j := range ln {
 		tsr.Values.Set(false, j)
 	}
 }
@@ -295,7 +295,7 @@ func (tsr *Bool) SetZeros() {
 // SetTrue is simple convenience function initialize all values to 0
 func (tsr *Bool) SetTrue() {
 	ln := tsr.Len()
-	for j := 0; j < ln; j++ {
+	for j := range ln {
 		tsr.Values.Set(true, j)
 	}
 }
@@ -313,11 +313,13 @@ func (tsr *Bool) Clone() Values {
 // optimized implementation if the other tensor is of the same type, and
 // otherwise it goes through appropriate standard type.
 func (tsr *Bool) CopyFrom(frm Values) {
+	sz := min(tsr.Len(), frm.Len())
 	if fsm, ok := frm.(*Bool); ok {
-		copy(tsr.Values, fsm.Values)
+		for i := range sz {
+			tsr.Values.Set(fsm.Values.Index(i), i)
+		}
 		return
 	}
-	sz := min(len(tsr.Values), frm.Len())
 	for i := range sz {
 		tsr.Values.Set(Float64ToBool(frm.Float1D(i)), i)
 	}
@@ -339,7 +341,9 @@ func (tsr *Bool) AppendFrom(frm Values) Values {
 	st := rows * cell
 	fsz := frows * fcell
 	if fsm, ok := frm.(*Bool); ok {
-		copy(tsr.Values[st:st+fsz], fsm.Values)
+		for i := range fsz {
+			tsr.Values.Set(fsm.Values.Index(i), st+i)
+		}
 		return tsr
 	}
 	for i := range fsz {

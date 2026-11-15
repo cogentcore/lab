@@ -155,7 +155,7 @@ func (ev *Env) MakeModel(sc *xyz.Scene) {
 	// params.SubSteps = 1
 }
 
-// Initstate reinitializes the physics model state.
+// InitState reinitializes the physics model state.
 func (ev *Env) InitState() { //types:add
 	ev.Physics.InitState()
 	ev.UpdateView()

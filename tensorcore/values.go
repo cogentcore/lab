@@ -62,7 +62,7 @@ func (tb *TableButton) Init() {
 	tb.Updater(func() {
 		text := "None"
 		if tb.Table != nil {
-			if nm, err := metadata.Get[string](tb.Table.Meta, "name"); err == nil {
+			if nm, err := metadata.GetFromData[string](tb.Table.Meta, "Name"); err == nil {
 				text = nm
 			} else {
 				text = "Table"

@@ -147,5 +147,4 @@ func Untar(r io.Reader, dir string, gz bool) error {
 			}
 		}
 	}
-	return errors.Join(errs...)
 }

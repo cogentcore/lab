@@ -28,9 +28,9 @@ import (
 	"cogentcore.org/lab/tensorfs"
 	"github.com/cogentcore/mvm/interp"
 	"github.com/cogentcore/mvm/lang/golang"
-	"github.com/cogentcore/mvm/vm"
 	"github.com/cogentcore/mvm/stdlib"
 	_ "github.com/cogentcore/mvm/stdlib/core" // the core standard library
+	"github.com/cogentcore/mvm/vm"
 	"github.com/cogentcore/readline"
 	"github.com/mattn/go-isatty"
 	"golang.org/x/term"
@@ -128,11 +128,13 @@ func (in *Interpreter) Prompt() string {
 	if dp == 0 {
 		return dir + " " + pc + " "
 	}
-	res := pc + " "
+	var res strings.Builder
+	res.WriteString(pc)
+	res.WriteString(" ")
 	for range dp {
-		res += "    " // note: /t confuses readline
+		res.WriteString("    ") // note: /t confuses readline
 	}
-	return res
+	return res.String()
 }
 
 // Eval evaluates (interprets) the given code,

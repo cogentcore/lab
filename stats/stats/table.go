@@ -37,7 +37,7 @@ func MeanTables(dts []*table.Table) *table.Table {
 	for _, dt := range dts {
 		dnr := dt.NumRows()
 		mx := min(dnr, maxRows)
-		for ri := 0; ri < mx; ri++ {
+		for ri := range mx {
 			rns[ri]++
 		}
 	}
@@ -47,15 +47,15 @@ func MeanTables(dts []*table.Table) *table.Table {
 			continue
 		}
 		_, cells := cl.RowCellSize()
-		for di, dt := range dts {
-			if di == 0 {
+		for _, dt := range dts {
+			if dt == maxdt { // ot is a clone of maxdt
 				continue
 			}
 			dc := dt.ColumnByIndex(ci)
 			dnr := dt.NumRows()
 			mx := min(dnr, maxRows)
-			for ri := 0; ri < mx; ri++ {
-				for j := 0; j < cells; j++ {
+			for ri := range mx {
+				for j := range cells {
 					cv := cl.FloatRow(ri, j)
 					cv += dc.FloatRow(ri, j)
 					cl.SetFloatRow(cv, ri, j)
@@ -63,7 +63,7 @@ func MeanTables(dts []*table.Table) *table.Table {
 			}
 		}
 		for ri := 0; ri < maxRows; ri++ {
-			for j := 0; j < cells; j++ {
+			for j := range cells {
 				cv := cl.FloatRow(ri, j)
 				if rns[ri] > 0 {
 					cv /= float64(rns[ri])

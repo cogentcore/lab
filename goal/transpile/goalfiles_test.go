@@ -79,7 +79,7 @@ func buildGoalFiles(t *testing.T, dir, bin string, names []string) map[string]bo
 		// follow a "# package" line (as do linker warnings).
 		errs := map[string][]string{}
 		name := ""
-		for _, ln := range strings.Split(strings.TrimSpace(out), "\n") {
+		for ln := range strings.SplitSeq(strings.TrimSpace(out), "\n") {
 			if pk, ok := strings.CutPrefix(ln, "# "); ok {
 				name = path.Base(pk)
 				continue
