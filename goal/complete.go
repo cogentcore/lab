@@ -147,7 +147,7 @@ func escapeShell(s string, quote rune) string {
 				b.WriteRune('\\')
 			}
 		default:
-			if unicode.IsSpace(r) || (strings.ContainsRune(transpile.ShellSpecial, r) && !(r == '\\' && transpile.BackslashLiteral)) {
+			if unicode.IsSpace(r) || (strings.ContainsRune(transpile.ShellSpecial, r) && (r != '\\' || !transpile.BackslashLiteral)) {
 				b.WriteRune('\\')
 			}
 		}

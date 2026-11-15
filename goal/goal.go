@@ -348,7 +348,7 @@ func (gl *Goal) DeleteAllJobs() {
 	n := len(gl.Jobs)
 	for i := n - 1; i >= 0; i-- {
 		jb := gl.Jobs.Pop()
-		jb.CmdIO.PopToStart()
+		jb.PopToStart()
 	}
 	if gl.pipeIn != nil {
 		gl.pipeIn.Close()

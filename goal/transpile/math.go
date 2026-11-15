@@ -83,7 +83,7 @@ func (st *State) transpileMath(toks Tokens, code string, fullLine bool, depth in
 		mp.expr(ex)
 	}
 
-	if !(mp.idx == len(toks) || mp.idx == len(toks)-1) { // -1 is for comment at end
+	if mp.idx != len(toks) && mp.idx != len(toks)-1 { // -1 is for comment at end
 		col := int(toks[min(mp.idx, len(toks)-1)].Pos)
 		st.addSourceError(col, "math mode cannot transpile this code (it may not be supported in math mode yet)")
 	}
@@ -661,7 +661,7 @@ func (mp *mathParse) isGoStmt(s ast.Stmt) bool {
 		}
 		for i, l := range x.Lhs {
 			id, ok := l.(*ast.Ident)
-			if !ok || !(id.Name == "_" || mp.state.math.isGo(id.Name)) {
+			if !ok || (id.Name != "_" && !mp.state.math.isGo(id.Name)) {
 				return false
 			}
 			if len(x.Lhs) != len(x.Rhs) {
@@ -1518,7 +1518,7 @@ var numpyProps = map[string]funWrap{
 // tensorFunc outputs the wrapping function and whether it needs ellipsis
 func (fw *funWrap) wrapFunc(mp *mathParse) bool {
 	ellip := false
-	wrapFun := fw.wrap
+	var wrapFun string
 	switch fw.wrap {
 	case "nis":
 		wrapFun = "tensor.NewIntScalar"

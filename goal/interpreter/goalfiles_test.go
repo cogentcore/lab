@@ -59,7 +59,7 @@ func TestMathDocs(t *testing.T) {
 	defer func() { tensorfs.ListOutput = nil }()
 	for i, m := range goalFence.FindAllStringSubmatch(string(page), -1) {
 		var lines []string
-		for _, l := range strings.Split(strings.TrimSuffix(m[2], "\n"), "\n") {
+		for l := range strings.SplitSeq(strings.TrimSuffix(m[2], "\n"), "\n") {
 			lines = append(lines, strings.TrimPrefix(l, m[1]))
 		}
 		fmt.Fprintf(&out, "######## block %d\n", i)

@@ -244,8 +244,7 @@ func (st *State) TranspileExecString(str string, output bool) Tokens {
 // addWordsError adds the given error of [ExecWords] for the code at the
 // given byte offset of the source line, at its position in it.
 func (st *State) addWordsError(err error, offset int) {
-	var we *WordsError
-	if errors.As(err, &we) {
+	if we, ok := errors.AsType[*WordsError](err); ok {
 		st.addSourceError(offset+we.Pos+1, we.Msg)
 		return
 	}

@@ -78,9 +78,7 @@ func TestComplete(t *testing.T) {
 			if strings.HasSuffix(c.add, "/") || strings.HasSuffix(c.add, string(filepath.Separator)) {
 				want += string(filepath.Separator)
 			}
-			if strings.HasPrefix(want, "./") {
-				want = want[2:]
-			}
+			want = strings.TrimPrefix(want, "./")
 			if c.icon != "terminal" && filepath.FromSlash(got) != want {
 				t.Errorf("%s + %s: read as %q, want %q", test.line, c.add, got, want)
 			}

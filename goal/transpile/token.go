@@ -29,7 +29,7 @@ type Token struct {
 	Pos token.Pos
 }
 
-// Tokens converts the string into tokens
+// TokensFromString converts the string into tokens
 func TokensFromString(ln string) Tokens {
 	fset := token.NewFileSet()
 	f := fset.AddFile("", fset.Base(), len(ln))
@@ -149,17 +149,20 @@ func (tk *Token) IsValidExecIdent() bool {
 // String is the stringer version which includes the token ID
 // in addition to the string literal
 func (tk Tokens) String() string {
-	str := ""
+	var str strings.Builder
 	for _, tok := range tk {
-		str += "[" + tok.Tok.String() + "] "
+		str.WriteString("[")
+		str.WriteString(tok.Tok.String())
+		str.WriteString("] ")
 		if tok.Str != "" {
-			str += tok.Str + " "
+			str.WriteString(tok.Str)
+			str.WriteString(" ")
 		}
 	}
-	if len(str) == 0 {
-		return str
+	if len(str.String()) == 0 {
+		return str.String()
 	}
-	return str[:len(str)-1] // remove trailing space
+	return str.String()[:len(str.String())-1] // remove trailing space
 }
 
 // Code returns concatenated Str values of the tokens,
@@ -290,10 +293,8 @@ func (tk Tokens) Contains(toks ...token.Token) bool {
 		return false
 	}
 	for _, t := range tk {
-		for _, st := range toks {
-			if t.Tok == st {
-				return true
-			}
+		if slices.Contains(toks, t.Tok) {
+			return true
 		}
 	}
 	return false
@@ -360,7 +361,7 @@ func (tk Tokens) BracketDepths() (paren, brace, brack int) {
 	if n == 0 {
 		return
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		tok := tk[i].Tok
 		switch tok {
 		case token.LPAREN:
