@@ -158,13 +158,16 @@ func BoxEdge(edgeID int32, upper math32.Vector3, edge0, edge1 *math32.Vector3) {
 		j := i + 1
 		*edge0 = BoxVertex(i, upper)
 		*edge1 = BoxVertex(j, upper)
-	} else if eid < 8 {
+		return
+	}
+	if eid < 8 {
 		// edges along y: 0-2, 1-3, 4-6, 5-7
 		eid -= 4
-		i := eid%2 + eid // 2 * 4
+		i := eid%2 + (eid/2)*4
 		j := i + 2
 		*edge0 = BoxVertex(i, upper)
 		*edge1 = BoxVertex(j, upper)
+		return
 	}
 	// edges along z: 0-4, 1-5, 2-6, 3-7
 	eid -= 8

@@ -293,3 +293,28 @@ func TestSphereCapsule(t *testing.T) {
 		// fmt.Println(cpA, cpB, tc.dist, actual)
 	}
 }
+
+// TestBoxEdge tests that the 12 edges of a box join the vertexes that
+// differ in one coordinate: 4 edges along each of x, y, and z.
+func TestBoxEdge(t *testing.T) {
+	upper := math32.Vec3(1, 2, 3)
+	seen := map[[2]math32.Vector3]bool{}
+	var n [3]int
+	for eid := range int32(12) {
+		var e0, e1 math32.Vector3
+		BoxEdge(eid, upper, &e0, &e1)
+		d := e1.Sub(e0)
+		dims := 0
+		for dim := range 3 {
+			if d.Dim(math32.Dims(dim)) != 0 {
+				dims++
+				n[dim]++
+				assert.Equal(t, 2*upper.Dim(math32.Dims(dim)), d.Dim(math32.Dims(dim)), "edge %d", eid)
+			}
+		}
+		assert.Equal(t, 1, dims, "edge %d is along one axis: %v %v", eid, e0, e1)
+		assert.False(t, seen[[2]math32.Vector3{e0, e1}], "edge %d is new", eid)
+		seen[[2]math32.Vector3{e0, e1}] = true
+	}
+	assert.Equal(t, [3]int{4, 4, 4}, n)
+}

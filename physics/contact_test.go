@@ -91,7 +91,6 @@ func TestCollideBodies(t *testing.T) {
 
 // TestCollideBoxes tests that a box rests on a box.
 func TestCollideBoxes(t *testing.T) {
-	t.Skip("a box sinks into another box (to 0.58 instead of 1.5): a known bug of the box-box collisions of the upstream library, for later")
 	db := stack(t, Box, Box)
 	assert.InDelta(t, 1.5, DynamicPos(db, GetParams(0).Next).Y, 0.1)
 }

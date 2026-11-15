@@ -849,12 +849,15 @@ fn BoxEdge(edgeID: i32, upper: vec3<f32>, edge0: ptr<function,vec3<f32>>,edge1: 
 		var j = i + 1;
 		*edge0 = BoxVertex(i, upper);
 		*edge1 = BoxVertex(j, upper);
-	} else if (eid < 8) {
+	return;
+	}
+	if (eid < 8) {
 		eid -= i32(4);
-		var i = eid%2 + eid; // 2 * 4
+		var i = eid%2 + (eid/2)*4;
 		var j = i + 2;
 		*edge0 = BoxVertex(i, upper);
 		*edge1 = BoxVertex(j, upper);
+	return;
 	}
 	eid -= i32(8);
 	var i = eid;
