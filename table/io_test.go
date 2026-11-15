@@ -53,7 +53,7 @@ func TestTableHeaders(t *testing.T) {
 	}
 	outh := dt.TableHeaders()
 	// fmt.Printf("headers out:\n%v\n", outh)
-	for i := 0; i < 2; i++ { // note: due to diff row-major index ordering, other cols are diff..
+	for i := range 2 { // note: due to diff row-major index ordering, other cols are diff..
 		hh := hdrs[i]
 		oh := outh[i]
 		if hh != oh {
@@ -66,12 +66,12 @@ func TestTableHeaders(t *testing.T) {
 }
 
 func TestReadTableDat(t *testing.T) {
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		fp, err := os.Open("testdata/emer_simple_lines_5x5.dat")
-		defer fp.Close()
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
+		defer fp.Close()
 		dt := New()
 		err = dt.ReadCSV(fp, '\t') // tsv
 		if err != nil {
@@ -103,10 +103,10 @@ func TestReadTableDat(t *testing.T) {
 			t.Errorf("TableHeaders: sc[2].Dim[1] != 5\n")
 		}
 		fo, err := os.Create("testdata/emer_simple_lines_5x5_rec.dat")
-		defer fo.Close()
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
+		defer fo.Close()
 		dt.WriteCSV(fo, '\t', Headers)
 	}
 }

@@ -41,7 +41,7 @@ func AlignShapes(a, b Tensor) (as, bs, os *Shape, err error) {
 		if bi >= 0 {
 			bd = bsz[bi]
 		}
-		if ad != bd && !(ad == 1 || bd == 1) {
+		if ad != bd && ad != 1 && bd != 1 {
 			err = fmt.Errorf("tensor.AlignShapes: output dimension %d does not align for a=%d b=%d: must be either the same or one of them is a 1", oi, ad, bd)
 			return
 		}

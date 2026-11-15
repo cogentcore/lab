@@ -62,12 +62,15 @@ func (dir *Node) listShort(recursive bool, ident int) string {
 		b.WriteString(indent.Tabs(ident))
 		if it.IsDir() {
 			if recursive {
-				b.WriteString("\n" + it.listShort(recursive, ident+1))
+				b.WriteString("\n")
+				b.WriteString(it.listShort(recursive, ident+1))
 			} else {
-				b.WriteString(it.name + "/ ")
+				b.WriteString(it.name)
+				b.WriteString("/ ")
 			}
 		} else {
-			b.WriteString(it.name + " ")
+			b.WriteString(it.name)
+			b.WriteString(" ")
 		}
 	}
 	return b.String()
@@ -80,12 +83,14 @@ func (dir *Node) listLong(recursive bool, ident int) string {
 	for _, it := range nodes {
 		b.WriteString(indent.Tabs(ident))
 		if it.IsDir() {
-			b.WriteString(it.name + "/\n")
+			b.WriteString(it.name)
+			b.WriteString("/\n")
 			if recursive {
 				b.WriteString(it.listLong(recursive, ident+1))
 			}
 		} else {
-			b.WriteString(it.String() + "\n")
+			b.WriteString(it.String())
+			b.WriteString("\n")
 		}
 	}
 	return b.String()

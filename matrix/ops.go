@@ -231,11 +231,11 @@ func InverseOut(a tensor.Tensor, out *tensor.Float64) error {
 		}
 	}
 	if na == 2 {
-		if a.DimSize(0) != a.DimSize(1) {
+		if ea.DimSize(0) != ea.DimSize(1) {
 			return squareError("matrix.Inverse", a)
 		}
-		ma, _ := NewMatrix(a)
-		out.SetShapeSizes(a.DimSize(0), a.DimSize(1))
+		ma, _ := NewMatrix(ea)
+		out.SetShapeSizes(ea.DimSize(0), ea.DimSize(1))
 		do, _ := NewDense(out)
 		return do.Inverse(ma)
 	}

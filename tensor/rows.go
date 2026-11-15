@@ -91,7 +91,7 @@ func (rw *Rows) Label() string            { return rw.Tensor.Label() }
 func (rw *Rows) Metadata() *metadata.Data { return rw.Tensor.Metadata() }
 func (rw *Rows) NumDims() int             { return rw.Tensor.NumDims() }
 
-// If we have Indexes, this is the effective shape sizes using
+// ShapeSizes returns the shape sizes: if we have Indexes, this is the effective shape sizes using
 // the current number of indexes as the outermost row dimension size.
 func (rw *Rows) ShapeSizes() []int {
 	if rw.Indexes == nil || rw.Tensor.NumDims() == 0 {
@@ -102,7 +102,7 @@ func (rw *Rows) ShapeSizes() []int {
 	return sh
 }
 
-// Shape() returns a [Shape] representation of the tensor shape
+// Shape returns a [Shape] representation of the tensor shape
 // (dimension sizes). If we have Indexes, this is the effective
 // shape using the current number of indexes as the outermost row dimension size.
 func (rw *Rows) Shape() *Shape {
@@ -429,7 +429,7 @@ func (rw *Rows) InsertRows(at, n int) {
 	rw.IndexesNeeded()
 	rw.Tensor.SetNumRows(stidx + n)
 	nw := make([]int, n, n+len(rw.Indexes)-at)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		nw[i] = stidx + i
 	}
 	rw.Indexes = append(rw.Indexes[:at], append(nw, rw.Indexes[at:]...)...)
@@ -496,7 +496,7 @@ func (rw *Rows) Float1D(i int) float64 {
 	if rw.Indexes == nil {
 		return rw.Tensor.Float1D(i)
 	}
-	return rw.Float(rw.Tensor.Shape().IndexFrom1D(i)...)
+	return rw.Float(rw.Shape().IndexFrom1D(i)...)
 }
 
 // SetFloat1D is somewhat expensive if indexes are set, because it needs to convert
@@ -506,7 +506,7 @@ func (rw *Rows) SetFloat1D(val float64, i int) {
 		rw.Tensor.SetFloat1D(val, i)
 		return
 	}
-	rw.SetFloat(val, rw.Tensor.Shape().IndexFrom1D(i)...)
+	rw.SetFloat(val, rw.Shape().IndexFrom1D(i)...)
 }
 
 ///////  Strings
@@ -562,7 +562,7 @@ func (rw *Rows) String1D(i int) string {
 	if rw.Indexes == nil {
 		return rw.Tensor.String1D(i)
 	}
-	return rw.StringValue(rw.Tensor.Shape().IndexFrom1D(i)...)
+	return rw.StringValue(rw.Shape().IndexFrom1D(i)...)
 }
 
 // SetString1D is somewhat expensive if indexes are set, because it needs to convert
@@ -572,7 +572,7 @@ func (rw *Rows) SetString1D(val string, i int) {
 		rw.Tensor.SetString1D(val, i)
 		return
 	}
-	rw.SetString(val, rw.Tensor.Shape().IndexFrom1D(i)...)
+	rw.SetString(val, rw.Shape().IndexFrom1D(i)...)
 }
 
 // AppendRowString adds a row and sets string value(s), up to number of cells.
@@ -634,7 +634,7 @@ func (rw *Rows) Int1D(i int) int {
 	if rw.Indexes == nil {
 		return rw.Tensor.Int1D(i)
 	}
-	return rw.Int(rw.Tensor.Shape().IndexFrom1D(i)...)
+	return rw.Int(rw.Shape().IndexFrom1D(i)...)
 }
 
 // SetInt1D is somewhat expensive if indexes are set, because it needs to convert
@@ -644,7 +644,7 @@ func (rw *Rows) SetInt1D(val int, i int) {
 		rw.Tensor.SetInt1D(val, i)
 		return
 	}
-	rw.SetInt(val, rw.Tensor.Shape().IndexFrom1D(i)...)
+	rw.SetInt(val, rw.Shape().IndexFrom1D(i)...)
 }
 
 ///////  SubSpaces

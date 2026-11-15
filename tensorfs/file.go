@@ -24,7 +24,7 @@ func (f *File) Stat() (fs.FileInfo, error) {
 }
 
 func (f *File) Close() error {
-	f.Reader.Reset(f.Node.Bytes())
+	f.Reset(f.Node.Bytes())
 	return nil
 }
 

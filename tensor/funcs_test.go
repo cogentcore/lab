@@ -55,11 +55,11 @@ func TestAlign(t *testing.T) {
 	assert.Equal(t, []int{1, 3, 4}, bs.Sizes)
 
 	ars := NewReshaped(a, 12)
-	as, bs, os, err = AlignShapes(ars, b)
+	_, _, _, err = AlignShapes(ars, b)
 	assert.Error(t, err)
 
 	brs := NewReshaped(b, 12)
-	as, bs, os, err = AlignShapes(ars, brs)
+	_, _, _, err = AlignShapes(ars, brs)
 	assert.NoError(t, err)
 
 	ars = NewReshaped(a, 3, 1, 4)

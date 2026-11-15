@@ -6,9 +6,11 @@
 // which is used for efficient storage of boolean data, such as projection connectivity patterns.
 package bitslice
 
+import "strings"
+
 import "fmt"
 
-// bitslice.Slice is the slice of []byte that holds the bits.
+// Slice is the slice of []byte that holds the bits.
 // first byte maintains the number of bits used in the last byte (0-7).
 // when 0 then prior byte is all full and a new one must be added for append.
 type Slice []byte
@@ -69,8 +71,8 @@ func (bs *Slice) SetLen(ln int) {
 		(*bs)[0] = byte(bi)
 	} else {
 		sl := make(Slice, bln+1)
-		sl[0] = byte(bi)
 		copy(sl, *bs)
+		sl[0] = byte(bi) // (after the copy of the old header)
 		*bs = sl
 	}
 }
@@ -126,9 +128,9 @@ func (bs *Slice) SetAll(val bool) {
 
 // ToBools converts to a []bool slice
 func (bs *Slice) ToBools() []bool {
-	ln := len(*bs)
+	ln := bs.Len() // bits, not bytes
 	bb := make([]bool, ln)
-	for i := 0; i < ln; i++ {
+	for i := range ln {
 		bb[i] = bs.Index(i)
 	}
 	return bb
@@ -160,7 +162,7 @@ func (bs *Slice) SubSlice(start, end int) Slice {
 		return Slice{}
 	}
 	ss := Make(nln, 0)
-	for i := 0; i < nln; i++ {
+	for i := range nln {
 		ss.Set(bs.Index(i+start), i)
 	}
 	return ss
@@ -185,7 +187,7 @@ func (bs *Slice) Delete(start, n int) Slice {
 		return Slice{}
 	}
 	ss := Make(nln, 0)
-	for i := 0; i < start; i++ {
+	for i := range start {
 		ss.Set(bs.Index(i), i)
 	}
 	for i := end; i < ln; i++ {
@@ -206,7 +208,7 @@ func (bs *Slice) Insert(start, n int) Slice {
 	}
 	nln := ln + n
 	ss := Make(nln, 0)
-	for i := 0; i < start; i++ {
+	for i := range start {
 		ss.Set(bs.Index(i), i)
 	}
 	for i := start; i < ln; i++ {
@@ -224,25 +226,23 @@ func (bs *Slice) String() string {
 		}
 		return "[]"
 	}
-	mx := ln
-	if mx > 1000 {
-		mx = 1000
-	}
-	str := "["
-	for i := 0; i < mx; i++ {
+	mx := min(ln, 1000)
+	var str strings.Builder
+	str.WriteString("[")
+	for i := range mx {
 		val := bs.Index(i)
 		if val {
-			str += "1 "
+			str.WriteString("1 ")
 		} else {
-			str += "0 "
+			str.WriteString("0 ")
 		}
 		if (i+1)%80 == 0 {
-			str += "\n"
+			str.WriteString("\n")
 		}
 	}
 	if ln > mx {
-		str += fmt.Sprintf("...(len=%v)", ln)
+		fmt.Fprintf(&str, "...(len=%v)", ln)
 	}
-	str += "]"
-	return str
+	str.WriteString("]")
+	return str.String()
 }

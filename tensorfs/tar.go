@@ -138,7 +138,7 @@ func Untar(r io.Reader, dir *Node, gz bool) error {
 			dir.Dir(fname)
 		case tar.TypeReg:
 			b := make([]byte, hdr.Size)
-			_, err := tr.Read(b)
+			_, err := io.ReadFull(tr, b)
 			if err != nil && err != io.EOF {
 				if allErr := addErr(err); allErr != nil {
 					return allErr
@@ -161,5 +161,4 @@ func Untar(r io.Reader, dir *Node, gz bool) error {
 			nd.Tensor = tensor.FromBinary(b)
 		}
 	}
-	return errors.Join(errs...)
 }

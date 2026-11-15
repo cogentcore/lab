@@ -9,7 +9,7 @@ package mpi
 // this file provides dummy versions, built by default, so mpi can be included
 // generically without incurring additional complexity.
 
-// set LogErrors to control whether MPI errors are automatically logged or not
+// LogErrors controls whether MPI errors are automatically logged or not
 var LogErrors = true
 
 // Op is an aggregation operation: Sum, Min, Max, etc

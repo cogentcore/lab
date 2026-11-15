@@ -24,10 +24,9 @@ func NewSliceTable(st any) (*Table, error) {
 	}
 	dt := New()
 
-	for i := 0; i < eltyp.NumField(); i++ {
-		f := eltyp.Field(i)
+	for f := range eltyp.Fields() {
 		kind := f.Type.Kind()
-		if !reflectx.KindIsBasic(kind) {
+		if !reflectx.KindIsBasic(kind) && kind != reflect.String {
 			continue
 		}
 		dt.AddColumnOfType(f.Name, kind)
@@ -44,11 +43,11 @@ func UpdateSliceTable(st any, dt *Table) {
 
 	nr := npv.Len()
 	dt.SetNumRows(nr)
-	for ri := 0; ri < nr; ri++ {
+	for ri := range nr {
 		for i := 0; i < eltyp.NumField(); i++ {
 			f := eltyp.Field(i)
 			kind := f.Type.Kind()
-			if !reflectx.KindIsBasic(kind) {
+			if !reflectx.KindIsBasic(kind) && kind != reflect.String {
 				continue
 			}
 			val := npv.Index(ri).Field(i).Interface()

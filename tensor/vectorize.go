@@ -93,17 +93,12 @@ func VectorizeOnThreads(threads int, nfun func(tsr ...Tensor) int, fun func(idx 
 	nper := int(math.Ceil(float64(n) / float64(threads)))
 	wait := sync.WaitGroup{}
 	for start := 0; start < n; start += nper {
-		end := start + nper
-		if end > n {
-			end = n
-		}
-		wait.Add(1) // todo: move out of loop
-		go func() {
+		end := min(start+nper, n)
+		wait.Go(func() {
 			for idx := start; idx < end; idx++ {
 				fun(idx, tsr...)
 			}
-			wait.Done()
-		}()
+		})
 	}
 	wait.Wait()
 }
@@ -136,7 +131,7 @@ func NMinLen(nt int, tsr ...Tensor) int {
 	}
 	n := tsr[0].Len()
 	for i := 1; i < nt; i++ {
-		n = min(n, tsr[0].Len())
+		n = min(n, tsr[i].Len())
 	}
 	return n
 }

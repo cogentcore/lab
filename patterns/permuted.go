@@ -50,7 +50,7 @@ func PermutedBinaryRows(tsr tensor.Values, nOn int, onVal, offVal float64) {
 	pord := RandSource.Perm(cells)
 	for rw := range rows {
 		stidx := rw * cells
-		for i := 0; i < cells; i++ {
+		for i := range cells {
 			if i < nOn {
 				tsr.SetFloat1D(onVal, stidx+pord[i])
 			} else {
@@ -110,9 +110,8 @@ func PermutedBinaryMinDiff(tsr tensor.Values, nOn int, onVal, offVal float64, mi
 				df := int(math.Round(float64(.5 * dst)))
 				if df < minDiff {
 					nunder[r1]++
-					mxnun = max(nunder[r1])
 					nunder[r2]++
-					mxnun = max(nunder[r2])
+					mxnun = max(mxnun, nunder[r1], nunder[r2])
 					nbad++
 				}
 			}

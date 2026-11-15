@@ -81,7 +81,7 @@ func assignVar(ptr any, b any, tfun func(a, b tensor.Tensor) error, ffun func(a,
 		return fmt.Errorf("tmath: %T is not a pointer to a variable", ptr)
 	}
 	dst := pv.Elem()
-	if t, ok := dst.Interface().(tensor.Tensor); ok {
+	if t, ok := reflect.TypeAssert[tensor.Tensor](dst); ok {
 		return tfun(t, tensor.ToTensor(b))
 	}
 	if !reflectx.KindIsNumber(dst.Kind()) {

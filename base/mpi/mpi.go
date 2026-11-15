@@ -26,7 +26,7 @@ import (
 	"unsafe"
 )
 
-// set LogErrors to control whether MPI errors are automatically logged or not
+// LogErrors controls whether MPI errors are automatically logged or not
 var LogErrors = true
 
 // Error takes an MPI error code and returns an appropriate error

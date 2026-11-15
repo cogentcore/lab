@@ -16,6 +16,11 @@ import (
 // dest will have np * src.Rows Rows, filled with each processor's data, in order.
 // dest must have same overall shape as src at start, but rows will be enforced.
 func GatherTensorRows(dest, src tensor.Values, comm *mpi.Comm) error {
+	if !mpi.IsOn() { // one process, without MPI: the gather is a copy
+		tensor.SetShapeFrom(dest, src)
+		dest.CopyFrom(src)
+		return nil
+	}
 	dt := src.DataType()
 	if dt == reflect.String {
 		return GatherTensorRowsString(dest.(*tensor.String), src.(*tensor.String), comm)
@@ -62,6 +67,11 @@ func GatherTensorRows(dest, src tensor.Values, comm *mpi.Comm) error {
 // dest will have np * src.Rows Rows, filled with each processor's data, in order.
 // dest must have same overall shape as src at start, but rows will be enforced.
 func GatherTensorRowsString(dest, src *tensor.String, comm *mpi.Comm) error {
+	if !mpi.IsOn() { // one process, without MPI: the gather is a copy
+		tensor.SetShapeFrom(dest, src)
+		dest.CopyFrom(src)
+		return nil
+	}
 	sr, _ := src.Shape().RowCellSize()
 	dr, _ := dest.Shape().RowCellSize()
 	np := mpi.WorldSize()
@@ -120,6 +130,10 @@ func ReduceTensor(dest, src tensor.Values, comm *mpi.Comm, op mpi.Op) error {
 	slen := src.Len()
 	if slen != dest.Len() {
 		tensor.SetShapeFrom(dest, src)
+	}
+	if !mpi.IsOn() { // one process, without MPI: the reduction is a copy
+		dest.CopyFrom(src)
+		return nil
 	}
 	var err error
 	switch dt {

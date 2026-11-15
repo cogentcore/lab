@@ -11,6 +11,7 @@ import (
 // note: this file contains random distribution functions
 // from gonum.org/v1/gonum/stat/distuv
 // which we modified only to use the randx.Rand interface.
+
 // BinomialGen returns binomial with n trials (par) each of probability p (var)
 // Optionally can pass a single Rand interface to use --
 // otherwise uses system global Rand source.

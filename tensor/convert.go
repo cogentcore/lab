@@ -18,6 +18,9 @@ func Clone(tsr Tensor) Values {
 	if vl, ok := tsr.(Values); ok {
 		return vl.Clone()
 	}
+	if rw, ok := tsr.(*Rows); ok && rw.Indexes == nil { // AsValues returns the source
+		return rw.Tensor.Clone()
+	}
 	return tsr.AsValues()
 }
 

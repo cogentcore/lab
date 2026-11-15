@@ -237,7 +237,7 @@ func (tsr *String) CopyFrom(frm Values) {
 		return
 	}
 	sz := min(tsr.Len(), frm.Len())
-	for i := 0; i < sz; i++ {
+	for i := range sz {
 		tsr.Values[i] = Float64ToString(frm.Float1D(i))
 	}
 }
@@ -261,7 +261,7 @@ func (tsr *String) AppendFrom(frm Values) Values {
 		copy(tsr.Values[st:st+fsz], fsm.Values)
 		return tsr
 	}
-	for i := 0; i < fsz; i++ {
+	for i := range fsz {
 		tsr.Values[st+i] = Float64ToString(frm.Float1D(i))
 	}
 	return tsr
@@ -274,12 +274,12 @@ func (tsr *String) AppendFrom(frm Values) Values {
 // of the same type, and otherwise it goes through appropriate standard type.
 func (tsr *String) CopyCellsFrom(frm Values, to, start, n int) {
 	if fsm, ok := frm.(*String); ok {
-		for i := 0; i < n; i++ {
+		for i := range n {
 			tsr.Values[to+i] = fsm.Values[start+i]
 		}
 		return
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		tsr.Values[to+i] = Float64ToString(frm.Float1D(start + i))
 	}
 }
@@ -292,6 +292,9 @@ func (tsr *String) CopyCellsFrom(frm Values, to, start, n int) {
 // Use Clone() method to separate the two.
 func (tsr *String) SubSpace(offs ...int) Values {
 	b := tsr.subSpaceImpl(offs...)
+	if b == nil {
+		return nil
+	}
 	rt := &String{Base: *b}
 	return rt
 }

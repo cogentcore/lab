@@ -123,9 +123,7 @@ func (dir *Node) Nodes(names ...string) ([]*Node, error) {
 	}
 	var nds []*Node
 	if len(names) == 0 {
-		for _, it := range dir.nodes.Values {
-			nds = append(nds, it)
-		}
+		nds = append(nds, dir.nodes.Values...)
 		return nds, nil
 	}
 	var errs []error

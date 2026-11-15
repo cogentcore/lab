@@ -310,7 +310,7 @@ func (sl *Sliced) Len() int {
 
 func (sl *Sliced) NumDims() int { return sl.Tensor.NumDims() }
 
-// For each dimension, we return the effective shape sizes using
+// ShapeSizes returns, for each dimension, the effective shape sizes using
 // the current number of indexes per dimension.
 func (sl *Sliced) ShapeSizes() []int {
 	nd := sl.Tensor.NumDims()

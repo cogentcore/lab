@@ -32,8 +32,9 @@ func TestFS(t *testing.T) {
 	assert.NoError(t, err)
 	sd, err = sd.DirAtPath("network")
 	assert.NoError(t, err)
-	sd, err = dfs.DirAtPath("root/network")
+	nd, err := dfs.DirAtPath("root/network")
 	assert.NoError(t, err)
+	assert.Same(t, sd, nd)
 
 	if err := fstest.TestFS(dfs, "network/units"); err != nil {
 		t.Fatal(err)

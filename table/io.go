@@ -41,11 +41,11 @@ const (
 // Otherwise, only the data is written.
 func (dt *Table) SaveCSV(filename fsx.Filename, delim tensor.Delims, headers bool) error { //types:add
 	fp, err := os.Create(string(filename))
-	defer fp.Close()
 	if err != nil {
 		log.Println(err)
 		return err
 	}
+	defer fp.Close()
 	bw := bufio.NewWriter(fp)
 	err = dt.WriteCSV(bw, delim, headers)
 	bw.Flush()
@@ -133,7 +133,7 @@ func (dt *Table) ReadCSVRow(rec []string, row int) {
 	for _, tsr := range dt.Columns.Values {
 		_, csz := tsr.Shape().RowCellSize()
 		stoff := row * csz
-		for cc := 0; cc < csz; cc++ {
+		for cc := range csz {
 			str := rec[ci]
 			if !tsr.IsString() {
 				if str == "" || str == "NaN" || str == "-NaN" || str == "Inf" || str == "-Inf" {
@@ -247,7 +247,7 @@ func ShapeFromString(dims string) []int {
 	nd, _ := strconv.Atoi(dims[:clni])
 	sh := make([]int, nd)
 	ci := clni + 1
-	for i := 0; i < nd; i++ {
+	for i := range nd {
 		dstr := ""
 		if i < nd-1 {
 			nci := strings.Index(dims[ci:], ",")
@@ -273,6 +273,7 @@ func ConfigFromDataValues(dt *Table, hdrs []string, rec [][]string) error {
 		}
 		nmatch := 0
 		typ := reflect.String
+	rows:
 		for ri := 1; ri < nr; ri++ {
 			rv := rec[ri][ci]
 			if rv == "" {
@@ -282,7 +283,7 @@ func ConfigFromDataValues(dt *Table, hdrs []string, rec [][]string) error {
 			switch {
 			case ctyp == reflect.String: // definitive
 				typ = ctyp
-				break
+				break rows // a plain break only exits the switch
 			case typ == ctyp && (nmatch > 1 || ri == nr-1): // good enough
 				break
 			case typ == ctyp: // gather more info
@@ -411,7 +412,7 @@ func (dt *Table) WriteCSVRowWriter(cw *csv.Writer, row int, ncol int) error {
 		} else {
 			csh := tensor.NewShape(tsr.ShapeSizes()[1:]...) // cell shape
 			tc := csh.Len()
-			for ti := 0; ti < tc; ti++ {
+			for ti := range tc {
 				vl := ""
 				if prec <= 0 || tsr.IsString() {
 					vl = tsr.String1D(row*tc + ti)
@@ -445,29 +446,34 @@ func (dt *Table) TableHeaders() []string {
 			tc := csh.Len()
 			nd := csh.NumDims()
 			fnm := nm + fmt.Sprintf("[%v:", nd)
-			dn := fmt.Sprintf("<%v:", nd)
-			ffnm := fnm
-			for di := 0; di < nd; di++ {
-				ffnm += "0"
-				dn += fmt.Sprintf("%v", csh.DimSize(di))
+			var dn strings.Builder
+			fmt.Fprintf(&dn, "<%v:", nd)
+			var ffnm strings.Builder
+			ffnm.WriteString(fnm)
+			for di := range nd {
+				ffnm.WriteString("0")
+				fmt.Fprintf(&dn, "%v", csh.DimSize(di))
 				if di < nd-1 {
-					ffnm += ","
-					dn += ","
+					ffnm.WriteString(",")
+					dn.WriteString(",")
 				}
 			}
-			ffnm += "]" + dn + ">"
-			hdrs = append(hdrs, ffnm)
+			ffnm.WriteString("]")
+			ffnm.WriteString(dn.String())
+			ffnm.WriteString(">")
+			hdrs = append(hdrs, ffnm.String())
 			for ti := 1; ti < tc; ti++ {
 				idx := csh.IndexFrom1D(ti)
-				ffnm := fnm
-				for di := 0; di < nd; di++ {
-					ffnm += fmt.Sprintf("%v", idx[di])
+				var ffnm strings.Builder
+				ffnm.WriteString(fnm)
+				for di := range nd {
+					fmt.Fprintf(&ffnm, "%v", idx[di])
 					if di < nd-1 {
-						ffnm += ","
+						ffnm.WriteString(",")
 					}
 				}
-				ffnm += "]"
-				hdrs = append(hdrs, ffnm)
+				ffnm.WriteString("]")
+				hdrs = append(hdrs, ffnm.String())
 			}
 		}
 	}

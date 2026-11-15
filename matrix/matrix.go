@@ -53,7 +53,7 @@ func (mx *Matrix) At(i, j int) float64 {
 // T is the gonum/mat.Matrix transpose method.
 // It performs an implicit transpose by returning the receiver inside a Transpose.
 func (mx *Matrix) T() mat.Matrix {
-	return mat.Transpose{mx}
+	return mat.Transpose{Matrix: mx}
 }
 
 ////////  Symmetric
@@ -111,8 +111,8 @@ func CopyFromDense(to tensor.Values, dm *mat.Dense) {
 	nr, nc := dm.Dims()
 	to.SetShapeSizes(nr, nc)
 	idx := 0
-	for ri := 0; ri < nr; ri++ {
-		for ci := 0; ci < nc; ci++ {
+	for ri := range nr {
+		for ci := range nc {
 			v := dm.At(ri, ci)
 			to.SetFloat1D(v, idx)
 			idx++
