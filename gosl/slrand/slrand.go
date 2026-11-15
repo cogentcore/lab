@@ -104,7 +104,7 @@ func Float32(counter uint64, funcIndex uint32, key uint32) float32 {
 // counter for this specific random number call, and key as unique
 // index of the item being processed.
 func Float32Range11Vec2(counter uint64, funcIndex uint32, key uint32) sltype.Float32Vec2 {
-	return sltype.Uint32ToFloat32Vec2(Uint32Vec2(counter, funcIndex, key))
+	return sltype.Uint32ToFloat32Range11Vec2(Uint32Vec2(counter, funcIndex, key))
 }
 
 // Float32Range11 returns a uniformly distributed float32 value in range [-1,1],
@@ -152,7 +152,7 @@ func Float32NormVec2(counter uint64, funcIndex uint32, key uint32) sltype.Float3
 // counter for this specific random number call, and key as unique
 // index of the item being processed.
 func Float32Norm(counter uint64, funcIndex uint32, key uint32) float32 {
-	return Float32Vec2(counter, funcIndex, key).X
+	return Float32NormVec2(counter, funcIndex, key).X
 }
 
 // Uint32N returns a uint32 in the range [0,N).
@@ -179,7 +179,7 @@ type Counter struct {
 
 // Reset resets counter to last set Seed state
 func (ct *Counter) Reset() {
-	ct.Counter = sltype.Uint64FromLoHi(sltype.Uint32Vec2{0, ct.HiSeed})
+	ct.Counter = sltype.Uint64FromLoHi(sltype.Uint32Vec2{X: 0, Y: ct.HiSeed})
 }
 
 // Seed sets the Hi uint32 value from given seed, saving it in HiSeed field.

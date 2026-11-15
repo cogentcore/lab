@@ -52,8 +52,8 @@ func (st *State) HasGoslTag(lines [][]byte) bool {
 	for _, ln := range lines {
 		tln := bytes.TrimSpace(ln)
 		if st.Package == "" {
-			if bytes.HasPrefix(tln, pkg) {
-				st.Package = string(bytes.TrimPrefix(tln, pkg))
+			if after, ok := bytes.CutPrefix(tln, pkg); ok {
+				st.Package = string(after)
 			}
 		}
 		if bytes.HasPrefix(tln, key) {
@@ -185,9 +185,9 @@ func (st *State) CopyPackageFile(fnm, packagePath string) error {
 	if len(pkg.GoFiles) > 0 {
 		fn = pkg.GoFiles[0]
 	} else if len(pkg.OtherFiles) > 0 {
-		fn = pkg.GoFiles[0]
+		fn = pkg.OtherFiles[0]
 	} else {
-		err = fmt.Errorf("No files found in package: %s", packagePath)
+		err = fmt.Errorf("no files found in package: %s", packagePath)
 		fmt.Println(err)
 		return err
 	}

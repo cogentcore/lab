@@ -133,7 +133,7 @@ func testMatrix2s() []math32.Matrix2 {
 		math32.Shear2D(0.3, -0.7),
 		math32.Skew2D(0.2, 0.4),
 		math32.Identity2().Translate(1, 2).Rotate(math32.DegToRad(45)).Scale(2, 3),
-		math32.Matrix2{XX: 1, YX: 2, XY: 3, YY: 4, X0: 5, Y0: 6},
+		{XX: 1, YX: 2, XY: 3, YY: 4, X0: 5, Y0: 6},
 	}
 }
 

@@ -69,7 +69,7 @@ func main() {
 	anyDiffTol := false
 	mx := min(n, 5)
 	fmt.Printf("Index\tDif(Ex,Tol)\t   CPU   \t  then GPU\n")
-	for i := 0; i < n; i++ {
+	for i := range n {
 		smEx, smTol := IsSame(dataCU, dataGU, dataCF, dataGF, i)
 		if !smEx {
 			anyDiffEx = true

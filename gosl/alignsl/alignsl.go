@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-package alignsl performs 16-byte alignment checking of struct fields
+Package alignsl performs 16-byte alignment checking of struct fields
 and total size modulus checking of struct types to ensure WGSL
 (and GSL) compatibility.
 
@@ -87,7 +87,7 @@ func CheckStructImpl(cx *Context, st *types.Struct, stName string) bool {
 		return false
 	}
 	hasErr := false
-	for i := 0; i < nf; i++ {
+	for i := range nf {
 		fl := st.Field(i)
 		flds = append(flds, fl)
 		ft := fl.Type()
@@ -96,7 +96,7 @@ func CheckStructImpl(cx *Context, st *types.Struct, stName string) bool {
 			kind := bt.Kind()
 			if kind == types.Invalid {
 				hasErr = cx.AddError(fmt.Sprintf(`    %s:  %s: add //gosl:import "package"`, fl.Name(), bt.String()), hasErr, stName)
-			} else if !(kind == types.Uint32 || kind == types.Int32 || kind == types.Float32 || kind == types.Uint64) {
+			} else if kind != types.Uint32 && kind != types.Int32 && kind != types.Float32 && kind != types.Uint64 {
 				hasErr = cx.AddError(fmt.Sprintf("    %s:  basic type != [U]Int32 or Float32: %s", fl.Name(), bt.String()), hasErr, stName)
 				fmt.Println("kind:", kind, "ft:", ft.String())
 			}
@@ -160,10 +160,7 @@ WARNING: in struct type alignment checking:
 
 func CheckStack(cx *Context) bool {
 	hasErr := false
-	for {
-		if len(cx.Stack) == 0 {
-			break
-		}
+	for len(cx.Stack) != 0 {
 		st := cx.Stack
 		cx.Stack = make(map[*types.Struct]string) // new stack
 		for st, nm := range st {
@@ -201,8 +198,7 @@ func CheckScope(cx *Context, sc *types.Scope, level int) bool {
 		}
 	}
 	if ntyp == 0 {
-		for i := 0; i < sc.NumChildren(); i++ {
-			cs := sc.Child(i)
+		for cs := range sc.Children() {
 			er := CheckScope(cx, cs, level+1)
 			if er {
 				hasErr = true

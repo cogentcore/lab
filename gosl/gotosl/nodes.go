@@ -101,8 +101,8 @@ func hasDirective(dirs []string, dir string) bool {
 // and a bool indicating if the string was found.
 func directiveAfter(dirs []string, dir string) (string, bool) {
 	for _, d := range dirs {
-		if strings.HasPrefix(d, dir) {
-			return strings.TrimSpace(strings.TrimPrefix(d, dir)), true
+		if after, ok := strings.CutPrefix(d, dir); ok {
+			return strings.TrimSpace(after), true
 		}
 	}
 	return "", false
@@ -513,7 +513,7 @@ func (p *printer) goslFixArgs(args []ast.Expr, params *types.Tuple) ([]ast.Expr,
 	ags := slices.Clone(args)
 	mx := min(len(args), params.Len())
 	var rwargs []rwArg
-	for i := 0; i < mx; i++ {
+	for i := range mx {
 		ag := args[i]
 		pr := params.At(i)
 		switch x := ag.(type) {
@@ -525,7 +525,7 @@ func (p *printer) goslFixArgs(args []ast.Expr, params *types.Tuple) ([]ast.Expr,
 			ags[i] = nn
 		case *ast.Ident:
 			if gvar := p.GoToSL.GetTempVar(x.Name); gvar != nil {
-				if !(gvar.Var.ReadOnly && !gvar.ReadWrite) {
+				if !gvar.Var.ReadOnly || gvar.ReadWrite {
 					x.Name = "&" + x.Name
 					fmt.Println("fix amper", x.Name)
 					ags[i] = x
@@ -594,7 +594,7 @@ func (p *printer) matchAssignType(lhs []ast.Expr, rhs []ast.Expr) bool {
 	var err error
 	var typ types.Type
 	if id, ok := lhs[0].(*ast.Ident); ok {
-		typ = p.getIdType(id)
+		typ = p.getIDType(id)
 		if typ == nil {
 			return false
 		}
@@ -605,13 +605,10 @@ func (p *printer) matchAssignType(lhs []ast.Expr, rhs []ast.Expr) bool {
 		}
 	} else if st, ok := lhs[0].(*ast.StarExpr); ok {
 		if id, ok := st.X.(*ast.Ident); ok {
-			typ = p.getIdType(id)
+			typ = p.getIDType(id)
 			if typ == nil {
 				return false
 			}
-		}
-		if err != nil {
-			return false
 		}
 	}
 	if typ == nil {
@@ -644,7 +641,7 @@ func (p *printer) pathType(x *ast.SelectorExpr) (types.Type, error) {
 		return nil, fmt.Errorf("gosl pathType: path not a pure selector path")
 	}
 	np := len(paths)
-	idt := p.getIdType(paths[np-1])
+	idt := p.getIDType(paths[np-1])
 	if idt == nil {
 		err := fmt.Errorf("gosl pathType ERROR: cannot find type for name: %q", paths[np-1].Name)
 		p.userError(err)
@@ -658,7 +655,7 @@ func (p *printer) pathType(x *ast.SelectorExpr) (types.Type, error) {
 		pt := paths[pi]
 		f := fieldByName(bt, pt.Name)
 		if f == nil {
-			return nil, fmt.Errorf("gosl pathType: field not found %q in type: %q:", pt, bt.String())
+			return nil, fmt.Errorf("gosl pathType: field not found %q in type: %q", pt, bt.String())
 		}
 		if pi == 0 {
 			return f.Type(), nil
@@ -700,7 +697,7 @@ func (p *printer) ptrParamType(x ast.Expr) (ast.Expr, bool) {
 	if u, ok := x.(*ast.StarExpr); ok {
 		switch pt := u.X.(type) {
 		case *ast.Ident:
-			typ := p.getIdType(pt)
+			typ := p.getIDType(pt)
 			if typ != nil {
 				if _, ok := typ.Underlying().(*types.Struct); ok {
 					tn := getLocalTypeName(typ)
@@ -1260,7 +1257,7 @@ func (p *printer) expr1(expr ast.Expr, prec1, depth int) {
 		}
 
 	case *ast.BasicLit:
-		if p.PrintConfig.Mode&normalizeNumbers != 0 {
+		if p.Mode&normalizeNumbers != 0 {
 			x = normalizedNumber(x)
 		}
 		p.print(x)
@@ -1613,7 +1610,7 @@ func (p *printer) selectorPath(x *ast.SelectorExpr) (recvPath, recvType string, 
 			baseRecv = id
 			break
 		}
-		err = fmt.Errorf("gosl methodPath ERROR: path for method call must be simple list of fields, not %#v:", cur.X)
+		err = fmt.Errorf("gosl methodPath ERROR: path for method call must be simple list of fields, not %#v", cur.X)
 		p.userError(err)
 		return
 	}
@@ -1623,7 +1620,7 @@ func (p *printer) selectorPath(x *ast.SelectorExpr) (recvPath, recvType string, 
 	if gvar != nil {
 		idt = p.getTypeNameType(gvar.Var.SLType())
 	} else {
-		idt = p.getIdType(baseRecv)
+		idt = p.getIDType(baseRecv)
 	}
 	if idt == nil || typeIsInvalid(idt) {
 		err = fmt.Errorf("gosl methodPath ERROR: cannot find type for name: %q, gvar: %v", baseRecv.Name, gvar)
@@ -1653,7 +1650,7 @@ func (p *printer) methodPath(x *ast.SelectorExpr) (recvPath, recvType string, pa
 		recvPath += "." + pth
 		f := fieldByName(curt, pth)
 		if f == nil {
-			err = fmt.Errorf("gosl ERROR: field not found %q in type: %q:", pth, curt.String())
+			err = fmt.Errorf("gosl ERROR: field not found %q in type: %q", pth, curt.String())
 			p.userError(err)
 			return
 		}
@@ -1681,7 +1678,7 @@ func fieldByName(st *types.Struct, name string) *types.Var {
 	return nil
 }
 
-func (p *printer) getIdType(id *ast.Ident) types.Type {
+func (p *printer) getIDType(id *ast.Ident) types.Type {
 	if obj, ok := p.pkg.TypesInfo.Uses[id]; ok {
 		return obj.Type()
 	}
@@ -1724,8 +1721,6 @@ func (p *printer) getStructType(typ types.Type) (*types.Struct, error) {
 	}
 	err := fmt.Errorf("gosl ERROR: type is not a struct and it should be: %q %+T %+T", typ.String(), typ, utyp)
 	panic(err)
-	// p.userError(err)
-	return nil, err
 }
 
 func (p *printer) getNamedType(typ types.Type) (*types.Named, error) {
@@ -1799,9 +1794,8 @@ func (p *printer) globalVar(idx *ast.IndexExpr) (isGlobal bool, tmpVar, typName 
 	if st.VarIsReadWrite(id.Name) {
 		isReadOnly = false
 	}
-	tmpVar = id.Name
 	tmpVar = strings.ToLower(id.Name)
-	vtyp = p.getIdType(id)
+	vtyp = p.getIDType(id)
 	if vtyp == nil {
 		err := fmt.Errorf("gosl globalVar ERROR: cannot find type for name: %q", id.Name)
 		p.userError(err)
@@ -1867,7 +1861,7 @@ func (p *printer) setGlobalVars(gvrs map[string]*GetGlobalVar) {
 func (p *printer) methodIndex(idx *ast.IndexExpr) (recvPath, recvType string, pathType types.Type, isReadOnly bool, err error) {
 	id, ok := idx.X.(*ast.Ident)
 	if !ok {
-		err = fmt.Errorf("gosl methodIndex ERROR: must have a recv variable identifier, not %#v:", idx.X)
+		err = fmt.Errorf("gosl methodIndex ERROR: must have a recv variable identifier, not %#v", idx.X)
 		p.userError(err)
 		return
 	}
@@ -1939,8 +1933,8 @@ func (p *printer) tensorMethod(x *ast.CallExpr, vr *Var, methName string) {
 		p.print(token.RPAREN, token.RPAREN)
 	} else {
 		p.print(token.RPAREN, token.RBRACK)
-		if strings.HasPrefix(methName, "Set") {
-			opnm := strings.TrimPrefix(methName, "Set")
+		if after, ok := strings.CutPrefix(methName, "Set"); ok {
+			opnm := after
 			tok := token.ASSIGN
 			switch opnm {
 			case "Add":
@@ -1991,13 +1985,13 @@ func (p *printer) methodExpr(x *ast.CallExpr, depth int) {
 			return
 		}
 		recvPath = id.Name
-		typ := p.getIdType(id)
+		typ := p.getIDType(id)
 		if typ != nil {
 			recvType = getLocalTypeName(typ)
 			if strings.HasPrefix(recvType, "invalid") {
 				if gvar := p.GoToSL.GetTempVar(id.Name); gvar != nil {
 					recvType = gvar.Var.SLType()
-					if !(gvar.Var.ReadOnly && !gvar.ReadWrite) {
+					if !gvar.Var.ReadOnly || gvar.ReadWrite {
 						recvPath = "&" + recvPath
 					}
 					pathType = p.getTypeNameType(gvar.Var.SLType())
@@ -2008,13 +2002,12 @@ func (p *printer) methodExpr(x *ast.CallExpr, depth int) {
 			} else {
 				if gvar := p.GoToSL.GetTempVar(id.Name); gvar != nil {
 					recvType = gvar.Var.SLType()
-					if !(gvar.Var.ReadOnly && !gvar.ReadWrite) {
+					if !gvar.Var.ReadOnly || gvar.ReadWrite {
 						recvPath = "&" + recvPath
 					}
 					pathType = p.getTypeNameType(gvar.Var.SLType())
 				} else {
 					pathType = typ
-					recvPath = recvPath
 				}
 			}
 		} else {
@@ -2030,12 +2023,12 @@ func (p *printer) methodExpr(x *ast.CallExpr, depth int) {
 		if !isReadOnly {
 			rwargs = append(rwargs, rwArg{idx: idx, tmpVar: recvPath})
 		}
-	} else {
-		// fmt.Println("arg issue with:", methName)
-		// err := fmt.Errorf("gosl methodExpr ERROR: path expression for method call must be simple list of fields, not %#v:", path.X)
-		// p.userError(err)
-		// return
 	}
+	// otherwise:
+	// fmt.Println("arg issue with:", methName)
+	// err := fmt.Errorf("gosl methodExpr ERROR: path expression for method call must be simple list of fields, not %#v:", path.X)
+	// p.userError(err)
+	// return
 	args := x.Args
 	if pathType != nil {
 		meth, _, _ := types.LookupFieldOrMethod(pathType, true, p.pkg.Types, methName)
@@ -2819,7 +2812,7 @@ func (p *printer) valueSpec(s *ast.ValueSpec, keepType bool, tok token.Token, fi
 		extraTabs--
 	}
 
-	if !(isIota && s == firstSpec) && s.Values != nil {
+	if (!isIota || s != firstSpec) && s.Values != nil {
 		p.print(vtab, token.ASSIGN, blank)
 		p.exprList(token.NoPos, s.Values, 1, 0, token.NoPos, false)
 		extraTabs--
@@ -3022,7 +3015,7 @@ func (p *printer) systemVars(d *ast.GenDecl, sysname string) {
 			// by the time this happens, all types have been moved to imports and show up there
 			// so we've lost the original origin. And we'd have to make up an incompatible type name
 			// anyway, so bottom line is: all var types need to be defined locally.
-			// tt := p.getIdType(id)
+			// tt := p.getIDType(id)
 			// if tt != nil {
 			// 	fmt.Println("idtyp:", tt.String())
 			// }
@@ -3116,7 +3109,7 @@ func (p *printer) genDecl(d *ast.GenDecl) {
 				isIota := false
 				startVal := 0
 				if d.Tok == token.CONST {
-					if id, isId := firstSpec.Values[0].(*ast.Ident); isId {
+					if id, isID := firstSpec.Values[0].(*ast.Ident); isID {
 						if id.Name == "iota" {
 							isIota = true
 						}
@@ -3185,8 +3178,8 @@ func (p *printer) extendedEnum(firstSpec *ast.ValueSpec) int {
 	// 	}
 	// }
 
-	id, isId := pl.Y.(*ast.Ident)
-	if !isId {
+	id, isID := pl.Y.(*ast.Ident)
+	if !isID {
 		return -1
 	}
 	if id.Name != "iota" {
@@ -3199,8 +3192,8 @@ func (p *printer) extendedEnum(firstSpec *ast.ValueSpec) int {
 	if len(cl.Args) != 1 {
 		return -1
 	}
-	nid, isId := cl.Args[0].(*ast.Ident)
-	if !isId {
+	nid, isID := cl.Args[0].(*ast.Ident)
+	if !isID {
 		return -1
 	}
 	obj, ok := p.pkg.TypesInfo.Types[nid]
@@ -3354,18 +3347,6 @@ func (p *printer) distanceFrom(startPos token.Pos, startOutCol int) int {
 		return p.out.Column - startOutCol
 	}
 	return infinity
-}
-
-func (p *printer) methRecvType(typ ast.Expr) string {
-	switch x := typ.(type) {
-	case *ast.StarExpr:
-		return p.methRecvType(x.X)
-	case *ast.Ident:
-		return x.Name
-	default:
-		return fmt.Sprintf("recv type unknown: %+T", x)
-	}
-	return ""
 }
 
 func (p *printer) funcDecl(d *ast.FuncDecl) {
