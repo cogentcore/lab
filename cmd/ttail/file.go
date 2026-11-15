@@ -100,7 +100,7 @@ func (fl *File) Read() error {
 		ln++
 	}
 	fl.Rows = ln - 1 // skip header
-	return err
+	return scan.Err()
 }
 
 // FitWidths expands widths given current set of fields

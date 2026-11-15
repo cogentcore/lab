@@ -329,7 +329,7 @@ func (sr *Simmer) migrateProject() {
 		return
 	}
 	var code []string
-	for _, ln := range strings.Split(string(b), "\n") {
+	for ln := range strings.SplitSeq(string(b), "\n") {
 		f := strings.Fields(ln)
 		switch {
 		case len(f) >= 2 && f[0] == "gossh":

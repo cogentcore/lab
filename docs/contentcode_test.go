@@ -37,7 +37,7 @@ func goalSources(t *testing.T, file string) []string {
 	var srcs []string
 	for _, m := range goalFence.FindAllStringSubmatch(string(b), -1) {
 		var lines []string
-		for _, l := range strings.Split(strings.TrimSuffix(m[2], "\n"), "\n") {
+		for l := range strings.SplitSeq(strings.TrimSuffix(m[2], "\n"), "\n") {
 			lines = append(lines, strings.TrimPrefix(l, m[1]))
 		}
 		srcs = append(srcs, strings.Join(lines, "\n")+"\n")

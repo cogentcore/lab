@@ -83,10 +83,7 @@ func RawCat(files []string) {
 		}
 		scan := bufio.NewScanner(fp)
 		li := 0
-		for {
-			if !scan.Scan() {
-				break
-			}
+		for scan.Scan() {
 			ln := scan.Bytes()
 			if li == 0 {
 				if fi == 0 {
@@ -98,6 +95,9 @@ func RawCat(files []string) {
 				OutWriter.Write(LF)
 			}
 			li++
+		}
+		if err := scan.Err(); err != nil {
+			fmt.Println("Error reading file: ", err)
 		}
 		fp.Close()
 		if Delete {

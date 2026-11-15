@@ -81,6 +81,10 @@ func AnalyzeIris(dir *tensorfs.Node, br *lab.Basic) {
 	data := cdt.Column("data")
 	covar := tensor.NewFloat64()
 	err = metric.CovarianceMatrixOut(metric.Correlation, data, covar)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	cvg := br.Tabs.TensorGrid("Covar", covar)
 	_ = cvg
 
