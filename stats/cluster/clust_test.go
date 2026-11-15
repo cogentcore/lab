@@ -17,20 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var clusters = `
-0: 
-	9.181170003996987: 
-		5.534356399283666: 
-			4.859933131085473: 
-				3.4641016151377544: Mark_sad Mark_happy 
-				3.4641016151377544: Zane_sad Zane_happy 
-			3.4641016151377544: Alberto_sad Alberto_happy 
-		5.111664626761644: 
-			4.640135790634417: 
-				4: Lisa_sad Lisa_happy 
-				3.4641016151377544: Betty_sad Betty_happy 
-			3.605551275463989: Wendy_sad Wendy_happy `
-
 func TestClust(t *testing.T) {
 	dt := table.New()
 	err := dt.OpenCSV("testdata/faces.dat", tensor.Tab)

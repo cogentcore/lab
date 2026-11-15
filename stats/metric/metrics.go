@@ -117,10 +117,7 @@ func (m Metrics) Call(a, b tensor.Tensor) tensor.Values {
 // and false if metric values decrease as a function of distance
 // (e.g., Cosine, Correlation)
 func (m Metrics) Increasing() bool {
-	if m >= MetricDotProduct {
-		return false
-	}
-	return true
+	return m < MetricDotProduct
 }
 
 // AsMetricFunc returns given function as a [MetricFunc] function,

@@ -64,9 +64,7 @@ func Groups(dir *tensorfs.Node, tsrs ...tensor.Tensor) error {
 					lastVal = v
 				}
 			}
-			if start != nr-1 {
-				makeIdxs(td, srt, lastVal, start, nr)
-			}
+			makeIdxs(td, srt, lastVal, start, nr)
 		} else {
 			lastVal := srt.FloatRow(0, 0)
 			for r := range nr {
@@ -77,9 +75,7 @@ func Groups(dir *tensorfs.Node, tsrs ...tensor.Tensor) error {
 					lastVal = v
 				}
 			}
-			if start != nr-1 {
-				makeIdxs(td, srt, tensor.Float64ToString(lastVal), start, nr)
-			}
+			makeIdxs(td, srt, tensor.Float64ToString(lastVal), start, nr)
 		}
 	}
 	return nil

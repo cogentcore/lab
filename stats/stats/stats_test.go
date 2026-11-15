@@ -88,7 +88,7 @@ func TestFuncs64(t *testing.T) {
 	FinalOut(ix, out)
 	assert.InDelta(t, results[StatFinal], out.Values[0], tol)
 
-	for stat := StatCount; stat < StatsN; stat++ {
+	for stat := range StatsN {
 		out := stat.Call(ix)
 		assert.InDelta(t, results[stat], out.Float1D(0), tol)
 	}
@@ -281,7 +281,7 @@ func runBenchFuncs(b *testing.B, n int, fun Stats) {
 }
 
 func BenchmarkFuncs(b *testing.B) {
-	for stf := StatCount; stf < StatsN; stf++ {
+	for stf := range StatsN {
 		b.Run(fmt.Sprintf("stat=%s", stf.String()), func(b *testing.B) {
 			runBenchFuncs(b, 1000, stf)
 		})
@@ -292,8 +292,7 @@ func BenchmarkFuncs(b *testing.B) {
 func BenchmarkSumBaseline(b *testing.B) {
 	n := 1000
 	av := tensor.AsFloat64(tensor.Reshape(tensor.NewIntRange(1, n+1), n))
-	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		sum := float64(0)
 		for i := range n {
 			val := av.Float1D(i)
@@ -322,8 +321,7 @@ func runClosure(av *tensor.Float64, fun func(a, agg float64) float64) float64 {
 func BenchmarkSumClosure(b *testing.B) {
 	n := 1000
 	av := tensor.AsFloat64(tensor.Reshape(tensor.NewIntRange(1, n+1), n))
-	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		runClosure(av, func(val, agg float64) float64 {
 			if math.IsNaN(val) {
 				return agg

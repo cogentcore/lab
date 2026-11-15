@@ -21,7 +21,7 @@ func F64(hist *[]float64, vals []float64, nBins int, min, max float64) {
 	h := *hist
 	// 0.1.2.3 = 3-0 = 4 bins
 	inc := (max - min) / float64(nBins)
-	for i := 0; i < nBins; i++ {
+	for i := range nBins {
 		h[i] = 0
 	}
 	for _, v := range vals {
@@ -50,7 +50,7 @@ func F64Table(dt *table.Table, vals []float64, nBins int, min, max float64) {
 	F64(&ct.Values, vals, nBins, min, max)
 	inc := (max - min) / float64(nBins)
 	vls := dt.Columns.Values[0].(*tensor.Float64).Values
-	for i := 0; i < nBins; i++ {
+	for i := range nBins {
 		vls[i] = math32.Truncate64(min+float64(i)*inc, 4)
 	}
 }

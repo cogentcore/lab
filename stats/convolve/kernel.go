@@ -20,14 +20,14 @@ func GaussianKernel32(khalf int, sigma float32) []float32 {
 	kern := make([]float32, ksz)
 	sigdiv := 1 / (sigma * float32(khalf))
 	var sum float32
-	for i := 0; i < ksz; i++ {
+	for i := range ksz {
 		x := sigdiv * float32(i-khalf)
 		kv := math32.Exp(-0.5 * x * x)
 		kern[i] = kv
 		sum += kv
 	}
 	nfac := 1 / sum
-	for i := 0; i < ksz; i++ {
+	for i := range ksz {
 		kern[i] *= nfac
 	}
 	return kern
@@ -43,14 +43,14 @@ func GaussianKernel64(khalf int, sigma float64) []float64 {
 	kern := make([]float64, ksz)
 	sigdiv := 1 / (sigma * float64(khalf))
 	var sum float64
-	for i := 0; i < ksz; i++ {
+	for i := range ksz {
 		x := sigdiv * float64(i-khalf)
 		kv := math.Exp(-0.5 * x * x)
 		kern[i] = kv
 		sum += kv
 	}
 	nfac := 1 / sum
-	for i := 0; i < ksz; i++ {
+	for i := range ksz {
 		kern[i] *= nfac
 	}
 	return kern

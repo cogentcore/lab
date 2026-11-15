@@ -36,12 +36,12 @@ func Slice32(dest *[]float32, src []float32, kern []float32) error {
 	*dest = slicesx.SetLength(*dest, sz)
 	for i := khalf; i < sz-khalf; i++ {
 		var sum float32
-		for j := 0; j < ksz; j++ {
+		for j := range ksz {
 			sum += src[(i-khalf)+j] * kern[j]
 		}
 		(*dest)[i] = sum
 	}
-	for i := 0; i < khalf; i++ {
+	for i := range khalf {
 		var sum, ksum float32
 		for j := 0; j <= khalf+i; j++ {
 			ki := (j + khalf) - i // 0: 1+kh, 1: etc
@@ -91,12 +91,12 @@ func Slice64(dest *[]float64, src []float64, kern []float64) error {
 	*dest = slicesx.SetLength(*dest, sz)
 	for i := khalf; i < sz-khalf; i++ {
 		var sum float64
-		for j := 0; j < ksz; j++ {
+		for j := range ksz {
 			sum += src[(i-khalf)+j] * kern[j]
 		}
 		(*dest)[i] = sum
 	}
-	for i := 0; i < khalf; i++ {
+	for i := range khalf {
 		var sum, ksum float64
 		for j := 0; j <= khalf+i; j++ {
 			ki := (j + khalf) - i // 0: 1+kh, 1: etc

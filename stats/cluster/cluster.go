@@ -9,6 +9,7 @@ package cluster
 import (
 	"fmt"
 	"math"
+	"strings"
 
 	"cogentcore.org/core/base/indent"
 	"cogentcore.org/lab/stats/stats"
@@ -50,11 +51,12 @@ func (nn *Node) Sprint(labels tensor.Tensor, depth int) string {
 	if nn.IsLeaf() && labels != nil {
 		return labels.String1D(nn.Index) + " "
 	}
-	sv := fmt.Sprintf("\n%v%v: ", indent.Tabs(depth), nn.Dist)
+	var sv strings.Builder
+	fmt.Fprintf(&sv, "\n%v%v: ", indent.Tabs(depth), nn.Dist)
 	for _, kn := range nn.Kids {
-		sv += kn.Sprint(labels, depth+1)
+		sv.WriteString(kn.Sprint(labels, depth+1))
 	}
-	return sv
+	return sv.String()
 }
 
 // Indexes collects all the indexes in this node
@@ -98,7 +100,7 @@ func Cluster(metric Metrics, dmat, labels tensor.Tensor) *Node {
 func InitAllLeaves(ntot int) *Node {
 	root := &Node{}
 	root.Kids = make([]*Node, ntot)
-	for i := 0; i < ntot; i++ {
+	for i := range ntot {
 		root.Kids[i] = &Node{Index: i}
 	}
 	return root
@@ -126,7 +128,7 @@ func Glom(root *Node, metric Metrics, dmat tensor.Tensor) *Node {
 			actr := 0
 			ka.Indexes(aidx, &actr)
 			aix := aidx[0:actr]
-			for bi := 0; bi < ai; bi++ {
+			for bi := range ai {
 				kb := root.Kids[bi]
 				bctr := 0
 				kb.Indexes(bidx, &bctr)

@@ -324,7 +324,7 @@ func DotProductOut(a, b tensor.Tensor, out tensor.Values) error {
 	return nil
 }
 
-// DotProductOut computes the sum of the element-wise products of the
+// DotProduct computes the sum of the element-wise products of the
 // two tensors (aka the inner product).
 // See [MetricFunc] for general information.
 func DotProduct(a, b tensor.Tensor) tensor.Values {

@@ -10,6 +10,8 @@ import (
 	"cogentcore.org/core/math32"
 )
 
+// TestConv32 tests that a Gaussian kernel leaves the interior of a linear
+// ramp unchanged.
 func TestConv32(t *testing.T) {
 	kern := GaussianKernel32(2, .5)
 	// fmt.Printf("kern: %v\n", kern)
@@ -23,8 +25,8 @@ func TestConv32(t *testing.T) {
 	khalf := (len(kern) - 1) / 2
 	for i := range src {
 		if i >= khalf && i < (sz-1-khalf) {
-			err := math32.Abs(src[i] - float32(i))
-			if err > 1.0e-7 {
+			err := math32.Abs(dest[i] - float32(i))
+			if err > 1.0e-5 {
 				t.Errorf("error: %d:\t%g\t->\t%g\n", i, src[i], dest[i])
 			}
 		}

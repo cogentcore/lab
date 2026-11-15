@@ -38,13 +38,13 @@ func QuantilesOut(in, qs tensor.Tensor, out tensor.Values) error {
 	if qs.NumDims() != 1 {
 		return errors.Log(errors.New("stats.QuantilesFunc: only 1D quantile tensors allowed"))
 	}
-	tensor.SetShapeFrom(out, in)
+	tensor.SetShapeFrom(out, qs)
 	sin := tensor.AsRows(in.AsValues())
 	sin.ExcludeMissing()
 	sin.Sort(tensor.Ascending)
 	sz := len(sin.Indexes) - 1 // length of our own index list
-	if sz < 0 { // no values; one value is all of the quantiles
-		out.(tensor.Values).SetZeros()
+	if sz < 0 {                // no values; one value is all of the quantiles
+		out.SetZeros()
 		return nil
 	}
 	fsz := float64(sz)

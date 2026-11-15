@@ -65,7 +65,7 @@ func TestFuncs(t *testing.T) {
 	InvCosineOut(atsr, btsr, out)
 	assert.InDelta(t, results[MetricInvCosine], out.Values[0], tol)
 
-	for met := MetricL2Norm; met < MetricsN; met++ {
+	for met := range MetricsN {
 		out := met.Call(atsr, btsr)
 		assert.InDelta(t, results[met], out.Float1D(0), tol)
 	}
@@ -102,9 +102,8 @@ func BenchmarkFuncMulBaseline(b *testing.B) {
 	n := 1000
 	av := tensor.AsFloat64(tensor.Reshape(tensor.NewIntRange(1, n+1), n))
 	bv := tensor.AsFloat64(tensor.Reshape(tensor.NewIntRange(1, n+1), n))
-	b.ResetTimer()
 	s := float64(0)
-	for range b.N {
+	for b.Loop() {
 		for i := range n {
 			s += av.Values[i] * bv.Values[i]
 		}
@@ -128,8 +127,7 @@ func BenchmarkFuncMulClosure(b *testing.B) {
 	n := 1000
 	av := tensor.AsFloat64(tensor.Reshape(tensor.NewIntRange(1, n+1), n))
 	bv := tensor.AsFloat64(tensor.Reshape(tensor.NewIntRange(1, n+1), n))
-	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		runClosure(av, bv, func(a, b, agg float64) float64 {
 			return agg + a*b
 		})
@@ -150,8 +148,7 @@ func BenchmarkFuncMulClosureInterface(b *testing.B) {
 	n := 1000
 	av := tensor.AsFloat64(tensor.Reshape(tensor.NewIntRange(1, n+1), n))
 	bv := tensor.AsFloat64(tensor.Reshape(tensor.NewIntRange(1, n+1), n))
-	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		runClosureInterface(av, bv, func(a, b, agg float64) float64 {
 			return agg + a*b
 		})
@@ -164,8 +161,7 @@ func BenchmarkDotProductOut(b *testing.B) {
 	av := tensor.AsFloat64(tensor.Reshape(tensor.NewIntRange(1, n+1), n))
 	bv := tensor.AsFloat64(tensor.Reshape(tensor.NewIntRange(1, n+1), n))
 	ov := tensor.NewFloat64(1)
-	b.ResetTimer()
-	for range b.N {
+	for b.Loop() {
 		DotProductOut(av, bv, ov)
 	}
 }
@@ -220,7 +216,7 @@ var fns = []int{10, 20, 50, 100, 500, 1000, 10000}
 // BenchmarkFuncMulBaselineClosureArg: 	1464 ns/op
 
 func BenchmarkFuncs(b *testing.B) {
-	for met := MetricL2Norm; met < MetricsN; met++ {
+	for met := range MetricsN {
 		b.Run(fmt.Sprintf("met=%s", met.String()), func(b *testing.B) {
 			runBenchFuncs(b, 1000, met)
 		})

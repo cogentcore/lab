@@ -7,6 +7,7 @@ package glm
 import (
 	"fmt"
 	"math"
+	"strings"
 
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
@@ -124,7 +125,7 @@ func (glm *GLM) init(nIv, nDv int) {
 func (glm *GLM) SetTable(dt *table.Table, indepVars, depVars, predVars, errVars string) error {
 	iv := dt.Column(indepVars)
 	dv := dt.Column(depVars)
-	var pv, ev *tensor.Rows
+	var pv, ev tensor.RowMajor // interface, so unset values are nil
 	if predVars != "" {
 		pv = dt.Column(predVars)
 	}
@@ -187,11 +188,11 @@ func (glm *GLM) Run() {
 		if (itr+1)%10 == 0 {
 			lrate *= 0.5
 		}
-		for i := 0; i < n; i++ {
-			row := dt.RowIndex(i)
-			for di := 0; di < nDv; di++ {
+		for i := range n {
+			row := i // the Rows columns apply any table indexes
+			for di := range nDv {
 				pred := 0.0
-				for ii := 0; ii < nIv; ii++ {
+				for ii := range nIv {
 					pred += glm.Coeff.Float(di, ii) * iv.FloatRow(row, ii)
 				}
 				if !glm.ZeroOffset {
@@ -200,7 +201,7 @@ func (glm *GLM) Run() {
 				targ := dv.FloatRow(row, di)
 				err := targ - pred
 				sse += err * err
-				for ii := 0; ii < nIv; ii++ {
+				for ii := range nIv {
 					dc.Values[di*nCi+ii] += err * iv.FloatRow(row, ii)
 				}
 				if !glm.ZeroOffset {
@@ -214,12 +215,12 @@ func (glm *GLM) Run() {
 				}
 			}
 		}
-		for di := 0; di < nDv; di++ {
+		for di := range nDv {
 			for ii := 0; ii <= nIv; ii++ {
 				if glm.ZeroOffset && ii == nIv {
 					continue
 				}
-				idx := di*(nCi+1) + ii
+				idx := di*nCi + ii
 				w := glm.Coeff.Values[idx]
 				d := dc.Values[idx]
 				sgn := 1.0
@@ -241,41 +242,34 @@ func (glm *GLM) Run() {
 				lastItr = true
 			}
 		}
-		fmt.Println(itr, glm.MSE)
 		prevmse = glm.MSE
 	}
 
 	obsMeans := make([]float64, nDv)
 	errMeans := make([]float64, nDv)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		row := i
-		if dt.Indexes != nil {
-			row = dt.Indexes[i]
-		}
-		for di := 0; di < nDv; di++ {
+		for di := range nDv {
 			obsMeans[di] += dv.FloatRow(row, di)
 			errMeans[di] += ev.FloatRow(row, di)
 		}
 	}
-	for di := 0; di < nDv; di++ {
+	for di := range nDv {
 		obsMeans[di] *= norm
 		errMeans[di] *= norm
 		glm.ObsVariance[di] = 0
 		glm.ErrVariance[di] = 0
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		row := i
-		if dt.Indexes != nil {
-			row = dt.Indexes[i]
-		}
-		for di := 0; di < nDv; di++ {
+		for di := range nDv {
 			o := dv.FloatRow(row, di) - obsMeans[di]
 			glm.ObsVariance[di] += o * o
 			e := ev.FloatRow(row, di) - errMeans[di]
 			glm.ErrVariance[di] += e * e
 		}
 	}
-	for di := 0; di < nDv; di++ {
+	for di := range nDv {
 		glm.ObsVariance[di] *= norm
 		glm.ErrVariance[di] *= norm
 		glm.R2[di] = 1.0 - (glm.ErrVariance[di] / glm.ObsVariance[di])
@@ -286,41 +280,41 @@ func (glm *GLM) Run() {
 // equation, R^2, for each dependent variable, along with the variances of
 // observed and errors (residuals), which are used to compute it.
 func (glm *GLM) Variance() string {
-	str := ""
+	var str strings.Builder
 	for di := range glm.R2 {
 		if len(glm.DepNames) > di && glm.DepNames[di] != "" {
-			str += glm.DepNames[di]
+			str.WriteString(glm.DepNames[di])
 		} else {
-			str += fmt.Sprintf("DV %d", di)
+			fmt.Fprintf(&str, "DV %d", di)
 		}
-		str += fmt.Sprintf("\tR^2: %8.6g\tR: %8.6g\tVar Err: %8.4g\t Obs: %8.4g\n", glm.R2[di], math.Sqrt(glm.R2[di]), glm.ErrVariance[di], glm.ObsVariance[di])
+		fmt.Fprintf(&str, "\tR^2: %8.6g\tR: %8.6g\tVar Err: %8.4g\t Obs: %8.4g\n", glm.R2[di], math.Sqrt(glm.R2[di]), glm.ErrVariance[di], glm.ObsVariance[di])
 	}
-	return str
+	return str.String()
 }
 
 // Coeffs returns a string describing the coefficients
 func (glm *GLM) Coeffs() string {
-	str := ""
+	var str strings.Builder
 	for di := range glm.NDepVars {
 		if len(glm.DepNames) > di && glm.DepNames[di] != "" {
-			str += glm.DepNames[di]
+			str.WriteString(glm.DepNames[di])
 		} else {
-			str += fmt.Sprintf("DV %d", di)
+			fmt.Fprintf(&str, "DV %d", di)
 		}
-		str += " = "
+		str.WriteString(" = ")
 		for ii := 0; ii <= glm.NIndepVars; ii++ {
-			str += fmt.Sprintf("\t%8.6g", glm.Coeff.Float(di, ii))
+			fmt.Fprintf(&str, "\t%8.6g", glm.Coeff.Float(di, ii))
 			if ii < glm.NIndepVars {
-				str += " * "
-				if len(glm.IndepNames) > ii && glm.IndepNames[di] != "" {
-					str += glm.IndepNames[di]
+				str.WriteString(" * ")
+				if len(glm.IndepNames) > ii && glm.IndepNames[ii] != "" {
+					str.WriteString(glm.IndepNames[ii])
 				} else {
-					str += fmt.Sprintf("IV_%d", ii)
+					fmt.Fprintf(&str, "IV_%d", ii)
 				}
-				str += " + "
+				str.WriteString(" + ")
 			}
 		}
-		str += "\n"
+		str.WriteString("\n")
 	}
-	return str
+	return str.String()
 }

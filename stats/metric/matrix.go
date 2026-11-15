@@ -231,7 +231,7 @@ func covarianceMatrixDirect(cols []float64, rows, cells int, corr bool, out tens
 		}, out)
 	if corr {
 		for i := range cells {
-			for j := 0; j < i; j++ {
+			for j := range i {
 				vp := math.Sqrt(res[i*cells+i] * res[j*cells+j])
 				if vp > 0 {
 					res[i*cells+j] /= vp
