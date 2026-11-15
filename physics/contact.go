@@ -284,7 +284,11 @@ func CollisionBroad(i uint32) { //gosl:kernel
 		if szA.X == 0 {
 			infPlane = true
 		}
-		queryB := slmath.MulSpatialPoint(xwAR, xwAQ, xwBR)
+		// B in the body frame of the plane A (the inverse of its pose)
+		var bwAR math32.Vector3
+		var bwAQ math32.Quat
+		slmath.SpatialTransformInverse(xwAR, xwAQ, &bwAR, &bwAQ)
+		queryB := slmath.MulSpatialPoint(bwAR, bwAQ, xwBR)
 		closest := ClosestPointPlane(szA.X, szA.Z, queryB)
 		d := slmath.Length3(queryB.Sub(closest))
 		if d > rb+margin {
@@ -330,7 +334,7 @@ func AddBroadContacts(biA, biB, nci, ncA, ncB int32) {
 	for i := range ncB {
 		SetBroadContactA(nci+ncA+i, biB) // flipped
 		SetBroadContactB(nci+ncA+i, biA)
-		SetBroadContactPointIdx(nci+i, i)
+		SetBroadContactPointIdx(nci+ncA+i, i)
 	}
 }
 

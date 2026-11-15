@@ -573,12 +573,12 @@ return Dot3(diff, *norm);
 fn ColCapsuleCapsule(cpi: i32,maxIter: i32, gdA: ptr<function,GeomData>, gdB: ptr<function,GeomData>, pA: ptr<function,vec3<f32>>,pB: ptr<function,vec3<f32>>,norm: ptr<function,vec3<f32>>) -> f32 {
 	var hhA = (*gdA).Size.y - (*gdA).Size.x;
 	var hhB = (*gdB).Size.y - (*gdB).Size.x;
-	var e0 = vec3<f32>(0, 0, hhA*f32(cpi%2));
-	var e1 = vec3<f32>(0, 0, -hhA*f32((cpi+1)%2));
+	var e0 = vec3<f32>(0, hhA*f32(cpi%2), 0);
+	var e1 = vec3<f32>(0, -hhA*f32((cpi+1)%2), 0);
 	var edge0w = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, e0);
 	var edge1w = MulSpatialPoint((*gdA).WbR, (*gdA).WbQ, e1);
-	var edge0b = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge0w);
-	var edge1b = MulSpatialPoint((*gdA).BwR, (*gdA).BwQ, edge1w);
+	var edge0b = MulSpatialPoint((*gdB).BwR, (*gdB).BwQ, edge0w);
+	var edge1b = MulSpatialPoint((*gdB).BwR, (*gdB).BwQ, edge1w);
 	var u = ClosestEdgeCapsule((*gdB).Size.x, hhB, edge0b, edge1b, maxIter);
 	var pAw = edge0w*(1 - u)+(edge1w*(u));
 	var p0Bw = MulSpatialPoint((*gdB).WbR, (*gdB).WbQ, vec3<f32>(0, hhB, 0));
@@ -814,8 +814,12 @@ return cp;
 }
 fn ClosestPointLineSegment(a: vec3<f32>,b: vec3<f32>,pt: vec3<f32>) -> vec3<f32> {
 	var ab = b-(a);
+	var ab2 = Dot3(ab, ab);
+	if (ab2 == 0) { // a point (as the axis of a capsule that is a sphere): not 0/0
+		return a;
+	}
 	var ap = pt-(a);
-	var t = Dot3(ap, ab) / Dot3(ab, ab);
+	var t = Dot3(ap, ab) / ab2;
 	t = clamp(t, 0.0, 1.0);
 return a+(ab*(t));
 }

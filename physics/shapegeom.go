@@ -103,8 +103,12 @@ func ClosestPointPlane(width, length float32, pt math32.Vector3) math32.Vector3 
 
 func ClosestPointLineSegment(a, b, pt math32.Vector3) math32.Vector3 {
 	ab := b.Sub(a)
+	ab2 := slmath.Dot3(ab, ab)
+	if ab2 == 0 { // a point (as the axis of a capsule that is a sphere): not 0/0
+		return a
+	}
 	ap := pt.Sub(a)
-	t := slmath.Dot3(ap, ab) / slmath.Dot3(ab, ab)
+	t := slmath.Dot3(ap, ab) / ab2
 	t = math32.Clamp(t, 0.0, 1.0)
 	return a.Add(ab.MulScalar(t))
 }

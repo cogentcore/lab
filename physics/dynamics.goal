@@ -242,7 +242,14 @@ func (ml *Model) SetMass(idx int32, shape Shapes, size math32.Vector3, mass floa
 	Bodies[idx, BodyInvMass] = invm
 	inertia := shape.Inertia(size, mass)
 	SetBodyInertia(idx, inertia)
-	SetBodyInvInertia(idx, inertia.Inverse())
+	// A static body (mass 0) has no inverse inertia, as it has no inverse
+	// mass: the inverse of its zero inertia would otherwise be the identity,
+	// which makes it seem to rotate in the contact constraints.
+	var invInertia math32.Matrix3
+	if mass > 0 {
+		invInertia = inertia.Inverse()
+	}
+	SetBodyInvInertia(idx, invInertia)
 }
 
 // TotalKineticEnergy returns the total kinetic energy of the dynamic bodies,

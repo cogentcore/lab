@@ -54,9 +54,13 @@ func TestContactShapes(t *testing.T) {
 }
 
 // stack makes a model with a static ground plane, a dynamic body of the
-// first shape on it, and a dynamic body of the second shape above that,
-// which it steps for 2 seconds, returning the dynamic index of the top body.
-func stack(t *testing.T, bottom, top Shapes) int32 {
+// first shape resting on it, and a dynamic body of the second shape above
+// that, which it steps for 2 seconds, returning the dynamic index of the
+// top body, and the height that it should rest at. (The half-height of a
+// capsule is at least 1.01 times its radius, so the bottom body is placed
+// at its actual half-height, not overlapping the ground, which would
+// launch it.)
+func stack(t *testing.T, bottom, top Shapes) (int32, float32) {
 	t.Helper()
 	ml := testModel()
 	params := GetParams(0)
@@ -65,6 +69,8 @@ func stack(t *testing.T, bottom, top Shapes) int32 {
 	hsz := math32.Vec3(0.5, 0.5, 0.5)
 	gnd := ml.NewBody(Plane, math32.Vec3(10, 0, 10), math32.Vec3(0, 0, 0), rot)
 	ba, _ := ml.NewDynamic(bottom, 1, hsz, math32.Vec3(0, 0.5, 0), rot)
+	hb := BodyHSize(ba).Y
+	SetBodyPos(ba, math32.Vec3(0, hb, 0))
 	bb, db := ml.NewDynamic(top, 1, hsz, math32.Vec3(0, 2.5, 0), rot)
 	SetBodyGroup(gnd, -1) // static: collides with the dynamic groups
 	SetBodyGroup(ba, 1)   // collide with each other
@@ -75,24 +81,29 @@ func stack(t *testing.T, bottom, top Shapes) int32 {
 	for range 2000 {
 		ml.Step()
 	}
-	return db
+	return db, 2*hb + BodyHSize(bb).Y
 }
 
 // TestCollideBodies tests that a dynamic body that falls onto another
-// dynamic body on the ground rests on top of it.
+// dynamic body on the ground rests on top of it, for the pairs of shapes
+// other than cylinders (which only collide with planes).
 func TestCollideBodies(t *testing.T) {
-	for _, top := range []Shapes{Sphere, Capsule} {
-		db := stack(t, Box, top)
-		assert.InDelta(t, 1.5, DynamicPos(db, GetParams(0).Next).Y, 0.1, "%v on a box", top)
+	shapes := []Shapes{Box, Sphere, Capsule}
+	for _, bottom := range shapes {
+		for _, top := range shapes {
+			db, want := stack(t, bottom, top)
+			assert.InDelta(t, want, DynamicPos(db, GetParams(0).Next).Y, 0.02, "%v on a %v", top, bottom)
+		}
 	}
-	db := stack(t, Sphere, Sphere)
-	assert.InDelta(t, 1.5, DynamicPos(db, GetParams(0).Next).Y, 0.1, "a sphere on a sphere")
 }
 
-// TestCollideBoxes tests that a box rests on a box.
-func TestCollideBoxes(t *testing.T) {
-	db := stack(t, Box, Box)
-	assert.InDelta(t, 1.5, DynamicPos(db, GetParams(0).Next).Y, 0.1)
+// TestStaticInverseInertia tests that a static body has no inverse mass
+// or inverse inertia, so that it does not move in the contact constraints.
+func TestStaticInverseInertia(t *testing.T) {
+	ml := testModel()
+	bi := ml.NewBody(Box, math32.Vec3(1, 1, 1), math32.Vec3(0, 0, 0), math32.NewQuatIdentity())
+	assert.Equal(t, float32(0), Bodies.Value(int(bi), int(BodyInvMass)))
+	assert.Equal(t, math32.Matrix3{}, BodyInvInertia(bi))
 }
 
 // TestSphereBounce tests that a sphere dropped on the ground stays above
@@ -230,4 +241,48 @@ func TestSetStateFirstStep(t *testing.T) {
 	pos := DynamicPos(di, params.Next)
 	assert.Greater(t, pos.X, float32(5), "moved from the position set, with the delta")
 	assert.Greater(t, DynamicVel(di, params.Next).X, float32(0))
+}
+
+// TestCollideCapsules tests that a capsule (longer than its radius) that
+// falls onto another standing capsule on the ground rests on it, end to
+// end.
+func TestCollideCapsules(t *testing.T) {
+	ml := testModel()
+	params := GetParams(0)
+	params.Gravity.Y = -9.8
+	rot := math32.NewQuatIdentity()
+	hsz := math32.Vec3(0.5, 1, 0.5)
+	gnd := ml.NewBody(Plane, math32.Vec3(10, 0, 10), math32.Vec3(0, 0, 0), rot)
+	ba, _ := ml.NewDynamic(Capsule, 1, hsz, math32.Vec3(0, 1, 0), rot)
+	bb, db := ml.NewDynamic(Capsule, 1, hsz, math32.Vec3(0, 4, 0), rot)
+	SetBodyGroup(gnd, -1)
+	SetBodyGroup(ba, 1)
+	SetBodyGroup(bb, 1)
+	ml.Config()
+	for range 2000 {
+		ml.Step()
+	}
+	assert.InDelta(t, 3, DynamicPos(db, params.Next).Y, 0.02)
+}
+
+// TestCollideWall tests that a sphere moving toward a wall, a plane that is
+// moved and rotated from the ground, stops at it: the broad phase uses the
+// position of the sphere in the frame of the plane.
+func TestCollideWall(t *testing.T) {
+	ml := testModel()
+	params := GetParams(0)
+	params.Gravity.Y = 0
+	// a plane at x=3, facing -x (its normal, y, rotated to -x)
+	wrot := math32.NewQuatAxisAngle(math32.Vec3(0, 0, 1), math32.Pi/2)
+	wall := ml.NewBody(Plane, math32.Vec3(5, 0, 5), math32.Vec3(3, 0, 0), wrot)
+	SetBodyGroup(wall, -1)
+	_, di := ml.NewDynamic(Sphere, 1, math32.Vec3(0.5, 0.5, 0.5), math32.Vec3(0, 0, 0), math32.NewQuatIdentity())
+	ml.Config()
+	SetDynamicDelta(di, params.Next, math32.Vec3(2, 0, 0))
+	maxX := float32(0)
+	for range 3000 {
+		ml.Step()
+		maxX = max(maxX, DynamicPos(di, params.Next).X)
+	}
+	assert.InDelta(t, 2.5, maxX, 0.02, "stopped at the wall")
 }

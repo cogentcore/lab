@@ -160,12 +160,14 @@ func ColCapsuleCapsule(cpi, maxIter int32, gdA *GeomData, gdB *GeomData, pA, pB,
 	hhB := gdB.Size.Y - gdB.Size.X
 	// edge from capsule A
 	// depending on point id, we query an edge from 0 to 0.5 or 0.5 to 1
-	e0 := math32.Vec3(0, 0, hhA*float32(cpi%2))
-	e1 := math32.Vec3(0, 0, -hhA*float32((cpi+1)%2))
+	// (capsules are along the y axis)
+	e0 := math32.Vec3(0, hhA*float32(cpi%2), 0)
+	e1 := math32.Vec3(0, -hhA*float32((cpi+1)%2), 0)
 	edge0w := slmath.MulSpatialPoint(gdA.WbR, gdA.WbQ, e0)
 	edge1w := slmath.MulSpatialPoint(gdA.WbR, gdA.WbQ, e1)
-	edge0b := slmath.MulSpatialPoint(gdA.BwR, gdA.BwQ, edge0w)
-	edge1b := slmath.MulSpatialPoint(gdA.BwR, gdA.BwQ, edge1w)
+	// in the body frame of B, for its SDF
+	edge0b := slmath.MulSpatialPoint(gdB.BwR, gdB.BwQ, edge0w)
+	edge1b := slmath.MulSpatialPoint(gdB.BwR, gdB.BwQ, edge1w)
 	u := ClosestEdgeCapsule(gdB.Size.X, hhB, edge0b, edge1b, maxIter)
 	pAw := edge0w.MulScalar(1 - u).Add(edge1w.MulScalar(u))
 	p0Bw := slmath.MulSpatialPoint(gdB.WbR, gdB.WbQ, math32.Vec3(0, hhB, 0))
