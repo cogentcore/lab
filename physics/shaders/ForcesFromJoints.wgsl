@@ -170,7 +170,8 @@ fn SetDynamicForce(idx: i32,cni: i32, force: vec3<f32>) {
 fn SetDynamicTorque(idx: i32,cni: i32, torque: vec3<f32>) {
 	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynTorqueX))] = torque.x;
 	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynTorqueY))] = torque.y;
-	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynTorqueZ))] = torque.z;
+	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62],
+	u32(idx), u32(cni), u32(DynTorqueZ))] = torque.z;
 }
 
 //////// import: "enumgen.go"

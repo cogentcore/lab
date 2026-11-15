@@ -32,12 +32,16 @@ const (
 	DynQuatZ
 	DynQuatW
 
-	// Linear velocity.
+	// Linear velocity, computed after each step from the change in
+	// position (see StepBodyKinetics). It is an output: setting it does not
+	// change the motion, which is integrated from DynDelta.
 	DynVelX
 	DynVelY
 	DynVelZ
 
-	// Angular velocity.
+	// Angular velocity, computed after each step from the change in
+	// orientation (see StepBodyKinetics). It is an output: setting it does
+	// not change the motion, which is integrated from DynAngDelta.
 	DynAngVelX
 	DynAngVelY
 	DynAngVelZ
@@ -63,11 +67,16 @@ const (
 	DynTorqueZ
 
 	// Linear deltas. These accumulate over time via StepBodyDeltas.
+	// This is the linear velocity state that StepIntegrateBodies integrates:
+	// set it (in Next, between steps) to give a body an initial velocity.
 	DynDeltaX
 	DynDeltaY
 	DynDeltaZ
 
 	// Angular deltas. These accumulate over time via StepBodyDeltas.
+	// This is the angular velocity state that StepIntegrateBodies
+	// integrates: set it (in Next, between steps) to give a body an initial
+	// angular velocity.
 	DynAngDeltaX
 	DynAngDeltaY
 	DynAngDeltaZ
@@ -109,10 +118,17 @@ func SetDynamicQuat(idx, cni int32, rot math32.Quat) {
 	Dynamics[idx, cni, DynQuatW] = rot.W
 }
 
+// DynamicVel returns the linear velocity of the given dynamic body in the
+// given Cur or Next state, which is computed after each step from the
+// change in position (see [DynVelX]).
 func DynamicVel(idx, cni int32) math32.Vector3 {
 	return math32.Vec3(Dynamics[idx, cni, DynVelX], Dynamics[idx, cni, DynVelY], Dynamics[idx, cni, DynVelZ])
 }
 
+// SetDynamicVel sets the linear velocity of the given dynamic body in the
+// given Cur or Next state. The velocity is an output, which is computed
+// after each step: setting it does not change the motion. To give a body
+// an initial velocity, use [SetDynamicDelta] instead.
 func SetDynamicVel(idx, cni int32, vel math32.Vector3) {
 	Dynamics[idx, cni, DynVelX] = vel.X
 	Dynamics[idx, cni, DynVelY] = vel.Y
@@ -149,10 +165,17 @@ func SetDynamicTorque(idx, cni int32, torque math32.Vector3) {
 	Dynamics[idx, cni, DynTorqueZ] = torque.Z
 }
 
+// DynamicAngVel returns the angular velocity of the given dynamic body in
+// the given Cur or Next state, which is computed after each step from the
+// change in orientation (see [DynAngVelX]).
 func DynamicAngVel(idx, cni int32) math32.Vector3 {
 	return math32.Vec3(Dynamics[idx, cni, DynAngVelX], Dynamics[idx, cni, DynAngVelY], Dynamics[idx, cni, DynAngVelZ])
 }
 
+// SetDynamicAngVel sets the angular velocity of the given dynamic body in
+// the given Cur or Next state. The angular velocity is an output, which is
+// computed after each step: setting it does not change the motion. To
+// give a body an initial angular velocity, use [SetDynamicAngDelta].
 func SetDynamicAngVel(idx, cni int32, angVel math32.Vector3) {
 	Dynamics[idx, cni, DynAngVelX] = angVel.X
 	Dynamics[idx, cni, DynAngVelY] = angVel.Y
@@ -171,20 +194,34 @@ func SetDynamicAngAcc(idx, cni int32, angAcc math32.Vector3) {
 
 //////// Accumulating deltas
 
+// DynamicDelta returns the linear delta of the given dynamic body in the
+// given Cur or Next state, which is the linear velocity state that is
+// integrated in each step (see [DynDeltaX]).
 func DynamicDelta(idx, cni int32) math32.Vector3 {
 	return math32.Vec3(Dynamics[idx, cni, DynDeltaX], Dynamics[idx, cni, DynDeltaY], Dynamics[idx, cni, DynDeltaZ])
 }
 
+// SetDynamicDelta sets the linear delta of the given dynamic body in the
+// given Cur or Next state, which is the linear velocity state that is
+// integrated in each step: set it in Next (where the state is between
+// steps) to give a body an initial velocity.
 func SetDynamicDelta(idx, cni int32, delta math32.Vector3) {
 	Dynamics[idx, cni, DynDeltaX] = delta.X
 	Dynamics[idx, cni, DynDeltaY] = delta.Y
 	Dynamics[idx, cni, DynDeltaZ] = delta.Z
 }
 
+// DynamicAngDelta returns the angular delta of the given dynamic body in
+// the given Cur or Next state, which is the angular velocity state that is
+// integrated in each step (see [DynAngDeltaX]).
 func DynamicAngDelta(idx, cni int32) math32.Vector3 {
 	return math32.Vec3(Dynamics[idx, cni, DynAngDeltaX], Dynamics[idx, cni, DynAngDeltaY], Dynamics[idx, cni, DynAngDeltaZ])
 }
 
+// SetDynamicAngDelta sets the angular delta of the given dynamic body in
+// the given Cur or Next state, which is the angular velocity state that is
+// integrated in each step: set it in Next (where the state is between
+// steps) to give a body an initial angular velocity.
 func SetDynamicAngDelta(idx, cni int32, angDelta math32.Vector3) {
 	Dynamics[idx, cni, DynAngDeltaX] = angDelta.X
 	Dynamics[idx, cni, DynAngDeltaY] = angDelta.Y

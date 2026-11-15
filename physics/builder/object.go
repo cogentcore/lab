@@ -152,7 +152,7 @@ func (ob *Object) RotateAroundBody(body int, rot math32.Quat) {
 	ob.RotateAround(rot, bd.Pose.Pos)
 }
 
-// MoveOnAxis moves (translates) the specified distance on the
+// MoveOnAxisBody moves (translates) the specified distance on the
 // specified local axis, relative to the given body in object.
 // The axis is normalized prior to aplying the distance factor.
 func (ob *Object) MoveOnAxisBody(body int, x, y, z, dist float32) {

@@ -23,25 +23,25 @@ func TestSphereSphere(t *testing.T) {
 		posB          math32.Vector3
 		radiusB, dist float32
 	}{
-		{math32.Vector3{0.0, 0.0, 0.0}, 1.0, math32.Vector3{3.5, 0.0, 0.0}, 1.0, 1.5},  // Separated by 1.5
-		{math32.Vector3{0.0, 0.0, 0.0}, 1.0, math32.Vector3{3.0, 0.0, 0.0}, 1.0, 1.0},  // Separated by 1.0
-		{math32.Vector3{0.0, 0.0, 0.0}, 1.0, math32.Vector3{2.5, 0.0, 0.0}, 1.0, 0.5},  // Separated by 0.5
-		{math32.Vector3{0.0, 0.0, 0.0}, 1.0, math32.Vector3{2.0, 0.0, 0.0}, 1.0, 0.0},  // Exactly touching
-		{math32.Vector3{0.0, 1.0, 0.0}, 1.0, math32.Vector3{1.8, 1.0, 0.0}, 1.0, -0.2}, // Penetration = 0.2
-		{math32.Vector3{0.0, 0.0, 0.0}, 1.0, math32.Vector3{1.5, 0.0, 0.0}, 1.0, -0.5}, // Penetration = 0.5
-		{math32.Vector3{0.0, 0.0, 1.0}, 1.0, math32.Vector3{1.2, 0.0, 1.0}, 1.0, -0.8}, // Penetration = 0.8
+		{math32.Vector3{X: 0.0, Y: 0.0, Z: 0.0}, 1.0, math32.Vector3{X: 3.5, Y: 0.0, Z: 0.0}, 1.0, 1.5},  // Separated by 1.5
+		{math32.Vector3{X: 0.0, Y: 0.0, Z: 0.0}, 1.0, math32.Vector3{X: 3.0, Y: 0.0, Z: 0.0}, 1.0, 1.0},  // Separated by 1.0
+		{math32.Vector3{X: 0.0, Y: 0.0, Z: 0.0}, 1.0, math32.Vector3{X: 2.5, Y: 0.0, Z: 0.0}, 1.0, 0.5},  // Separated by 0.5
+		{math32.Vector3{X: 0.0, Y: 0.0, Z: 0.0}, 1.0, math32.Vector3{X: 2.0, Y: 0.0, Z: 0.0}, 1.0, 0.0},  // Exactly touching
+		{math32.Vector3{X: 0.0, Y: 1.0, Z: 0.0}, 1.0, math32.Vector3{X: 1.8, Y: 1.0, Z: 0.0}, 1.0, -0.2}, // Penetration = 0.2
+		{math32.Vector3{X: 0.0, Y: 0.0, Z: 0.0}, 1.0, math32.Vector3{X: 1.5, Y: 0.0, Z: 0.0}, 1.0, -0.5}, // Penetration = 0.5
+		{math32.Vector3{X: 0.0, Y: 0.0, Z: 1.0}, 1.0, math32.Vector3{X: 1.2, Y: 0.0, Z: 1.0}, 1.0, -0.8}, // Penetration = 0.8
 		// Different radii
-		{math32.Vector3{0.0, 0.0, 0.0}, 0.5, math32.Vector3{2.0, 0.0, 0.0}, 1.0, 0.5},  // Separated
-		{math32.Vector3{0.0, 1.0, 0.0}, 0.5, math32.Vector3{1.5, 1.0, 0.0}, 1.0, 0.0},  // Touching
-		{math32.Vector3{0.0, 0.0, 0.0}, 0.5, math32.Vector3{1.2, 0.0, 0.0}, 1.0, -0.3}, // Penetration = 0.3
+		{math32.Vector3{X: 0.0, Y: 0.0, Z: 0.0}, 0.5, math32.Vector3{X: 2.0, Y: 0.0, Z: 0.0}, 1.0, 0.5},  // Separated
+		{math32.Vector3{X: 0.0, Y: 1.0, Z: 0.0}, 0.5, math32.Vector3{X: 1.5, Y: 1.0, Z: 0.0}, 1.0, 0.0},  // Touching
+		{math32.Vector3{X: 0.0, Y: 0.0, Z: 0.0}, 0.5, math32.Vector3{X: 1.2, Y: 0.0, Z: 0.0}, 1.0, -0.3}, // Penetration = 0.3
 	}
 
 	tol := 1e-5
 
 	rot := math32.NewQuatIdentity()
 	for _, tc := range tests {
-		gdA := GeomData{Shape: Sphere, Radius: tc.radiusA, Size: math32.Vector3{tc.radiusA, 0, 0}, WbR: tc.posA, WbQ: rot}
-		gdB := GeomData{Shape: Sphere, Radius: tc.radiusB, Size: math32.Vector3{tc.radiusB, 0, 0}, WbR: tc.posB, WbQ: rot}
+		gdA := GeomData{Shape: Sphere, Radius: tc.radiusA, Size: math32.Vector3{X: tc.radiusA, Y: 0, Z: 0}, WbR: tc.posA, WbQ: rot}
+		gdB := GeomData{Shape: Sphere, Radius: tc.radiusB, Size: math32.Vector3{X: tc.radiusB, Y: 0, Z: 0}, WbR: tc.posB, WbQ: rot}
 		InitGeomData(0, &gdA)
 		InitGeomData(0, &gdB)
 
@@ -82,12 +82,12 @@ func TestSpherePlane(t *testing.T) {
 		normal, posA, posB math32.Vector3
 		radius, dist       float32
 	}{
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{2, 2, 0}, 1, 1},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{2, 1.5, 0}, 1, 0.5},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{2, 1, 0}, 1, 0},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{2, 0.8, 0}, 1, -0.2},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{2, 0.5, 0}, 1, -0.5},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{2, 0.2, 0}, 1, -0.8},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 2, Y: 2, Z: 0}, 1, 1},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 2, Y: 1.5, Z: 0}, 1, 0.5},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 2, Y: 1, Z: 0}, 1, 0},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 2, Y: 0.8, Z: 0}, 1, -0.2},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 2, Y: 0.5, Z: 0}, 1, -0.5},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 2, Y: 0.2, Z: 0}, 1, -0.8},
 		// {math32.Vector3{1, 0, 0}, math32.Vector3{1, 0, 0}, math32.Vector3{2.0, 0, 0}, 0.5, 0.5},  // X-axis, separation = 0.5
 		// {math32.Vector3{1, 0, 0}, math32.Vector3{1, 0, 0}, math32.Vector3{1.5, 0, 0}, 0.5, 0},    // X-axis, touching
 		//	{math32.Vector3{1, 0, 0}, math32.Vector3{1, 0, 0}, math32.Vector3{1.3, 0, 0}, 0.5, -0.2}, // X-axis, penetration = 0.2
@@ -97,8 +97,8 @@ func TestSpherePlane(t *testing.T) {
 	rot := math32.NewQuatIdentity()
 	for _, tc := range tests {
 		// note: A = sphere but pos = B..
-		gdA := GeomData{Shape: Sphere, Radius: tc.radius, Size: math32.Vector3{tc.radius, 0, 0}, WbR: tc.posB, WbQ: rot}
-		gdB := GeomData{Shape: Plane, Size: math32.Vector3{0, 0, 0}, WbR: tc.posA, WbQ: rot}
+		gdA := GeomData{Shape: Sphere, Radius: tc.radius, Size: math32.Vector3{X: tc.radius, Y: 0, Z: 0}, WbR: tc.posB, WbQ: rot}
+		gdB := GeomData{Shape: Plane, Size: math32.Vector3{X: 0, Y: 0, Z: 0}, WbR: tc.posA, WbQ: rot}
 		InitGeomData(0, &gdA)
 		InitGeomData(0, &gdB)
 
@@ -136,13 +136,13 @@ func TestCapsulePlane(t *testing.T) {
 		normal, posA, posB math32.Vector3
 		radius, dist       float32
 	}{
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{0, 3, 0}, 0.5, 1.5},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{0, 2.5, 0}, 0.5, 1.0},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{0, 2.0, 0}, 0.5, 0.5},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{0, 1.5, 0}, 0.5, 0},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{0, 1.4, 0}, 0.5, -0.1},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{0, 1.3, 0}, 0.5, -0.2},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{0, 1.2, 0}, 0.5, -0.3},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 3, Z: 0}, 0.5, 1.5},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 2.5, Z: 0}, 0.5, 1.0},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 2.0, Z: 0}, 0.5, 0.5},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 1.5, Z: 0}, 0.5, 0},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 1.4, Z: 0}, 0.5, -0.1},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 1.3, Z: 0}, 0.5, -0.2},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 1.2, Z: 0}, 0.5, -0.3},
 	}
 	tol := 1e-5
 
@@ -151,8 +151,8 @@ func TestCapsulePlane(t *testing.T) {
 	for _, tc := range tests {
 		// note: A = capsule but pos = B..
 		// 1.5 hh = 1 raw hh
-		gdA := GeomData{Shape: Capsule, Radius: tc.radius, Size: math32.Vector3{tc.radius, 1.5, tc.radius}, WbR: tc.posB, WbQ: rot}
-		gdB := GeomData{Shape: Plane, Size: math32.Vector3{0, 0, 0}, WbR: tc.posA, WbQ: rot}
+		gdA := GeomData{Shape: Capsule, Radius: tc.radius, Size: math32.Vector3{X: tc.radius, Y: 1.5, Z: tc.radius}, WbR: tc.posB, WbQ: rot}
+		gdB := GeomData{Shape: Plane, Size: math32.Vector3{X: 0, Y: 0, Z: 0}, WbR: tc.posA, WbQ: rot}
 		InitGeomData(0, &gdA)
 		InitGeomData(0, &gdB)
 
@@ -191,13 +191,13 @@ func TestCylinderPlane(t *testing.T) {
 		normal, posA, posB math32.Vector3
 		radius, dist       float32
 	}{
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{0, 2.5, 0}, 0.5, 1.5},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{0, 2.0, 0}, 0.5, 1.0},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{0, 1.5, 0}, 0.5, 0.5},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{0, 1.0, 0}, 0.5, 0},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{0, 0.9, 0}, 0.5, -0.1},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{0, 0.8, 0}, 0.5, -0.2},
-		{math32.Vector3{0, 1, 0}, math32.Vector3{0, 0, 0}, math32.Vector3{0, 0.7, 0}, 0.5, -0.3},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 2.5, Z: 0}, 0.5, 1.5},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 2.0, Z: 0}, 0.5, 1.0},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 1.5, Z: 0}, 0.5, 0.5},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 1.0, Z: 0}, 0.5, 0},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 0.9, Z: 0}, 0.5, -0.1},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 0.8, Z: 0}, 0.5, -0.2},
+		{math32.Vector3{X: 0, Y: 1, Z: 0}, math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 0.7, Z: 0}, 0.5, -0.3},
 	}
 	tol := 1e-5
 
@@ -206,16 +206,15 @@ func TestCylinderPlane(t *testing.T) {
 	for _, tc := range tests {
 		// note: A = capsule but pos = B..
 		// 1 hh
-		gdA := GeomData{Shape: Cylinder, Radius: tc.radius, Size: math32.Vector3{tc.radius, 1.0, tc.radius}, WbR: tc.posB, WbQ: rot}
-		gdB := GeomData{Shape: Plane, Size: math32.Vector3{0, 0, 0}, WbR: tc.posA, WbQ: rot}
+		gdA := GeomData{Shape: Cylinder, Radius: tc.radius, Size: math32.Vector3{X: tc.radius, Y: 1.0, Z: tc.radius}, WbR: tc.posB, WbQ: rot}
+		gdB := GeomData{Shape: Plane, Size: math32.Vector3{X: 0, Y: 0, Z: 0}, WbR: tc.posA, WbQ: rot}
 		InitGeomData(0, &gdA)
 		InitGeomData(0, &gdB)
 
 		var ptA, ptB, norm math32.Vector3
 		// important: we know that the lower axis, cpi = 0, is closest here
-		var dist float32
 		// for cpi := range int32(4) {
-		dist = ColCylinderPlane(0, 10, &gdA, &gdB, &ptA, &ptB, &norm)
+		dist := ColCylinderPlane(0, 10, &gdA, &gdB, &ptA, &ptB, &norm)
 		// fmt.Println(cpi, dist, ptA, ptB, norm)
 		// }
 		margin := float32(0.01)
@@ -248,13 +247,13 @@ func TestSphereCapsule(t *testing.T) {
 		posA, posB             math32.Vector3
 		radiusA, radiusB, dist float32
 	}{
-		{math32.Vector3{0, 0, 0}, math32.Vector3{0, 4, 0}, 1.0, 0.5, 1.5},
-		{math32.Vector3{0, 0, 0}, math32.Vector3{0, 3.5, 0}, 1.0, 0.5, 1.0},
-		{math32.Vector3{0, 0, 0}, math32.Vector3{0, 3.0, 0}, 1.0, 0.5, 0.5},
-		{math32.Vector3{0, 0, 0}, math32.Vector3{0, 2.5, 0}, 1.0, 0.5, 0},
-		{math32.Vector3{0, 0, 0}, math32.Vector3{0, 2.4, 0}, 1.0, 0.5, -0.1},
-		{math32.Vector3{0, 0, 0}, math32.Vector3{0, 2.3, 0}, 1.0, 0.5, -0.2},
-		{math32.Vector3{0, 0, 0}, math32.Vector3{0, 2.2, 0}, 1.0, 0.5, -0.3},
+		{math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 4, Z: 0}, 1.0, 0.5, 1.5},
+		{math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 3.5, Z: 0}, 1.0, 0.5, 1.0},
+		{math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 3.0, Z: 0}, 1.0, 0.5, 0.5},
+		{math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 2.5, Z: 0}, 1.0, 0.5, 0},
+		{math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 2.4, Z: 0}, 1.0, 0.5, -0.1},
+		{math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 2.3, Z: 0}, 1.0, 0.5, -0.2},
+		{math32.Vector3{X: 0, Y: 0, Z: 0}, math32.Vector3{X: 0, Y: 2.2, Z: 0}, 1.0, 0.5, -0.3},
 	}
 	tol := 1e-5
 
@@ -262,8 +261,8 @@ func TestSphereCapsule(t *testing.T) {
 	for _, tc := range tests {
 		// note: A = capsule but pos = B..
 		// 1.5 hh = 1 raw hh
-		gdA := GeomData{Shape: Sphere, Radius: tc.radiusA, Size: math32.Vector3{tc.radiusA, 0, 0}, WbR: tc.posA, WbQ: rot}
-		gdB := GeomData{Shape: Capsule, Radius: tc.radiusB, Size: math32.Vector3{tc.radiusB, 1.5, tc.radiusB}, WbR: tc.posB, WbQ: rot}
+		gdA := GeomData{Shape: Sphere, Radius: tc.radiusA, Size: math32.Vector3{X: tc.radiusA, Y: 0, Z: 0}, WbR: tc.posA, WbQ: rot}
+		gdB := GeomData{Shape: Capsule, Radius: tc.radiusB, Size: math32.Vector3{X: tc.radiusB, Y: 1.5, Z: tc.radiusB}, WbR: tc.posB, WbQ: rot}
 		InitGeomData(0, &gdA)
 		InitGeomData(0, &gdB)
 

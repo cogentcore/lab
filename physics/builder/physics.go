@@ -25,11 +25,14 @@ type Physics struct {
 }
 
 // Build calls Builder.Build with Model and Scene args,
-// and then Init on the Scene.
+// and then Init on the Scene, which configures the Model,
+// or else Config on the Model.
 func (ph *Physics) Build() {
 	ph.Builder.Build(ph.Model, ph.Scene)
 	if ph.Scene != nil {
 		ph.Scene.Init(ph.Model)
+	} else {
+		ph.Model.Config()
 	}
 }
 

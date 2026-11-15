@@ -125,6 +125,10 @@ type PhysicsParams struct {
 }
 
 func (pr *PhysicsParams) Defaults() {
+	// The state is in Next between steps, which then becomes Cur
+	// (see StepInit): they must differ, so that a state set before
+	// the first step (as by SetDynamicPos) is not overwritten.
+	pr.Cur, pr.Next = 0, 1
 	pr.Iterations = 1
 	pr.Dt = 0.0001
 	pr.SubSteps = 10

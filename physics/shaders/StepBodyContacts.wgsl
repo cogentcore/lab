@@ -423,10 +423,12 @@ fn DynamicQuat(idx: i32,cni: i32) -> vec4<f32> {
 	return vec4<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatZ))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatW))]);
 }
 fn DynamicDelta(idx: i32,cni: i32) -> vec3<f32> {
-	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaZ))]);
+	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62],
+	u32(idx), u32(cni), u32(DynDeltaZ))]);
 }
 fn DynamicAngDelta(idx: i32,cni: i32) -> vec3<f32> {
-	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaZ))]);
+	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62],
+	u32(idx), u32(cni), u32(DynAngDeltaZ))]);
 }
 
 //////// import: "enumgen.go"

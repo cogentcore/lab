@@ -836,14 +836,14 @@ fn ClosestPointBox(upper: vec3<f32>,pt: vec3<f32>) -> vec3<f32> {
 		}
 	}return vec3<f32>(x, y, z);
 }
-fn BoxVertex(ptId: i32, upper: vec3<f32>) -> vec3<f32> {
-	var sign_x = f32(ptId%2)*2.0 - 1.0;
-	var sign_y = f32((ptId/2)%2)*2.0 - 1.0;
-	var sign_z = f32((ptId/4)%2)*2.0 - 1.0;
-return vec3<f32>(sign_x*upper.x, sign_y*upper.y, sign_z*upper.z);
+fn BoxVertex(ptID: i32, upper: vec3<f32>) -> vec3<f32> {
+	var signX = f32(ptID%2)*2.0 - 1.0;
+	var signY = f32((ptID/2)%2)*2.0 - 1.0;
+	var signZ = f32((ptID/4)%2)*2.0 - 1.0;
+return vec3<f32>(signX*upper.x, signY*upper.y, signZ*upper.z);
 }
-fn BoxEdge(edgeId: i32, upper: vec3<f32>, edge0: ptr<function,vec3<f32>>,edge1: ptr<function,vec3<f32>>) {
-	var eid = edgeId;
+fn BoxEdge(edgeID: i32, upper: vec3<f32>, edge0: ptr<function,vec3<f32>>,edge1: ptr<function,vec3<f32>>) {
+	var eid = edgeID;
 	if (eid < 4) {
 		var i = eid * 2;
 		var j = i + 1;
@@ -862,12 +862,12 @@ fn BoxEdge(edgeId: i32, upper: vec3<f32>, edge0: ptr<function,vec3<f32>>,edge1: 
 	*edge0 = BoxVertex(i, upper);
 	*edge1 = BoxVertex(j, upper);
 }
-fn PlaneEdge(edgeId: i32, width: f32,length: f32, edge0: ptr<function,vec3<f32>>,edge1: ptr<function,vec3<f32>>) {
-	var p0x = (2*f32(edgeId%2) - 1) * width;
-	var p0z = (2*f32(edgeId/2) - 1) * length;
+fn PlaneEdge(edgeID: i32, width: f32,length: f32, edge0: ptr<function,vec3<f32>>,edge1: ptr<function,vec3<f32>>) {
+	var p0x = (2*f32(edgeID%2) - 1) * width;
+	var p0z = (2*f32(edgeID/2) - 1) * length;
 	var p1x: f32;
 	var p1z: f32;
-	if (edgeId == 0 || edgeId == 3) {
+	if (edgeID == 0 || edgeID == 3) {
 		p1x = p0x;
 		p1z = -p0z;
 	} else {

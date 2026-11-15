@@ -258,10 +258,12 @@ fn SetDynamicQuat(idx: i32,cni: i32, rot: vec4<f32>) {
 	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatX))] = rot.x;
 	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatY))] = rot.y;
 	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatZ))] = rot.z;
-	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynQuatW))] = rot.w;
+	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62],
+	u32(idx), u32(cni), u32(DynQuatW))] = rot.w;
 }
 fn DynamicVel(idx: i32,cni: i32) -> vec3<f32> {
-	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynVelX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynVelY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynVelZ))]);
+	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynVelX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynVelY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62],
+	u32(idx), u32(cni), u32(DynVelZ))]);
 }
 fn SetDynamicVel(idx: i32,cni: i32, vel: vec3<f32>) {
 	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynVelX))] = vel.x;
@@ -274,7 +276,8 @@ fn SetDynamicAcc(idx: i32,cni: i32, acc: vec3<f32>) {
 	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAccZ))] = acc.z;
 }
 fn DynamicAngVel(idx: i32,cni: i32) -> vec3<f32> {
-	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngVelX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngVelY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngVelZ))]);
+	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngVelX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngVelY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62],
+	u32(idx), u32(cni), u32(DynAngVelZ))]);
 }
 fn SetDynamicAngVel(idx: i32,cni: i32, angVel: vec3<f32>) {
 	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngVelX))] = angVel.x;
@@ -288,15 +291,18 @@ fn SetDynamicAngAcc(idx: i32,cni: i32, angAcc: vec3<f32>) {
 	u32(idx), u32(cni), u32(DynAngAccZ))] = angAcc.z;
 }
 fn DynamicDelta(idx: i32,cni: i32) -> vec3<f32> {
-	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaZ))]);
+	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62],
+	u32(idx), u32(cni), u32(DynDeltaZ))]);
 }
 fn SetDynamicDelta(idx: i32,cni: i32, delta: vec3<f32>) {
 	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaX))] = delta.x;
 	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaY))] = delta.y;
-	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynDeltaZ))] = delta.z;
+	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62],
+	u32(idx), u32(cni), u32(DynDeltaZ))] = delta.z;
 }
 fn DynamicAngDelta(idx: i32,cni: i32) -> vec3<f32> {
-	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaZ))]);
+	return vec3<f32>(Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaX))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaY))], Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62],
+	u32(idx), u32(cni), u32(DynAngDeltaZ))]);
 }
 fn SetDynamicAngDelta(idx: i32,cni: i32, angDelta: vec3<f32>) {
 	Dynamics[Index3D(TensorStrides[60], TensorStrides[61], TensorStrides[62], u32(idx), u32(cni), u32(DynAngDeltaX))] = angDelta.x;
