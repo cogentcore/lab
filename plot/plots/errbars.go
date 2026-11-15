@@ -82,7 +82,7 @@ func (eb *YErrorBars) SetData(data any) error {
 		eb.Low = eb.High
 	}
 	if eb.X == nil || eb.Y == nil || eb.Low == nil || eb.High == nil {
-		return fmt.Errorf("X or Y or Low or High is nil")
+		return fmt.Errorf("nil X, Y, Low, or High data")
 	}
 	eb.stylers = plot.GetStylersFromData(dt, plot.X, plot.Low, plot.High)
 	eb.ystylers = plot.GetStylersFromData(dt, plot.Y)
@@ -127,9 +127,11 @@ func (eb *YErrorBars) Plot(plt *plot.Plot) {
 	eb.PX = make([]float32, nv)
 	eb.PY = make([]float32, nv)
 
+	py := plt.PY
 	minX, maxX := plt.PX(plt.X.DataRange.Min), plt.PX(plt.X.DataRange.Max)
 	var minY, maxY float32
 	if eb.Style.RightY {
+		py = plt.PYR
 		minY, maxY = plt.PYR(plt.YR.DataRange.Max), plt.PYR(plt.YR.DataRange.Min)
 	} else {
 		minY, maxY = plt.PY(plt.Y.DataRange.Max), plt.PY(plt.Y.DataRange.Min)
@@ -144,8 +146,8 @@ func (eb *YErrorBars) Plot(plt *plot.Plot) {
 		if x < minX || x > maxX {
 			continue
 		}
-		ylow := plt.PY(y - math.Abs(eb.Low[i]))
-		yhigh := plt.PY(y + math.Abs(eb.High[i]))
+		ylow := py(y - math.Abs(eb.Low[i]))
+		yhigh := py(y + math.Abs(eb.High[i]))
 		if math32.IsNaN(ylow) || math32.IsNaN(yhigh) {
 			continue
 		}
@@ -183,7 +185,7 @@ func (eb *YErrorBars) UpdateRange(plt *plot.Plot) {
 		if math.IsNaN(ylow) || math.IsNaN(yhigh) {
 			continue
 		}
-		yax.Range.FitInRange(minmax.F64{ylow, yhigh})
+		yax.Range.FitInRange(minmax.F64{Min: ylow, Max: yhigh})
 	}
 
 	plot.RangeLogic(plt.Style.OutOfRange, &plt.X.Range, &plt.Style.XAxis.Range)
@@ -240,15 +242,13 @@ func (eb *XErrorBars) SetData(data any) error {
 	}
 	eb.X = plot.MustCopyRole(dt, plot.X)
 	eb.Y = plot.MustCopyRole(dt, plot.Y)
-	eb.Low = plot.MustCopyRole(dt, plot.Low)
-	eb.High = plot.MustCopyRole(dt, plot.High)
 	eb.Low = plot.CopyRole(dt, plot.Low)
 	eb.High = plot.CopyRole(dt, plot.High)
 	if eb.Low == nil && eb.High != nil {
 		eb.Low = eb.High
 	}
 	if eb.X == nil || eb.Y == nil || eb.Low == nil || eb.High == nil {
-		return nil
+		return fmt.Errorf("nil X, Y, Low, or High data")
 	}
 	eb.stylers = plot.GetStylersFromData(dt, plot.High)
 	eb.ystylers = plot.GetStylersFromData(dt, plot.Y)
@@ -293,9 +293,11 @@ func (eb *XErrorBars) Plot(plt *plot.Plot) {
 	eb.PX = make([]float32, nv)
 	eb.PY = make([]float32, nv)
 
+	py := plt.PY
 	minX, maxX := plt.PX(plt.X.DataRange.Min), plt.PX(plt.X.DataRange.Max)
 	var minY, maxY float32
 	if eb.Style.RightY {
+		py = plt.PYR
 		minY, maxY = plt.PYR(plt.YR.DataRange.Max), plt.PYR(plt.YR.DataRange.Min)
 	} else {
 		minY, maxY = plt.PY(plt.Y.DataRange.Max), plt.PY(plt.Y.DataRange.Min)
@@ -303,7 +305,7 @@ func (eb *XErrorBars) Plot(plt *plot.Plot) {
 
 	eb.Style.Line.SetStroke(plt)
 	for i, x := range eb.X {
-		y := plt.PY(eb.Y.Float1D(i))
+		y := py(eb.Y.Float1D(i))
 		if math32.IsNaN(y) || math.IsNaN(x) {
 			continue
 		}
@@ -348,7 +350,7 @@ func (eb *XErrorBars) UpdateRange(plt *plot.Plot) {
 		if math.IsNaN(xlow) || math.IsNaN(xhigh) {
 			continue
 		}
-		plt.X.Range.FitInRange(minmax.F64{xlow, xhigh})
+		plt.X.Range.FitInRange(minmax.F64{Min: xlow, Max: xhigh})
 	}
 
 	plot.RangeLogic(plt.Style.OutOfRange, &plt.X.Range, &plt.Style.XAxis.Range)

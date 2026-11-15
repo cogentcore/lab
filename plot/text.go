@@ -78,7 +78,7 @@ func (tx *Text) Defaults() {
 	tx.Style.Defaults()
 }
 
-// config is called during the layout of the plot, prior to drawing
+// Config is called during the layout of the plot, prior to drawing
 func (tx *Text) Config(pt *Plot) {
 	uc := pt.UnitContext()
 	ts := &tx.textStyle
@@ -199,9 +199,9 @@ func (tx *Text) Draw(pt *Plot, pos math32.Vector2) {
 		pt.Painter.DrawText(tx.PaintText, pos)
 		return
 	}
-	m := pt.Painter.Paint.Transform
+	m := pt.Painter.Transform
 	rotx := math32.Rotate2DAround(math32.DegToRad(tx.Style.Rotation), pos)
-	pt.Painter.Paint.Transform = m.Mul(rotx)
+	pt.Painter.Transform = m.Mul(rotx)
 	pt.Painter.DrawText(tx.PaintText, pos)
-	pt.Painter.Paint.Transform = m
+	pt.Painter.Transform = m
 }

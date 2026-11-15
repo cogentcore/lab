@@ -68,7 +68,7 @@ func (lb *Labels) SetData(data any) error {
 	lb.Y = plot.MustCopyRole(dt, plot.Y)
 	ld := dt[plot.Label]
 	if ld == nil || lb.X == nil || lb.Y == nil {
-		return fmt.Errorf("Label or X or Y is nil")
+		return fmt.Errorf("nil Label, X, or Y data")
 	}
 	lb.Labels = make(plot.Labels, lb.X.Len())
 	for i := range ld.Len() {
@@ -188,8 +188,8 @@ func (lb *Labels) UpdateRange(plt *plot.Plot) {
 		twd := 1.1 * pxToData.X * ltxt.Size().X
 		maxx := xv + float64(pxToData.X*st.Offset.X.Dots+twd)
 		maxy := yv + float64(pxToData.Y*st.Offset.Y.Dots+tht) // y is up here
-		plt.X.Range.FitInRange(minmax.F64{xv, maxx})
-		yax.Range.FitInRange(minmax.F64{yv, maxy})
+		plt.X.Range.FitInRange(minmax.F64{Min: xv, Max: maxx})
+		yax.Range.FitInRange(minmax.F64{Min: yv, Max: maxy})
 	}
 
 	plot.RangeLogic(plt.Style.OutOfRange, &plt.X.Range, &plt.Style.XAxis.Range)

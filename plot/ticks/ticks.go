@@ -7,7 +7,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// This is an implementation of the Talbot, Lin and Hanrahan algorithm
+// Package ticks is an implementation of the Talbot, Lin and Hanrahan algorithm
 // described in doi:10.1109/TVCG.2010.130 with reference to the R
 // implementation in the labeling package, ©2014 Justin Talbot (Licensed
 // MIT+file LICENSE|Unlimited).
