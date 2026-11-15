@@ -8,7 +8,7 @@ go 1.27.0
 // https://github.com/googleapis/go-genproto/issues/1015
 
 require (
-	cogentcore.org/core v0.5.36
+	cogentcore.org/core v0.5.38
 	github.com/cogentcore/mvm v0.0.0-20261026193832-5ebd19c3fa21
 	github.com/cogentcore/readline v0.1.3
 	github.com/hack-pad/hackpadfs v0.2.4
@@ -57,7 +57,6 @@ require (
 	github.com/go-gl/glfw/v3.4/glfw v0.1.0-pre.1.0.20260628091122-0bd588dc30cf // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	github.com/gomarkdown/markdown v0.0.0-20260724235538-61af6e1e6971 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/hack-pad/go-indexeddb v0.3.2 // indirect
@@ -81,6 +80,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sgtdi/fswatcher v1.3.0 // indirect
 	github.com/tdewolff/parse/v2 v2.8.5 // indirect
+	github.com/yuin/goldmark/v2 v2.1.16 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/exp/shiny v0.0.0-20240416160154-fe59bbe5cc7f // indirect
 	golang.org/x/image v0.44.0 // indirect
