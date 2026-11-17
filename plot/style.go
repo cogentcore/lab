@@ -30,7 +30,10 @@ type Style struct { //types:add -setters
 	Plotter PlotterName
 
 	// Role specifies how a particular column of data should be used,
-	// for [plot.NewTablePlot] [table.Table] driven plots.
+	// for [plot.NewTablePlot] [table.Table] driven plots. Note that
+	// the X role is controlled by the [plot.PlotStyle] XAxis.Column
+	// setting, and the Set X action (in [plotcore.Editor]) is the best
+	// way to change it.
 	Role Roles
 
 	// Group specifies a group of related data items,

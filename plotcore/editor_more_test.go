@@ -460,3 +460,121 @@ func TestPlotTooltip(t *testing.T) {
 		assert.Equal(t, "empty", tt)
 	}))
 }
+
+// TestEditorTypeXAxis tests setting the type of plot of all the columns,
+// and the Set X button of the style dialog of a column.
+func TestEditorTypeXAxis(t *testing.T) {
+	defer core.TrackWindows()()
+	b := core.NewBody()
+	pl := NewEditor(b)
+	dt := newPlotTable("Squares")
+	plot.SetStyler(dt.Column("Y1"), func(s *plot.Style) { s.On = true })
+	plot.SetStyler(dt.Column("Y2"), func(s *plot.Style) { s.On = true })
+	pl.SetTable(dt)
+	var tb *core.Toolbar
+	b.AddTopBar(func(bar *core.Frame) {
+		tb = core.NewToolbar(bar)
+		tb.Maker(pl.MakeToolbar)
+	})
+	setX := func(sc *core.Scene) *core.Button {
+		return core.ButtonByText(sc, "Set X")
+	}
+	core.AssertRender(t, b, "type-xaxis", core.Locked(b, func() {
+		require.NotNil(t, core.ButtonByText(tb, "Type"))
+		pl.SetPlotType(plots.BarType)
+		for _, name := range []string{"Y1", "Y2"} {
+			st := columnStyle(pl, name)
+			assert.Equal(t, plot.PlotterName(plots.BarType), st.Plotter, name)
+			assert.Equal(t, st.Line.Color, st.Line.Fill, name)
+		}
+		assert.Equal(t, plot.PlotterName(plots.LabelsType), columnStyle(pl, "Label").Plotter)
+		require.NotNil(t, pl.plot)
+		_, ok := pl.plot.Plotters[0].(*plots.Bar)
+		assert.True(t, ok, "a bar plot")
+		core.ButtonByText(pl.columnsFrame, "X").Send(events.Click)
+	}), func() {
+		sc := windowScene(t, "X style properties")
+		require.NotNil(t, sc)
+		core.Locked(sc, func() {
+			assert.True(t, setX(sc).IsDisabled(), "the x axis")
+		})()
+		core.Locked(b, func() {
+			core.ButtonByText(pl.columnsFrame, "Y2").Send(events.Click)
+		})()
+	}, func() {
+		sc := windowScene(t, "Y2 style properties")
+		require.NotNil(t, sc)
+		core.Locked(sc, func() {
+			bt := setX(sc)
+			assert.False(t, bt.IsDisabled())
+			bt.Send(events.Click)
+			assert.True(t, bt.IsDisabled())
+			assert.Equal(t, plot.X, findWidget[*core.Form](sc).Struct.(*plot.Style).Role)
+		})()
+	}, core.Locked(b, func() {
+		assert.Equal(t, "Y2", pl.PlotStyle.XAxis.Column)
+		y2 := columnStyle(pl, "Y2")
+		assert.Equal(t, plot.X, y2.Role)
+		assert.Equal(t, "Y2", y2.Plot.XAxis.Column)
+		assert.Equal(t, plot.Y, columnStyle(pl, "X").Role, "the former x axis")
+		assert.True(t, columnSwitch(pl, "Y2").StateIs(states.Disabled))
+		assert.False(t, columnSwitch(pl, "X").StateIs(states.Disabled))
+		assert.Equal(t, 1, uniquePlotters(pl.plot))
+
+		menuSetX := func(name string) *core.Button { return menuSetX(pl, name) }
+		assert.True(t, menuSetX("Y2").IsDisabled(), "the x axis")
+		mx := menuSetX("X")
+		require.False(t, mx.IsDisabled())
+		mx.Send(events.Click)
+		assert.Equal(t, "X", pl.PlotStyle.XAxis.Column)
+		assert.Equal(t, plot.X, columnStyle(pl, "X").Role)
+		y2 = columnStyle(pl, "Y2")
+		assert.Equal(t, plot.Y, y2.Role)
+		assert.False(t, y2.On, "as its switch shows")
+
+		pl.SetPlotType(plots.XYType)
+		y1 := columnStyle(pl, "Y1")
+		assert.Equal(t, plot.PlotterName(plots.XYType), y1.Plotter)
+		assert.Nil(t, y1.Line.Fill)
+	}))
+}
+
+// menuSetX returns the Set X button of the context menu of the name
+// of the given column.
+func menuSetX(pl *Editor, name string) *core.Button {
+	bt := core.ButtonByText(pl.columnsFrame, name)
+	m := core.NewScene()
+	for _, cm := range bt.ContextMenus {
+		cm(m, image.Point{})
+	}
+	return core.ButtonByText(m, "Set X")
+}
+
+// TestEditorSetXIntColumns tests Set X with more than one int column:
+// only the last one is the X axis by default, with the X role.
+func TestEditorSetXIntColumns(t *testing.T) {
+	b := core.NewBody()
+	pl := NewEditor(b)
+	dt := newPlotTable("Squares")
+	rn := dt.AddIntColumn("Run")
+	for i := range 5 {
+		rn.SetInt1D(10*i, i)
+	}
+	plot.SetStyler(dt.Column("Y1"), func(s *plot.Style) { s.On = true })
+	pl.SetTable(dt)
+	core.RenderImage(b, core.Locked(b, func() {
+		assert.Equal(t, "Run", pl.xAxisColumn())
+		assert.Equal(t, plot.X, columnStyle(pl, "Run").Role)
+		assert.Equal(t, plot.Y, columnStyle(pl, "X").Role, "only the x axis has the X role")
+		assert.False(t, columnSwitch(pl, "X").StateIs(states.Disabled))
+		assert.True(t, columnSwitch(pl, "Run").StateIs(states.Disabled))
+		assert.True(t, menuSetX(pl, "Run").IsDisabled(), "the x axis")
+		mx := menuSetX(pl, "X")
+		require.False(t, mx.IsDisabled(), "another int column")
+		mx.Send(events.Click)
+		assert.Equal(t, "X", pl.xAxisColumn())
+		assert.Equal(t, plot.Y, columnStyle(pl, "Run").Role)
+		d, _, _ := pl.plot.Plotters[0].Data()
+		assert.Equal(t, 4.0, d[plot.X].Float1D(4))
+	}))
+}

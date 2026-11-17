@@ -68,6 +68,23 @@ type Editor struct { //types:add
 	columnsFrame      *core.Frame
 	plotWidget        *Plot
 	plotStyleModified map[string]bool
+
+	// columns has the style of each column, by name.
+	columns map[string]*editorColumn
+}
+
+// editorColumn has the style of a column in the [Editor],
+// which is applied to the column on top of any of its own stylers.
+type editorColumn struct {
+
+	// style is the style of the column.
+	style *plot.Style
+
+	// mods are the modified fields of style, which are applied.
+	mods map[string]bool
+
+	// isString is whether the column holds strings.
+	isString bool
 }
 
 func (pl *Editor) CopyFieldsFrom(frm tree.Node) {
@@ -382,11 +399,24 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 	if pl.table == nil {
 		return
 	}
+	if pl.columns == nil {
+		pl.columns = map[string]*editorColumn{}
+	}
+	maps.DeleteFunc(pl.columns, func(name string, ec *editorColumn) bool {
+		return pl.table.Columns.IndexByKey(name) < 0
+	})
+	xcol, nfloat := pl.defaultXColumn()
+	intColorIdx := nfloat // the colors of floats are the same as without ints
 	for ci, cl := range pl.table.Columns.Values {
 		cnm := pl.table.Columns.Keys[ci]
 		tree.AddAt(p, cnm, func(w *core.Frame) {
 			psty := plot.GetStylers(cl)
-			cst, mods, clr := pl.defaultColumnStyle(cl, &colorIdx, &hasSplit, psty)
+			cidx := &colorIdx
+			if !reflectx.KindIsFloat(cl.DataType()) {
+				cidx = &intColorIdx
+			}
+			cst, mods, clr := pl.defaultColumnStyle(cl, cnm == xcol, cidx, &hasSplit, psty)
+			pl.columns[cnm] = &editorColumn{style: cst, mods: mods, isString: cl.IsString()}
 			isSplit := cst.Role == plot.Split
 			stys := psty
 			stys.Add(func(s *plot.Style) {
@@ -443,6 +473,14 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 			tree.AddChild(w, func(w *core.Button) {
 				tt := "[Edit all styling options for this column] " + metadata.Doc(cl)
 				w.SetText(cnm).SetType(core.ButtonAction).SetTooltip(tt)
+				w.AddContextMenu(func(m *core.Scene, pos image.Point) {
+					bt := core.NewButton(m).SetText("Set X")
+					bt.SetTooltip("Use this column as the X axis of the plot")
+					bt.SetEnabled(pl.xAxisColumn() != cnm)
+					bt.OnClick(func(e events.Event) {
+						pl.SetXAxis(cnm)
+					})
+				})
 				w.OnClick(func(e events.Event) {
 					update := func() {
 						if core.TheApp.Platform().IsMobile() {
@@ -461,22 +499,28 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 					fm.OnChange(func(e events.Event) {
 						update()
 					})
-					// d.AddTopBar(func(bar *core.Frame) {
-					// 	core.NewToolbar(bar).Maker(func(p *tree.Plan) {
-					// 		tree.Add(p, func(w *core.Button) {
-					// 			w.SetText("Set x-axis").OnClick(func(e events.Event) {
-					// 				pl.Options.XAxis = cp.Column
-					// 				update()
-					// 			})
-					// 		})
-					// 		tree.Add(p, func(w *core.Button) {
-					// 			w.SetText("Set legend").OnClick(func(e events.Event) {
-					// 				pl.Options.Legend = cp.Column
-					// 				update()
-					// 			})
-					// 		})
-					// 	})
-					// })
+					d.AddTopBar(func(bar *core.Frame) {
+						core.NewToolbar(bar).Maker(func(p *tree.Plan) {
+							tree.Add(p, func(w *core.Button) {
+								w.SetText("Set X")
+								w.SetTooltip("Use this column as the X axis of the plot")
+								w.OnClick(func(e events.Event) {
+									if core.TheApp.Platform().IsMobile() {
+										pl.SetXAxis(cnm)
+									} else { // the editor is in another window
+										pl.AsyncLock()
+										pl.SetXAxis(cnm)
+										pl.AsyncUnlock()
+									}
+									fm.Update()
+									w.Update()
+								})
+								w.Updater(func() {
+									w.SetEnabled(pl.xAxisColumn() != cnm)
+								})
+							})
+						})
+					})
 					d.RunWindowDialog(pl)
 				})
 			})
@@ -484,9 +528,121 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 	}
 }
 
+// xAxisColumn returns the name of the column that is the X axis of
+// the plot: the [plot.XAxisStyle.Column] of [Editor.PlotStyle] if set,
+// and otherwise the last column with the X role, as in [plot.NewTablePlot].
+func (pl *Editor) xAxisColumn() string {
+	if xcol := pl.PlotStyle.XAxis.Column; xcol != "" {
+		return xcol
+	}
+	xcol := ""
+	for _, name := range pl.table.Columns.Keys {
+		if ec, ok := pl.columns[name]; ok && ec.style.Role == plot.X {
+			xcol = name
+		}
+	}
+	return xcol
+}
+
+// SetPlotType sets the type of plot (the [plot.Style.Plotter]) of all
+// the columns that hold numbers (not strings) to the given type, e.g.,
+// to switch the plot from XY to Bar. See [plot.SetPlotters] for the
+// version for a table.
+func (pl *Editor) SetPlotType(plotType plot.PlotterName) { //types:add
+	isBar := plotType == plots.BarType
+	for _, ec := range pl.columns {
+		if ec.isString {
+			continue
+		}
+		cst := ec.style
+		cst.Plotter = plotType
+		ec.mods["Plotter"] = true
+		if isBar { // bars are filled with the color of the column
+			cst.Line.Fill = cst.Line.Color
+			ec.mods["Line.Fill"] = true
+		} else if ec.mods["Line.Fill"] {
+			cst.Line.Fill = nil
+			ec.mods["Line.Fill"] = false
+		}
+	}
+	pl.UpdatePlot()
+	pl.Update()
+}
+
+// SetXAxis sets the column of the given name to be the X axis of the
+// plot: its role is set to X, and the [plot.XAxisStyle.Column] of
+// [Editor.PlotStyle] is set to it. Any other column with the X role
+// is changed to the Y role, and turned off. See [plot.SetXAxis] for
+// the version for a table.
+func (pl *Editor) SetXAxis(column string) { //types:add
+	xc, ok := pl.columns[column]
+	if !ok {
+		core.ErrorSnackbar(pl, fmt.Errorf("SetXAxis: column %q not found", column))
+		return
+	}
+	for name, ec := range pl.columns {
+		if name != column && ec.style.Role == plot.X {
+			ec.style.Role = plot.Y
+			ec.mods["Role"] = true
+			ec.style.On = false // as its switch shows; it can be turned on
+			ec.mods["On"] = true
+		}
+	}
+	xc.style.Role = plot.X
+	xc.mods["Role"] = true
+	pl.PlotStyle.XAxis.Column = column
+	if pl.plotStyleModified == nil {
+		pl.plotStyleModified = map[string]bool{}
+	}
+	pl.plotStyleModified["XAxis.Column"] = true
+	pl.UpdatePlot()
+	pl.Update()
+}
+
+// defaultXColumn returns the name of the column that is the X axis of
+// the plot by default, which is the only column with the X role:
+// the [plot.XAxisStyle.Column] of the plot style if set, and otherwise
+// the last column with the X role set by its stylers, as in
+// [plot.NewTablePlot], and otherwise the last column of integers
+// with no role set. It also returns the number of columns of floats.
+func (pl *Editor) defaultXColumn() (string, int) {
+	xaxis := pl.PlotStyle.XAxis.Column
+	xrole, xint := "", ""
+	nfloat := 0
+	for ci, cl := range pl.table.Columns.Values {
+		cnm := pl.table.Columns.Keys[ci]
+		st := plot.NewStyle()
+		if sty := plot.GetStylers(cl); sty != nil {
+			sty.Run(st)
+		}
+		if xaxis == "" {
+			xaxis = st.Plot.XAxis.Column
+		}
+		isfloat := reflectx.KindIsFloat(cl.DataType())
+		if isfloat {
+			nfloat++
+		}
+		switch {
+		case st.Role == plot.X:
+			xrole = cnm
+		case st.Role == plot.NoRole && !isfloat && !cl.IsString():
+			xint = cnm
+		}
+	}
+	switch {
+	case xaxis != "" && pl.table.Columns.IndexByKey(xaxis) >= 0:
+		return xaxis, nfloat
+	case xrole != "":
+		return xrole, nfloat
+	}
+	return xint, nfloat
+}
+
 // defaultColumnStyle initializes the column style with any existing stylers
 // plus additional general defaults, returning the initially modified field names.
-func (pl *Editor) defaultColumnStyle(cl tensor.Values, colorIdx *int, hasSplit *bool, psty plot.Stylers) (*plot.Style, map[string]bool, image.Image) {
+// isX is whether the column is the X axis of the plot: only that column has
+// the X role, and other columns of numbers have the Y role.
+func (pl *Editor) defaultColumnStyle(cl tensor.Values, isX bool, colorIdx *int, hasSplit *bool, psty plot.Stylers) (*plot.Style, map[string]bool, image.Image) {
 	cst := &plot.Style{}
 	cst.Defaults()
 	if psty != nil {
@@ -496,29 +652,32 @@ func (pl *Editor) defaultColumnStyle(cl tensor.Values, colorIdx *int, hasSplit *
 		*hasSplit = true
 	}
 	mods := map[string]bool{}
-	isfloat := reflectx.KindIsFloat(cl.DataType())
+	isString := cl.IsString()
 	if cst.Plotter == "" {
-		if isfloat {
-			cst.Plotter = plot.PlotterName(plots.XYType)
-			mods["Plotter"] = true
-		} else if cl.IsString() {
+		if isString {
 			cst.Plotter = plot.PlotterName(plots.LabelsType)
-			mods["Plotter"] = true
+		} else {
+			cst.Plotter = plot.PlotterName(plots.XYType)
 		}
+		mods["Plotter"] = true
 	}
-	if cst.Role == plot.NoRole {
+	switch {
+	case isX:
+		if cst.Role != plot.X {
+			cst.Role = plot.X
+			mods["Role"] = true
+		}
+	case cst.Role == plot.NoRole || cst.Role == plot.X:
 		mods["Role"] = true
-		if isfloat {
-			cst.Role = plot.Y
-		} else if cl.IsString() {
+		if isString {
 			cst.Role = plot.Label
 		} else {
-			cst.Role = plot.X
+			cst.Role = plot.Y
 		}
 	}
 	clr := cst.Line.Color
 	if clr == colors.Scheme.OnSurface {
-		if cst.Role == plot.Y && isfloat {
+		if cst.Role == plot.Y && !isString {
 			clr = colors.Uniform(colors.Spaced(*colorIdx))
 			(*colorIdx)++
 			if !*hasSplit {
@@ -624,6 +783,10 @@ func (pl *Editor) MakeToolbar(p *tree.Plan) {
 				})
 				d.RunWindowDialog(pl)
 			})
+	})
+	tree.Add(p, func(w *core.FuncButton) {
+		w.SetFunc(pl.SetPlotType).SetText("Type").SetIcon(icons.BarChart)
+		w.SetTooltip("Set the type of plot of all the columns that hold numbers, e.g., XY or Bar")
 	})
 	tree.Add(p, func(w *core.Button) {
 		w.SetText("Table").SetIcon(icons.Edit).
