@@ -152,7 +152,9 @@ func TestEditGoal(t *testing.T) {
 	}
 }
 
-// runTimeout runs f, and returns its panic as an error.
+// runTimeout runs f, and returns its panic as an error, or an error if it
+// is still running after a time that only a hang takes: a block that makes
+// a 3D scene (physics) can take over 10s on a busy CI machine.
 func runTimeout(f func()) error {
 	done := make(chan error, 1)
 	go func() {
@@ -167,7 +169,7 @@ func runTimeout(f func()) error {
 	select {
 	case err := <-done:
 		return err
-	case <-time.After(10 * time.Second):
-		return fmt.Errorf("still running after 10s")
+	case <-time.After(2 * time.Minute):
+		return fmt.Errorf("still running after 2m")
 	}
 }
