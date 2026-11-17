@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"time"
 
 	"cogentcore.org/core/base/errors"
@@ -287,6 +288,9 @@ func (sr *Simmer) MakeToolbar(p *tree.Plan) {
 	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(sr.PlotMean).SetIcon(icons.ShowChart)
+		w.OnFirst(events.Click, func(e events.Event) {
+			w.Args[0].SetValue(slices.Clone(sr.Project.GroupColumns)) // prompt with the saved columns
+		})
 	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(sr.Cancel).SetIcon(icons.Refresh)

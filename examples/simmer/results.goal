@@ -9,6 +9,7 @@ import (
 	"maps"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 
 	"cogentcore.org/core/base/fsx"
@@ -160,9 +161,11 @@ func (sr *Simmer) Plot() { //types:add
 }
 
 // PlotMean concatenates selected Results data files and generates a plot
-// of the resulting data, computing the mean over the values in 
-// [Project.GroupColumns] to group values (e.g., across Epochs).
-func (sr *Simmer) PlotMean() { //types:add
+// of the resulting data, computing the mean over the values in the
+// given group columns to group values (e.g., across Epochs). Different
+// result files need different group columns: the columns are saved in
+// [Project.GroupColumns], which is the default for the next time.
+func (sr *Simmer) PlotMean(groupColumns []string) { //types:add
 	ts := sr.Tabs.AsLab()
 	tv := sr.ResultsTableView
 	if tv == nil {
@@ -174,8 +177,23 @@ func (sr *Simmer) PlotMean() { //types:add
 		core.MessageSnackbar(sr, "PlotMean: No Results rows selected")
 		return
 	}
-	nc := len(sr.Project.GroupColumns)
-	rdir := "Stats/" + sr.Project.GroupColumns[nc-1] // results dir
+	nc := len(groupColumns)
+	if nc == 0 {
+		core.MessageSnackbar(sr, "PlotMean: no group columns given")
+		return
+	}
+	for _, i := range jis {
+		rdt := sr.ResultsList[i].Table
+		for _, gc := range groupColumns {
+			if rdt.Column(gc) == nil {
+				core.MessageSnackbar(sr, fmt.Sprintf("PlotMean: group column %q not found in %s", gc, sr.ResultsList[i].Path))
+				return
+			}
+		}
+	}
+	sr.Project.GroupColumns = slices.Clone(groupColumns)
+	sr.SaveProject()
+	rdir := "Stats/" + groupColumns[nc-1] // results dir
 	var AggTable *table.Table
 	for _, i := range jis {
 		res := sr.ResultsList[i]
@@ -183,7 +201,7 @@ func (sr *Simmer) PlotMean() { //types:add
 		label := res.Label
 		dir, _ := tensorfs.NewDir("root")
 		rdt := res.Table
-		stats.TableGroups(dir, rdt, sr.Project.GroupColumns...)
+		stats.TableGroups(dir, rdt, groupColumns...)
 		var fcols []string
 		for ci, cl := range rdt.Columns.Values {
 			if cl.DataType() != reflect.Float32 && cl.DataType() != reflect.Float64 {
