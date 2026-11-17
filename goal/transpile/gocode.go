@@ -275,9 +275,12 @@ func (gc *GoCode) ToGoal(pos textpos.Pos) (textpos.Pos, bool) {
 	if c == 0 {
 		return textpos.Pos{Line: ln}, true
 	}
-	// at the offset of the position in the Go code of its token
+	// at the offset of the position in the Go code of its token, which
+	// starts after any space before it: a space can have the column of
+	// the token after it, as before a type, which put the tokens of the
+	// type one character after their source (as semantic tokens)
 	i0 := i
-	for i0 > 0 && sl.Cols[i0-1] == c {
+	for i0 > 0 && sl.Cols[i0-1] == c && gtxt[i0-1] != ' ' {
 		i0--
 	}
 	b := min(int(c)-1+i-i0, len(sl.Src))
