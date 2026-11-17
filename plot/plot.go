@@ -108,6 +108,14 @@ type PlotStyle struct { //types:add -setters
 	// overall Plot level, for elements that plot points (e.g., plots.XY).
 	PointsOn DefaultOffOn
 
+	// NegativeX determines whether lines that connect points with a negative
+	// X-axis direction are drawn by default at the overall Plot level, for
+	// elements that plot lines (e.g., plots.XY); otherwise there is a break
+	// in the line. It is off by default, so that repeated series of data
+	// across the X axis are plotted separately. [LineStyle.NegativeX]
+	// overrides it for an element.
+	NegativeX bool
+
 	// OutOfRange specifies how to handle out-of-range values, when a
 	// range has been set with fixed Min or Max values that exclude some
 	// data points.

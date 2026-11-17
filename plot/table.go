@@ -354,3 +354,50 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 // 	}
 // 	plt.NominalX(vals...)
 // }
+
+// SetPlotters sets the [Style.Plotter] type of all the columns of
+// the given table that hold numbers (not strings) to the given type,
+// via a [Styler] added to each, e.g., to switch a whole plot from
+// XY to Bar. The [plotcore.Editor] has its own version that operates
+// on its column styles.
+func SetPlotters(dt *table.Table, ptyp PlotterName) {
+	for _, cl := range dt.Columns.Values {
+		if cl.IsString() {
+			continue
+		}
+		Styler(cl, func(s *Style) {
+			s.Plotter = ptyp
+		})
+	}
+}
+
+// SetXAxis sets the column of the given name in the given table to be
+// the X axis of the plot, via [Styler] functions that set its [Style.Role]
+// to [X] and the [XAxisStyle.Column] of the overall plot style to it.
+// Any other column with the X role is changed to the Y role.
+// Returns an error if the column is not found.
+func SetXAxis(dt *table.Table, column string) error {
+	ci := dt.Columns.IndexByKey(column)
+	if ci < 0 {
+		return fmt.Errorf("plot.SetXAxis: column %q not found", column)
+	}
+	for i, cl := range dt.Columns.Values {
+		if i == ci {
+			continue
+		}
+		st := NewStyle()
+		if sty := GetStylers(cl); sty != nil {
+			sty.Run(st)
+		}
+		if st.Role == X {
+			Styler(cl, func(s *Style) {
+				s.Role = Y
+			})
+		}
+	}
+	Styler(dt.Columns.Values[ci], func(s *Style) {
+		s.Role = X
+		s.Plot.XAxis.Column = column
+	})
+	return nil
+}

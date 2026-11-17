@@ -232,8 +232,15 @@ func TestLine(t *testing.T) {
 
 		l1.Style.Line.Step = plot.NoStep
 		l1.Style.Line.Fill = nil
-		l1.Style.Line.NegativeX = true
+		l1.Style.Line.NegativeX = plot.On
 		imagex.Assert(t, plt.RenderImage(), "line-negx"+suffix)
+
+		// the default of the plot, overridden by the line
+		l1.Style.Line.NegativeX = plot.Default
+		l1.Styler(func(s *plot.Style) { s.Plot.NegativeX = true })
+		imagex.Assert(t, plt.RenderImage(), "line-negx"+suffix)
+		l1.Style.Line.NegativeX = plot.Off
+		imagex.Assert(t, plt.RenderImage(), "line"+suffix)
 	}
 }
 

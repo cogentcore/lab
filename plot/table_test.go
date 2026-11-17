@@ -250,3 +250,39 @@ func TestTablePlotErrors(t *testing.T) {
 	require.NotNil(t, plt)
 	assert.Empty(t, plt.Plotters)
 }
+
+// TestSetPlottersXAxis tests switching the type of plot of all the
+// columns that hold numbers, and setting the X axis column.
+func TestSetPlottersXAxis(t *testing.T) {
+	dt := testTable()
+	styleCol(dt, "X", func(s *Style) { s.Role = X })
+	styleCol(dt, "Y1", func(s *Style) {
+		s.On = true
+		s.Role = Y
+	})
+	styleCol(dt, "Y2", func(s *Style) {
+		s.On = true
+		s.Role = Y
+	})
+	SetPlotters(dt, "Bar")
+	for _, name := range []string{"X", "X2", "Y1", "Y2"} {
+		st := NewStyle()
+		sty := GetStylers(dt.Columns.At(name))
+		sty.Run(st)
+		assert.Equal(t, PlotterName("Bar"), st.Plotter, name)
+	}
+	assert.Nil(t, GetStylers(dt.Columns.At("Name")), "a string column")
+
+	assert.Error(t, SetXAxis(dt, "Nope"))
+	require.NoError(t, SetXAxis(dt, "X2"))
+	st := NewStyle()
+	sty := GetStylers(dt.Columns.At("X"))
+	sty.Run(st)
+	assert.Equal(t, Y, st.Role, "the former x axis")
+	plt, err := NewTablePlot(dt)
+	require.NoError(t, err)
+	d, _, _ := plt.Plotters[0].Data()
+	assert.Equal(t, 50.0, d[X].Float1D(5))
+	plt.applyStyle()
+	assert.Equal(t, "X2", plt.X.Label.Text)
+}

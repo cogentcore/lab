@@ -295,7 +295,7 @@ func (ln *XY) Plot(plt *plot.Plot) {
 					hasPrev = true
 				}
 			}
-			if !hasPrev || (!ln.Style.Line.NegativeX && ptx < prevX) {
+			if !hasPrev || (!ln.Style.Line.NegativeXOn(&plt.Style) && ptx < prevX) {
 				hasPrev = true
 				pc.MoveTo(ptx, pty)
 			} else {

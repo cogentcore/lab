@@ -662,3 +662,20 @@ func TestEnums(t *testing.T) {
 	enumRoundTrip(t, DefaultOffOnValues())
 	enumRoundTrip(t, OutOfRangeValues())
 }
+
+// TestNegativeXOn tests the NegativeX of a line, with the default
+// from the plot style.
+func TestNegativeXOn(t *testing.T) {
+	var ps PlotStyle
+	ps.Defaults()
+	var ls LineStyle
+	ls.Defaults()
+	assert.False(t, ls.NegativeXOn(&ps), "off by default")
+	ps.NegativeX = true
+	assert.True(t, ls.NegativeXOn(&ps), "from the plot")
+	ls.NegativeX = Off
+	assert.False(t, ls.NegativeXOn(&ps))
+	ps.NegativeX = false
+	ls.NegativeX = On
+	assert.True(t, ls.NegativeXOn(&ps))
+}

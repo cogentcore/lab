@@ -36,9 +36,9 @@ type LineStyle struct { //types:add -setters
 
 	// NegativeX specifies whether to draw lines that connect points with a negative
 	// X-axis direction; otherwise there is a break in the line.
-	// default is false, so that repeated series of data across the X axis
-	// are plotted separately.
-	NegativeX bool
+	// Default uses the [PlotStyle.NegativeX] of the plot, which is off by default,
+	// so that repeated series of data across the X axis are plotted separately.
+	NegativeX DefaultOffOn
 
 	// Step specifies how to step the line between points.
 	Step StepKind
@@ -47,6 +47,16 @@ type LineStyle struct { //types:add -setters
 func (ls *LineStyle) Defaults() {
 	ls.Color = colors.Scheme.OnSurface
 	ls.Width.Pt(1)
+}
+
+// NegativeXOn returns whether to draw lines that connect points with a
+// negative X-axis direction, from [LineStyle.NegativeX], or the
+// [PlotStyle.NegativeX] of the given plot style if it is Default.
+func (ls *LineStyle) NegativeXOn(ps *PlotStyle) bool {
+	if ls.NegativeX == Default {
+		return ps.NegativeX
+	}
+	return ls.NegativeX == On
 }
 
 // SpacedColor sets the Color to a default spaced color based on index,
