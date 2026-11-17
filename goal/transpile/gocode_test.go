@@ -73,6 +73,41 @@ func TestTranspileGoPackage(t *testing.T) {
 	assert.Equal(t, textpos.Pos{Line: 5, Char: 5}, p)
 }
 
+// TestTranspileGoTokenStart tests that the tokens after a space that has
+// the column of the token after it, as before a type, and the & that the
+// Go code has spaces around, are at their positions in the source. They
+// were one character after them, as the semantic tokens of Goal files.
+func TestTranspileGoTokenStart(t *testing.T) {
+	src := "package x\n\nfunc f(a *T, b uint32) {\n\tvar caP, caD float32\n\tg(a, &caP, &caD)\n}\n"
+	gc := TranspileGo(src, filepath.Join(t.TempDir(), "test.go"), GoOptions{})
+	toGoal := func(goLine int, tok string, n int) textpos.Pos {
+		ln := gc.Offset + goLine
+		i := 0
+		for range n { // the nth occurrence of tok
+			i += strings.Index(gc.Lines[ln][i:], tok) + 1
+		}
+		p, ok := gc.ToGoal(textpos.Pos{Line: ln, Char: i - 1})
+		assert.True(t, ok)
+		return p
+	}
+	srcPos := func(line int, tok string, n int) textpos.Pos {
+		sl := strings.Split(src, "\n")[line]
+		i := 0
+		for range n {
+			i += strings.Index(sl[i:], tok) + 1
+		}
+		return textpos.Pos{Line: line, Char: i - 1}
+	}
+	for _, c := range []struct {
+		line int
+		tok  string
+		n    int
+	}{{2, "*", 1}, {2, "T", 1}, {2, "uint32", 1}, {3, "float32", 1}, {3, "caD", 1},
+		{4, "&", 1}, {4, "caP", 1}, {4, "&", 2}, {4, "caD", 1}} {
+		assert.Equal(t, srcPos(c.line, c.tok, c.n), toGoal(c.line, c.tok, c.n), "%s %d on line %d", c.tok, c.n, c.line)
+	}
+}
+
 func TestTranspileGoErrors(t *testing.T) {
 	src := "x := 1\nfor {\n"
 	gc := TranspileGo(src, filepath.Join(t.TempDir(), "test.go"), GoOptions{FindImports: true, Imports: []string{`"fmt"`}})

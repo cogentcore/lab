@@ -1,7 +1,7 @@
 codeberg.org/go-pdf/fpdf v0.11.1 h1:U8+coOTDVLxHIXZgGvkfQEi/q0hYHYvEHFuGNX2GzGs=
 codeberg.org/go-pdf/fpdf v0.11.1/go.mod h1:Y0DGRAdZ0OmnZPvjbMp/1bYxmIPxm0ws4tfoPOc4LjU=
-cogentcore.org/core v0.5.39 h1:vLuaCt4EsymcoD6/+FjUcA/ocEmRNszka0X3Vmqs5/Y=
-cogentcore.org/core v0.5.39/go.mod h1:UBL5a8xXnSCCjbH8SX6CY4JvMqoP7M3QMFoC22Q6rd4=
+cogentcore.org/core v0.5.42 h1:W9OWT+1UHSklBsv5rHUzRBB2humfyI7urewDLqdT9+E=
+cogentcore.org/core v0.5.42/go.mod h1:UBL5a8xXnSCCjbH8SX6CY4JvMqoP7M3QMFoC22Q6rd4=
 git.sr.ht/~sbinet/cmpimg v0.1.0 h1:E0zPRk2muWuCqSKSVZIWsgtU9pjsw3eKHi8VmQeScxo=
 git.sr.ht/~sbinet/cmpimg v0.1.0/go.mod h1:FU12psLbF4TfNXkKH2ZZQ29crIqoiqTZmeQ7dkp/pxE=
 git.sr.ht/~sbinet/overlayfs v0.1.1 h1:HvCHXT1cs8RMSjNLQXxPPosB2hgR3tRC8RniH0f3ESg=
@@ -273,10 +273,12 @@ golang.org/x/tools v0.51.0/go.mod h1:9eEncMayCV6zRMGhR5eZEC2iBx98qWcF1HZ9Z7wJOoA
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 gonum.org/v1/gonum v0.17.0 h1:VbpOemQlsSMrYmn7T2OUvQ4dqxQXU+ouZFQsZOx50z4=
 gonum.org/v1/gonum v0.17.0/go.mod h1:El3tOrEuMpv2UdMrbNlKEh9vd86bmQ6vqIcDwxEOc1E=
-google.golang.org/genproto v0.0.0-20261110000943-09e21b237f2c h1:4nfdocNgwiZ3kcGvgxucXk/gTqG6kCkbel7m0iP5oOc=
-google.golang.org/genproto v0.0.0-20261110000943-09e21b237f2c/go.mod h1:8uJkuAUFkZ0SrS8jn4wEa0mj+e9ghn2dylqpGHbOt9A=
+google.golang.org/genproto v0.0.0-20261116203732-fd2c7689a808 h1:6aHJHyVLHur/B8smoA7laKyrb928vSFWpJ7u9SwAPH4=
+google.golang.org/genproto v0.0.0-20261116203732-fd2c7689a808/go.mod h1:mTIfZoZKf1iZ/beiQw+XCJYfyibuS8HGUaMbxSsBo7o=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20261104224025-d1e00e9f33ab h1:8sYjjefPfQ+FZEh1ZwBAqK/NifJVhOxut8nRh3SJzZM=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20261104224025-d1e00e9f33ab/go.mod h1:OaIUM3+LpYcK2GXM4FTmhWoIq371Owdr+Cc7/BsYHHc=
+google.golang.org/genproto/googleapis/rpc v0.0.0-20261110000943-09e21b237f2c h1:XXChExL+Tm7Ubp0x0VXUEncPLHrkXIgoVWqnxmKNbAA=
+google.golang.org/genproto/googleapis/rpc v0.0.0-20261110000943-09e21b237f2c/go.mod h1:OaIUM3+LpYcK2GXM4FTmhWoIq371Owdr+Cc7/BsYHHc=
 google.golang.org/grpc v1.84.0 h1:soMyaPJ8pAak5PIQ0DGBUir0XRo2fRoMqhNWMLlLxO0=
 google.golang.org/grpc v1.84.0/go.mod h1:ljCht0DrxQrXBDRTZp52Qxh3Ffk8CdYm2sj4O2QN2C0=
 google.golang.org/protobuf v1.36.12 h1:pJOKDDOyeXErUroCihFAd5LQuwXBSpVnKGrj5o/fwxc=
