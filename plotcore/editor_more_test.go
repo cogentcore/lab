@@ -6,7 +6,9 @@ package plotcore
 
 import (
 	"cogentcore.org/core/colors"
+	"cogentcore.org/core/styles"
 	"cogentcore.org/core/tree"
+	"fmt"
 	"image"
 	"os"
 	"path/filepath"
@@ -122,7 +124,7 @@ func TestEditorColumns(t *testing.T) {
 		require.NotNil(t, pl.plot)
 		assert.Equal(t, 2, uniquePlotters(pl.plot))
 
-		core.ButtonByText(pl.columnsFrame, "Clear").Send(events.Click)
+		core.ButtonByText(pl, "Clear").Send(events.Click)
 		assert.False(t, columnStyle(pl, "Y1").On, "the first column")
 		assert.False(t, columnStyle(pl, "Y2").On)
 
@@ -157,7 +159,7 @@ func TestEditorClearFirst(t *testing.T) {
 	pl.SetTable(dt)
 	core.RenderImage(b, core.Locked(b, func() {
 		assert.True(t, columnStyle(pl, "A").On)
-		core.ButtonByText(pl.columnsFrame, "Clear").Send(events.Click)
+		core.ButtonByText(pl, "Clear").Send(events.Click)
 		assert.False(t, columnStyle(pl, "A").On)
 		assert.False(t, columnSwitch(pl, "A").IsChecked())
 	}))
@@ -659,4 +661,34 @@ func TestEditorTypeMenu(t *testing.T) {
 			assert.Equal(t, []string{"Default", "Bar", "Labels", "XErrorBars", "XY", "YErrorBars"}, texts)
 		})()
 	})
+}
+
+// TestEditorColumnsHeader tests that the buttons for all the columns stay
+// in place above the columns, which scroll.
+func TestEditorColumnsHeader(t *testing.T) {
+	dt := table.New("Many")
+	for i := range 40 {
+		dt.AddFloat64Column(fmt.Sprintf("Col%02d", i))
+	}
+	dt.SetNumRows(3)
+	b := core.NewBody()
+	pl := NewEditor(b)
+	pl.Styler(func(s *styles.Style) {
+		s.Min.X.Dp(600)
+		s.Max.Y.Dp(400)
+	})
+	pl.SetTable(dt)
+	var clearY, colY int
+	core.AssertRender(t, b, "columns-header", core.Locked(b, func() {
+		clear := core.ButtonByText(pl, "Clear")
+		require.NotNil(t, clear)
+		assert.NotEqual(t, pl.columnsFrame, clear.Parent, "not in the scrolling columns")
+		clearY = clear.Geom.TotalBBox.Min.Y
+		colY = core.ButtonByText(pl.columnsFrame, "Col00").Geom.TotalBBox.Min.Y
+		assert.True(t, pl.columnsFrame.HasScroll[math32.Y], "the columns scroll")
+		pl.columnsFrame.ScrollDimToContentEnd(math32.Y)
+	}), core.Locked(b, func() {
+		assert.Equal(t, clearY, core.ButtonByText(pl, "Clear").Geom.TotalBBox.Min.Y, "in place")
+		assert.Less(t, core.ButtonByText(pl.columnsFrame, "Col00").Geom.TotalBBox.Min.Y, colY, "scrolled")
+	}))
 }

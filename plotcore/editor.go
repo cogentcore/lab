@@ -129,8 +129,9 @@ func (pl *Editor) Init() {
 			pl.plotStyleFromTable()
 		}
 	})
-	tree.AddChildAt(pl, "columns", func(w *core.Frame) {
-		pl.columnsFrame = w
+	// the buttons for all the columns are in a header that stays in place,
+	// above the columns, which scroll
+	tree.AddChildAt(pl, "columns-panel", func(w *core.Frame) {
 		w.Styler(func(s *styles.Style) {
 			s.Direction = styles.Column
 			s.Background = colors.Scheme.SurfaceContainerLow
@@ -138,10 +139,23 @@ func (pl *Editor) Init() {
 				s.Grow.Set(1, 0)
 			} else {
 				s.Grow.Set(0, 1)
-				s.Overflow.Y = styles.OverflowAuto
 			}
 		})
-		w.Maker(pl.makeColumns)
+		tree.AddChildAt(w, "columns-header", func(w *core.Frame) {
+			pl.makeColumnsHeader(w)
+		})
+		tree.AddChildAt(w, "separator", func(w *core.Separator) {})
+		tree.AddChildAt(w, "columns", func(w *core.Frame) {
+			pl.columnsFrame = w
+			w.Styler(func(s *styles.Style) {
+				s.Direction = styles.Column
+				if w.SizeClass() != core.SizeCompact {
+					s.Grow.Set(1, 1) // the width of the header too
+					s.Overflow.Y = styles.OverflowAuto
+				}
+			})
+			w.Maker(pl.makeColumns)
+		})
 	})
 	tree.AddChildAt(pl, "plot", func(w *Plot) {
 		pl.plotWidget = w
@@ -337,17 +351,9 @@ func (pl *Editor) genPlot() {
 	pl.inPlot = false
 }
 
-// plotColumnsHeaderN is the number of children of the columns frame
-// before the columns: the frame of the buttons and the separator.
-const plotColumnsHeaderN = 2
-
 // allColumnsOff turns all columns off.
 func (pl *Editor) allColumnsOff() {
-	fr := pl.columnsFrame
-	for i, cli := range fr.Children {
-		if i < plotColumnsHeaderN {
-			continue
-		}
+	for _, cli := range pl.columnsFrame.Children {
 		cl := cli.(*core.Frame)
 		sw := cl.Child(0).(*core.Switch)
 		sw.SetChecked(false)
@@ -359,11 +365,7 @@ func (pl *Editor) allColumnsOff() {
 // setColumnsByName turns columns on or off if their name contains
 // the given string.
 func (pl *Editor) setColumnsByName(nameContains string, on bool) { //types:add
-	fr := pl.columnsFrame
-	for i, cli := range fr.Children {
-		if i < plotColumnsHeaderN {
-			continue
-		}
+	for _, cli := range pl.columnsFrame.Children {
 		cl := cli.(*core.Frame)
 		if !strings.Contains(cl.Name, nameContains) {
 			continue
@@ -375,27 +377,29 @@ func (pl *Editor) setColumnsByName(nameContains string, on bool) { //types:add
 	pl.Update()
 }
 
-// makeColumns makes the Plans for columns
-func (pl *Editor) makeColumns(p *tree.Plan) {
-	tree.Add(p, func(w *core.Frame) {
-		tree.AddChild(w, func(w *core.Button) {
-			w.SetText("Clear").SetIcon(icons.ClearAll).SetType(core.ButtonAction)
-			w.SetTooltip("Turn all columns off")
-			w.OnClick(func(e events.Event) {
-				pl.allColumnsOff()
-			})
-		})
-		tree.AddChild(w, func(w *core.Button) {
-			w.SetText("Search").SetIcon(icons.Search).SetType(core.ButtonAction)
-			w.SetTooltip("Select columns by column name")
-			w.OnClick(func(e events.Event) {
-				core.CallFunc(pl, pl.setColumnsByName)
-			})
+// makeColumnsHeader makes the buttons for all the columns, in the given
+// header above them.
+func (pl *Editor) makeColumnsHeader(w *core.Frame) {
+	tree.AddChild(w, func(w *core.Button) {
+		w.SetText("Clear").SetIcon(icons.ClearAll).SetType(core.ButtonAction)
+		w.SetTooltip("Turn all columns off")
+		w.OnClick(func(e events.Event) {
+			pl.allColumnsOff()
 		})
 	})
+	tree.AddChild(w, func(w *core.Button) {
+		w.SetText("Search").SetIcon(icons.Search).SetType(core.ButtonAction)
+		w.SetTooltip("Select columns by column name")
+		w.OnClick(func(e events.Event) {
+			core.CallFunc(pl, pl.setColumnsByName)
+		})
+	})
+}
+
+// makeColumns makes the Plans for columns
+func (pl *Editor) makeColumns(p *tree.Plan) {
 	hasSplit := false // split uses different color styling
 	colorIdx := 0     // index for color sequence -- skips various types
-	tree.Add(p, func(w *core.Separator) {})
 	if pl.table == nil {
 		return
 	}
