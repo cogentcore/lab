@@ -27,10 +27,14 @@ func (fc *PlotterChooser) Init() {
 	fc.Chooser.Init()
 	pnms := maps.Keys(plot.Plotters)
 	slices.Sort(pnms)
-	// the items are PlotterNames, as the value, so that it is found in them
-	items := make([]core.ChooserItem, len(pnms))
+	// the items are PlotterNames, as the value, so that it is found in them;
+	// the first is the blank default
+	items := make([]core.ChooserItem, len(pnms)+1)
+	items[0] = core.ChooserItem{Value: plot.PlotterName(""), Text: "Default",
+		Tooltip: "the default: the Plotter of the plot Style for numbers (XY unless set there), Labels for strings"}
 	for i, nm := range pnms {
-		items[i].Value = plot.PlotterName(nm)
+		items[i+1].Value = plot.PlotterName(nm)
+		items[i+1].Tooltip = plot.Plotters[nm].Doc
 	}
 	fc.SetItems(items...)
 }

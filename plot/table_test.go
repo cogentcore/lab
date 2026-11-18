@@ -264,12 +264,15 @@ func TestSetPlottersXAxis(t *testing.T) {
 		s.On = true
 		s.Role = Y
 	})
+	styleCol(dt, "Y2", func(s *Style) { s.Plotter = "XY" })
 	SetPlotters(dt, "Bar")
 	for _, name := range []string{"X", "X2", "Y1", "Y2"} {
 		st := NewStyle()
 		sty := GetStylers(dt.Columns.At(name))
 		sty.Run(st)
-		assert.Equal(t, PlotterName("Bar"), st.Plotter, name)
+		assert.Equal(t, PlotterName(""), st.Plotter, name)
+		assert.Equal(t, PlotterName("Bar"), st.Plot.Plotter, name)
+		assert.Equal(t, PlotterName("Bar"), st.PlotterOrDefault(false, &st.Plot), name)
 	}
 	assert.Nil(t, GetStylers(dt.Columns.At("Name")), "a string column")
 
@@ -285,4 +288,36 @@ func TestSetPlottersXAxis(t *testing.T) {
 	assert.Equal(t, 50.0, d[X].Float1D(5))
 	plt.applyStyle()
 	assert.Equal(t, "X2", plt.X.Label.Text)
+}
+
+// TestPlotStylePlotter tests that the Plotter of the PlotStyle is the
+// default type of plotter for the columns of numbers, which their own
+// Plotter overrides, and that strings default to Labels.
+func TestPlotStylePlotter(t *testing.T) {
+	st := NewStyle()
+	assert.Equal(t, PlotterName("XY"), st.PlotterOrDefault(false, nil))
+	assert.Equal(t, PlotterName("Labels"), st.PlotterOrDefault(true, &PlotStyle{Plotter: "Bar"}))
+	assert.Equal(t, PlotterName("Bar"), st.PlotterOrDefault(false, &PlotStyle{Plotter: "Bar"}))
+	st.Plotter = "XY"
+	assert.Equal(t, PlotterName("XY"), st.PlotterOrDefault(false, &PlotStyle{Plotter: "Bar"}))
+
+	// the plot style set by one column applies to all of them
+	dt := testTable()
+	styleCol(dt, "X", func(s *Style) {
+		s.Role = X
+		s.Plot.Plotter = "TestPoints"
+	})
+	for _, name := range []string{"Y1", "Y2"} {
+		styleCol(dt, name, func(s *Style) {
+			s.On = true
+			s.Role = Y
+		})
+	}
+	plt, err := NewTablePlot(dt)
+	require.NoError(t, err)
+	require.Len(t, plt.Plotters, 2)
+	for _, pt := range plt.Plotters {
+		_, ok := pt.(*testPlotter)
+		assert.True(t, ok)
+	}
 }

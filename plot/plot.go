@@ -84,6 +84,13 @@ type PlotStyle struct { //types:add -setters
 	// Legend has the styling properties for the Legend.
 	Legend LegendStyle `display:"add-fields"`
 
+	// Plotter is the default type of plotter for the columns of numbers in
+	// [NewTablePlot] [table.Table] driven plots, used for those whose own
+	// [Style.Plotter] is blank, so that it changes the type of plot of all
+	// of them, e.g., from XY to Bar. Blank means XY. Columns of strings
+	// default to Labels.
+	Plotter PlotterName
+
 	// Axis has the styling properties for the Axis associated with this Data.
 	Axis AxisStyle `display:"add-fields"`
 

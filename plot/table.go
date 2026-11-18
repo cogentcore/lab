@@ -114,10 +114,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		if gp != "" {
 			doneGps[gp] = true
 		}
-		ptyp := "XY"
-		if st.Plotter != "" {
-			ptyp = string(st.Plotter)
-		}
+		ptyp := string(st.PlotterOrDefault(cl.IsString(), &psty))
 		pt, err := PlotterByType(ptyp)
 		if err != nil {
 			errs = append(errs, err)
@@ -355,18 +352,20 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 // 	plt.NominalX(vals...)
 // }
 
-// SetPlotters sets the [Style.Plotter] type of all the columns of
-// the given table that hold numbers (not strings) to the given type,
-// via a [Styler] added to each, e.g., to switch a whole plot from
-// XY to Bar. The [plotcore.Editor] has its own version that operates
-// on its column styles.
+// SetPlotters sets the default type of plotter of the columns of the
+// given table that hold numbers (not strings) to the given type, e.g., to
+// switch a whole plot from XY to Bar: the [PlotStyle.Plotter], via a
+// [Styler] added to each of them, which also clears their own
+// [Style.Plotter] so that they use it. The [plotcore.Editor] has its own
+// version that operates on its styles.
 func SetPlotters(dt *table.Table, ptyp PlotterName) {
 	for _, cl := range dt.Columns.Values {
 		if cl.IsString() {
 			continue
 		}
 		Styler(cl, func(s *Style) {
-			s.Plotter = ptyp
+			s.Plot.Plotter = ptyp
+			s.Plotter = ""
 		})
 	}
 }

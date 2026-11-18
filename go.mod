@@ -2,13 +2,8 @@ module cogentcore.org/lab
 
 go 1.27.0
 
-// after go mod tidy, you need to run:
-// go get google.golang.org/genproto@latest
-// otherwise there will be an ambiguous import warning when building baremetal
-// https://github.com/googleapis/go-genproto/issues/1015
-
 require (
-	cogentcore.org/core v0.5.43
+	cogentcore.org/core v0.5.44
 	github.com/cogentcore/mvm v0.0.0-20261026193832-5ebd19c3fa21
 	github.com/cogentcore/readline v0.1.3
 	github.com/hack-pad/hackpadfs v0.2.4
@@ -22,8 +17,6 @@ require (
 	golang.org/x/term v0.47.0
 	golang.org/x/tools v0.51.0
 	gonum.org/v1/gonum v0.17.0
-	google.golang.org/grpc v1.84.0
-	google.golang.org/protobuf v1.36.12
 )
 
 require (
@@ -57,6 +50,7 @@ require (
 	github.com/go-gl/glfw/v3.4/glfw v0.1.0-pre.1.0.20260628091122-0bd588dc30cf // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/hack-pad/go-indexeddb v0.3.2 // indirect
@@ -89,8 +83,6 @@ require (
 	golang.org/x/net v0.61.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
-	google.golang.org/genproto v0.0.0-20261116203732-fd2c7689a808 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20261110000943-09e21b237f2c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/knuth v0.5.5 // indirect
 	modernc.org/token v1.1.0 // indirect

@@ -1,5 +1,0 @@
-[[Servers.Values]]
-	Name = "hpc2"
-	SSH = "hpc2.engr.ucdavis.edu"
-	NGPUs = 2
-

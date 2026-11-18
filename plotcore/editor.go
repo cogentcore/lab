@@ -129,8 +129,9 @@ func (pl *Editor) Init() {
 			pl.plotStyleFromTable()
 		}
 	})
-	tree.AddChildAt(pl, "columns", func(w *core.Frame) {
-		pl.columnsFrame = w
+	// the buttons for all the columns are in a header that stays in place,
+	// above the columns, which scroll
+	tree.AddChildAt(pl, "columns-panel", func(w *core.Frame) {
 		w.Styler(func(s *styles.Style) {
 			s.Direction = styles.Column
 			s.Background = colors.Scheme.SurfaceContainerLow
@@ -138,10 +139,23 @@ func (pl *Editor) Init() {
 				s.Grow.Set(1, 0)
 			} else {
 				s.Grow.Set(0, 1)
-				s.Overflow.Y = styles.OverflowAuto
 			}
 		})
-		w.Maker(pl.makeColumns)
+		tree.AddChildAt(w, "columns-header", func(w *core.Frame) {
+			pl.makeColumnsHeader(w)
+		})
+		tree.AddChildAt(w, "separator", func(w *core.Separator) {})
+		tree.AddChildAt(w, "columns", func(w *core.Frame) {
+			pl.columnsFrame = w
+			w.Styler(func(s *styles.Style) {
+				s.Direction = styles.Column
+				if w.SizeClass() != core.SizeCompact {
+					s.Grow.Set(1, 1) // the width of the header too
+					s.Overflow.Y = styles.OverflowAuto
+				}
+			})
+			w.Maker(pl.makeColumns)
+		})
 	})
 	tree.AddChildAt(pl, "plot", func(w *Plot) {
 		pl.plotWidget = w
@@ -337,17 +351,9 @@ func (pl *Editor) genPlot() {
 	pl.inPlot = false
 }
 
-// plotColumnsHeaderN is the number of children of the columns frame
-// before the columns: the frame of the buttons and the separator.
-const plotColumnsHeaderN = 2
-
 // allColumnsOff turns all columns off.
 func (pl *Editor) allColumnsOff() {
-	fr := pl.columnsFrame
-	for i, cli := range fr.Children {
-		if i < plotColumnsHeaderN {
-			continue
-		}
+	for _, cli := range pl.columnsFrame.Children {
 		cl := cli.(*core.Frame)
 		sw := cl.Child(0).(*core.Switch)
 		sw.SetChecked(false)
@@ -359,11 +365,7 @@ func (pl *Editor) allColumnsOff() {
 // setColumnsByName turns columns on or off if their name contains
 // the given string.
 func (pl *Editor) setColumnsByName(nameContains string, on bool) { //types:add
-	fr := pl.columnsFrame
-	for i, cli := range fr.Children {
-		if i < plotColumnsHeaderN {
-			continue
-		}
+	for _, cli := range pl.columnsFrame.Children {
 		cl := cli.(*core.Frame)
 		if !strings.Contains(cl.Name, nameContains) {
 			continue
@@ -375,27 +377,29 @@ func (pl *Editor) setColumnsByName(nameContains string, on bool) { //types:add
 	pl.Update()
 }
 
-// makeColumns makes the Plans for columns
-func (pl *Editor) makeColumns(p *tree.Plan) {
-	tree.Add(p, func(w *core.Frame) {
-		tree.AddChild(w, func(w *core.Button) {
-			w.SetText("Clear").SetIcon(icons.ClearAll).SetType(core.ButtonAction)
-			w.SetTooltip("Turn all columns off")
-			w.OnClick(func(e events.Event) {
-				pl.allColumnsOff()
-			})
-		})
-		tree.AddChild(w, func(w *core.Button) {
-			w.SetText("Search").SetIcon(icons.Search).SetType(core.ButtonAction)
-			w.SetTooltip("Select columns by column name")
-			w.OnClick(func(e events.Event) {
-				core.CallFunc(pl, pl.setColumnsByName)
-			})
+// makeColumnsHeader makes the buttons for all the columns, in the given
+// header above them.
+func (pl *Editor) makeColumnsHeader(w *core.Frame) {
+	tree.AddChild(w, func(w *core.Button) {
+		w.SetText("Clear").SetIcon(icons.ClearAll).SetType(core.ButtonAction)
+		w.SetTooltip("Turn all columns off")
+		w.OnClick(func(e events.Event) {
+			pl.allColumnsOff()
 		})
 	})
+	tree.AddChild(w, func(w *core.Button) {
+		w.SetText("Search").SetIcon(icons.Search).SetType(core.ButtonAction)
+		w.SetTooltip("Select columns by column name")
+		w.OnClick(func(e events.Event) {
+			core.CallFunc(pl, pl.setColumnsByName)
+		})
+	})
+}
+
+// makeColumns makes the Plans for columns
+func (pl *Editor) makeColumns(p *tree.Plan) {
 	hasSplit := false // split uses different color styling
 	colorIdx := 0     // index for color sequence -- skips various types
-	tree.Add(p, func(w *core.Separator) {})
 	if pl.table == nil {
 		return
 	}
@@ -423,6 +427,10 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 				mf := modFields(mods)
 				errors.Log(reflectx.CopyFields(s, cst, mf...))
 				errors.Log(reflectx.CopyFields(&s.Plot, &pl.PlotStyle, modFields(pl.plotStyleModified)...))
+				// bars are filled with the color of the column
+				if !mods["Line.Fill"] && s.PlotterOrDefault(cl.IsString(), &pl.PlotStyle) == plots.BarType {
+					s.Line.Fill = s.Line.Color
+				}
 			})
 			plot.SetStyler(cl, stys...)
 
@@ -544,26 +552,23 @@ func (pl *Editor) xAxisColumn() string {
 	return xcol
 }
 
-// SetPlotType sets the type of plot (the [plot.Style.Plotter]) of all
-// the columns that hold numbers (not strings) to the given type, e.g.,
-// to switch the plot from XY to Bar. See [plot.SetPlotters] for the
-// version for a table.
+// SetPlotType sets the type of plot of all the columns that hold numbers
+// (not strings) to the given type, e.g., to switch the plot from XY to Bar:
+// the [plot.PlotStyle.Plotter] of [Editor.PlotStyle], which is the default
+// for the columns, whose own [plot.Style.Plotter] is cleared so that they
+// use it. See [plot.SetPlotters] for the version for a table.
 func (pl *Editor) SetPlotType(plotType plot.PlotterName) { //types:add
-	isBar := plotType == plots.BarType
+	pl.PlotStyle.Plotter = plotType
+	if pl.plotStyleModified == nil {
+		pl.plotStyleModified = map[string]bool{}
+	}
+	pl.plotStyleModified["Plotter"] = true
 	for _, ec := range pl.columns {
-		if ec.isString {
+		if ec.isString || ec.style.Plotter == "" {
 			continue
 		}
-		cst := ec.style
-		cst.Plotter = plotType
+		ec.style.Plotter = ""
 		ec.mods["Plotter"] = true
-		if isBar { // bars are filled with the color of the column
-			cst.Line.Fill = cst.Line.Color
-			ec.mods["Line.Fill"] = true
-		} else if ec.mods["Line.Fill"] {
-			cst.Line.Fill = nil
-			ec.mods["Line.Fill"] = false
-		}
 	}
 	pl.UpdatePlot()
 	pl.Update()
@@ -653,12 +658,9 @@ func (pl *Editor) defaultColumnStyle(cl tensor.Values, isX bool, colorIdx *int, 
 	}
 	mods := map[string]bool{}
 	isString := cl.IsString()
-	if cst.Plotter == "" {
-		if isString {
-			cst.Plotter = plot.PlotterName(plots.LabelsType)
-		} else {
-			cst.Plotter = plot.PlotterName(plots.XYType)
-		}
+	// the plotter of numbers is the default, the PlotStyle Plotter
+	if cst.Plotter == "" && isString {
+		cst.Plotter = plot.PlotterName(plots.LabelsType)
 		mods["Plotter"] = true
 	}
 	switch {
@@ -687,10 +689,6 @@ func (pl *Editor) defaultColumnStyle(cl tensor.Values, isX bool, colorIdx *int, 
 				mods["Point.Color"] = true
 				cst.Point.Fill = clr
 				mods["Point.Fill"] = true
-				if cst.Plotter == plots.BarType {
-					cst.Line.Fill = clr
-					mods["Line.Fill"] = true
-				}
 			}
 		}
 	}
@@ -786,7 +784,14 @@ func (pl *Editor) MakeToolbar(p *tree.Plan) {
 	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(pl.SetPlotType).SetText("Type").SetIcon(icons.BarChart)
-		w.SetTooltip("Set the type of plot of all the columns that hold numbers, e.g., XY or Bar")
+		w.SetTooltip("Set the type of plot of all the columns that hold numbers, e.g., XY or Bar (the Plotter of the plot Style)")
+		w.OnFirst(events.Click, func(e events.Event) { // start with the current type
+			ptyp := pl.PlotStyle.Plotter
+			if ptyp == "" {
+				ptyp = plots.XYType
+			}
+			w.Args[0].SetValue(ptyp)
+		})
 	})
 	tree.Add(p, func(w *core.Button) {
 		w.SetText("Table").SetIcon(icons.Edit).
