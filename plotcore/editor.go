@@ -423,6 +423,10 @@ func (pl *Editor) makeColumns(p *tree.Plan) {
 				mf := modFields(mods)
 				errors.Log(reflectx.CopyFields(s, cst, mf...))
 				errors.Log(reflectx.CopyFields(&s.Plot, &pl.PlotStyle, modFields(pl.plotStyleModified)...))
+				// bars are filled with the color of the column
+				if !mods["Line.Fill"] && s.PlotterOrDefault(cl.IsString(), &pl.PlotStyle) == plots.BarType {
+					s.Line.Fill = s.Line.Color
+				}
 			})
 			plot.SetStyler(cl, stys...)
 
@@ -544,26 +548,23 @@ func (pl *Editor) xAxisColumn() string {
 	return xcol
 }
 
-// SetPlotType sets the type of plot (the [plot.Style.Plotter]) of all
-// the columns that hold numbers (not strings) to the given type, e.g.,
-// to switch the plot from XY to Bar. See [plot.SetPlotters] for the
-// version for a table.
+// SetPlotType sets the type of plot of all the columns that hold numbers
+// (not strings) to the given type, e.g., to switch the plot from XY to Bar:
+// the [plot.PlotStyle.Plotter] of [Editor.PlotStyle], which is the default
+// for the columns, whose own [plot.Style.Plotter] is cleared so that they
+// use it. See [plot.SetPlotters] for the version for a table.
 func (pl *Editor) SetPlotType(plotType plot.PlotterName) { //types:add
-	isBar := plotType == plots.BarType
+	pl.PlotStyle.Plotter = plotType
+	if pl.plotStyleModified == nil {
+		pl.plotStyleModified = map[string]bool{}
+	}
+	pl.plotStyleModified["Plotter"] = true
 	for _, ec := range pl.columns {
-		if ec.isString {
+		if ec.isString || ec.style.Plotter == "" {
 			continue
 		}
-		cst := ec.style
-		cst.Plotter = plotType
+		ec.style.Plotter = ""
 		ec.mods["Plotter"] = true
-		if isBar { // bars are filled with the color of the column
-			cst.Line.Fill = cst.Line.Color
-			ec.mods["Line.Fill"] = true
-		} else if ec.mods["Line.Fill"] {
-			cst.Line.Fill = nil
-			ec.mods["Line.Fill"] = false
-		}
 	}
 	pl.UpdatePlot()
 	pl.Update()
@@ -653,12 +654,9 @@ func (pl *Editor) defaultColumnStyle(cl tensor.Values, isX bool, colorIdx *int, 
 	}
 	mods := map[string]bool{}
 	isString := cl.IsString()
-	if cst.Plotter == "" {
-		if isString {
-			cst.Plotter = plot.PlotterName(plots.LabelsType)
-		} else {
-			cst.Plotter = plot.PlotterName(plots.XYType)
-		}
+	// the plotter of numbers is the default, the PlotStyle Plotter
+	if cst.Plotter == "" && isString {
+		cst.Plotter = plot.PlotterName(plots.LabelsType)
 		mods["Plotter"] = true
 	}
 	switch {
@@ -687,10 +685,6 @@ func (pl *Editor) defaultColumnStyle(cl tensor.Values, isX bool, colorIdx *int, 
 				mods["Point.Color"] = true
 				cst.Point.Fill = clr
 				mods["Point.Fill"] = true
-				if cst.Plotter == plots.BarType {
-					cst.Line.Fill = clr
-					mods["Line.Fill"] = true
-				}
 			}
 		}
 	}
@@ -786,7 +780,14 @@ func (pl *Editor) MakeToolbar(p *tree.Plan) {
 	})
 	tree.Add(p, func(w *core.FuncButton) {
 		w.SetFunc(pl.SetPlotType).SetText("Type").SetIcon(icons.BarChart)
-		w.SetTooltip("Set the type of plot of all the columns that hold numbers, e.g., XY or Bar")
+		w.SetTooltip("Set the type of plot of all the columns that hold numbers, e.g., XY or Bar (the Plotter of the plot Style)")
+		w.OnFirst(events.Click, func(e events.Event) { // start with the current type
+			ptyp := pl.PlotStyle.Plotter
+			if ptyp == "" {
+				ptyp = plots.XYType
+			}
+			w.Args[0].SetValue(ptyp)
+		})
 	})
 	tree.Add(p, func(w *core.Button) {
 		w.SetText("Table").SetIcon(icons.Edit).

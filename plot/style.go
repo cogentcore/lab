@@ -26,7 +26,8 @@ type Style struct { //types:add -setters
 
 	// Plotter is the type of plotter to use in plotting this data,
 	// for [plot.NewTablePlot] [table.Table] driven plots.
-	// Blank means use default ([plots.XY] is overall default).
+	// Blank means use the default: the [PlotStyle.Plotter] for numbers
+	// (XY unless set there), and Labels for strings.
 	Plotter PlotterName
 
 	// Role specifies how a particular column of data should be used,
@@ -279,4 +280,19 @@ func (or OutOfRange) HasMark() bool {
 
 func (or OutOfRange) HasBreak() bool {
 	return or == BreakMark || or == Break
+}
+
+// PlotterOrDefault returns the type of plotter to use for data with this
+// style: its [Style.Plotter] if set, and otherwise Labels for strings,
+// or the given plot style's [PlotStyle.Plotter] for numbers, or XY.
+func (st *Style) PlotterOrDefault(isString bool, ps *PlotStyle) PlotterName {
+	switch {
+	case st.Plotter != "":
+		return st.Plotter
+	case isString:
+		return "Labels"
+	case ps != nil && ps.Plotter != "":
+		return ps.Plotter
+	}
+	return "XY"
 }

@@ -5,6 +5,8 @@
 package plotcore
 
 import (
+	"cogentcore.org/core/colors"
+	"cogentcore.org/core/tree"
 	"image"
 	"os"
 	"path/filepath"
@@ -103,7 +105,7 @@ func TestEditorColumns(t *testing.T) {
 		assert.Equal(t, plot.X, x.Role)
 		y1 := columnStyle(pl, "Y1")
 		assert.Equal(t, plot.Y, y1.Role)
-		assert.Equal(t, plot.PlotterName(plots.XYType), y1.Plotter)
+		assert.Equal(t, plot.PlotterName(""), y1.Plotter, "numbers use the default, the PlotStyle Plotter")
 		assert.False(t, y1.On)
 		lb := columnStyle(pl, "Label")
 		assert.Equal(t, plot.Label, lb.Role)
@@ -374,9 +376,11 @@ func TestPlotterChooser(t *testing.T) {
 	pc, ok := w.(*PlotterChooser)
 	require.True(t, ok)
 	core.RenderImage(b, core.Locked(b, func() {
-		assert.Len(t, pc.Items, len(plot.Plotters))
+		assert.Len(t, pc.Items, len(plot.Plotters)+1, "the default and all of the plotters")
+		assert.Equal(t, plot.PlotterName(""), pc.Items[0].Value)
+		assert.Equal(t, "Default", pc.Items[0].Text)
 		assert.Equal(t, plot.PlotterName(plots.BarType), pc.CurrentItem.Value)
-		assert.Equal(t, 0, pc.CurrentIndex)
+		assert.Equal(t, 1, pc.CurrentIndex)
 		pc.SetCurrentIndex(len(pc.Items) - 1)
 		pc.SendChange()
 		assert.Equal(t, plot.PlotterName(plots.YErrorBarsType), name)
@@ -481,18 +485,31 @@ func TestEditorTypeXAxis(t *testing.T) {
 	}
 	core.AssertRender(t, b, "type-xaxis", core.Locked(b, func() {
 		require.NotNil(t, core.ButtonByText(tb, "Type"))
+		// a column set to another plotter also gets the type
+		pl.columns["Y2"].style.Plotter = plots.XErrorBarsType
+		pl.columns["Y2"].mods["Plotter"] = true
 		pl.SetPlotType(plots.BarType)
+		assert.Equal(t, plot.PlotterName(plots.BarType), pl.PlotStyle.Plotter)
 		for _, name := range []string{"Y1", "Y2"} {
-			st := columnStyle(pl, name)
-			assert.Equal(t, plot.PlotterName(plots.BarType), st.Plotter, name)
-			assert.Equal(t, st.Line.Color, st.Line.Fill, name)
+			assert.Equal(t, plot.PlotterName(""), columnStyle(pl, name).Plotter, name)
 		}
 		assert.Equal(t, plot.PlotterName(plots.LabelsType), columnStyle(pl, "Label").Plotter)
 		require.NotNil(t, pl.plot)
-		_, ok := pl.plot.Plotters[0].(*plots.Bar)
-		assert.True(t, ok, "a bar plot")
+		require.Len(t, pl.plot.Plotters, 2)
+		for _, pt := range pl.plot.Plotters {
+			_, ok := pt.(*plots.Bar)
+			assert.True(t, ok, "a bar plot")
+		}
 		core.ButtonByText(pl.columnsFrame, "X").Send(events.Click)
 	}), func() {
+		core.Locked(b, func() { // filled with the color of the column
+			for i, pt := range pl.plot.Plotters {
+				bar := pt.(*plots.Bar)
+				bar.ApplyStyle(&pl.plot.Style, i)
+				assert.NotEqual(t, colors.Scheme.OnSurface, bar.Style.Line.Color, "the color of the column")
+				assert.Equal(t, bar.Style.Line.Color, bar.Style.Line.Fill)
+			}
+		})()
 		sc := windowScene(t, "X style properties")
 		require.NotNil(t, sc)
 		core.Locked(sc, func() {
@@ -533,9 +550,11 @@ func TestEditorTypeXAxis(t *testing.T) {
 		assert.False(t, y2.On, "as its switch shows")
 
 		pl.SetPlotType(plots.XYType)
-		y1 := columnStyle(pl, "Y1")
-		assert.Equal(t, plot.PlotterName(plots.XYType), y1.Plotter)
-		assert.Nil(t, y1.Line.Fill)
+		assert.Equal(t, plot.PlotterName(plots.XYType), pl.PlotStyle.Plotter)
+		for _, pt := range pl.plot.Plotters {
+			_, ok := pt.(*plots.XY)
+			assert.True(t, ok, "back to an XY plot")
+		}
 	}))
 }
 
@@ -577,4 +596,67 @@ func TestEditorSetXIntColumns(t *testing.T) {
 		d, _, _ := pl.plot.Plotters[0].Data()
 		assert.Equal(t, 4.0, d[plot.X].Float1D(4))
 	}))
+}
+
+// TestEditorPlotStylePlotter tests that the Plotter of the plot style of
+// the editor (as set in its Style dialog) changes the type of plot of the
+// columns of numbers, whose bars are filled with the color of the column.
+func TestEditorPlotStylePlotter(t *testing.T) {
+	b := core.NewBody()
+	pl := NewEditor(b)
+	pl.SetTable(newPlotTable("Bars"))
+	core.RenderImage(b, core.Locked(b, func() {
+		// only Y2 is on: its bar is the first plotter, but its color is
+		// the second, so that the default fill of the bar would differ
+		pl.columns["Y2"].style.On = true
+		pl.columns["Y2"].mods["On"] = true
+		pl.PlotStyle.Plotter = plots.BarType
+		pl.plotStyleModified["Plotter"] = true
+		pl.UpdatePlot()
+		require.Len(t, pl.plot.Plotters, 1)
+		bar, ok := pl.plot.Plotters[0].(*plots.Bar)
+		require.True(t, ok, "a bar plot")
+		bar.ApplyStyle(&pl.plot.Style, 0)
+		assert.Equal(t, colors.Uniform(colors.Spaced(1)), bar.Style.Line.Color)
+		assert.Equal(t, bar.Style.Line.Color, bar.Style.Line.Fill)
+	}))
+}
+
+// TestEditorTypeMenu tests the menu of the type of plot that the Type
+// button prompts for: it starts with the current type, and has the
+// default and the plotters, with no blank item for an unset value.
+func TestEditorTypeMenu(t *testing.T) {
+	b := core.NewBody()
+	pl := NewEditor(b)
+	pl.SetTable(newPlotTable("Type menu"))
+	var tb *core.Toolbar
+	b.AddTopBar(func(bar *core.Frame) {
+		tb = core.NewToolbar(bar)
+		tb.Maker(pl.MakeToolbar)
+	})
+	var pc *PlotterChooser
+	core.AssertRender(t, b, "type-menu", core.Locked(b, func() {
+		core.ButtonByText(tb, "Type").Send(events.Click)
+	}), func() {
+		core.Locked(b, func() {
+			pc = findWidget[*PlotterChooser](core.TopScene(b))
+			require.NotNil(t, pc)
+			assert.Len(t, pc.Items, len(plot.Plotters)+1)
+			assert.Equal(t, plot.PlotterName(plots.XYType), pc.CurrentItem.Value, "the current type")
+			pc.Send(events.Click)
+		})()
+	}, func() {
+		core.Locked(b, func() {
+			menu := core.TopScene(b)
+			require.NotEqual(t, pc.Scene, menu, "the menu")
+			var texts []string
+			menu.WidgetWalkDown(func(cw core.Widget, cwb *core.WidgetBase) bool {
+				if bt, ok := cw.(*core.Button); ok {
+					texts = append(texts, bt.Text)
+				}
+				return tree.Continue
+			})
+			assert.Equal(t, []string{"Default", "Bar", "Labels", "XErrorBars", "XY", "YErrorBars"}, texts)
+		})()
+	})
 }
