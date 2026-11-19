@@ -168,9 +168,14 @@ func (dt *Table) SortColumnIndexes(ascending, stable bool, colIndexes ...int) *T
 	if stable {
 		sf = dt.SortStableFunc
 	}
+	// the columns, without the indexes: ColumnByIndex copies the indexes,
+	// which in the comparison function made the sort O(N^2 log N).
+	cols := make([]tensor.Values, len(colIndexes))
+	for k, ci := range colIndexes {
+		cols[k] = dt.Columns.Values[ci]
+	}
 	sf(func(dt *Table, i, j int) int {
-		for _, ci := range colIndexes {
-			cl := dt.ColumnByIndex(ci).Tensor
+		for _, cl := range cols {
 			if cl.IsString() {
 				v := tensor.CompareAscending(cl.StringRow(i, 0), cl.StringRow(j, 0), ascending)
 				if v != 0 {
