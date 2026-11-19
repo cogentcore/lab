@@ -15,6 +15,8 @@ var _ = register(func() {
 			"AxisScalesN":        reflect.ValueOf(p_cogentcore_org_lab_plot.AxisScalesN),
 			"AxisScalesValues":   reflect.ValueOf(p_cogentcore_org_lab_plot.AxisScalesValues),
 			"AxisStyle":          reflect.ValueOf((*p_cogentcore_org_lab_plot.AxisStyle)(nil)),
+			"BarPosition":        reflect.ValueOf(p_cogentcore_org_lab_plot.BarPosition),
+			"BarSeriesWidth":     reflect.ValueOf(p_cogentcore_org_lab_plot.BarSeriesWidth),
 			"BasicStylers":       reflect.ValueOf(p_cogentcore_org_lab_plot.BasicStylers),
 			"Box":                reflect.ValueOf(p_cogentcore_org_lab_plot.Box),
 			"Break":              reflect.ValueOf(p_cogentcore_org_lab_plot.Break),

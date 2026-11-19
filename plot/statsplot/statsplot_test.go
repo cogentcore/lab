@@ -61,7 +61,7 @@ func plotTable(t *testing.T, dt *table.Table, name string) *plot.Plot {
 func TestMeanError(t *testing.T) {
 	dt := resultsTable()
 	dir, _ := tensorfs.NewDir("Root")
-	me := &MeanError{X: "Epoch", Values: []string{"Err"}, Split: "Cond"}
+	me := &MeanError{X: "Epoch", Values: []Column{"Err"}, Split: "Cond"}
 	me.Defaults()
 	rt, err := me.Table(dir, dt)
 	require.NoError(t, err)
@@ -87,7 +87,7 @@ func TestMeanError(t *testing.T) {
 	plotTable(t, rt, "mean-error-bars")
 
 	// categories: bars
-	me = &MeanError{X: "Cat", Values: []string{"RT"}, Split: "Cond"}
+	me = &MeanError{X: "Cat", Values: []Column{"RT"}, Split: "Cond"}
 	rt, err = me.Table(dir, dt)
 	require.NoError(t, err)
 	assert.Equal(t, "Easy", rt.Column("Cat").String1D(0))

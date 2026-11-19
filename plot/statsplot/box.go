@@ -29,14 +29,14 @@ type Box struct { //types:add -setters
 	// Category is the column of the categories, one box for each value
 	// (e.g., the condition of a simulation): one box for all of the values
 	// if it is empty.
-	Category string
+	Category Column
 
 	// Value is the column of the values.
-	Value string
+	Value Column
 
 	// Split is an optional column whose values split the rows into
 	// separate series of boxes next to each other, each in their own columns.
-	Split string
+	Split Column
 
 	// Whisker is the extent of the whiskers, in multiples of the
 	// interquartile range from the quartiles, typically 1.5:
@@ -61,7 +61,7 @@ type boxData struct {
 }
 
 // boxData returns the data of the boxes or violins of the given columns.
-func newBoxData(dt *table.Table, category, value, split string) (*boxData, error) {
+func newBoxData(dt *table.Table, category, value, split Column) (*boxData, error) {
 	bd := &boxData{}
 	var err error
 	if bd.vcol, err = column(dt, value); err != nil {
@@ -186,10 +186,10 @@ func (bd *boxData) outlierColumns(b *builder, si int, bss []*boxStat, prefix str
 // axisLabels sets the axis labels of the plot of the given table,
 // on its last column, which is the category column used by the boxes
 // (the plot styles of columns that are not used are not applied).
-func axisLabels(dt *table.Table, category, value string) {
+func axisLabels(dt *table.Table, category, value Column) {
 	plot.Styler(dt.Columns.Values[dt.NumColumns()-1], func(s *plot.Style) {
-		s.Plot.XAxis.Label = category
-		s.Plot.YAxisLabel = value
+		s.Plot.XAxis.Label = string(category)
+		s.Plot.YAxisLabel = string(value)
 	})
 }
 
@@ -212,7 +212,7 @@ func (bx *Box) Table(dir *tensorfs.Node, dt *table.Table) (*table.Table, error) 
 	b := newBuilder(dir, "Box", nrows)
 	for si, sp := range bd.splits {
 		clr := seriesColor(si)
-		prefix := colName(bx.Value, sp.name)
+		prefix := colName(string(bx.Value), sp.name)
 		bd.boxColumns(b, si, bss[si], prefix, func(s *plot.Style) {
 			s.Line.Fill = clr
 		})
@@ -235,14 +235,14 @@ type Violin struct { //types:add -setters
 	// Category is the column of the categories, one violin for each value
 	// (e.g., the condition of a simulation): one violin for all of the
 	// values if it is empty.
-	Category string
+	Category Column
 
 	// Value is the column of the values.
-	Value string
+	Value Column
 
 	// Split is an optional column whose values split the rows into
 	// separate series of violins next to each other, each in their own columns.
-	Split string
+	Split Column
 
 	// Points is the number of points of the density of each violin.
 	Points int `default:"50"`
@@ -291,7 +291,7 @@ func (vl *Violin) Table(dir *tensorfs.Node, dt *table.Table) (*table.Table, erro
 	halfWidth := 0.45 * plot.BarSeriesWidth(nsp)
 	for si, sp := range bd.splits {
 		clr := seriesColor(si)
-		prefix := colName(vl.Value, sp.name)
+		prefix := colName(string(vl.Value), sp.name)
 		gp := colName(prefix, "Violin")
 		vx := b.floats(colName(gp, "X"), func(s *plot.Style) {
 			s.Role = plot.X

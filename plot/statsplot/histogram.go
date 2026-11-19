@@ -24,12 +24,12 @@ import (
 type Histogram struct { //types:add -setters
 
 	// Value is the column of the values.
-	Value string
+	Value Column
 
 	// Split is an optional column whose values split the rows into
 	// separate histograms (e.g., the condition of a simulation),
 	// each in their own column.
-	Split string
+	Split Column
 
 	// Bins is the number of bins.
 	Bins int `default:"20"`
@@ -80,7 +80,7 @@ func (hs *Histogram) Table(dir *tensorfs.Node, dt *table.Table) (*table.Table, e
 	}
 	width := (mx - mn) / float64(nb)
 	b := newBuilder(dir, "Histogram", nb)
-	bc := b.floats(hs.Value, func(s *plot.Style) {
+	bc := b.floats(string(hs.Value), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	for i := range nb {

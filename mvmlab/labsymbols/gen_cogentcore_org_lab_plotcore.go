@@ -11,7 +11,9 @@ var _ = register(func() {
 	add(map[string]map[string]reflect.Value{
 		"cogentcore.org/lab/plotcore": {
 			"ClusterPlot":       reflect.ValueOf(p_cogentcore_org_lab_plotcore.ClusterPlot),
+			"ColumnChooser":     reflect.ValueOf((*p_cogentcore_org_lab_plotcore.ColumnChooser)(nil)),
 			"Editor":            reflect.ValueOf((*p_cogentcore_org_lab_plotcore.Editor)(nil)),
+			"NewColumnChooser":  reflect.ValueOf(p_cogentcore_org_lab_plotcore.NewColumnChooser),
 			"NewEditor":         reflect.ValueOf(p_cogentcore_org_lab_plotcore.NewEditor),
 			"NewPlot":           reflect.ValueOf(p_cogentcore_org_lab_plotcore.NewPlot),
 			"NewPlotterChooser": reflect.ValueOf(p_cogentcore_org_lab_plotcore.NewPlotterChooser),

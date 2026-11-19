@@ -34,6 +34,10 @@ import (
 	"cogentcore.org/lab/tensorfs"
 )
 
+// Column is the name of a column of the source table, which
+// plotcore edits with a chooser of the columns of its table.
+type Column string
+
 // Plotter is the interface of the types of statistical plots,
 // which have their options as fields.
 type Plotter interface {
@@ -73,8 +77,8 @@ func tableRows(dt *table.Table) []int {
 
 // column returns the raw data of the given column of the table,
 // with an error if it is not found.
-func column(dt *table.Table, name string) (tensor.Values, error) {
-	cl := dt.Columns.At(name)
+func column(dt *table.Table, name Column) (tensor.Values, error) {
+	cl := dt.Columns.At(string(name))
 	if cl == nil {
 		return nil, fmt.Errorf("statsplot: column %q not found", name)
 	}
@@ -129,7 +133,7 @@ func groupRows(cl tensor.Values, rows []int) []*group {
 
 // splitGroups returns the groups of the rows of the table by the
 // given split column, one group with all of the rows if it is "".
-func splitGroups(dt *table.Table, split string) ([]*group, error) {
+func splitGroups(dt *table.Table, split Column) ([]*group, error) {
 	var cl tensor.Values
 	if split != "" {
 		var err error
@@ -143,7 +147,7 @@ func splitGroups(dt *table.Table, split string) ([]*group, error) {
 // categories returns the groups of all of the rows of the table by the
 // given category column (one group if ""), and for each split group,
 // the rows of each category, in the same order (nil if none).
-func categories(dt *table.Table, category string, splits []*group) ([]*group, [][][]int, error) {
+func categories(dt *table.Table, category Column, splits []*group) ([]*group, [][][]int, error) {
 	var cl tensor.Values
 	if category != "" {
 		var err error
@@ -239,11 +243,11 @@ func (b *builder) strings(name string, st ...func(s *plot.Style)) *tensor.String
 
 // categoryColumn adds the column of the category labels,
 // as the X axis labels of bar-like plots.
-func (b *builder) categoryColumn(name string, cats []*group) {
+func (b *builder) categoryColumn(name Column, cats []*group) {
 	if name == "" {
 		name = "Category"
 	}
-	cl := b.strings(name, func(s *plot.Style) {
+	cl := b.strings(string(name), func(s *plot.Style) {
 		s.Role = plot.X
 	})
 	for i, c := range cats {

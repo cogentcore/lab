@@ -56,16 +56,16 @@ type MeanError struct { //types:add -setters
 	// X is the column of the X axis values: the mean is computed over the
 	// rows with the same X value (e.g., Epoch). If it is empty, the mean
 	// is computed over all of the rows, plotted as a bar.
-	X string
+	X Column
 
 	// Values are the columns to compute the mean of: all of the columns of
 	// floating point numbers other than X and Split, if empty.
-	Values []string
+	Values []Column
 
 	// Split is an optional column whose values split the rows into
 	// separate series (e.g., the condition of a simulation),
 	// each in their own columns.
-	Split string
+	Split Column
 
 	// Error is the measure of the error of the mean.
 	Error Errors
@@ -110,13 +110,13 @@ func (me *MeanError) meanError(vals []float64) (mean, err float64) {
 }
 
 // valueColumns returns the Values, or the default ones.
-func (me *MeanError) valueColumns(dt *table.Table) []string {
+func (me *MeanError) valueColumns(dt *table.Table) []Column {
 	if len(me.Values) > 0 {
 		return me.Values
 	}
-	var vals []string
+	var vals []Column
 	for ci, cl := range dt.Columns.Values {
-		nm := dt.Columns.Keys[ci]
+		nm := Column(dt.Columns.Keys[ci])
 		dtp := cl.DataType()
 		if nm == me.X || nm == me.Split || (dtp != reflect.Float32 && dtp != reflect.Float64) {
 			continue
@@ -156,7 +156,7 @@ func (me *MeanError) Table(dir *tensorfs.Node, dt *table.Table) (*table.Table, e
 	if isBar || xcol.IsString() {
 		b.categoryColumn(xname, xs)
 	} else {
-		xc := b.floats(xname, func(s *plot.Style) {
+		xc := b.floats(string(xname), func(s *plot.Style) {
 			s.Role = plot.X
 		})
 		for i, x := range xs {
@@ -173,7 +173,7 @@ func (me *MeanError) Table(dir *tensorfs.Node, dt *table.Table) (*table.Table, e
 		for si, sp := range splits {
 			clr := seriesColor(series)
 			series++
-			name := colName(vn, sp.name)
+			name := colName(string(vn), sp.name)
 			mc := b.floats(name, func(s *plot.Style) {
 				s.On = true
 				s.Role = plot.Y
@@ -220,7 +220,7 @@ func (me *MeanError) Table(dir *tensorfs.Node, dt *table.Table) (*table.Table, e
 	}
 	if len(valNames) == 1 {
 		plot.Styler(b.dt.Columns.Values[0], func(s *plot.Style) {
-			s.Plot.YAxisLabel = valNames[0]
+			s.Plot.YAxisLabel = string(valNames[0])
 		})
 	}
 	return b.dt, nil

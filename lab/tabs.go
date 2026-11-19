@@ -166,6 +166,9 @@ func (ts *Tabs) PlotTable(label string, dt *table.Table) *plotcore.Editor {
 		return pl
 	})
 	if pl != nil {
+		pl.PlotTableFunc = func(name string, dt *table.Table) {
+			ts.PlotTable(name, dt)
+		}
 		pl.SetTable(dt)
 	}
 	return pl

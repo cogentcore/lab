@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 /bin/rm -f gen_*.go
 
 # The GUI packages of Cogent Lab.
-lab="physics physics/phyxyz physics/builder plot plot/plots plotcore tensorcore lab"
+lab="physics physics/phyxyz physics/builder plot plot/plots plot/statsplot plotcore tensorcore lab"
 
 pkgs=""
 for p in $lab; do pkgs="$pkgs cogentcore.org/lab/$p"; done

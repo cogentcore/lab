@@ -12,16 +12,16 @@ var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot/statsplot.Box",
 // Category is the column of the categories, one box for each value
 // (e.g., the condition of a simulation): one box for all of the values
 // if it is empty.
-func (t *Box) SetCategory(v string) *Box { t.Category = v; return t }
+func (t *Box) SetCategory(v Column) *Box { t.Category = v; return t }
 
 // SetValue sets the [Box.Value]:
 // Value is the column of the values.
-func (t *Box) SetValue(v string) *Box { t.Value = v; return t }
+func (t *Box) SetValue(v Column) *Box { t.Value = v; return t }
 
 // SetSplit sets the [Box.Split]:
 // Split is an optional column whose values split the rows into
 // separate series of boxes next to each other, each in their own columns.
-func (t *Box) SetSplit(v string) *Box { t.Split = v; return t }
+func (t *Box) SetSplit(v Column) *Box { t.Split = v; return t }
 
 // SetWhisker sets the [Box.Whisker]:
 // Whisker is the extent of the whiskers, in multiples of the
@@ -39,16 +39,16 @@ var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot/statsplot.Violi
 // Category is the column of the categories, one violin for each value
 // (e.g., the condition of a simulation): one violin for all of the
 // values if it is empty.
-func (t *Violin) SetCategory(v string) *Violin { t.Category = v; return t }
+func (t *Violin) SetCategory(v Column) *Violin { t.Category = v; return t }
 
 // SetValue sets the [Violin.Value]:
 // Value is the column of the values.
-func (t *Violin) SetValue(v string) *Violin { t.Value = v; return t }
+func (t *Violin) SetValue(v Column) *Violin { t.Value = v; return t }
 
 // SetSplit sets the [Violin.Split]:
 // Split is an optional column whose values split the rows into
 // separate series of violins next to each other, each in their own columns.
-func (t *Violin) SetSplit(v string) *Violin { t.Split = v; return t }
+func (t *Violin) SetSplit(v Column) *Violin { t.Split = v; return t }
 
 // SetPoints sets the [Violin.Points]:
 // Points is the number of points of the density of each violin.
@@ -81,13 +81,13 @@ var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot/statsplot.Histo
 
 // SetValue sets the [Histogram.Value]:
 // Value is the column of the values.
-func (t *Histogram) SetValue(v string) *Histogram { t.Value = v; return t }
+func (t *Histogram) SetValue(v Column) *Histogram { t.Value = v; return t }
 
 // SetSplit sets the [Histogram.Split]:
 // Split is an optional column whose values split the rows into
 // separate histograms (e.g., the condition of a simulation),
 // each in their own column.
-func (t *Histogram) SetSplit(v string) *Histogram { t.Split = v; return t }
+func (t *Histogram) SetSplit(v Column) *Histogram { t.Split = v; return t }
 
 // SetBins sets the [Histogram.Bins]:
 // Bins is the number of bins.
@@ -115,18 +115,18 @@ var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot/statsplot.MeanE
 // X is the column of the X axis values: the mean is computed over the
 // rows with the same X value (e.g., Epoch). If it is empty, the mean
 // is computed over all of the rows, plotted as a bar.
-func (t *MeanError) SetX(v string) *MeanError { t.X = v; return t }
+func (t *MeanError) SetX(v Column) *MeanError { t.X = v; return t }
 
 // SetValues sets the [MeanError.Values]:
 // Values are the columns to compute the mean of: all of the columns of
 // floating point numbers other than X and Split, if empty.
-func (t *MeanError) SetValues(v ...string) *MeanError { t.Values = v; return t }
+func (t *MeanError) SetValues(v ...Column) *MeanError { t.Values = v; return t }
 
 // SetSplit sets the [MeanError.Split]:
 // Split is an optional column whose values split the rows into
 // separate series (e.g., the condition of a simulation),
 // each in their own columns.
-func (t *MeanError) SetSplit(v string) *MeanError { t.Split = v; return t }
+func (t *MeanError) SetSplit(v Column) *MeanError { t.Split = v; return t }
 
 // SetError sets the [MeanError.Error]:
 // Error is the measure of the error of the mean.

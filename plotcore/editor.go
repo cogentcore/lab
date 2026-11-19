@@ -37,6 +37,7 @@ import (
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorcore"
+	"cogentcore.org/lab/tensorfs"
 	"golang.org/x/exp/maps"
 )
 
@@ -71,6 +72,15 @@ type Editor struct { //types:add
 
 	// columns has the style of each column, by name.
 	columns map[string]*editorColumn
+
+	// PlotTableFunc, if set, shows the table of a new plot made from this
+	// one, with the given name, such as a statistical plot of the Stats
+	// menu (e.g., in a new tab), instead of in a new window.
+	PlotTableFunc func(name string, dt *table.Table) `display:"-"`
+
+	// StatsDir is the tensorfs directory of the data of the statistical
+	// plots of the Stats menu.
+	StatsDir *tensorfs.Node `display:"-"`
 }
 
 // editorColumn has the style of a column in the [Editor],
@@ -792,6 +802,10 @@ func (pl *Editor) MakeToolbar(p *tree.Plan) {
 			}
 			w.Args[0].SetValue(ptyp)
 		})
+	})
+	tree.Add(p, func(w *core.Button) {
+		w.SetText("Stats").SetIcon(icons.QueryStats).SetMenu(pl.makeStatsMenu)
+		w.SetTooltip("Make a statistical plot of the data in a new plot: the mean and error of columns, a histogram, a box plot, or a violin plot")
 	})
 	tree.Add(p, func(w *core.Button) {
 		w.SetText("Table").SetIcon(icons.Edit).
