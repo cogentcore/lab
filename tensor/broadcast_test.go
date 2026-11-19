@@ -70,3 +70,36 @@ func BenchmarkFloatBinary(b *testing.B) {
 		}
 	})
 }
+
+// TestRowsIndex1D tests the 1D accessors of Rows with Indexes,
+// against the n-dimensional ones.
+func TestRowsIndex1D(t *testing.T) {
+	ft := NewFloat64(4, 2, 3)
+	for i := range ft.Len() {
+		ft.SetFloat1D(float64(i), i)
+	}
+	st := NewString(4, 2)
+	it := NewInt(5)
+	for i := range st.Len() {
+		st.SetString1D(fmt.Sprint(i), i)
+	}
+	for i := range it.Len() {
+		it.SetInt1D(i*10, i)
+	}
+	idx := []int{3, 1, 2}
+	fr := NewRows(ft, idx...)
+	for i := range fr.Len() {
+		r, c := i/6, i%6
+		assert.Equal(t, ft.Float(idx[r], c/3, c%3), fr.Float1D(i))
+	}
+	fr.SetFloat1D(-1, 7) // row 1 = 1, cell 1
+	assert.Equal(t, -1.0, ft.Float(1, 0, 1))
+	sr := NewRows(st, idx...)
+	assert.Equal(t, st.StringValue(2, 1), sr.String1D(5))
+	sr.SetString1D("x", 0)
+	assert.Equal(t, "x", st.StringValue(3, 0))
+	ir := NewRows(it, 4, 0)
+	assert.Equal(t, 40, ir.Int1D(0))
+	ir.SetInt1D(7, 1)
+	assert.Equal(t, 7, it.Int1D(0))
+}

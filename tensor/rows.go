@@ -67,6 +67,18 @@ func (rw *Rows) IsString() bool { return rw.Tensor.IsString() }
 
 func (rw *Rows) DataType() reflect.Kind { return rw.Tensor.DataType() }
 
+// index1D returns the flat index into the Tensor for the given flat index
+// into the rows, with the row indirected through the Indexes, which must be set.
+// Rows index the outermost dimension of the Tensor, so the cells within a row
+// are contiguous.
+func (rw *Rows) index1D(i int) int {
+	_, cells := rw.Tensor.Shape().RowCellSize()
+	if cells <= 1 {
+		return rw.Indexes[i]
+	}
+	return rw.Indexes[i/cells]*cells + i%cells
+}
+
 // RowIndex returns the actual index into underlying tensor row based on given
 // index value.  If Indexes == nil, index is passed through.
 func (rw *Rows) RowIndex(idx int) int {
@@ -490,23 +502,21 @@ func (rw *Rows) SetFloatRow(val float64, row, cell int) {
 	rw.Tensor.SetFloatRow(val, rw.RowIndex(row), cell)
 }
 
-// Float1D is somewhat expensive if indexes are set, because it needs to convert
-// the flat index back into a full n-dimensional index and then use that api.
+// Float1D indirects the row of the flat index through the Indexes, if set.
 func (rw *Rows) Float1D(i int) float64 {
 	if rw.Indexes == nil {
 		return rw.Tensor.Float1D(i)
 	}
-	return rw.Float(rw.Shape().IndexFrom1D(i)...)
+	return rw.Tensor.Float1D(rw.index1D(i))
 }
 
-// SetFloat1D is somewhat expensive if indexes are set, because it needs to convert
-// the flat index back into a full n-dimensional index and then use that api.
+// SetFloat1D indirects the row of the flat index through the Indexes, if set.
 func (rw *Rows) SetFloat1D(val float64, i int) {
 	if rw.Indexes == nil {
 		rw.Tensor.SetFloat1D(val, i)
 		return
 	}
-	rw.SetFloat(val, rw.Shape().IndexFrom1D(i)...)
+	rw.Tensor.SetFloat1D(val, rw.index1D(i))
 }
 
 ///////  Strings
@@ -556,23 +566,21 @@ func (rw *Rows) AppendRowFloat(val ...float64) {
 	rw.Tensor.AppendRowFloat(val...)
 }
 
-// String1D is somewhat expensive if indexes are set, because it needs to convert
-// the flat index back into a full n-dimensional index and then use that api.
+// String1D indirects the row of the flat index through the Indexes, if set.
 func (rw *Rows) String1D(i int) string {
 	if rw.Indexes == nil {
 		return rw.Tensor.String1D(i)
 	}
-	return rw.StringValue(rw.Shape().IndexFrom1D(i)...)
+	return rw.Tensor.String1D(rw.index1D(i))
 }
 
-// SetString1D is somewhat expensive if indexes are set, because it needs to convert
-// the flat index back into a full n-dimensional index and then use that api.
+// SetString1D indirects the row of the flat index through the Indexes, if set.
 func (rw *Rows) SetString1D(val string, i int) {
 	if rw.Indexes == nil {
 		rw.Tensor.SetString1D(val, i)
 		return
 	}
-	rw.SetString(val, rw.Shape().IndexFrom1D(i)...)
+	rw.Tensor.SetString1D(val, rw.index1D(i))
 }
 
 // AppendRowString adds a row and sets string value(s), up to number of cells.
@@ -628,23 +636,21 @@ func (rw *Rows) AppendRowInt(val ...int) {
 	rw.Tensor.AppendRowInt(val...)
 }
 
-// Int1D is somewhat expensive if indexes are set, because it needs to convert
-// the flat index back into a full n-dimensional index and then use that api.
+// Int1D indirects the row of the flat index through the Indexes, if set.
 func (rw *Rows) Int1D(i int) int {
 	if rw.Indexes == nil {
 		return rw.Tensor.Int1D(i)
 	}
-	return rw.Int(rw.Shape().IndexFrom1D(i)...)
+	return rw.Tensor.Int1D(rw.index1D(i))
 }
 
-// SetInt1D is somewhat expensive if indexes are set, because it needs to convert
-// the flat index back into a full n-dimensional index and then use that api.
+// SetInt1D indirects the row of the flat index through the Indexes, if set.
 func (rw *Rows) SetInt1D(val int, i int) {
 	if rw.Indexes == nil {
 		rw.Tensor.SetInt1D(val, i)
 		return
 	}
-	rw.SetInt(val, rw.Shape().IndexFrom1D(i)...)
+	rw.Tensor.SetInt1D(val, rw.index1D(i))
 }
 
 ///////  SubSpaces
