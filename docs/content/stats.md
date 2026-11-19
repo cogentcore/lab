@@ -31,6 +31,19 @@ fmt.Println("mean d:", meand)
 
 You can see that the stats on n-dimensional data are automatically computed across the _row_ (outer-most) dimension. You can reshape your data and the results as needed to get the statistics you want.
 
+## Quantiles and box plots
+
+`stats.Quantiles` computes any quantiles of the values (e.g., 0.5 for the median), with linear interpolation between the sorted values, and `stats.BoxStats` computes the five values of a box plot: the low whisker, first quartile, median, third quartile, and high whisker, where the whiskers are the most extreme values within the given multiple (typically 1.5) of the interquartile range from the quartiles, and values beyond them are outliers. Both are computed across rows for n-dimensional data, as for the other stats:
+
+```Goal
+##
+x := [1, 2, 3, 4, 5, 6, 7, 8, 9, 30]
+##
+fmt.Println("median:", stats.Median(x))
+fmt.Println("quantiles:", stats.Quantiles(x, tensor.NewFloat64FromValues(0.1, 0.9)))
+fmt.Println("box stats:", stats.BoxStats(x, 1.5))
+```
+
 ## Grouping and stats
 
 The `stats` package has functions that group values in a [[tensor]] or a [[table]] so that statistics can be computed across the groups. The grouping uses [[tensorfs]] to organize the groups and statistics, as in the following example:

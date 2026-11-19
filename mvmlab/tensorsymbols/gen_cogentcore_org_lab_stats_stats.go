@@ -13,6 +13,8 @@ var _ = register(func() {
 			"AsStatsFunc":                 reflect.ValueOf(p_cogentcore_org_lab_stats_stats.AsStatsFunc),
 			"Binarize":                    reflect.ValueOf(p_cogentcore_org_lab_stats_stats.Binarize),
 			"BinarizeOut":                 reflect.ValueOf(p_cogentcore_org_lab_stats_stats.BinarizeOut),
+			"BoxStats":                    reflect.ValueOf(p_cogentcore_org_lab_stats_stats.BoxStats),
+			"BoxStatsOut":                 reflect.ValueOf(p_cogentcore_org_lab_stats_stats.BoxStatsOut),
 			"Clamp":                       reflect.ValueOf(p_cogentcore_org_lab_stats_stats.Clamp),
 			"ClampOut":                    reflect.ValueOf(p_cogentcore_org_lab_stats_stats.ClampOut),
 			"Count":                       reflect.ValueOf(p_cogentcore_org_lab_stats_stats.Count),

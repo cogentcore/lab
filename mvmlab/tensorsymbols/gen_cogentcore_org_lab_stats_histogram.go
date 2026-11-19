@@ -10,8 +10,12 @@ import (
 var _ = register(func() {
 	add(map[string]map[string]reflect.Value{
 		"cogentcore.org/lab/stats/histogram": {
-			"F64":      reflect.ValueOf(p_cogentcore_org_lab_stats_histogram.F64),
-			"F64Table": reflect.ValueOf(p_cogentcore_org_lab_stats_histogram.F64Table),
+			"F64":          reflect.ValueOf(p_cogentcore_org_lab_stats_histogram.F64),
+			"F64Table":     reflect.ValueOf(p_cogentcore_org_lab_stats_histogram.F64Table),
+			"KDE":          reflect.ValueOf(p_cogentcore_org_lab_stats_histogram.KDE),
+			"KDEBandwidth": reflect.ValueOf(p_cogentcore_org_lab_stats_histogram.KDEBandwidth),
+			"KDEGrid":      reflect.ValueOf(p_cogentcore_org_lab_stats_histogram.KDEGrid),
+			"KDEOut":       reflect.ValueOf(p_cogentcore_org_lab_stats_histogram.KDEOut),
 		},
 	})
 })
