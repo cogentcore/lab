@@ -389,6 +389,22 @@ func TestPlotterChooser(t *testing.T) {
 	}))
 }
 
+// TestColorMapName tests that the color map of the color axis style
+// is edited with a color map button.
+func TestColorMapName(t *testing.T) {
+	b := core.NewBody()
+	name := plot.ColorMapName("ColdHot")
+	w := core.NewValue(&name, "", b)
+	cb, ok := w.(*core.ColorMapButton)
+	require.True(t, ok)
+	core.RenderImage(b, core.Locked(b, func() {
+		assert.Equal(t, "ColdHot", cb.MapName)
+		cb.MapName = "Viridis"
+		cb.SendChange()
+		assert.Equal(t, plot.ColorMapName("Viridis"), name)
+	}))
+}
+
 // TestPlotPanZoom tests panning the plot with the mouse, and zooming it
 // with the scroll wheel, with the modifier keys that keep one axis.
 func TestPlotPanZoom(t *testing.T) {

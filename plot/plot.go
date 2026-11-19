@@ -128,6 +128,11 @@ type PlotStyle struct { //types:add -setters
 	// SizeAxis has plot-level properties specific to the Size virtual axis.
 	SizeAxis VirtualAxisStyle
 
+	// ColorAxis has the properties of the color axis, which maps the
+	// values of the Color data role to colors with a color map,
+	// shown in a color bar.
+	ColorAxis ColorAxisStyle `display:"add-fields"`
+
 	// LinesOn determines whether lines are plotted by default at the overall,
 	// Plot level, for elements that plot lines (e.g., plots.XY).
 	LinesOn DefaultOffOn
@@ -180,6 +185,7 @@ func (ps *PlotStyle) Defaults() {
 	ps.Legend.Defaults()
 	ps.Axis.Defaults()
 	ps.Grid.Defaults()
+	ps.ColorAxis.Defaults()
 	ps.LineWidth.Pt(1)
 	ps.PointSize.Pt(3)
 	ps.LabelSize.Dp(16)
@@ -244,6 +250,9 @@ type Plot struct {
 
 	// SizeAxis is a virtual axis for the Size data role.
 	SizeAxis VirtualAxis
+
+	// ColorAxis maps the values of the Color data role to colors.
+	ColorAxis ColorAxis
 
 	// Legend is the plot's legend.
 	Legend Legend
@@ -369,6 +378,7 @@ func (pt *Plot) applyStyle() {
 	pt.X.TickText.Style.Rotation = pt.Style.XAxis.Rotation
 
 	pt.SizeAxis.Style = st.Plot.SizeAxis
+	pt.ColorAxis.Style = pt.Style.ColorAxis
 
 	pt.Y.Style = pt.Style.Axis
 	pt.YR.Style = pt.Style.Axis
@@ -488,6 +498,7 @@ func (pt *Plot) UpdateRange() {
 	pt.YR.Range.SetInfinity()
 	pt.Z.Range.SetInfinity()
 	pt.SizeAxis.Range.SetInfinity()
+	pt.ColorAxis.resetRange()
 	if pt.Style.XAxis.Range.FixMin {
 		pt.X.Range.Min = pt.Style.XAxis.Range.Min
 	}
@@ -502,6 +513,7 @@ func (pt *Plot) UpdateRange() {
 	pt.Y.Range.Sanitize()
 	pt.YR.Range.Sanitize()
 	pt.Z.Range.Sanitize()
+	pt.ColorAxis.finalRange()
 
 	pt.X.Range.Min *= pt.PanZoom.XScale
 	pt.X.Range.Max *= pt.PanZoom.XScale

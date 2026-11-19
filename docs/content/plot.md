@@ -116,7 +116,7 @@ for i := range 21 {
 
 `XY` is the workhorse standard Plotter, taking at least `X` and `Y` inputs, and plotting lines and / or points at each X, Y point (`plots.NewLine`, `plots.NewScatter`, and `plots.NewPointLine` set which ones by default). 
 
-Optionally, a `Size` input can be provided, which sets the size of the points, for a bubble plot. The `Point.ColorFunc` and `Point.FillFunc` styles can set the color of each point.
+Optionally, a `Size` input can be provided, which sets the size of the points, for a bubble plot, and a `Color` input sets the colors of the points via the color map of the plot (see Colors below). The `Point.ColorFunc` and `Point.FillFunc` styles can also set the color of each point.
 
 ```Goal
 plt := lab.NewPlot(b)
@@ -303,6 +303,19 @@ plots.NewVLine(plt, 3, 15)
 ```
 
 In a table plot, the values of a line are those of its column, whatever its role (other than `X`, which is the X axis), so a column with the times of events (and `NaN` elsewhere) can be plotted as `VLine`s.
+
+### Colors
+
+The `Color` data role maps values onto colors, using the color axis of the plot, which is shown in a color bar at the right of the plot. The `ColorAxis` plot style sets the color map (`ColdHot` by default), the range of values mapped onto it (the range of the data by default, where either end can be fixed), and a label for the color bar, which can also be turned off:
+
+```Goal
+plt := lab.NewPlot(b)
+plots.NewScatter(plt, plot.Data{plot.X: x, plot.Y: y, plot.Color: sem}).Styler(func(s *plot.Style) {
+	s.Point.Size.Pt(6)
+	s.Plot.ColorAxis.ColorMap = "Viridis"
+	s.Plot.ColorAxis.Label = "SEM"
+})
+```
 
 ### Grid
 

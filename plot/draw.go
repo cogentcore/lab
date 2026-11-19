@@ -51,6 +51,7 @@ func (pt *Plot) drawConfig() {
 	pt.YR.drawConfig()
 	pt.Z.drawConfig()
 	pt.SizeAxis.drawConfig()
+	pt.ColorAxis.drawConfig()
 	pt.Painter.ToDots()
 }
 
@@ -107,13 +108,18 @@ func (pt *Plot) Draw(pc *paint.Painter) *paint.Painter {
 		ptb.Min.Y += int(math32.Ceil(th))
 	}
 
+	cb := pt.colorBarConfig()
+	if cb != nil {
+		ptb.Max.X -= int(cb.width)
+	}
+
 	pt.X.SanitizeRange()
 	pt.Y.SanitizeRange()
 	pt.YR.SanitizeRange()
 
 	ywidth, tickWidth, tpad, bpad := pt.Y.sizeY(pt, ptb.Min.Y)
 	yrwidth, yrtickWidth, yrtpad, yrbpad := pt.YR.sizeY(pt, ptb.Min.Y)
-	xheight, lpad, rpad := pt.X.sizeX(pt, float32(ywidth), float32(yrwidth), float32(sz.X-int(ywidth+yrwidth)))
+	xheight, lpad, rpad := pt.X.sizeX(pt, float32(ywidth), float32(yrwidth), float32(ptb.Size().X-int(ywidth+yrwidth)))
 
 	tb := ptb
 	tb.Min.X += ywidth
@@ -146,6 +152,9 @@ func (pt *Plot) Draw(pc *paint.Painter) *paint.Painter {
 
 	pt.Legend.draw(pt)
 	pc.PopContext()
+	if cb != nil {
+		pt.drawColorBar(cb, float32(ptb.Max.X))
+	}
 	pc.PopContext() // global
 
 	pt.Painter = nil
