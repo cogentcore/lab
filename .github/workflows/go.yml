@@ -18,8 +18,11 @@ jobs:
       with:
         go-version: '1.27.2'
 
+    # the system packages, the core command, and its Go tools (goimports, goalimports, goalls)
     - name: Set up Core
-      run: go install cogentcore.org/core@main && core setup
+      uses: cogentcore/core/.github/actions/setup-core@main
+      with:
+        tools: true
 
     - name: Build
       run: go build -v ./...
