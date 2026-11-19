@@ -9,11 +9,14 @@ import (
 	"math/rand"
 	"testing"
 
+	"cogentcore.org/core/colors"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/events"
 	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/plot/plots"
 	"cogentcore.org/lab/plot/statsplot"
 	"cogentcore.org/lab/table"
+	"cogentcore.org/lab/tensorfs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -115,5 +118,47 @@ func TestEditorStatsPlot(t *testing.T) {
 	}, core.Locked(b, func() {
 		assert.Equal(t, "Err Box plot", name)
 		assert.Equal(t, "Err A Low", got.Columns.Keys[0])
+	}))
+}
+
+// TestEditorStatsTables tests that the tables of stats plots are plotted
+// in the editor as they are by plot.NewTablePlot: the X columns of groups
+// (violins, outliers) stay X, and boxes keep their fill and line colors.
+func TestEditorStatsTables(t *testing.T) {
+	dir, _ := tensorfs.NewDir("Stats")
+	vl := &statsplot.Violin{Category: "Cat", Value: "Err", Split: "Cond"}
+	vl.Defaults()
+	vt, err := vl.Table(dir, newResultsTable())
+	require.NoError(t, err)
+	b := core.NewBody()
+	pl := NewEditor(b)
+	pl.SetTable(vt)
+	core.RenderImage(b, core.Locked(b, func() {
+		assert.Equal(t, plot.X, columnStyle(pl, "Err A Violin X").Role)
+		assert.Equal(t, "Cat", pl.xAxisColumn())
+		require.Equal(t, 4, len(pl.plot.Plotters))
+		vb := pl.plot.Plotters[0].(*plots.Band)
+		assert.NotNil(t, vb.Center)
+		bst := plot.NewStyle() // the style of the box, as applied when drawn
+		pl.plot.Plotters[1].(*plots.Box).Stylers().Run(bst)
+		assert.Equal(t, colors.Scheme.Surface, bst.Line.Fill)
+		assert.Equal(t, colors.Scheme.OnSurface, bst.Line.Color)
+	}))
+
+	bxp := &statsplot.Box{Category: "Cat", Value: "Err"}
+	bxp.Defaults()
+	bt, err := bxp.Table(dir, newResultsTable())
+	require.NoError(t, err)
+	b = core.NewBody()
+	pl = NewEditor(b)
+	pl.SetTable(bt)
+	core.RenderImage(b, core.Locked(b, func() {
+		bst := plot.NewStyle()
+		pl.plot.Plotters[0].(*plots.Box).Stylers().Run(bst)
+		assert.Equal(t, colors.Scheme.OnSurface, bst.Line.Color)
+		assert.NotNil(t, bst.Line.Fill)
+		assert.NotEqual(t, colors.Scheme.Surface, bst.Line.Fill)
+		_, ok := pl.plot.Plotters[1].(*plots.XY) // the outliers
+		assert.True(t, ok)
 	}))
 }

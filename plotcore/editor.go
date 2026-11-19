@@ -679,7 +679,8 @@ func (pl *Editor) defaultColumnStyle(cl tensor.Values, isX bool, colorIdx *int, 
 			cst.Role = plot.X
 			mods["Role"] = true
 		}
-	case cst.Role == plot.NoRole || cst.Role == plot.X:
+	case cst.Role == plot.NoRole || (cst.Role == plot.X && cst.Group == ""):
+		// an X column of a group is the X data of its plotter
 		mods["Role"] = true
 		if isString {
 			cst.Role = plot.Label
@@ -688,11 +689,22 @@ func (pl *Editor) defaultColumnStyle(cl tensor.Values, isX bool, colorIdx *int, 
 		}
 	}
 	clr := cst.Line.Color
-	if clr == colors.Scheme.OnSurface {
+	ptyp := cst.PlotterOrDefault(isString, &pl.PlotStyle)
+	isBox := ptyp == plots.BoxType || ptyp == plots.XBoxType
+	if isBox && cst.Line.Fill != nil {
+		if cst.Line.Fill != colors.Scheme.Surface { // white boxes: the line color
+			clr = cst.Line.Fill // the color of a box is its fill
+		}
+	} else if clr == colors.Scheme.OnSurface {
 		if cst.Role == plot.Y && !isString {
 			clr = colors.Uniform(colors.Spaced(*colorIdx))
 			(*colorIdx)++
-			if !*hasSplit {
+			switch {
+			case *hasSplit:
+			case isBox: // the lines of boxes stay in contrast with the fill
+				cst.Line.Fill = clr
+				mods["Line.Fill"] = true
+			default:
 				cst.Line.Color = clr
 				mods["Line.Color"] = true
 				cst.Point.Color = clr
