@@ -272,8 +272,11 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		}
 		if pt.clr != nil {
 			pl.Stylers().Add(func(s *Style) {
-				s.Line.Color = pt.clr
-				if pt.ptyp == "Bar" {
+				// box lines (incl. the median) stay in contrast to the fill
+				if !isBox(pt.ptyp) {
+					s.Line.Color = pt.clr
+				}
+				if isBarLike(pt.ptyp) {
 					s.Line.Fill = pt.clr
 				}
 				s.Point.Color = pt.clr
@@ -287,7 +290,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 				plt.Legend.Add(pt.lbl, tn)
 			}
 		}
-		if pt.ptyp == "Bar" {
+		if isBarLike(pt.ptyp) {
 			barCols = append(barCols, pt.ci)
 			barPlots = append(barPlots, len(plt.Plotters)-1)
 		}
@@ -311,7 +314,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		}
 	}
 
-	// Set bar spacing based on total number of bars present.
+	// Set bar spacing based on total number of bar-like plots present.
 	nbar := len(barCols)
 	if nbar > 1 {
 		sz := 1.0 / (float64(nbar) + 0.5)
@@ -321,10 +324,28 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 				s.Width.Stride = 1
 				s.Width.Offset = float64(bi) * sz
 				s.Width.Width = psty.BarWidth * sz
+				s.Width.TickOffset = 0.5*float64(nbar-1)*sz - float64(bi)*sz
 			})
 		}
 	}
 	return plt, errors.Join(errs...)
+}
+
+// isBarLike returns whether the given plotter type is positioned
+// along the category axis as a Bar (Bar, Box, XBox), so that multiple
+// such plots are spaced out next to each other, and filled with the
+// group color for Split plots.
+func isBarLike(ptyp string) bool {
+	switch ptyp {
+	case "Bar", "Box", "XBox":
+		return true
+	}
+	return false
+}
+
+// isBox returns whether the given plotter type is a Box or XBox.
+func isBox(ptyp string) bool {
+	return ptyp == "Box" || ptyp == "XBox"
 }
 
 // todo: bar chart rows, if needed

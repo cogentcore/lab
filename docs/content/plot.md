@@ -127,7 +127,7 @@ To create a plot with multiple error bars, multiple Bar Plotters are created, wi
 
 ### Box
 
-`Box` takes `X`, `Y` (median line), `U`, `V` (box first and 3rd quartile values), and `Low`, `High` (Min, Max) inputs, and renders a box plot with error bars.
+`Box` takes `Y` (median), `U` (first quartile), and `V` (third quartile) inputs, and optional `Low`, `High` inputs for the ends of the whiskers (e.g., the min and max, or the furthest values within 1.5 times the interquartile range), and draws a box from `U` to `V` filled with `Line.Fill`, with a median line and whiskers with caps drawn in the `Line` style. The boxes are positioned like `Bar`s (`Style.Width` `Offset`, `Stride`, and `Width`), and an optional `X` input provides the category labels, so multiple box plots can be placed next to each other, and outliers can be added with an XY scatter. `XBox` draws horizontal boxes, with the values along the X axis.
 
 ### Band, XBand
 

@@ -311,8 +311,7 @@ func (bc *Bar) UpdateRange(plt *plot.Plot) {
 			yax.Range.FitValInRange(valTop)
 		}
 		if bc.XLabels != nil {
-			cat := bw.Offset + float64(i)*bw.Stride
-			ticks[i].Value = cat
+			ticks[i].Value = bw.Offset + float64(i)*bw.Stride + bw.TickOffset
 			if bc.XLabels.Len() > i {
 				ticks[i].Label = bc.XLabels[i]
 			} else {

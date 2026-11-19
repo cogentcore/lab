@@ -28,6 +28,7 @@ func TestTable(t *testing.T) {
 	tx, ty := tensor.NewFloat64(n), tensor.NewFloat64(n)
 	tl, th := tensor.NewFloat64(n), tensor.NewFloat64(n)
 	ts := tensor.NewFloat64(n)
+	tu, tv := tensor.NewFloat64(n), tensor.NewFloat64(n)
 	lbls := tensor.NewString(n)
 	for i := range n {
 		tx.SetFloat1D(float64(i*5), i)
@@ -35,6 +36,8 @@ func TestTable(t *testing.T) {
 		tl.SetFloat1D(5*rng.Float64(), i)
 		th.SetFloat1D(5*rng.Float64(), i)
 		ts.SetFloat1D(1+5*rng.Float64(), i)
+		tu.SetFloat1D(ty.Float1D(i)-5, i)
+		tv.SetFloat1D(ty.Float1D(i)+5, i)
 		lbls.SetString1D(strconv.Itoa(i), i)
 	}
 	ptyps := maps.Keys(plot.Plotters)
@@ -74,6 +77,14 @@ func TestTable(t *testing.T) {
 			s.Role = plot.Size
 			s.Group = "Y"
 		})
+		plot.SetStyler(tu, func(s *plot.Style) {
+			s.Role = plot.U
+			s.Group = "Y"
+		})
+		plot.SetStyler(tv, func(s *plot.Style) {
+			s.Role = plot.V
+			s.Group = "Y"
+		})
 		plot.SetStyler(lbls, genst, func(s *plot.Style) {
 			s.On = true
 			s.Role = plot.Label
@@ -85,6 +96,8 @@ func TestTable(t *testing.T) {
 		dt.AddColumn("Low", tl)
 		dt.AddColumn("High", th)
 		dt.AddColumn("Size", ts)
+		dt.AddColumn("U", tu)
+		dt.AddColumn("V", tv)
 		dt.AddColumn("Labels", lbls)
 
 		plt, err := plot.NewTablePlot(dt)
