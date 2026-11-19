@@ -156,6 +156,16 @@ func (bx *Box) Data() (data plot.Data, pixX, pixY []float32) {
 	return
 }
 
+// numValid returns the number of boxes up to the last one with a median,
+// excluding NaN padding at the end (e.g., of a table with other data).
+func (bx *Box) numValid() int {
+	n := len(bx.Median)
+	for n > 0 && math.IsNaN(bx.Median[n-1]) {
+		n--
+	}
+	return n
+}
+
 // pos returns the position of the box at index i on the category axis.
 func (bx *Box) pos(i int) float64 {
 	return bx.Style.Width.Offset + float64(i)*bx.Style.Width.Stride
@@ -252,7 +262,7 @@ func (bx *Box) Plot(plt *plot.Plot) {
 // UpdateRange updates the given ranges.
 func (bx *Box) UpdateRange(plt *plot.Plot) {
 	bw := bx.Style.Width
-	n := len(bx.Median)
+	n := bx.numValid()
 	catMin := bw.Offset - bw.Pad
 	catMax := bw.Offset + float64(n-1)*bw.Stride + bw.Pad
 	yax := &plt.Y
@@ -264,22 +274,18 @@ func (bx *Box) UpdateRange(plt *plot.Plot) {
 		catRange, valRange = valRange, &plt.X.Range
 	}
 	var ticks plot.ConstantTicks
-	if bx.XLabels != nil {
-		ticks = make(plot.ConstantTicks, n)
-	}
 	for i := range n {
 		for _, v := range []float64{bx.Median[i], bx.Q1[i], bx.Q3[i], whisker(bx.Low, i), whisker(bx.High, i)} {
 			if !math.IsNaN(v) {
 				valRange.FitValInRange(v)
 			}
 		}
-		if ticks != nil {
-			ticks[i].Value = bx.pos(i) + bw.TickOffset
+		if bx.XLabels != nil && !math.IsNaN(bx.Median[i]) {
+			lb := fmt.Sprintf("%d", i)
 			if i < len(bx.XLabels) {
-				ticks[i].Label = bx.XLabels[i]
-			} else {
-				ticks[i].Label = fmt.Sprintf("%d", i)
+				lb = bx.XLabels[i]
 			}
+			ticks = append(ticks, plot.Tick{Value: bx.pos(i) + bw.TickOffset, Label: lb})
 		}
 	}
 	catRange.FitInRange(minmax.F64{Min: catMin, Max: catMax})

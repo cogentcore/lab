@@ -382,18 +382,42 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 	// Set bar spacing based on total number of bar-like plots present.
 	nbar := len(barCols)
 	if nbar > 1 {
-		sz := 1.0 / (float64(nbar) + 0.5)
+		sz := BarSeriesWidth(nbar)
 		for bi, bp := range barPlots {
 			pl := plt.Plotters[bp]
 			pl.Stylers().Add(func(s *Style) {
 				s.Width.Stride = 1
-				s.Width.Offset = float64(bi) * sz
-				s.Width.Width = psty.BarWidth * sz
+				s.Width.Offset = BarPosition(0, bi, nbar)
+				s.Width.Width *= sz // the BarWidth by default
 				s.Width.TickOffset = 0.5*float64(nbar-1)*sz - float64(bi)*sz
 			})
 		}
 	}
 	return plt, errors.Join(errs...)
+}
+
+// BarSeriesWidth returns the width of each of the given number of series
+// of bar-like plots (Bar, Box, etc) next to each other, as spaced by
+// [NewTablePlot]: the width of a bar is this times the BarWidth style.
+func BarSeriesWidth(nseries int) float64 {
+	if nseries <= 1 {
+		return 1
+	}
+	return 1.0 / (float64(nseries) + 0.5)
+}
+
+// BarPosition returns the position along the category axis of the
+// bar-like plot (Bar, Box, etc) of the given category index,
+// in the given series of the given number of series next to each other,
+// as spaced by [NewTablePlot] (with the default [WidthStyle] for one
+// series), e.g., to plot other elements at the same positions.
+func BarPosition(category, series, nseries int) float64 {
+	if nseries <= 1 {
+		var ws WidthStyle
+		ws.Defaults()
+		return ws.Offset + float64(category)*ws.Stride
+	}
+	return float64(category) + float64(series)*BarSeriesWidth(nseries)
 }
 
 // isBarLike returns whether the given plotter type is positioned
