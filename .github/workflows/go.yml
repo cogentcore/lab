@@ -18,8 +18,17 @@ jobs:
       with:
         go-version: '1.27.2'
 
-    - name: Set up Core
-      run: go install cogentcore.org/core@main && core setup
+    # The Linux packages that Cogent Core needs (as installed by `core setup`),
+    # cached across runs: installing them from the apt mirrors can take many minutes.
+    - name: Install Core dependencies
+      uses: awalsh128/cache-apt-pkgs-action@v1
+      with:
+        packages: gcc libgl1-mesa-dev libegl1-mesa-dev mesa-vulkan-drivers xorg-dev libwayland-dev libxkbcommon-dev
+        version: 1.0
+
+    # the core command, and the Go tools that it installs (goimports, goalimports, goalls)
+    - name: Install Core
+      run: go install cogentcore.org/core@main && core update
 
     - name: Build
       run: go build -v ./...
