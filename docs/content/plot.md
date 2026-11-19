@@ -129,13 +129,15 @@ To create a plot with multiple error bars, multiple Bar Plotters are created, wi
 
 `Box` takes `X`, `Y` (median line), `U`, `V` (box first and 3rd quartile values), and `Low`, `High` (Min, Max) inputs, and renders a box plot with error bars.
 
-### XFill, YFill
+### Band, XBand
 
-`XFill` and `YFill` are used to draw filled regions between pairs of X or Y points, using the `X`, `Y`, and `Low`, `High` values to specify the center point (X, Y) and the region below / left and above / right to fill around that central point.
+`Band` fills the area between `Low` and `High` Y values along the X axis, and `XBand` fills the area between `Low` and `High` X values along the Y axis. If the center values (`Y` for `Band`, `X` for `XBand`) are given, `Low` and `High` are deviations below and above them, as for `ErrorBar` (`Low` is `High` if not given), so the same data can be plotted as error bars or as an error band. Otherwise, `Low` and `High` are the edges of the band, and `Low` is 0 if not given, to fill the area below `High`. NaN values break the band into separate parts.
 
-XFill along with an XY line can be used to draw the equivalent of the [matplotlib fill_between](https://matplotlib.org/stable/plot_types/basic/fill_between.html#sphx-glr-plot-types-basic-fill-between-py) plot.
+The fill is the `Line.Fill` style if set, and otherwise the `Line.Color` at 30% opacity, so a band and its line can share one color. The edges are drawn only if `Line.On` is `On`.
 
-YFill can be used to draw the equivalent of the [matplotlib violin plot](https://matplotlib.org/stable/plot_types/stats/violin.html#sphx-glr-plot-types-stats-violin-py).
+`Band` along with an XY line is the equivalent of the [matplotlib fill_between](https://matplotlib.org/stable/plot_types/basic/fill_between.html#sphx-glr-plot-types-basic-fill-between-py) plot, for error bands and stacked areas.
+
+`XBand` is the equivalent of fill_betweenx, and draws the body of a [matplotlib violin plot](https://matplotlib.org/stable/plot_types/stats/violin.html#sphx-glr-plot-types-stats-violin-py): `X` is the position of the violin, `Y` the values, and `High` the density at each value.
 
 ### Pie
 
@@ -167,7 +169,7 @@ Could also have a separate plot3d package based on `xyz` that is true 3D for int
 
 # Statistical plots
 
-The `statplot` package provides functions taking `tensor` data that produce statistical plots of the data, including Quartiles (Box with Median, Quartile, Min, Max), Histogram (Bar), Violin (YFill), Range (XFill), Cluster... 
+The `statplot` package provides functions taking `tensor` data that produce statistical plots of the data, including Quartiles (Box with Median, Quartile, Min, Max), Histogram (Bar), Violin (XBand), Range (Band), Cluster... 
 
 TODO: add a Data scatter that plots points to overlay on top of Violin or Box.
 

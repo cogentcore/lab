@@ -382,7 +382,7 @@ func TestPlotterChooser(t *testing.T) {
 		assert.Equal(t, plot.PlotterName(""), pc.Items[0].Value)
 		assert.Equal(t, "Default", pc.Items[0].Text)
 		assert.Equal(t, plot.PlotterName(plots.BarType), pc.CurrentItem.Value)
-		assert.Equal(t, 1, pc.CurrentIndex)
+		assert.Equal(t, plot.PlotterName(plots.BarType), pc.Items[pc.CurrentIndex].Value)
 		pc.SetCurrentIndex(len(pc.Items) - 1)
 		pc.SendChange()
 		assert.Equal(t, plot.PlotterName(plots.YErrorBarsType), name)
@@ -658,7 +658,7 @@ func TestEditorTypeMenu(t *testing.T) {
 				}
 				return tree.Continue
 			})
-			assert.Equal(t, []string{"Default", "Bar", "Labels", "XErrorBars", "XY", "YErrorBars"}, texts)
+			assert.Equal(t, []string{"Default", "Band", "Bar", "Labels", "XBand", "XErrorBars", "XY", "YErrorBars"}, texts)
 		})()
 	})
 }
