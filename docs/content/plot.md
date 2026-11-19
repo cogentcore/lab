@@ -135,6 +135,13 @@ plt := lab.NewPlot(b)
 plots.NewBar(plt, plot.Data{plot.X: tensor.NewStringFromValues("A", "B", "C", "D"), plot.Y: plot.Values{3, 5, 2, 4}, plot.Low: plot.Values{0.3, 0.6, 0.3, 0.4}, plot.High: plot.Values{0.5, 0.8, 0.3, 0.6}})
 ```
 
+`XBar` draws horizontal bars, with the values along the X axis (as `NewXBar` does, or the `Horizontal` field of a `Bar`):
+
+```Goal
+plt := lab.NewPlot(b)
+plots.NewXBar(plt, plot.Data{plot.X: tensor.NewStringFromValues("A", "B", "C", "D"), plot.Y: plot.Values{3, 5, 2, 4}, plot.High: plot.Values{0.5, 0.8, 0.3, 0.6}})
+```
+
 The `Base` field of a `Bar` sets the bottom of each bar, for floating bars, such as a waterfall plot of a running total:
 
 ```Goal

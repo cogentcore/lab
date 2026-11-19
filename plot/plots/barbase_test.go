@@ -10,6 +10,7 @@ import (
 
 	"cogentcore.org/core/base/iox/imagex"
 	"cogentcore.org/lab/plot"
+	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"github.com/stretchr/testify/assert"
 )
@@ -75,4 +76,47 @@ func TestBarRightY(t *testing.T) {
 	plt.RenderImage()
 	assert.Equal(t, plt.PYR(50), bc.PY[1])
 	assert.NotEqual(t, plt.PY(50), bc.PY[1])
+}
+
+func TestTableXBar(t *testing.T) {
+	dt := table.New("XBar")
+	gp := dt.AddStringColumn("Group")
+	cond := dt.AddStringColumn("Cond")
+	val := dt.AddFloat64Column("Value")
+	sem := dt.AddFloat64Column("SEM")
+	for ci, cnm := range []string{"Control", "Test"} {
+		for g, gnm := range []string{"A", "B", "C"} {
+			dt.AddRows(1)
+			row := dt.NumRows() - 1
+			gp.SetString1D(gnm, row)
+			cond.SetString1D(cnm, row)
+			val.SetFloat1D(float64(2+g+2*ci), row)
+			sem.SetFloat1D(0.3+0.1*float64(g), row)
+		}
+	}
+	plot.SetStyler(gp, func(s *plot.Style) {
+		s.Role = plot.X
+		s.Plot.Title = "Table horizontal bars with Split"
+	})
+	plot.SetStyler(cond, func(s *plot.Style) {
+		s.On = true
+		s.Role = plot.Split
+	})
+	plot.SetStyler(val, func(s *plot.Style) {
+		s.On = true
+		s.Role = plot.Y
+		s.Plotter = XBarType
+	})
+	plot.SetStyler(sem, func(s *plot.Style) {
+		s.Role = plot.High
+	})
+	plt, err := plot.NewTablePlot(dt)
+	assert.NoError(t, err)
+	imagex.Assert(t, plt.RenderImage(), "table-xbar")
+	b0 := plt.Plotters[0].(*Bar)
+	assert.True(t, b0.Horizontal)
+	ticks, ok := plt.Y.Ticker.(plot.ConstantTicks)
+	assert.True(t, ok)
+	assert.Equal(t, "B", ticks[1].Label)
+	assert.Equal(t, 6.0+0.5, plt.X.Range.Max)
 }

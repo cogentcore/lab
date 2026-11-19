@@ -20,12 +20,21 @@ import (
 	"cogentcore.org/lab/plot"
 )
 
-// BarType is be used for specifying the type name.
-const BarType = "Bar"
+const (
+	// BarType is used for specifying the type name of a vertical [Bar].
+	BarType = "Bar"
+
+	// XBarType is used for specifying the type name of a horizontal [Bar],
+	// with the values along the X axis.
+	XBarType = "XBar"
+)
 
 func init() {
 	plot.RegisterPlotter(BarType, "A Bar presents ordinally-organized data with rectangular bars with lengths proportional to the data values, and an optional error bar at the top of the bar using the High data role, and the Low data role for a different error below the top.", []plot.Roles{plot.Y}, []plot.Roles{plot.High, plot.Low, plot.X}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
 		return NewBar(plt, data)
+	})
+	plot.RegisterPlotter(XBarType, "A horizontal Bar, with the values along the X axis: bars with lengths proportional to the data values, and an optional error bar at the end of the bar using the High data role, and the Low data role for a different error below the end.", []plot.Roles{plot.Y}, []plot.Roles{plot.High, plot.Low, plot.X}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
+		return NewXBar(plt, data)
 	})
 }
 
@@ -88,6 +97,16 @@ func NewBar(plt *plot.Plot, data any) *Bar {
 	}
 	bc.Defaults()
 	plt.Add(bc)
+	return bc
+}
+
+// NewXBar adds a new horizontal bar plotter, with the values along the
+// X axis, as for [NewBar] with [Bar.Horizontal] set.
+func NewXBar(plt *plot.Plot, data any) *Bar {
+	bc := NewBar(plt, data)
+	if bc != nil {
+		bc.Horizontal = true
+	}
 	return bc
 }
 

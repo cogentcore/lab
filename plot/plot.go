@@ -359,6 +359,9 @@ func (pt *Plot) applyStyle() {
 		}
 	}
 	pt.Style = st.Plot
+	if pt.Style.YAxisLabel != "" {
+		pt.Y.Label.Text = pt.Style.YAxisLabel
+	}
 	// then apply to elements
 	for i, plt := range pt.Plotters {
 		plt.ApplyStyle(&pt.Style, i)

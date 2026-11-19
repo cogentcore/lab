@@ -307,9 +307,24 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		if len(plt.Plotters) > 0 {
 			pl0 := plt.Plotters[0]
 			if pl0 != nil {
-				pl0.Stylers().Add(func(s *Style) {
-					s.Plot.XAxis.Label = lbl
-				})
+				if isHorizontal(ptrs[0].ptyp) {
+					// the X column has the categories along the Y axis,
+					// and the values are along the X axis
+					vlbl := dt.Columns.Keys[ptrs[0].ci]
+					if csty[ptrs[0].ci].Label != "" {
+						vlbl = csty[ptrs[0].ci].Label
+					}
+					pl0.Stylers().Add(func(s *Style) {
+						if s.Plot.YAxisLabel == "" {
+							s.Plot.YAxisLabel = lbl
+						}
+						s.Plot.XAxis.Label = vlbl
+					})
+				} else {
+					pl0.Stylers().Add(func(s *Style) {
+						s.Plot.XAxis.Label = lbl
+					})
+				}
 			}
 		}
 	}
@@ -332,15 +347,21 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 }
 
 // isBarLike returns whether the given plotter type is positioned
-// along the category axis as a Bar (Bar, Box, XBox), so that multiple
+// along the category axis as a Bar (Bar, XBar, Box, XBox), so that multiple
 // such plots are spaced out next to each other, and filled with the
 // group color for Split plots.
 func isBarLike(ptyp string) bool {
 	switch ptyp {
-	case "Bar", "Box", "XBox":
+	case "Bar", "XBar", "Box", "XBox":
 		return true
 	}
 	return false
+}
+
+// isHorizontal returns whether the given plotter type is a horizontal
+// bar-like plot (XBar, XBox), with the categories along the Y axis.
+func isHorizontal(ptyp string) bool {
+	return ptyp == "XBar" || ptyp == "XBox"
 }
 
 // isBox returns whether the given plotter type is a Box or XBox.
