@@ -24,7 +24,7 @@ import (
 const BarType = "Bar"
 
 func init() {
-	plot.RegisterPlotter(BarType, "A Bar presents ordinally-organized data with rectangular bars with lengths proportional to the data values, and an optional error bar at the top of the bar using the High data role.", []plot.Roles{plot.Y}, []plot.Roles{plot.High, plot.X}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
+	plot.RegisterPlotter(BarType, "A Bar presents ordinally-organized data with rectangular bars with lengths proportional to the data values, and an optional error bar at the top of the bar using the High data role, and the Low data role for a different error below the top.", []plot.Roles{plot.Y}, []plot.Roles{plot.High, plot.Low, plot.X}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
 		return NewBar(plt, data)
 	})
 }
@@ -38,8 +38,16 @@ func init() {
 // Bar Width is in data units, e.g., should be <= Stride.
 // Defaults provide a unit-spaced plot.
 type Bar struct {
-	// copies of data
-	Y, Err plot.Values
+	// copies of data: Y is the height of the bars, Err the error above
+	// their tops (High data role), and ErrLow the optional error below
+	// their tops (Low data role), as for [YErrorBars].
+	// The error is only drawn above the bar if ErrLow is not set.
+	Y, Err, ErrLow plot.Values
+
+	// Base is the optional bottom of each bar, for floating bars
+	// (e.g., ranges, a waterfall, or a Gantt chart); it is 0 if not set.
+	// Bars stacked on this one start at the top of its bars.
+	Base plot.Values
 
 	// actual plotting X, Y values in data coordinates, taking into account stacking etc.
 	X, Yp plot.Values
@@ -99,6 +107,7 @@ func (bc *Bar) SetData(data any) error {
 	bc.XLabels = plot.CopyRoleLabels(dt, plot.X)
 	bc.stylers = plot.GetStylersFromData(dt, plot.X, plot.Y)
 	bc.Err = plot.CopyRole(dt, plot.High)
+	bc.ErrLow = plot.CopyRole(dt, plot.Low)
 	return nil
 }
 
@@ -128,24 +137,34 @@ func (bc *Bar) Data() (data plot.Data, pixX, pixY []float32) {
 	if bc.Err != nil {
 		data[plot.High] = bc.Err
 	}
+	if bc.ErrLow != nil {
+		data[plot.Low] = bc.ErrLow
+	}
 	return
 }
 
 // BarHeight returns the maximum y value of the
-// ith bar, taking into account any bars upon
-// which it is stacked.
+// ith bar, taking into account its Base and
+// any bars upon which it is stacked.
 func (bc *Bar) BarHeight(i int) float64 {
-	ht := float64(0.0)
 	if bc == nil {
 		return 0
 	}
+	ht := bc.Bottom(i)
 	if i >= 0 && i < len(bc.Y) {
 		ht += bc.Y[i]
 	}
-	if bc.StackedOn != nil {
-		ht += bc.StackedOn.BarHeight(i)
-	}
 	return ht
+}
+
+// Bottom returns the bottom y value of the ith bar: the top of any
+// bar it is stacked on, plus its Base value if set.
+func (bc *Bar) Bottom(i int) float64 {
+	bt := bc.StackedOn.BarHeight(i) // nil safe
+	if i >= 0 && i < len(bc.Base) {
+		bt += bc.Base[i]
+	}
+	return bt
 }
 
 // StackOn stacks a bar chart on top of another,
@@ -171,10 +190,12 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 	bc.PY = make([]float32, nv)
 
 	var minY, maxY float64
+	py := plt.PY
 	if bc.Horizontal {
 		minY, maxY = plt.X.DataRange.Min, plt.X.DataRange.Max
 	} else {
 		if bc.Style.RightY {
+			py = plt.PYR
 			minY, maxY = plt.YR.DataRange.Min, plt.YR.DataRange.Max
 		} else {
 			minY, maxY = plt.Y.DataRange.Min, plt.Y.DataRange.Max
@@ -189,7 +210,10 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 			continue
 		}
 		cat := bw.Offset + float64(i)*bw.Stride
-		bottom := bc.StackedOn.BarHeight(i) // nil safe
+		bottom := bc.Bottom(i)
+		if math.IsNaN(bottom) {
+			continue
+		}
 		val := bottom + ht
 		if val < minY || val > maxY {
 			if oor.HasMark() {
@@ -216,8 +240,8 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 			catVal = plt.PX(cat)
 			catMin = plt.PX(cat - hw)
 			catMax = plt.PX(cat + hw)
-			valMin = plt.PY(bottom)
-			valMax = plt.PY(val)
+			valMin = py(bottom)
+			valMax = py(val)
 			bc.X[i] = cat
 			bc.Yp[i] = val
 			bc.PX[i] = catVal
@@ -229,27 +253,36 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 		pc.Rectangle(box.Min.X, box.Min.Y, box.Size().X, box.Size().Y)
 		pc.Draw()
 
-		if i < len(bc.Err) {
-			errval := bc.Err[i]
-			if math.IsNaN(errval) {
-				continue
-			}
-			errval = math.Abs(errval)
-			if bc.Horizontal {
-				eVal := plt.PX(bottom + ht + math.Abs(errval))
-				pc.MoveTo(valMax, catVal)
-				pc.LineTo(eVal, catVal)
-				pc.MoveTo(eVal, plt.PY(cat-ew))
-				pc.LineTo(eVal, plt.PY(cat+ew))
-			} else {
-				eVal := plt.PY(bottom + ht + math.Abs(errval))
-				pc.MoveTo(catVal, valMax)
-				pc.LineTo(catVal, eVal)
-				pc.MoveTo(plt.PX(cat-ew), eVal)
-				pc.LineTo(plt.PX(cat+ew), eVal)
-			}
-			pc.Draw()
+		// error bar: from the top of the bar (or the top minus ErrLow)
+		// to the top plus Err, with caps at the error ends.
+		top := bottom + ht
+		hi, lo := whisker(bc.Err, i), whisker(bc.ErrLow, i)
+		if math.IsNaN(hi) {
+			continue
 		}
+		ends := []float64{top + math.Abs(hi)}
+		start := top
+		if !math.IsNaN(lo) {
+			start = top - math.Abs(lo)
+			ends = append(ends, start)
+		}
+		pt := func(cat, val float64) (float32, float32) {
+			if bc.Horizontal {
+				return plt.PX(val), plt.PY(cat)
+			}
+			return plt.PX(cat), py(val)
+		}
+		x0, y0 := pt(cat, start)
+		x1, y1 := pt(cat, ends[0])
+		pc.MoveTo(x0, y0)
+		pc.LineTo(x1, y1)
+		for _, e := range ends {
+			x0, y0 = pt(cat-ew, e)
+			x1, y1 = pt(cat+ew, e)
+			pc.MoveTo(x0, y0)
+			pc.LineTo(x1, y1)
+		}
+		pc.Draw()
 	}
 
 	pc.Fill.Color = nil
@@ -259,7 +292,10 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 			if math.IsNaN(ht) {
 				continue
 			}
-			bottom := bc.StackedOn.BarHeight(i) // nil safe
+			bottom := bc.Bottom(i)
+			if math.IsNaN(bottom) {
+				continue
+			}
 			val := bottom + ht
 			if val >= minY && val <= maxY {
 				continue
@@ -274,7 +310,7 @@ func (bc *Bar) Plot(plt *plot.Plot) {
 				pty = plt.PY(cat)
 			} else {
 				ptx = plt.PX(cat)
-				pty = plt.PY(val)
+				pty = py(val)
 			}
 			bc.Style.OutOfRangeMark.DrawShape(pc, math32.Vec2(ptx, pty))
 		}
@@ -295,13 +331,16 @@ func (bc *Bar) UpdateRange(plt *plot.Plot) {
 		ticks = make(plot.ConstantTicks, len(bc.Y))
 	}
 	for i, val := range bc.Y {
-		valBot := bc.StackedOn.BarHeight(i)
+		valBot := bc.Bottom(i)
 		valTop := valBot + val
 		if math.IsNaN(valBot) || math.IsNaN(valTop) {
 			continue
 		}
-		if i < len(bc.Err) {
-			valTop += math.Abs(bc.Err[i])
+		if e := whisker(bc.Err, i); !math.IsNaN(e) {
+			if el := whisker(bc.ErrLow, i); !math.IsNaN(el) {
+				valBot = min(valBot, valTop-math.Abs(el))
+			}
+			valTop += math.Abs(e)
 		}
 		if bc.Horizontal {
 			plt.X.Range.FitValInRange(valBot)

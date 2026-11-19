@@ -128,11 +128,26 @@ plots.NewScatter(plt, plot.Data{plot.X: x, plot.Y: y, plot.Size: sem}).Styler(fu
 
 ### Bar
 
-`Bar` takes `Y` inputs, and draws bars of corresponding height. An optional `X` input provides labels for the bars, and an optional `High` input plots error bars above each bar.
+`Bar` takes `Y` inputs, and draws bars of corresponding height. An optional `X` input provides labels for the bars, and an optional `High` input plots error bars above each bar, with an optional `Low` input for the error below the top of each bar (as for `ErrorBar`).
 
 ```Goal
 plt := lab.NewPlot(b)
-plots.NewBar(plt, plot.Data{plot.X: tensor.NewStringFromValues("A", "B", "C", "D"), plot.Y: plot.Values{3, 5, 2, 4}, plot.High: plot.Values{0.5, 0.8, 0.3, 0.6}})
+plots.NewBar(plt, plot.Data{plot.X: tensor.NewStringFromValues("A", "B", "C", "D"), plot.Y: plot.Values{3, 5, 2, 4}, plot.Low: plot.Values{0.3, 0.6, 0.3, 0.4}, plot.High: plot.Values{0.5, 0.8, 0.3, 0.6}})
+```
+
+The `Base` field of a `Bar` sets the bottom of each bar, for floating bars, such as a waterfall plot of a running total:
+
+```Goal
+plt := lab.NewPlot(b)
+steps := plot.Values{5, 3, -2, 4, -3}
+base, hts := make(plot.Values, 5), make(plot.Values, 5)
+total := 0.0
+for i, s := range steps {
+	base[i] = min(total, total+s)
+	hts[i] = math.Abs(s)
+	total += s
+}
+plots.NewBar(plt, plot.Data{plot.X: tensor.NewStringFromValues("a", "b", "c", "d", "e"), plot.Y: hts}).Base = base
 ```
 
 Bars can be stacked on top of each other:
