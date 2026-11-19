@@ -219,3 +219,77 @@ func TestTableBand(t *testing.T) {
 	assert.Equal(t, 4, len(plt.Plotters))
 	imagex.Assert(t, plt.RenderImage(), "table-band")
 }
+
+// TestTableBandGroup tests an error band made by a second plotter in the
+// group of the XY line, from the same columns, with the color of the line.
+func TestTableBandGroup(t *testing.T) {
+	for _, split := range []bool{false, true} {
+		data := sinBandData()
+		n := len(data[plot.X].(plot.Values))
+		nr := n
+		if split {
+			nr = 2 * n
+		}
+		tx, ty, ts := tensor.NewFloat64(nr), tensor.NewFloat64(nr), tensor.NewFloat64(nr)
+		sp := tensor.NewString(nr)
+		for i := range nr {
+			j := i % n
+			off := 0.0
+			sp.SetString1D("A", i)
+			if i >= n {
+				off = 30
+				sp.SetString1D("B", i)
+			}
+			tx.SetFloat1D(data[plot.X].Float1D(j), i)
+			ty.SetFloat1D(data[plot.Y].Float1D(j)+off, i)
+			ts.SetFloat1D(data[plot.High].Float1D(j), i)
+		}
+		plot.SetStyler(tx, func(s *plot.Style) {
+			s.Role = plot.X
+		})
+		plot.SetStyler(ty, func(s *plot.Style) {
+			s.On = true
+			s.Role = plot.Y
+			s.Group = "Y"
+			s.Plot.Title = "Table XY with an error Band in its group"
+		})
+		plot.SetStyler(ts, func(s *plot.Style) {
+			s.On = true
+			s.Role = plot.High
+			s.Group = "Y"
+			s.Plotter = BandType
+		})
+		dt := table.New("BandGroup")
+		dt.AddColumn("X", tx)
+		dt.AddColumn("Y", ty)
+		dt.AddColumn("SEM", ts)
+		if split {
+			plot.SetStyler(sp, func(s *plot.Style) {
+				s.On = true
+				s.Role = plot.Split
+			})
+			dt.AddColumn("Split", sp)
+		}
+		plt, err := plot.NewTablePlot(dt)
+		assert.NoError(t, err)
+		nm := "table-band-group"
+		np := 2
+		if split {
+			nm += "-split"
+			np = 4
+		}
+		imagex.Assert(t, plt.RenderImage(), nm)
+		assert.Equal(t, np, len(plt.Plotters))
+		for i := 0; i < np/2; i++ {
+			xy := plt.Plotters[i].(*XY)
+			bd := plt.Plotters[np/2+i].(*Band)
+			assert.Equal(t, xy.Style.Line.Color, bd.Style.Line.Color)
+			assert.NotNil(t, bd.Center) // deviations around the Y of the group
+		}
+		nleg := 0 // no legend for one main plotter
+		if split {
+			nleg = 2 // the error bands are not in the legend
+		}
+		assert.Equal(t, nleg, len(plt.Legend.Entries))
+	}
+}
