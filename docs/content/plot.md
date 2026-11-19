@@ -222,23 +222,55 @@ plots.NewBand(plt, plot.Data{plot.X: x, plot.High: lowr})
 plots.NewBand(plt, plot.Data{plot.X: x, plot.Low: lowr, plot.High: upr})
 ```
 
-`XBand` is the equivalent of fill_betweenx, and draws the body of a [matplotlib violin plot](https://matplotlib.org/stable/plot_types/stats/violin.html#sphx-glr-plot-types-stats-violin-py): `X` is the position of the violin, `Y` the values, and `High` the density at each value. A box plot can be drawn on top of it:
+`XBand` is the equivalent of fill_betweenx, and draws the body of a [matplotlib violin plot](https://matplotlib.org/stable/plot_types/stats/violin.html#sphx-glr-plot-types-stats-violin-py): `X` is the position of the violin, `Y` the values, and `High` the density at each value. Here, the violins show a gaussian kernel density of random samples in three groups, with a box plot of the quartiles of each group on top of them, and the outliers beyond the whiskers (1.5 times the interquartile range) as points:
 
 ```Goal
 plt := lab.NewPlot(b)
-for i, mean := range []float64{4, 6} {
-	vx, vy, vd := make(plot.Values, 41), make(plot.Values, 41), make(plot.Values, 41)
-	for j := range 41 {
-		vy[j] = 10 * float64(j) / 40
-		vx[j] = float64(i + 1)
-		vd[j] = 0.4 * math.Exp(-0.5*(vy[j]-mean)*(vy[j]-mean)/(1+float64(i)))
+med, q1, q3 := make(plot.Values, 3), make(plot.Values, 3), make(plot.Values, 3)
+low, high := make(plot.Values, 3), make(plot.Values, 3)
+var ox, oy plot.Values
+for g, mean := range []float64{2, 5, 3} {
+	vals := make([]float64, 100)
+	for i := range vals {
+		vals[i] = mean + (1+0.5*float64(g))*rand.NormFloat64()
 	}
-	plots.NewXBand(plt, plot.Data{plot.X: vx, plot.Y: vy, plot.High: vd})
+	sort.Float64s(vals)
+	q := func(p float64) float64 { return vals[int(p*99+0.5)] }
+	med[g], q1[g], q3[g] = q(0.5), q(0.25), q(0.75)
+	iqr := q3[g] - q1[g]
+	low[g], high[g] = q3[g], q1[g]
+	for _, v := range vals {
+		if v < q1[g]-1.5*iqr || v > q3[g]+1.5*iqr {
+			ox = append(ox, float64(g+1))
+			oy = append(oy, v)
+		} else {
+			low[g] = min(low[g], v)
+			high[g] = max(high[g], v)
+		}
+	}
+	vx, vy, vd := make(plot.Values, 50), make(plot.Values, 50), make(plot.Values, 50)
+	dmax := 0.0
+	for j := range 50 {
+		vx[j] = float64(g + 1)
+		vy[j] = vals[0] + (vals[99]-vals[0])*float64(j)/49
+		for _, v := range vals {
+			z := (vy[j] - v) / 0.5
+			vd[j] += math.Exp(-0.5 * z * z)
+		}
+		dmax = max(dmax, vd[j])
+	}
+	for j := range vd {
+		vd[j] *= 0.4 / dmax
+	}
+	plots.NewXBand(plt, plot.Data{plot.X: vx, plot.Y: vy, plot.High: vd}).Styler(func(s *plot.Style) {
+		s.Line.Color = colors.Uniform(colors.Gray)
+	})
 }
-plots.NewBox(plt, plot.Data{plot.Y: plot.Values{4, 6}, plot.U: plot.Values{3.2, 4.9}, plot.V: plot.Values{4.8, 7.1}}).Styler(func(s *plot.Style) {
-	s.Width.Width = 0.1
+plots.NewBox(plt, plot.Data{plot.X: tensor.NewStringFromValues("A", "B", "C"), plot.Y: med, plot.U: q1, plot.V: q3, plot.Low: low, plot.High: high}).Styler(func(s *plot.Style) {
+	s.Width.Width = 0.2
 	s.Line.Fill = colors.Scheme.Surface
 })
+plots.NewScatter(plt, plot.Data{plot.X: ox, plot.Y: oy})
 ```
 
 ### Reference lines and spans
