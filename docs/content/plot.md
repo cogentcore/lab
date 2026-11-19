@@ -337,9 +337,30 @@ TODO: implement, details on mapping,
 
 ## 2D Grid-based
 
-### ColorGrid
+### Heatmap
 
-Input = Values and X, Y size
+`Heatmap` draws a grid of cells colored by the values of a 2D tensor in the `Color` role (rows by columns), using the color axis of the plot (see Colors above), with optional `X` and `Y` labels for the columns and rows. Row 0 is at the top by default, as for a matrix or image (`TopZero`), and the cell edges are drawn if `Line.On` is `On`. For a higher-dimensional tensor, such as a table column of matrices, one row of the outer dimension (`Row`, the last one by default) is drawn. Here is the correlation matrix of four random variables:
+
+```Goal
+plt := lab.NewPlot(b)
+vars := tensor.NewFloat64(100, 4)
+for i := range 100 {
+	a := rand.NormFloat64()
+	vars.Set(a, i, 0)
+	vars.Set(a+0.5*rand.NormFloat64(), i, 1)
+	vars.Set(-a+rand.NormFloat64(), i, 2)
+	vars.Set(rand.NormFloat64(), i, 3)
+}
+names := tensor.NewStringFromValues("A", "B", "C", "D")
+corr := metric.CovarianceMatrix(metric.Correlation, vars)
+plots.NewHeatmap(plt, plot.Data{plot.Color: corr, plot.X: names, plot.Y: names}).Styler(func(s *plot.Style) {
+	s.Line.On = plot.On
+	s.Plot.ColorAxis.Range.SetMin(-1).SetMax(1)
+	s.Plot.ColorAxis.Label = "Correlation"
+})
+```
+
+The `tensorcore.TensorGrid` widget also shows tensors as colored grids, including higher-dimensional ones, interactively in the GUI, while a `Heatmap` is part of a plot, with axes, labels, and other plot elements, and can be saved as SVG or PDF.
 
 ### Contour
 

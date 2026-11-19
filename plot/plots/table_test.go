@@ -43,6 +43,9 @@ func TestTable(t *testing.T) {
 	ptyps := maps.Keys(plot.Plotters)
 	slices.Sort(ptyps)
 	for _, ttyp := range ptyps {
+		if ttyp == HeatmapType { // needs a Color tensor: TestHeatmapRows
+			continue
+		}
 		// attach stylers to the Y axis data: that is where plotter looks for it
 		genst := func(s *plot.Style) {
 			s.Plot.Title = "Test " + ttyp
