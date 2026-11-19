@@ -139,6 +139,7 @@ func (pt *Plot) Draw(pc *paint.Painter) *paint.Painter {
 	tb.Max.Y += 2
 	pt.PushBounds(tb)
 
+	pt.drawGrid()
 	for _, plt := range pt.Plotters {
 		plt.Plot(pt)
 	}
@@ -149,6 +150,34 @@ func (pt *Plot) Draw(pc *paint.Painter) *paint.Painter {
 
 	pt.Painter = nil
 	return pc
+}
+
+// drawGrid draws the grid lines behind the data, at the major ticks
+// of the X and Y axes, as specified by the [GridStyle].
+func (pt *Plot) drawGrid() {
+	gs := &pt.Style.Grid
+	if (!gs.X && !gs.Y) || gs.Line.On == Off {
+		return
+	}
+	pb := pt.PlotBox
+	if gs.X && pt.X.Style.On {
+		for _, t := range pt.X.ticks {
+			x := pt.PX(t.Value)
+			if t.IsMinor() || x < pb.Min.X || x > pb.Max.X {
+				continue
+			}
+			gs.Line.Draw(pt, math32.Vec2(x, pb.Min.Y), math32.Vec2(x, pb.Max.Y))
+		}
+	}
+	if gs.Y && pt.Y.Style.On {
+		for _, t := range pt.Y.ticks {
+			y := pt.PY(t.Value)
+			if t.IsMinor() || y < pb.Min.Y || y > pb.Max.Y {
+				continue
+			}
+			gs.Line.Draw(pt, math32.Vec2(pb.Min.X, y), math32.Vec2(pb.Max.X, y))
+		}
+	}
 }
 
 ////////	Axis
