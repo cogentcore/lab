@@ -371,7 +371,47 @@ The `tensorcore.TensorGrid` widget also shows tensors as colored grids, includin
 
 ### Contour
 
-??
+`Contour` draws the contour lines of the values of a 2D tensor in the `Color` role (rows by columns, as for a `Heatmap`): the lines along which the values are equal to each of a number of levels, colored by their level via the color axis of the plot. `FilledContour` fills the regions between the levels instead. The levels are about `Levels` (10 by default) round values across the range of the values, as for axis ticks, or the given `LevelValues`. Optional `X` and `Y` data are the coordinates of the columns and rows; otherwise column j is at X = j and row i at Y = i, with row 0 at the bottom. The values are interpolated linearly between the grid points, and NaN values leave holes.
+
+Here are the contours of two gaussian peaks, of opposite signs:
+
+```Goal
+plt := lab.NewPlot(b)
+n := 41
+x := tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(-3), tensor.NewFloat64Scalar(3), n, tensor.IncludeEnd)
+y := tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(-2), tensor.NewFloat64Scalar(2), n, tensor.IncludeEnd)
+z := tensor.NewFloat64(n, n)
+for r := range n {
+	for c := range n {
+		xv, yv := x.Float1D(c), y.Float1D(r)
+		z.Set(math.Exp(-xv*xv-yv*yv)-math.Exp(-(xv-1)*(xv-1)-(yv-1)*(yv-1)), r, c)
+	}
+}
+plots.NewContour(plt, plot.Data{plot.Color: z, plot.X: x, plot.Y: y})
+```
+
+The filled regions, with the contour lines between them, which are drawn if `Line.On` is `On`, in the `Line.Color`:
+
+```Goal
+plt := lab.NewPlot(b)
+n := 41
+x := tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(-3), tensor.NewFloat64Scalar(3), n, tensor.IncludeEnd)
+y := tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(-2), tensor.NewFloat64Scalar(2), n, tensor.IncludeEnd)
+z := tensor.NewFloat64(n, n)
+for r := range n {
+	for c := range n {
+		xv, yv := x.Float1D(c), y.Float1D(r)
+		z.Set(math.Exp(-xv*xv-yv*yv)-math.Exp(-(xv-1)*(xv-1)-(yv-1)*(yv-1)), r, c)
+	}
+}
+ct := plots.NewFilledContour(plt, plot.Data{plot.Color: z, plot.X: x, plot.Y: y})
+ct.Levels = 8
+ct.Styler(func(s *plot.Style) {
+	s.Line.On = plot.On
+	s.Line.Width.Pt(0.5)
+	s.Plot.ColorAxis.Label = "Z"
+})
+```
 
 ### Vector
 
@@ -463,7 +503,9 @@ lab.NewPlotFrom(plt, b)
 
 ## In the plot editor
 
-The **Stats** menu of a [[plot editor]] makes these plots of its table, with a dialog of their options, which starts from the columns of the current plot: the X axis, the columns that are on, and the Split column. The new plot is shown in a new tab in Cogent Lab, or a new window:
+The **Stats** menu of a [[plot editor]] makes these plots of its table, with a dialog of their options, which starts from the columns of the current plot: the X axis, the columns that are on, and the Split column. The new plot is shown in a new tab in Cogent Lab, or a new window.
+
+For the following plot, click on the Stats menu in the toolbar, and select `Mean and error` -- use the default options, and you'll see a nice Band summary of the data.
 
 ```Goal
 plot.SetStyler(results.Column("Epoch"), func(s *plot.Style) { s.Role = plot.X })

@@ -674,7 +674,7 @@ func TestEditorTypeMenu(t *testing.T) {
 				}
 				return tree.Continue
 			})
-			assert.Equal(t, []string{"Default", "Band", "Bar", "Box", "HLine", "HSpan", "Heatmap", "Labels", "VLine", "VSpan", "XBand", "XBar", "XBox", "XErrorBars", "XY", "YErrorBars"}, texts)
+			assert.Equal(t, []string{"Default", "Band", "Bar", "Box", "Contour", "FilledContour", "HLine", "HSpan", "Heatmap", "Labels", "VLine", "VSpan", "XBand", "XBar", "XBox", "XErrorBars", "XY", "YErrorBars"}, texts)
 		})()
 	})
 }

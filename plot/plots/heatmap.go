@@ -100,31 +100,8 @@ func (hm *Heatmap) SetData(data any) error {
 
 // setValues sets the values from the data, for the current Row.
 func (hm *Heatmap) setValues() error {
-	tsr, ok := hm.data[plot.Color].(tensor.Tensor)
-	if !ok {
-		return fmt.Errorf("Heatmap: Color data must be a tensor.Tensor")
-	}
-	sizes := tsr.ShapeSizes()
-	nd := len(sizes)
-	var cell tensor.Tensor = tsr
-	switch {
-	case nd == 0 || tsr.Len() == 0:
-		return plot.ErrNoData
-	case nd == 1:
-		hm.Rows, hm.Columns = 1, sizes[0]
-	case nd == 2:
-		hm.Rows, hm.Columns = sizes[0], sizes[1]
-	default:
-		row := hm.Row
-		if row < 0 || row >= sizes[0] {
-			row = sizes[0] - 1
-		}
-		cell = tensor.Cells1D(tsr, row)
-		hm.Columns = sizes[nd-1]
-		hm.Rows = cell.Len() / hm.Columns
-	}
 	var err error
-	hm.Values, err = plot.CopyValues(cell)
+	hm.Values, hm.Rows, hm.Columns, err = gridValues(HeatmapType, hm.data, hm.Row)
 	if err != nil {
 		return err
 	}
@@ -132,6 +109,39 @@ func (hm *Heatmap) setValues() error {
 	hm.YLabels = hm.labels(plot.Y, hm.Rows)
 	hm.stylers = plot.GetStylersFromData(hm.data, plot.Color)
 	return nil
+}
+
+// gridValues returns the values of the grid of the tensor in the Color
+// role of the given data, with its number of rows and columns, for a
+// plotter of the given type: a 2D tensor is used as is, and a 1D tensor
+// as one row. For a higher-dimensional tensor, the given row of the outer
+// dimension is used (the last one if it is out of range), with its
+// innermost dimension as the columns and the rest as rows.
+func gridValues(typ string, data plot.Data, row int) (vals plot.Values, rows, cols int, err error) {
+	tsr, ok := data[plot.Color].(tensor.Tensor)
+	if !ok {
+		return nil, 0, 0, fmt.Errorf("%s: Color data must be a tensor.Tensor", typ)
+	}
+	sizes := tsr.ShapeSizes()
+	nd := len(sizes)
+	var cell tensor.Tensor = tsr
+	switch {
+	case nd == 0 || tsr.Len() == 0:
+		return nil, 0, 0, plot.ErrNoData
+	case nd == 1:
+		rows, cols = 1, sizes[0]
+	case nd == 2:
+		rows, cols = sizes[0], sizes[1]
+	default:
+		if row < 0 || row >= sizes[0] {
+			row = sizes[0] - 1
+		}
+		cell = tensor.Cells1D(tsr, row)
+		cols = sizes[nd-1]
+		rows = cell.Len() / cols
+	}
+	vals, err = plot.CopyValues(cell)
+	return
 }
 
 // labels returns the labels for the given role if it has n values.
