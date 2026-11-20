@@ -264,7 +264,9 @@ func (ct *Contour) Plot(plt *plot.Plot) {
 				path(px)
 				continue
 			}
-			parts, lb, ok := labelLine(px, tx.PaintText.Bounds.Size())
+			parts, lb, ok := labelLine(px, tx.PaintText.Bounds.Size(), func(lb *contourLabel) bool {
+				return lb.inside(plt.PlotBox) && !slices.ContainsFunc(labels, lb.overlaps)
+			})
 			for _, p := range parts {
 				path(p)
 			}
@@ -300,6 +302,10 @@ type contourLabel struct {
 
 	// angle is the rotation of the label, in radians.
 	angle float32
+
+	// size is the size of the box of the label, with its padding,
+	// before the rotation.
+	size math32.Vector2
 }
 
 // draw draws the label centered at its position, rotated.
@@ -312,18 +318,77 @@ func (lb *contourLabel) draw(plt *plot.Plot) {
 	pc.Transform = m
 }
 
+// axes returns the unit vectors along the width and height of the box.
+func (lb *contourLabel) axes() (u, v math32.Vector2) {
+	sin, cos := math32.Sincos(lb.angle)
+	return math32.Vec2(cos, sin), math32.Vec2(-sin, cos)
+}
+
+// corners returns the corners of the rotated box of the label.
+func (lb *contourLabel) corners() [4]math32.Vector2 {
+	u, v := lb.axes()
+	hu, hv := u.MulScalar(0.5*lb.size.X), v.MulScalar(0.5*lb.size.Y)
+	return [4]math32.Vector2{lb.pos.Sub(hu).Sub(hv), lb.pos.Add(hu).Sub(hv), lb.pos.Add(hu).Add(hv), lb.pos.Sub(hu).Add(hv)}
+}
+
+// inside returns whether the box of the label is inside the given box.
+func (lb *contourLabel) inside(box math32.Box2) bool {
+	for _, c := range lb.corners() {
+		if c.X < box.Min.X || c.X > box.Max.X || c.Y < box.Min.Y || c.Y > box.Max.Y {
+			return false
+		}
+	}
+	return true
+}
+
+// overlaps returns whether the rotated boxes of the labels overlap,
+// by the separating axis theorem: they do not if their projections
+// on one of the axes of either box are separated.
+func (lb *contourLabel) overlaps(o contourLabel) bool {
+	ca, cb := lb.corners(), o.corners()
+	ua, va := lb.axes()
+	ub, vb := o.axes()
+	for _, ax := range [4]math32.Vector2{ua, va, ub, vb} {
+		amin, amax := projectRange(ca, ax)
+		bmin, bmax := projectRange(cb, ax)
+		if amax < bmin || bmax < amin {
+			return false
+		}
+	}
+	return true
+}
+
+// projectRange returns the range of the projections of the given points
+// on the given axis.
+func projectRange(pts [4]math32.Vector2, ax math32.Vector2) (mn, mx float32) {
+	mn, mx = pts[0].Dot(ax), pts[0].Dot(ax)
+	for _, p := range pts[1:] {
+		d := p.Dot(ax)
+		mn, mx = min(mn, d), max(mx, d)
+	}
+	return
+}
+
+// labelPositions are the positions along a line, as fractions of its
+// length, at which a label is tried, in order: the middle first, and
+// then away from it, for the first one that fits.
+var labelPositions = []float32{0.5, 0.35, 0.65, 0.2, 0.8, 0.27, 0.73, 0.42, 0.58, 0.12, 0.88}
+
 // labelLine returns the parts of the given line, in pixels, around a gap
-// for a label of the given size at the middle of the line, and the label,
-// which is upright along the line there. The line is returned as is,
-// without a label, if it is not long enough for one.
-func labelLine(pts []math32.Vector2, size math32.Vector2) ([][]math32.Vector2, contourLabel, bool) {
+// for a label of the given size, at the first of the [labelPositions]
+// along the line for which the label fits, as determined by the given
+// function (e.g., not overlapping other labels), and the label, which is
+// upright along the line there. The line is returned as is, without a
+// label, if it is not long enough for one, or the label does not fit.
+func labelLine(pts []math32.Vector2, size math32.Vector2, fits func(lb *contourLabel) bool) ([][]math32.Vector2, contourLabel, bool) {
 	// cumulative lengths
 	cum := make([]float32, len(pts))
 	for i := 1; i < len(pts); i++ {
 		cum[i] = cum[i-1] + pts[i].Sub(pts[i-1]).Length()
 	}
 	total := cum[len(cum)-1]
-	gap := 0.5*size.X + 0.25*size.Y
+	pad := 0.25 * size.Y
+	gap := 0.5*size.X + pad
 	if total < 3*size.X {
 		return [][]math32.Vector2{pts}, contourLabel{}, false
 	}
@@ -341,20 +406,30 @@ func labelLine(pts []math32.Vector2, size math32.Vector2) ([][]math32.Vector2, c
 		}
 		return pts[i-1].Add(pts[i].Sub(pts[i-1]).MulScalar(t)), i
 	}
-	mid := 0.5 * total
-	p0, i0 := at(mid - gap)
-	p1, i1 := at(mid + gap)
-	before := append(slices.Clone(pts[:i0]), p0)
-	after := append([]math32.Vector2{p1}, pts[i1:]...)
-	pos, _ := at(mid)
-	d := p1.Sub(p0)
-	angle := math32.Atan2(d.Y, d.X)
-	if angle > math32.Pi/2 { // upright
-		angle -= math32.Pi
-	} else if angle < -math32.Pi/2 {
-		angle += math32.Pi
+	for _, f := range labelPositions {
+		mid := f * total
+		if mid-gap < 0 || mid+gap > total {
+			continue
+		}
+		p0, i0 := at(mid - gap)
+		p1, i1 := at(mid + gap)
+		pos, _ := at(mid)
+		d := p1.Sub(p0)
+		angle := math32.Atan2(d.Y, d.X)
+		if angle > math32.Pi/2 { // upright
+			angle -= math32.Pi
+		} else if angle < -math32.Pi/2 {
+			angle += math32.Pi
+		}
+		lb := contourLabel{pos: pos, angle: angle, size: size.Add(math32.Vec2(2*pad, pad))}
+		if fits != nil && !fits(&lb) {
+			continue
+		}
+		before := append(slices.Clone(pts[:i0]), p0)
+		after := append([]math32.Vector2{p1}, pts[i1:]...)
+		return [][]math32.Vector2{before, after}, lb, true
 	}
-	return [][]math32.Vector2{before, after}, contourLabel{pos: pos, angle: angle}, true
+	return [][]math32.Vector2{pts}, contourLabel{}, false
 }
 
 // UpdateRange updates the given ranges.

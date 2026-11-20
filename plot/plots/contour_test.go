@@ -130,7 +130,7 @@ func TestContourLevels(t *testing.T) {
 func TestContourLabelLine(t *testing.T) {
 	// a straight line along X, 100 pixels long, with a 20 by 10 label
 	pts := []math32.Vector2{{0, 0}, {50, 0}, {100, 0}}
-	parts, lb, ok := labelLine(pts, math32.Vec2(20, 10))
+	parts, lb, ok := labelLine(pts, math32.Vec2(20, 10), nil)
 	require.True(t, ok)
 	require.Equal(t, 2, len(parts))
 	assert.Equal(t, math32.Vec2(50, 0), lb.pos)
@@ -142,13 +142,45 @@ func TestContourLabelLine(t *testing.T) {
 	assert.Equal(t, pts[2], parts[1][len(parts[1])-1])
 
 	// right to left is upright
-	_, lb, _ = labelLine([]math32.Vector2{{100, 0}, {0, 0}}, math32.Vec2(20, 10))
+	_, lb, _ = labelLine([]math32.Vector2{{100, 0}, {0, 0}}, math32.Vec2(20, 10), nil)
 	assert.InDelta(t, 0, lb.angle, 1e-6)
 
 	// too short for a label
-	parts, _, ok = labelLine([]math32.Vector2{{0, 0}, {50, 0}}, math32.Vec2(20, 10))
+	parts, _, ok = labelLine([]math32.Vector2{{0, 0}, {50, 0}}, math32.Vec2(20, 10), nil)
 	assert.False(t, ok)
 	assert.Equal(t, 1, len(parts))
+
+	// a label that does not fit at the middle goes to the next position
+	parts, lb, ok = labelLine(pts, math32.Vec2(20, 10), func(lb *contourLabel) bool {
+		return lb.pos.X != 50
+	})
+	require.True(t, ok)
+	assert.Equal(t, math32.Vec2(35, 0), lb.pos)
+	assert.Equal(t, math32.Vec2(22.5, 0), parts[0][len(parts[0])-1])
+	// or nowhere
+	parts, _, ok = labelLine(pts, math32.Vec2(20, 10), func(lb *contourLabel) bool { return false })
+	assert.False(t, ok)
+	assert.Equal(t, [][]math32.Vector2{pts}, parts)
+}
+
+func TestContourLabelOverlap(t *testing.T) {
+	a := contourLabel{pos: math32.Vec2(0, 0), size: math32.Vec2(20, 10)}
+	b := contourLabel{pos: math32.Vec2(15, 0), size: math32.Vec2(20, 10)}
+	assert.True(t, a.overlaps(b))
+	b.pos.X = 25
+	assert.False(t, a.overlaps(b))
+	// rotated by 90 degrees, b is 10 wide along X, around its position
+	b.angle = math32.Pi / 2
+	b.pos.X = 14 // from 9 to 19
+	assert.True(t, a.overlaps(b))
+	b.pos.X = 16 // from 11 to 21
+	assert.False(t, a.overlaps(b))
+	// diagonal boxes whose bounding boxes overlap, but not the boxes
+	c := contourLabel{pos: math32.Vec2(0, 0), size: math32.Vec2(40, 4), angle: math32.Pi / 4}
+	d := contourLabel{pos: math32.Vec2(12, -12), size: math32.Vec2(40, 4), angle: math32.Pi / 4}
+	assert.False(t, c.overlaps(d))
+	assert.True(t, a.inside(math32.B2(-10, -5, 10, 5)))
+	assert.False(t, a.inside(math32.B2(-10, -4, 10, 5)))
 }
 
 func TestContour(t *testing.T) {
@@ -195,6 +227,14 @@ func TestContour(t *testing.T) {
 	ct.Labels = true
 	ct.Styler(func(s *plot.Style) { s.Line.On = plot.On })
 	imagex.Assert(t, plt.RenderImage(), "contour-filled-labels")
+
+	// many levels, whose labels would overlap at the middles of the lines
+	plt = plot.New()
+	plt.Title.Text = "Crowded contour labels"
+	ct = NewContour(plt, plot.Data{plot.Color: z, plot.X: x, plot.Y: y})
+	ct.Labels = true
+	ct.Levels = 30
+	imagex.Assert(t, plt.RenderImage(), "contour-labels-crowded")
 
 	// explicit levels, the grid indexes, and NaN holes
 	z.Set(math.NaN(), 20, 20)

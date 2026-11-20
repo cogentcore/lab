@@ -51,6 +51,11 @@ func (DefaultTicks) Ticks(mn, mx float64, nticks int) []Tick {
 
 	values, step, q, mag := ticks.ForRange(mn, mx, nticks, ticks.WithinData)
 	majorDelta, fc, prec := ticks.Format(values, step, q, mag)
+	for i, v := range values {
+		if math.Abs(v) < 1e-9*majorDelta { // rounding errors of 0
+			values[i] = 0
+		}
+	}
 	labels := make([]Tick, len(values))
 	for i, v := range values {
 		labels[i] = Tick{Value: v, Label: strconv.FormatFloat(float64(v), fc, prec, 64)}
