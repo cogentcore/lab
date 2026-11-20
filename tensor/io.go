@@ -246,7 +246,7 @@ func Sprintf(format string, tsr Tensor, maxLen int) string {
 			mxwd = len(s)
 		}
 	}
-	onedRow := false
+	onedRow := OnedColumn
 	shp := tsr.Shape()
 	rowShape, colShape, _, colIdxs := Projection2DDimShapes(shp, onedRow)
 	rows, cols, _, _ := Projection2DShape(shp, onedRow)

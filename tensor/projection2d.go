@@ -4,14 +4,18 @@
 
 package tensor
 
+// OnedRows specifies whether the 1D case of a 2D projection goes along the row:
+// [OnedRow] or [OnedColumn].
+type OnedRows bool
+
 const (
 	// OnedRow is for onedRow arguments to Projection2D functions,
 	// specifies that the 1D case goes along the row.
-	OnedRow = true
+	OnedRow OnedRows = true
 
 	// OnedColumn is for onedRow arguments to Projection2D functions,
 	// specifies that the 1D case goes along the column.
-	OnedColumn = false
+	OnedColumn OnedRows = false
 )
 
 // Projection2DShape returns the size of a 2D projection of the given tensor Shape,
@@ -22,7 +26,7 @@ const (
 // the remaining inner dimensions use the above logic from there, as if it was even.
 // rowEx returns the number of "extra" (outer-dimensional) rows
 // and colEx returns the number of extra cols, to add extra spacing between these dimensions.
-func Projection2DShape(shp *Shape, onedRow bool) (rows, cols, rowEx, colEx int) {
+func Projection2DShape(shp *Shape, onedRow OnedRows) (rows, cols, rowEx, colEx int) {
 	if shp.Len() == 0 {
 		return 1, 1, 0, 0
 	}
@@ -63,7 +67,7 @@ func Projection2DShape(shp *Shape, onedRow bool) (rows, cols, rowEx, colEx int) 
 // If there are an odd number of dimensions, the first dimension is row-wise, and
 // the remaining inner dimensions use the above logic from there, as if it was even.
 // This is the main organizing function for all Projection2D calls.
-func Projection2DDimShapes(shp *Shape, onedRow bool) (rowShape, colShape *Shape, rowIdxs, colIdxs []int) {
+func Projection2DDimShapes(shp *Shape, onedRow OnedRows) (rowShape, colShape *Shape, rowIdxs, colIdxs []int) {
 	nd := shp.NumDims()
 	if nd == 1 {
 		if onedRow {
@@ -102,7 +106,7 @@ func Projection2DDimShapes(shp *Shape, onedRow bool) (rowShape, colShape *Shape,
 // Projection2DIndex returns the flat 1D index for given row, col coords for a 2D projection
 // of the given tensor shape, collapsing higher dimensions down to 2D (and 1D up to 2D).
 // See [Projection2DShape] for full info.
-func Projection2DIndex(shp *Shape, onedRow bool, row, col int) int {
+func Projection2DIndex(shp *Shape, onedRow OnedRows, row, col int) int {
 	if shp.Len() == 0 {
 		return 0
 	}
@@ -133,7 +137,7 @@ func Projection2DIndex(shp *Shape, onedRow bool, row, col int) int {
 // that go into the given row, col coords for a 2D projection of the given tensor,
 // collapsing higher dimensions down to 2D (and 1D up to 2D).
 // See [Projection2DShape] for full info.
-func Projection2DCoords(shp *Shape, onedRow bool, row, col int) (rowCoords, colCoords []int) {
+func Projection2DCoords(shp *Shape, onedRow OnedRows, row, col int) (rowCoords, colCoords []int) {
 	if shp.Len() == 0 {
 		return []int{0}, []int{0}
 	}
@@ -164,7 +168,7 @@ func Projection2DCoords(shp *Shape, onedRow bool, row, col int) (rowCoords, colC
 // Projection2DValue returns the float64 value at given row, col coords for a 2D projection
 // of the given tensor, collapsing higher dimensions down to 2D (and 1D up to 2D).
 // See [Projection2DShape] for full info.
-func Projection2DValue(tsr Tensor, onedRow bool, row, col int) float64 {
+func Projection2DValue(tsr Tensor, onedRow OnedRows, row, col int) float64 {
 	idx := Projection2DIndex(tsr.Shape(), onedRow, row, col)
 	return tsr.Float1D(idx)
 }
@@ -172,7 +176,7 @@ func Projection2DValue(tsr Tensor, onedRow bool, row, col int) float64 {
 // Projection2DString returns the string value at given row, col coords for a 2D projection
 // of the given tensor, collapsing higher dimensions down to 2D (and 1D up to 2D).
 // See [Projection2DShape] for full info.
-func Projection2DString(tsr Tensor, onedRow bool, row, col int) string {
+func Projection2DString(tsr Tensor, onedRow OnedRows, row, col int) string {
 	idx := Projection2DIndex(tsr.Shape(), onedRow, row, col)
 	return tsr.String1D(idx)
 }
@@ -180,7 +184,7 @@ func Projection2DString(tsr Tensor, onedRow bool, row, col int) string {
 // Projection2DSet sets a float64 value at given row, col coords for a 2D projection
 // of the given tensor, collapsing higher dimensions down to 2D (and 1D up to 2D).
 // See [Projection2DShape] for full info.
-func Projection2DSet(tsr Tensor, onedRow bool, row, col int, val float64) {
+func Projection2DSet(tsr Tensor, onedRow OnedRows, row, col int, val float64) {
 	idx := Projection2DIndex(tsr.Shape(), onedRow, row, col)
 	tsr.SetFloat1D(val, idx)
 }
@@ -188,7 +192,7 @@ func Projection2DSet(tsr Tensor, onedRow bool, row, col int, val float64) {
 // Projection2DSetString sets a string value at given row, col coords for a 2D projection
 // of the given tensor, collapsing higher dimensions down to 2D (and 1D up to 2D).
 // See [Projection2DShape] for full info.
-func Projection2DSetString(tsr Tensor, onedRow bool, row, col int, val string) {
+func Projection2DSetString(tsr Tensor, onedRow OnedRows, row, col int, val string) {
 	idx := Projection2DIndex(tsr.Shape(), onedRow, row, col)
 	tsr.SetString1D(val, idx)
 }

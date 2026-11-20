@@ -22,6 +22,7 @@ var _ = register(func() {
 			"NewSubPlot":        reflect.ValueOf(p_cogentcore_org_lab_plotcore.NewSubPlot),
 			"Plot":              reflect.ValueOf((*p_cogentcore_org_lab_plotcore.Plot)(nil)),
 			"PlotterChooser":    reflect.ValueOf((*p_cogentcore_org_lab_plotcore.PlotterChooser)(nil)),
+			"ToolbarPlace":      reflect.ValueOf((*p_cogentcore_org_lab_plotcore.ToolbarPlace)(nil)),
 			"TopBar":            reflect.ValueOf(p_cogentcore_org_lab_plotcore.TopBar),
 		},
 	})

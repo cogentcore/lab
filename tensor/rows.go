@@ -222,18 +222,25 @@ func (rw *Rows) Permuted() {
 	}
 }
 
+// SortOrder is the direction of a sort: [Ascending] or [Descending].
+type SortOrder bool
+
+// SortStability specifies whether a sort is stable, preserving the original
+// order of equal elements: [StableSort] or [UnstableSort].
+type SortStability bool
+
 const (
 	// Ascending specifies an ascending sort direction for tensor Sort routines
-	Ascending = true
+	Ascending SortOrder = true
 
 	// Descending specifies a descending sort direction for tensor Sort routines
-	Descending = false
+	Descending SortOrder = false
 
 	// StableSort specifies using stable, original order-preserving sort, which is slower.
-	StableSort = true
+	StableSort SortStability = true
 
 	// Unstable specifies using faster but unstable sorting.
-	UnstableSort = false
+	UnstableSort SortStability = false
 )
 
 // SortFunc sorts the row-wise indexes using given compare function.
@@ -260,7 +267,7 @@ func (rw *Rows) SortIndexes() {
 
 // CompareAscending is a sort compare function that reverses direction
 // based on the ascending bool.
-func CompareAscending[T cmp.Ordered](a, b T, ascending bool) int {
+func CompareAscending[T cmp.Ordered](a, b T, ascending SortOrder) int {
 	if ascending {
 		return cmp.Compare(a, b)
 	}
@@ -269,7 +276,7 @@ func CompareAscending[T cmp.Ordered](a, b T, ascending bool) int {
 
 // Sort does default alpha or numeric sort of row-wise data.
 // Uses first cell of higher dimensional data.
-func (rw *Rows) Sort(ascending bool) {
+func (rw *Rows) Sort(ascending SortOrder) {
 	if rw.Tensor.IsString() {
 		rw.SortFunc(func(tsr Values, i, j int) int {
 			return CompareAscending(tsr.StringRow(i, 0), tsr.StringRow(j, 0), ascending)
@@ -297,7 +304,7 @@ func (rw *Rows) SortStableFunc(cmp func(tsr Values, i, j int) int) {
 
 // SortStable does stable default alpha or numeric sort.
 // Uses first cell of higher dimensional data.
-func (rw *Rows) SortStable(ascending bool) {
+func (rw *Rows) SortStable(ascending SortOrder) {
 	if rw.Tensor.IsString() {
 		rw.SortStableFunc(func(tsr Values, i, j int) int {
 			return CompareAscending(tsr.StringRow(i, 0), tsr.StringRow(j, 0), ascending)

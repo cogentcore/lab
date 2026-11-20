@@ -12,6 +12,7 @@ var _ = register(func() {
 		"cogentcore.org/lab/tensorfs": {
 			"AllFiles":       reflect.ValueOf(p_cogentcore_org_lab_tensorfs.AllFiles),
 			"Chdir":          reflect.ValueOf(p_cogentcore_org_lab_tensorfs.Chdir),
+			"CopyMode":       reflect.ValueOf((*p_cogentcore_org_lab_tensorfs.CopyMode)(nil)),
 			"CurDir":         reflect.ValueOf(&p_cogentcore_org_lab_tensorfs.CurDir),
 			"CurRoot":        reflect.ValueOf(&p_cogentcore_org_lab_tensorfs.CurRoot),
 			"DirFile":        reflect.ValueOf((*p_cogentcore_org_lab_tensorfs.DirFile)(nil)),
@@ -22,6 +23,8 @@ var _ = register(func() {
 			"File":           reflect.ValueOf((*p_cogentcore_org_lab_tensorfs.File)(nil)),
 			"Get":            reflect.ValueOf(p_cogentcore_org_lab_tensorfs.Get),
 			"List":           reflect.ValueOf(p_cogentcore_org_lab_tensorfs.List),
+			"ListDepth":      reflect.ValueOf((*p_cogentcore_org_lab_tensorfs.ListDepth)(nil)),
+			"ListDetail":     reflect.ValueOf((*p_cogentcore_org_lab_tensorfs.ListDetail)(nil)),
 			"ListOutput":     reflect.ValueOf(&p_cogentcore_org_lab_tensorfs.ListOutput),
 			"Long":           reflect.ValueOf(p_cogentcore_org_lab_tensorfs.Long),
 			"Mkdir":          reflect.ValueOf(p_cogentcore_org_lab_tensorfs.Mkdir),

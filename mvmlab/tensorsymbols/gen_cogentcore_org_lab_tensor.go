@@ -42,7 +42,7 @@ func CloneValues[T Values](tsr T) T {
 	return tsr.Clone().(T)
 }
 
-func CompareAscending[T cmp.Ordered](a, b T, ascending bool) int {
+func CompareAscending[T cmp.Ordered](a, b T, ascending SortOrder) int {
 	if ascending {
 		return cmp.Compare(a, b)
 	}
@@ -52,7 +52,7 @@ func CompareAscending[T cmp.Ordered](a, b T, ascending bool) int {
 type DataTypes interface {
 	string | bool | float32 | float64 | int | int64 | uint64 | int32 | uint32 | byte
 }
-`, []string{"FloatPromoteType", "NewOfType", "Tensor", "Values"})
+`, []string{"FloatPromoteType", "NewOfType", "SortOrder", "Tensor", "Values"})
 	add(map[string]map[string]reflect.Value{
 		"cogentcore.org/lab/tensor": {
 			"AddFunc":                 reflect.ValueOf(p_cogentcore_org_lab_tensor.AddFunc),
@@ -185,6 +185,7 @@ type DataTypes interface {
 			"NumThreads":              reflect.ValueOf(&p_cogentcore_org_lab_tensor.NumThreads),
 			"OnedColumn":              reflect.ValueOf(p_cogentcore_org_lab_tensor.OnedColumn),
 			"OnedRow":                 reflect.ValueOf(p_cogentcore_org_lab_tensor.OnedRow),
+			"OnedRows":                reflect.ValueOf((*p_cogentcore_org_lab_tensor.OnedRows)(nil)),
 			"OpenCSV":                 reflect.ValueOf(p_cogentcore_org_lab_tensor.OpenCSV),
 			"OpenFS":                  reflect.ValueOf(p_cogentcore_org_lab_tensor.OpenFS),
 			"Precision":               reflect.ValueOf(p_cogentcore_org_lab_tensor.Precision),
@@ -222,6 +223,8 @@ type DataTypes interface {
 			"SlicesMagic":             reflect.ValueOf((*p_cogentcore_org_lab_tensor.SlicesMagic)(nil)),
 			"SlicesMagicN":            reflect.ValueOf(p_cogentcore_org_lab_tensor.SlicesMagicN),
 			"SlicesMagicValues":       reflect.ValueOf(p_cogentcore_org_lab_tensor.SlicesMagicValues),
+			"SortOrder":               reflect.ValueOf((*p_cogentcore_org_lab_tensor.SortOrder)(nil)),
+			"SortStability":           reflect.ValueOf((*p_cogentcore_org_lab_tensor.SortStability)(nil)),
 			"Space":                   reflect.ValueOf(p_cogentcore_org_lab_tensor.Space),
 			"SplitAtInnerDims":        reflect.ValueOf(p_cogentcore_org_lab_tensor.SplitAtInnerDims),
 			"Sprintf":                 reflect.ValueOf(p_cogentcore_org_lab_tensor.Sprintf),

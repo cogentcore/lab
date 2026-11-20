@@ -118,20 +118,23 @@ func NewSubPlot(parent ...tree.Node) *Editor {
 	return pl
 }
 
-// Values of the topBar argument of [NewEditorWithBar].
+// ToolbarPlace specifies where the toolbar of an editor made by
+// [NewEditorWithBar] goes: [TopBar] or [InlineBar].
+type ToolbarPlace bool
+
 const (
 	// TopBar puts the toolbar of the editor in the top bar of its [core.Body].
-	TopBar = true
+	TopBar ToolbarPlace = true
 
 	// InlineBar puts the toolbar of the editor in its parent, before it.
-	InlineBar = false
+	InlineBar ToolbarPlace = false
 )
 
 // NewEditorWithBar returns a new [Editor] in the given parent, with its
 // toolbar: in the top bar of the parent if topBar is [TopBar] and the parent
 // is a [core.Body], or else ([InlineBar]) in the parent, before the editor.
-func NewEditorWithBar(parent tree.Node, topBar bool) *Editor {
-	if b, ok := parent.(*core.Body); ok && topBar {
+func NewEditorWithBar(parent tree.Node, topBar ToolbarPlace) *Editor {
+	if b, ok := parent.(*core.Body); ok && topBar == TopBar {
 		pl := NewEditor(b)
 		b.AddTopBar(func(bar *core.Frame) {
 			core.NewToolbar(bar).Maker(pl.MakeToolbar)

@@ -24,13 +24,17 @@ import (
 	"cogentcore.org/lab/tensor"
 )
 
+// CSVHeaders specifies whether CSV files have headers: [Headers] or
+// [NoHeaders].
+type CSVHeaders bool
+
 const (
 	// Headers is passed to CSV methods for the headers arg, to use headers
 	// that capture full type and tensor shape information.
-	Headers = true
+	Headers CSVHeaders = true
 
 	// NoHeaders is passed to CSV methods for the headers arg, to not use headers
-	NoHeaders = false
+	NoHeaders CSVHeaders = false
 )
 
 // SaveCSV writes a table to a comma-separated-values (CSV) file
@@ -39,7 +43,7 @@ const (
 // and tensor cell geometry of the columns, enabling full reloading
 // of exactly the same table format and data (recommended).
 // Otherwise, only the data is written.
-func (dt *Table) SaveCSV(filename fsx.Filename, delim tensor.Delims, headers bool) error { //types:add
+func (dt *Table) SaveCSV(filename fsx.Filename, delim tensor.Delims, headers CSVHeaders) error { //types:add
 	fp, err := os.Create(string(filename))
 	if err != nil {
 		log.Println(err)
@@ -330,7 +334,7 @@ func InferDataType(str string) reflect.Kind {
 // and tensor cell geometry of the columns, enabling full reloading
 // of exactly the same table format and data (recommended).
 // Otherwise, only the data is written.
-func (dt *Table) WriteCSV(w io.Writer, delim tensor.Delims, headers bool) error {
+func (dt *Table) WriteCSV(w io.Writer, delim tensor.Delims, headers CSVHeaders) error {
 	ncol := 0
 	var err error
 	if headers {

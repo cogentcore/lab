@@ -141,7 +141,7 @@ func (tb *TensorEditor) SetTensor(et tensor.Tensor) *TensorEditor {
 }
 
 func (tb *TensorEditor) UpdateSliceSize() int {
-	tb.SliceSize, tb.NCols, _, _ = tensor.Projection2DShape(tb.Tensor.Shape(), tb.Layout.OddRow)
+	tb.SliceSize, tb.NCols, _, _ = tensor.Projection2DShape(tb.Tensor.Shape(), tensor.OnedRows(tb.Layout.OddRow))
 	return tb.SliceSize
 }
 
@@ -162,10 +162,10 @@ func (tb *TensorEditor) UpdateMaxWidths() {
 		mxw := 0
 		for si := range tb.SliceSize {
 			if isstr {
-				str := tensor.Projection2DString(tb.Tensor, tb.Layout.OddRow, si, fli)
+				str := tensor.Projection2DString(tb.Tensor, tensor.OnedRows(tb.Layout.OddRow), si, fli)
 				mxw = max(mxw, len(str))
 			} else {
-				fval := tensor.Projection2DValue(tb.Tensor, tb.Layout.OddRow, si, fli)
+				fval := tensor.Projection2DValue(tb.Tensor, tensor.OnedRows(tb.Layout.OddRow), si, fli)
 				mxw = max(mxw, len(fmt.Sprintf("%g", fval)))
 			}
 		}
@@ -211,7 +211,7 @@ func (tb *TensorEditor) MakeHeader(p *tree.Plan) {
 }
 
 func (tb *TensorEditor) ColumnHeader(col int) string {
-	_, cc := tensor.Projection2DCoords(tb.Tensor.Shape(), tb.Layout.OddRow, 0, col)
+	_, cc := tensor.Projection2DCoords(tb.Tensor.Shape(), tensor.OnedRows(tb.Layout.OddRow), 0, col)
 	var sitxt strings.Builder
 	for i, ccc := range cc {
 		fmt.Fprintf(&sitxt, "%03d", ccc)
@@ -283,9 +283,9 @@ func (tb *TensorEditor) MakeRow(p *tree.Plan, i int) {
 					_, vi, invis := svi.SliceIndex(i)
 					if !invis {
 						if isstr {
-							tensor.Projection2DSetString(tb.Tensor, tb.Layout.OddRow, vi, fli, str)
+							tensor.Projection2DSetString(tb.Tensor, tensor.OnedRows(tb.Layout.OddRow), vi, fli, str)
 						} else {
-							tensor.Projection2DSet(tb.Tensor, tb.Layout.OddRow, vi, fli, fval)
+							tensor.Projection2DSet(tb.Tensor, tensor.OnedRows(tb.Layout.OddRow), vi, fli, fval)
 						}
 					}
 					tb.This.(core.Lister).UpdateMaxWidths()
@@ -296,10 +296,10 @@ func (tb *TensorEditor) MakeRow(p *tree.Plan, i int) {
 				_, vi, invis := svi.SliceIndex(i)
 				if !invis {
 					if isstr {
-						str = tensor.Projection2DString(tb.Tensor, tb.Layout.OddRow, vi, fli)
+						str = tensor.Projection2DString(tb.Tensor, tensor.OnedRows(tb.Layout.OddRow), vi, fli)
 						core.Bind(&str, w)
 					} else {
-						fval = tensor.Projection2DValue(tb.Tensor, tb.Layout.OddRow, vi, fli)
+						fval = tensor.Projection2DValue(tb.Tensor, tensor.OnedRows(tb.Layout.OddRow), vi, fli)
 						core.Bind(&fval, w)
 					}
 				} else {
@@ -505,7 +505,7 @@ func (tb *TensorEditor) TextRunes() []rune {
 // to define the meaning of the Region line, char values for the matches.
 // The bool return value indicates whether this widget handled the search,
 // thereby excluding further searching within the elements under it.
-func (tb *TensorEditor) Search(find string, useCase bool) ([]textpos.Match, bool) {
+func (tb *TensorEditor) Search(find string, useCase core.CaseSensitive) ([]textpos.Match, bool) {
 	var results []textpos.Match
 	_, isstr := tb.Tensor.(*tensor.String)
 	for si := range tb.SliceSize { // the rows of the display
@@ -516,9 +516,9 @@ func (tb *TensorEditor) Search(find string, useCase bool) ([]textpos.Match, bool
 		for fli := range tb.NCols {
 			var str string
 			if isstr {
-				str = tensor.Projection2DString(tb.Tensor, tb.Layout.OddRow, rw, fli)
+				str = tensor.Projection2DString(tb.Tensor, tensor.OnedRows(tb.Layout.OddRow), rw, fli)
 			} else {
-				fval := tensor.Projection2DValue(tb.Tensor, tb.Layout.OddRow, rw, fli)
+				fval := tensor.Projection2DValue(tb.Tensor, tensor.OnedRows(tb.Layout.OddRow), rw, fli)
 				str = fmt.Sprintf("%g", fval)
 			}
 			m := core.SearchRunes([]rune(str), find, useCase)
@@ -573,14 +573,14 @@ func (tb *TensorEditor) HighlightMatches(matches []textpos.Match) bool {
 // SelectMatch selects match at given index from among those returned
 // from the Search method. scroll = scroll widget into view.
 // reset = clear selection instead of selecting.
-func (tb *TensorEditor) SelectMatch(matches []textpos.Match, index int, scroll, reset bool) {
+func (tb *TensorEditor) SelectMatch(matches []textpos.Match, index int, scroll core.SelectionScroll, reset core.SelectionReset) {
 	nWidgPerRow, idxOff := tb.RowWidgetNs()
 	match := matches[index]
 	lg := tb.ListGrid
 	ln := match.Region.Start.Line
 	rw := ln / tb.NCols
 	if rw < tb.StartIndex || rw >= tb.StartIndex+tb.VisibleRows {
-		if reset || !scroll {
+		if reset == core.SelectReset || scroll == core.SelectNoScroll {
 			return
 		}
 		tb.ScrollToIndex(rw)

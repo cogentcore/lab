@@ -12,12 +12,16 @@ import (
 	"cogentcore.org/lab/tensor"
 )
 
+// CopyMode specifies whether a copy overwrites existing nodes: [Overwrite] or
+// [Preserve].
+type CopyMode bool
+
 const (
 	// Preserve is used for Overwrite flag, indicating to not overwrite and preserve existing.
-	Preserve = false
+	Preserve CopyMode = false
 
 	// Overwrite is used for Overwrite flag, indicating to overwrite existing.
-	Overwrite = true
+	Overwrite CopyMode = true
 )
 
 // CopyFromValue copies value from given source node, cloning it.
@@ -45,7 +49,7 @@ func (nd *Node) Clone() *Node {
 // Copy copies node(s) from given paths to given path or directory.
 // if there are multiple from nodes, then to must be a directory.
 // must be called on a directory node.
-func (dir *Node) Copy(overwrite bool, to string, from ...string) error {
+func (dir *Node) Copy(overwrite CopyMode, to string, from ...string) error {
 	if err := dir.mustDir("Copy", to); err != nil {
 		return err
 	}

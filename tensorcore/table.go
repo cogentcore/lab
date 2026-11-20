@@ -481,7 +481,7 @@ func (tb *Table) SortColumn(fldIndex int) {
 	} else {
 		tb.Table.IndexesNeeded()
 		col := tb.Table.ColumnByIndex(tb.SortIndex)
-		col.Sort(!tb.SortDescending)
+		col.Sort(tensor.SortOrder(!tb.SortDescending))
 		tb.Table.IndexesFromTensor(col)
 	}
 	tb.Update() // requires full update due to sort button icon
@@ -783,7 +783,7 @@ func (tb *Table) TextRunes() []rune {
 // to define the meaning of the Region line, char values for the matches.
 // The bool return value indicates whether this widget handled the search,
 // thereby excluding further searching within the elements under it.
-func (tb *Table) Search(find string, useCase bool) ([]textpos.Match, bool) {
+func (tb *Table) Search(find string, useCase core.CaseSensitive) ([]textpos.Match, bool) {
 	var results []textpos.Match
 	nr := tb.Table.NumRows()
 	for rw := range nr {
@@ -841,14 +841,14 @@ func (tb *Table) HighlightMatches(matches []textpos.Match) bool {
 // SelectMatch selects match at given index from among those returned
 // from the Search method. scroll = scroll widget into view.
 // reset = clear selection instead of selecting.
-func (tb *Table) SelectMatch(matches []textpos.Match, index int, scroll, reset bool) {
+func (tb *Table) SelectMatch(matches []textpos.Match, index int, scroll core.SelectionScroll, reset core.SelectionReset) {
 	nWidgPerRow, idxOff := tb.RowWidgetNs()
 	match := matches[index]
 	lg := tb.ListGrid
 	ln := match.Region.Start.Line
 	rw := ln / tb.nCols
 	if rw < tb.StartIndex || rw >= tb.StartIndex+tb.VisibleRows {
-		if reset || !scroll {
+		if reset == core.SelectReset || scroll == core.SelectNoScroll {
 			return
 		}
 		tb.ScrollToIndex(rw)
