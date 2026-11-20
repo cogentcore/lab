@@ -100,7 +100,7 @@ func TestDirTar(t *testing.T) {
 	gz := true
 
 	var b bytes.Buffer
-	err = Tar(&b, dir, gz, nil)
+	err = Tar(&b, dir, Compression(gz), nil)
 	assert.NoError(t, err)
 
 	// fmt.Println(b.Len())
@@ -108,7 +108,7 @@ func TestDirTar(t *testing.T) {
 	ndir, err := NewDir("root")
 	assert.NoError(t, err)
 
-	err = Untar(&b, ndir, gz)
+	err = Untar(&b, ndir, Compression(gz))
 	assert.NoError(t, err)
 
 	nls := ndir.ListAll()

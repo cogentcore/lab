@@ -10,22 +10,28 @@ import (
 	"cogentcore.org/core/base/indent"
 )
 
+// ListDetail specifies the detail of a [Node.List]: [Long] or [Short].
+type ListDetail bool
+
+// ListDepth specifies the depth of a [Node.List]: [Recursive] or [DirOnly].
+type ListDepth bool
+
 const (
 	// Short is used as a named arg for the [Node.List] method
 	// for a short, name-only listing, vs. [Long].
-	Short = false
+	Short ListDetail = false
 
 	// Long is used as a named arg for the [Node.List] method
 	// for a long, name and size listing, vs. [Short].
-	Long = true
+	Long ListDetail = true
 
 	// DirOnly is used as a named arg for the [Node.List] method
 	// for only listing the current directory, vs. [Recursive].
-	DirOnly = false
+	DirOnly ListDepth = false
 
 	// Recursive is used as a named arg for the [Node.List] method
 	// for listing all directories recursively, vs. [DirOnly].
-	Recursive = true
+	Recursive ListDepth = true
 )
 
 func (nd *Node) String() string {
@@ -41,13 +47,13 @@ func (nd *Node) String() string {
 
 // ListAll returns a Long, Recursive listing of nodes in the given directory.
 func (dir *Node) ListAll() string {
-	return dir.listLong(true, 0)
+	return dir.listLong(Recursive, 0)
 }
 
 // List returns a listing of nodes in the given directory.
 //   - long = include detailed information about each node, vs just the name.
 //   - recursive = descend into subdirectories.
-func (dir *Node) List(long, recursive bool) string {
+func (dir *Node) List(long ListDetail, recursive ListDepth) string {
 	if long {
 		return dir.listLong(recursive, 0)
 	}
@@ -55,7 +61,7 @@ func (dir *Node) List(long, recursive bool) string {
 }
 
 // listShort returns a name-only listing of given directory.
-func (dir *Node) listShort(recursive bool, ident int) string {
+func (dir *Node) listShort(recursive ListDepth, ident int) string {
 	var b strings.Builder
 	nodes, _ := dir.Nodes()
 	for _, it := range nodes {
@@ -77,7 +83,7 @@ func (dir *Node) listShort(recursive bool, ident int) string {
 }
 
 // listLong returns a detailed listing of given directory.
-func (dir *Node) listLong(recursive bool, ident int) string {
+func (dir *Node) listLong(recursive ListDepth, ident int) string {
 	var b strings.Builder
 	nodes, _ := dir.Nodes()
 	for _, it := range nodes {

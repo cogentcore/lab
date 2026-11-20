@@ -79,7 +79,7 @@ func TestAppendRowsEtc(t *testing.T) {
 	assert.Equal(t, []int{2, 5, 8, 11, 1, 4, 7, 10, 0, 3, 6, 9}, dt.Indexes)
 
 	dt.Sequential()
-	dt.SortColumns(tensor.Descending, true, "Int", "Flt64")
+	dt.SortColumns(tensor.Descending, tensor.StableSort, "Int", "Flt64")
 	assert.Equal(t, []int{2, 5, 8, 11, 1, 4, 7, 10, 0, 3, 6, 9}, dt.Indexes)
 
 	dt.Sequential()

@@ -76,6 +76,41 @@ func (t *VirtualAxisStyle) SetScale(v AxisScales) *VirtualAxisStyle { t.Scale = 
 
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.VirtualAxis", IDName: "virtual-axis", Doc: "VirtualAxis represents a data role that is not plotted as a visible axis,\nsuch as the Size role controlling size of points.\nThis is the \"internal\" data structure and should not be used for styling.", Fields: []types.Field{{Name: "Range", Doc: "Range has the Min, Max range of values for the axis (in raw data units.)"}, {Name: "Style", Doc: "Style has the style parameters for the Axis,\ncopied from [PlotStyle] source."}, {Name: "Scale", Doc: "Scale transforms a value given in the data coordinate system\nto the normalized coordinate system of the axis—its distance\nalong the axis as a fraction of the axis range."}}})
 
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.ColorMapName", IDName: "color-map-name", Doc: "ColorMapName is the name of a [colormap.Map] (see [colormap.AvailableMaps]),\nwhich the plotcore package edits with a color map button."})
+
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.ColorAxisStyle", IDName: "color-axis-style", Doc: "ColorAxisStyle has the plot level style properties of the color axis,\nwhich maps the values of the Color data role (e.g., of XY points,\nor the cells of a Heatmap) to colors with a color map, shown in a\ncolor bar at the right of the plot.", Directives: []types.Directive{{Tool: "types", Directive: "add", Args: []string{"-setters"}}}, Fields: []types.Field{{Name: "ColorMap", Doc: "ColorMap is the name of the color map, ColdHot by default."}, {Name: "Range", Doc: "Range is the range of values mapped onto the color map,\nwhere either end can be fixed; otherwise it is the range of the data."}, {Name: "Scale", Doc: "Scale specifies how values are scaled along the color map:\nLinear, Log, Inverted."}, {Name: "Bar", Doc: "Bar specifies whether to draw the color bar at the right of the plot,\nwhich is drawn by default whenever any plot element uses colors."}, {Name: "Label", Doc: "Label is the optional label of the color bar."}, {Name: "Width", Doc: "Width is the width of the color bar, 16dp by default."}}})
+
+// SetColorMap sets the [ColorAxisStyle.ColorMap]:
+// ColorMap is the name of the color map, ColdHot by default.
+func (t *ColorAxisStyle) SetColorMap(v ColorMapName) *ColorAxisStyle { t.ColorMap = v; return t }
+
+// SetRange sets the [ColorAxisStyle.Range]:
+// Range is the range of values mapped onto the color map,
+// where either end can be fixed; otherwise it is the range of the data.
+func (t *ColorAxisStyle) SetRange(v minmax.Range64) *ColorAxisStyle { t.Range = v; return t }
+
+// SetScale sets the [ColorAxisStyle.Scale]:
+// Scale specifies how values are scaled along the color map:
+// Linear, Log, Inverted.
+func (t *ColorAxisStyle) SetScale(v AxisScales) *ColorAxisStyle { t.Scale = v; return t }
+
+// SetBar sets the [ColorAxisStyle.Bar]:
+// Bar specifies whether to draw the color bar at the right of the plot,
+// which is drawn by default whenever any plot element uses colors.
+func (t *ColorAxisStyle) SetBar(v DefaultOffOn) *ColorAxisStyle { t.Bar = v; return t }
+
+// SetLabel sets the [ColorAxisStyle.Label]:
+// Label is the optional label of the color bar.
+func (t *ColorAxisStyle) SetLabel(v string) *ColorAxisStyle { t.Label = v; return t }
+
+// SetWidth sets the [ColorAxisStyle.Width]:
+// Width is the width of the color bar, 16dp by default.
+func (t *ColorAxisStyle) SetWidth(v units.Value) *ColorAxisStyle { t.Width = v; return t }
+
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.ColorAxis", IDName: "color-axis", Doc: "ColorAxis maps the values of the Color data role to colors, using the\n[ColorAxisStyle] of the plot. Plotters that use colors call [ColorAxis.AddRange]\nin their UpdateRange method, and [ColorAxis.Color] to get the color of a value.\nThis is the \"internal\" data structure and should not be used for styling.", Fields: []types.Field{{Name: "Range", Doc: "Range has the Min, Max range of values for the axis (in raw data units)."}, {Name: "Style", Doc: "Style has the style parameters, copied from the [PlotStyle]."}, {Name: "Scale", Doc: "Scale transforms a value given in the data coordinate system\nto the normalized coordinate system of the axis."}, {Name: "Map", Doc: "Map is the color map, from the Style."}, {Name: "Used", Doc: "Used is set when any plotter uses colors, by [ColorAxis.AddRange]."}}})
+
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.colorBar", IDName: "color-bar", Doc: "colorBar has the layout info for drawing the color bar.", Fields: []types.Field{{Name: "ticks"}, {Name: "width", Doc: "width is the total width of the bar, ticks, labels, and padding."}, {Name: "label"}, {Name: "tick"}}})
+
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.Data", IDName: "data", Doc: "Data is a map of Roles and Data for that Role, providing the\nprimary way of passing data to a Plotter"})
 
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.Valuer", IDName: "valuer", Doc: "Valuer is the data interface for plotting, supporting either\nfloat64 or string representations. It is satisfied by the tensor.Tensor\ninterface, so a tensor can be used directly for plot Data.", Methods: []types.Method{{Name: "Len", Doc: "Len returns the number of values.", Returns: []string{"int"}}, {Name: "Float1D", Doc: "Float1D(i int) returns float64 value at given index.", Args: []string{"i"}, Returns: []string{"float64"}}, {Name: "String1D", Doc: "String1D(i int) returns string value at given index.", Args: []string{"i"}, Returns: []string{"string"}}}})
@@ -117,7 +152,7 @@ var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.Thumbnailer", I
 
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.LegendEntry", IDName: "legend-entry", Doc: "A LegendEntry represents a single line of a legend, it\nhas a name and an icon.", Fields: []types.Field{{Name: "Text", Doc: "text is the text associated with this entry."}, {Name: "Thumbs", Doc: "thumbs is a slice of all of the thumbnails styles"}}})
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.LineStyle", IDName: "line-style", Doc: "LineStyle has style properties for drawing lines.", Directives: []types.Directive{{Tool: "types", Directive: "add", Args: []string{"-setters"}}}, Fields: []types.Field{{Name: "On", Doc: "On indicates whether to plot lines."}, {Name: "Color", Doc: "Color is the stroke color image specification.\nSetting to nil turns line off."}, {Name: "Width", Doc: "Width is the line width, with a default of 1 Pt (point).\nSetting to 0 turns line off."}, {Name: "Dashes", Doc: "Dashes are the dashes of the stroke. Each pair of values specifies\nthe amount to paint and then the amount to skip."}, {Name: "Fill", Doc: "Fill is the color to fill solid regions, in a plot-specific\nway (e.g., the area below a Line plot, the bar color).\nUse nil to disable filling."}, {Name: "NegativeX", Doc: "NegativeX specifies whether to draw lines that connect points with a negative\nX-axis direction; otherwise there is a break in the line.\nDefault uses the [PlotStyle.NegativeX] of the plot, which is off by default,\nso that repeated series of data across the X axis are plotted separately."}, {Name: "Step", Doc: "Step specifies how to step the line between points."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.LineStyle", IDName: "line-style", Doc: "LineStyle has style properties for drawing lines.", Directives: []types.Directive{{Tool: "types", Directive: "add", Args: []string{"-setters"}}}, Fields: []types.Field{{Name: "On", Doc: "On indicates whether to plot lines."}, {Name: "Color", Doc: "Color is the stroke color image specification.\nSetting to nil turns line off."}, {Name: "Width", Doc: "Width is the line width, with a default of 1 Pt (point).\nSetting to 0 turns line off."}, {Name: "Dashes", Doc: "Dashes are the dashes of the stroke. Each pair of values specifies\nthe amount to paint and then the amount to skip, in points (Pt)."}, {Name: "Fill", Doc: "Fill is the color to fill solid regions, in a plot-specific\nway (e.g., the area below a Line plot, the bar color).\nUse nil to disable filling."}, {Name: "NegativeX", Doc: "NegativeX specifies whether to draw lines that connect points with a negative\nX-axis direction; otherwise there is a break in the line.\nDefault uses the [PlotStyle.NegativeX] of the plot, which is off by default,\nso that repeated series of data across the X axis are plotted separately."}, {Name: "Step", Doc: "Step specifies how to step the line between points."}}})
 
 // SetOn sets the [LineStyle.On]:
 // On indicates whether to plot lines.
@@ -135,7 +170,7 @@ func (t *LineStyle) SetWidth(v units.Value) *LineStyle { t.Width = v; return t }
 
 // SetDashes sets the [LineStyle.Dashes]:
 // Dashes are the dashes of the stroke. Each pair of values specifies
-// the amount to paint and then the amount to skip.
+// the amount to paint and then the amount to skip, in points (Pt).
 func (t *LineStyle) SetDashes(v ...float32) *LineStyle { t.Dashes = v; return t }
 
 // SetFill sets the [LineStyle.Fill]:
@@ -183,7 +218,22 @@ func (t *XAxisStyle) SetRange(v minmax.Range64) *XAxisStyle { t.Range = v; retur
 // Linear, Log, Inverted
 func (t *XAxisStyle) SetScale(v AxisScales) *XAxisStyle { t.Scale = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.PlotStyle", IDName: "plot-style", Doc: "PlotStyle has overall plot level styling properties.\nSome properties provide defaults for individual elements, which can\nthen be overwritten by element-level properties.", Directives: []types.Directive{{Tool: "types", Directive: "add", Args: []string{"-setters"}}}, Fields: []types.Field{{Name: "Title", Doc: "Title is the overall title of the plot."}, {Name: "TitleStyle", Doc: "TitleStyle is the text styling parameters for the title."}, {Name: "Background", Doc: "Background is the background of the plot.\nThe default is [colors.Scheme.Surface]."}, {Name: "Scale", Doc: "Scale multiplies the plot DPI value, to change the overall scale\nof the rendered plot.  Larger numbers produce larger scaling.\nTypically use larger numbers when generating plots for inclusion in\ndocuments or other cases where the overall plot size will be small."}, {Name: "Legend", Doc: "Legend has the styling properties for the Legend."}, {Name: "Axis", Doc: "Axis has the styling properties for the Axis associated with this Data."}, {Name: "XAxis", Doc: "XAxis has plot-level properties specific to the XAxis."}, {Name: "YAxisLabel", Doc: "YAxisLabel is the optional label to use for the YAxis instead of the default."}, {Name: "SizeAxis", Doc: "SizeAxis has plot-level properties specific to the Size virtual axis."}, {Name: "LinesOn", Doc: "LinesOn determines whether lines are plotted by default at the overall,\nPlot level, for elements that plot lines (e.g., plots.XY)."}, {Name: "LineWidth", Doc: "LineWidth sets the default line width for data plotting lines at the\noverall Plot level."}, {Name: "PointsOn", Doc: "PointsOn determines whether points are plotted by default at the\noverall Plot level, for elements that plot points (e.g., plots.XY)."}, {Name: "Plotter", Doc: "Plotter is the default type of plotter for the columns of numbers in\n[NewTablePlot] [table.Table] driven plots, used for those whose own\n[Style.Plotter] is blank, so that it changes the type of plot of all\nof them, e.g., from XY to Bar. Blank means XY. Columns of strings\ndefault to Labels."}, {Name: "NegativeX", Doc: "NegativeX determines whether lines that connect points with a negative\nX-axis direction are drawn by default at the overall Plot level, for\nelements that plot lines (e.g., plots.XY); otherwise there is a break\nin the line. It is off by default, so that repeated series of data\nacross the X axis are plotted separately. [LineStyle.NegativeX]\noverrides it for an element."}, {Name: "OutOfRange", Doc: "OutOfRange specifies how to handle out-of-range values, when a\nrange has been set with fixed Min or Max values that exclude some\ndata points."}, {Name: "PointSize", Doc: "PointSize sets the default point size at the overall Plot level."}, {Name: "LabelSize", Doc: "LabelSize sets the default label text size at the overall Plot level."}, {Name: "BarWidth", Doc: "BarWidth for Bar plot sets the default width of the bars,\nwhich should be less than the Stride (1 typically) to prevent\nbar overlap. Defaults to .8."}, {Name: "ShowErrors", Doc: "ShowErrors can be set to have Plot configuration errors reported.\nThis is particularly important for table-driven plots (e.g., [plotcore.Editor]),\nbut it is not on by default because often there are transitional states\nwith known errors that can lead to false alarms."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.GridStyle", IDName: "grid-style", Doc: "GridStyle has the properties of the grid lines drawn behind the data\nat the major ticks of the X and (left) Y axes.", Directives: []types.Directive{{Tool: "types", Directive: "add", Args: []string{"-setters"}}}, Fields: []types.Field{{Name: "X", Doc: "X draws vertical grid lines at the major ticks of the X axis."}, {Name: "Y", Doc: "Y draws horizontal grid lines at the major ticks of the Y axis."}, {Name: "Line", Doc: "Line has the style of the grid lines. The default is a thin line\nof the [colors.Scheme.OutlineVariant] color."}}})
+
+// SetX sets the [GridStyle.X]:
+// X draws vertical grid lines at the major ticks of the X axis.
+func (t *GridStyle) SetX(v bool) *GridStyle { t.X = v; return t }
+
+// SetY sets the [GridStyle.Y]:
+// Y draws horizontal grid lines at the major ticks of the Y axis.
+func (t *GridStyle) SetY(v bool) *GridStyle { t.Y = v; return t }
+
+// SetLine sets the [GridStyle.Line]:
+// Line has the style of the grid lines. The default is a thin line
+// of the [colors.Scheme.OutlineVariant] color.
+func (t *GridStyle) SetLine(v LineStyle) *GridStyle { t.Line = v; return t }
+
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.PlotStyle", IDName: "plot-style", Doc: "PlotStyle has overall plot level styling properties.\nSome properties provide defaults for individual elements, which can\nthen be overwritten by element-level properties.", Directives: []types.Directive{{Tool: "types", Directive: "add", Args: []string{"-setters"}}}, Fields: []types.Field{{Name: "Title", Doc: "Title is the overall title of the plot."}, {Name: "TitleStyle", Doc: "TitleStyle is the text styling parameters for the title."}, {Name: "Background", Doc: "Background is the background of the plot.\nThe default is [colors.Scheme.Surface]."}, {Name: "Scale", Doc: "Scale multiplies the plot DPI value, to change the overall scale\nof the rendered plot.  Larger numbers produce larger scaling.\nTypically use larger numbers when generating plots for inclusion in\ndocuments or other cases where the overall plot size will be small."}, {Name: "Legend", Doc: "Legend has the styling properties for the Legend."}, {Name: "Plotter", Doc: "Plotter is the default type of plotter for the columns of numbers in\n[NewTablePlot] [table.Table] driven plots, used for those whose own\n[Style.Plotter] is blank, so that it changes the type of plot of all\nof them, e.g., from XY to Bar. Blank means XY. Columns of strings\ndefault to Labels."}, {Name: "Axis", Doc: "Axis has the styling properties for the Axis associated with this Data."}, {Name: "XAxis", Doc: "XAxis has plot-level properties specific to the XAxis."}, {Name: "YAxisLabel", Doc: "YAxisLabel is the optional label to use for the YAxis instead of the default."}, {Name: "Grid", Doc: "Grid has the properties of the grid lines drawn behind the data\nat the major ticks of the X and (left) Y axes."}, {Name: "SizeAxis", Doc: "SizeAxis has plot-level properties specific to the Size virtual axis."}, {Name: "ColorAxis", Doc: "ColorAxis has the properties of the color axis, which maps the\nvalues of the Color data role to colors with a color map,\nshown in a color bar."}, {Name: "LinesOn", Doc: "LinesOn determines whether lines are plotted by default at the overall,\nPlot level, for elements that plot lines (e.g., plots.XY)."}, {Name: "LineWidth", Doc: "LineWidth sets the default line width for data plotting lines at the\noverall Plot level."}, {Name: "PointsOn", Doc: "PointsOn determines whether points are plotted by default at the\noverall Plot level, for elements that plot points (e.g., plots.XY)."}, {Name: "NegativeX", Doc: "NegativeX determines whether lines that connect points with a negative\nX-axis direction are drawn by default at the overall Plot level, for\nelements that plot lines (e.g., plots.XY); otherwise there is a break\nin the line. It is off by default, so that repeated series of data\nacross the X axis are plotted separately. [LineStyle.NegativeX]\noverrides it for an element."}, {Name: "OutOfRange", Doc: "OutOfRange specifies how to handle out-of-range values, when a\nrange has been set with fixed Min or Max values that exclude some\ndata points."}, {Name: "PointSize", Doc: "PointSize sets the default point size at the overall Plot level."}, {Name: "LabelSize", Doc: "LabelSize sets the default label text size at the overall Plot level."}, {Name: "BarWidth", Doc: "BarWidth for Bar plot sets the default width of the bars,\nwhich should be less than the Stride (1 typically) to prevent\nbar overlap. Defaults to .8."}, {Name: "ShowErrors", Doc: "ShowErrors can be set to have Plot configuration errors reported.\nThis is particularly important for table-driven plots (e.g., [plotcore.Editor]),\nbut it is not on by default because often there are transitional states\nwith known errors that can lead to false alarms."}}})
 
 // SetTitle sets the [PlotStyle.Title]:
 // Title is the overall title of the plot.
@@ -209,6 +259,14 @@ func (t *PlotStyle) SetScale(v float32) *PlotStyle { t.Scale = v; return t }
 // Legend has the styling properties for the Legend.
 func (t *PlotStyle) SetLegend(v LegendStyle) *PlotStyle { t.Legend = v; return t }
 
+// SetPlotter sets the [PlotStyle.Plotter]:
+// Plotter is the default type of plotter for the columns of numbers in
+// [NewTablePlot] [table.Table] driven plots, used for those whose own
+// [Style.Plotter] is blank, so that it changes the type of plot of all
+// of them, e.g., from XY to Bar. Blank means XY. Columns of strings
+// default to Labels.
+func (t *PlotStyle) SetPlotter(v PlotterName) *PlotStyle { t.Plotter = v; return t }
+
 // SetAxis sets the [PlotStyle.Axis]:
 // Axis has the styling properties for the Axis associated with this Data.
 func (t *PlotStyle) SetAxis(v AxisStyle) *PlotStyle { t.Axis = v; return t }
@@ -221,9 +279,20 @@ func (t *PlotStyle) SetXAxis(v XAxisStyle) *PlotStyle { t.XAxis = v; return t }
 // YAxisLabel is the optional label to use for the YAxis instead of the default.
 func (t *PlotStyle) SetYAxisLabel(v string) *PlotStyle { t.YAxisLabel = v; return t }
 
+// SetGrid sets the [PlotStyle.Grid]:
+// Grid has the properties of the grid lines drawn behind the data
+// at the major ticks of the X and (left) Y axes.
+func (t *PlotStyle) SetGrid(v GridStyle) *PlotStyle { t.Grid = v; return t }
+
 // SetSizeAxis sets the [PlotStyle.SizeAxis]:
 // SizeAxis has plot-level properties specific to the Size virtual axis.
 func (t *PlotStyle) SetSizeAxis(v VirtualAxisStyle) *PlotStyle { t.SizeAxis = v; return t }
+
+// SetColorAxis sets the [PlotStyle.ColorAxis]:
+// ColorAxis has the properties of the color axis, which maps the
+// values of the Color data role to colors with a color map,
+// shown in a color bar.
+func (t *PlotStyle) SetColorAxis(v ColorAxisStyle) *PlotStyle { t.ColorAxis = v; return t }
 
 // SetLinesOn sets the [PlotStyle.LinesOn]:
 // LinesOn determines whether lines are plotted by default at the overall,
@@ -239,14 +308,6 @@ func (t *PlotStyle) SetLineWidth(v units.Value) *PlotStyle { t.LineWidth = v; re
 // PointsOn determines whether points are plotted by default at the
 // overall Plot level, for elements that plot points (e.g., plots.XY).
 func (t *PlotStyle) SetPointsOn(v DefaultOffOn) *PlotStyle { t.PointsOn = v; return t }
-
-// SetPlotter sets the [PlotStyle.Plotter]:
-// Plotter is the default type of plotter for the columns of numbers in
-// [NewTablePlot] [table.Table] driven plots, used for those whose own
-// [Style.Plotter] is blank, so that it changes the type of plot of all
-// of them, e.g., from XY to Bar. Blank means XY. Columns of strings
-// default to Labels.
-func (t *PlotStyle) SetPlotter(v PlotterName) *PlotStyle { t.Plotter = v; return t }
 
 // SetNegativeX sets the [PlotStyle.NegativeX]:
 // NegativeX determines whether lines that connect points with a negative
@@ -286,7 +347,7 @@ func (t *PlotStyle) SetShowErrors(v bool) *PlotStyle { t.ShowErrors = v; return 
 
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.PanZoom", IDName: "pan-zoom", Doc: "PanZoom provides post-styling pan and zoom range manipulation.", Fields: []types.Field{{Name: "XOffset", Doc: "XOffset adds offset to X range (pan)."}, {Name: "XScale", Doc: "XScale multiplies X range (zoom)."}, {Name: "YOffset", Doc: "YOffset adds offset to Y range (pan)."}, {Name: "YScale", Doc: "YScale multiplies Y range (zoom)."}}})
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.Plot", IDName: "plot", Doc: "Plot is the basic type representing a plot.\nIt renders into its own image.RGBA Pixels image,\nand can also save a corresponding SVG version.", Fields: []types.Field{{Name: "Title", Doc: "Title of the plot"}, {Name: "Style", Doc: "Style has the styling properties for the plot.\nAll end-user configuration should be put in here,\nrather than modifying other fields directly on the plot."}, {Name: "StandardTextStyle", Doc: "standard text style with default options"}, {Name: "X", Doc: "X, Y, YR, and Z are the horizontal, vertical, right vertical, and depth axes\nof the plot respectively. These are the actual compiled\nstate data and should not be used for styling: use Style."}, {Name: "Y", Doc: "X, Y, YR, and Z are the horizontal, vertical, right vertical, and depth axes\nof the plot respectively. These are the actual compiled\nstate data and should not be used for styling: use Style."}, {Name: "YR", Doc: "X, Y, YR, and Z are the horizontal, vertical, right vertical, and depth axes\nof the plot respectively. These are the actual compiled\nstate data and should not be used for styling: use Style."}, {Name: "Z", Doc: "X, Y, YR, and Z are the horizontal, vertical, right vertical, and depth axes\nof the plot respectively. These are the actual compiled\nstate data and should not be used for styling: use Style."}, {Name: "SizeAxis", Doc: "SizeAxis is a virtual axis for the Size data role."}, {Name: "Legend", Doc: "Legend is the plot's legend."}, {Name: "Plotters", Doc: "Plotters are drawn by calling their Plot method after the axes are drawn."}, {Name: "PanZoom", Doc: "PanZoom provides post-styling pan and zoom range factors."}, {Name: "HighlightPlotter", Doc: "HighlightPlotter is the Plotter to highlight. Used for mouse hovering for example.\nIt is the responsibility of the Plotter Plot function to implement highlighting."}, {Name: "HighlightIndex", Doc: "HighlightIndex is the index of the data point to highlight, for HighlightPlotter."}, {Name: "TextShaper", Doc: "TextShaper for shaping text. Can set to a shared external one,\nor else the shared plotShaper is used under a mutex lock during Render."}, {Name: "PaintBox", Doc: "PaintBox is the bounding box for the plot within the Paint.\nFor standalone, it is the size of the image."}, {Name: "PlotBox", Doc: "Current local plot bounding box in image coordinates, for computing\nplotting coordinates."}, {Name: "Painter", Doc: "Painter is the current painter being used,\nwhich is only valid during rendering, and is set by Draw function.\nIt needs to be exported for different plot types in other packages."}, {Name: "unitContext", Doc: "unitContext is current unit context, only valid during rendering."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.Plot", IDName: "plot", Doc: "Plot is the basic type representing a plot.\nIt renders into its own image.RGBA Pixels image,\nand can also save a corresponding SVG version.", Fields: []types.Field{{Name: "Title", Doc: "Title of the plot"}, {Name: "Style", Doc: "Style has the styling properties for the plot.\nAll end-user configuration should be put in here,\nrather than modifying other fields directly on the plot."}, {Name: "StandardTextStyle", Doc: "standard text style with default options"}, {Name: "X", Doc: "X, Y, YR, and Z are the horizontal, vertical, right vertical, and depth axes\nof the plot respectively. These are the actual compiled\nstate data and should not be used for styling: use Style."}, {Name: "Y", Doc: "X, Y, YR, and Z are the horizontal, vertical, right vertical, and depth axes\nof the plot respectively. These are the actual compiled\nstate data and should not be used for styling: use Style."}, {Name: "YR", Doc: "X, Y, YR, and Z are the horizontal, vertical, right vertical, and depth axes\nof the plot respectively. These are the actual compiled\nstate data and should not be used for styling: use Style."}, {Name: "Z", Doc: "X, Y, YR, and Z are the horizontal, vertical, right vertical, and depth axes\nof the plot respectively. These are the actual compiled\nstate data and should not be used for styling: use Style."}, {Name: "SizeAxis", Doc: "SizeAxis is a virtual axis for the Size data role."}, {Name: "ColorAxis", Doc: "ColorAxis maps the values of the Color data role to colors."}, {Name: "Legend", Doc: "Legend is the plot's legend."}, {Name: "Plotters", Doc: "Plotters are drawn by calling their Plot method after the axes are drawn."}, {Name: "PanZoom", Doc: "PanZoom provides post-styling pan and zoom range factors."}, {Name: "HighlightPlotter", Doc: "HighlightPlotter is the Plotter to highlight. Used for mouse hovering for example.\nIt is the responsibility of the Plotter Plot function to implement highlighting."}, {Name: "HighlightIndex", Doc: "HighlightIndex is the index of the data point to highlight, for HighlightPlotter."}, {Name: "TextShaper", Doc: "TextShaper for shaping text. Can set to a shared external one,\nor else the shared plotShaper is used under a mutex lock during Render."}, {Name: "PaintBox", Doc: "PaintBox is the bounding box for the plot within the Paint.\nFor standalone, it is the size of the image."}, {Name: "PlotBox", Doc: "Current local plot bounding box in image coordinates, for computing\nplotting coordinates."}, {Name: "Painter", Doc: "Painter is the current painter being used,\nwhich is only valid during rendering, and is set by Draw function.\nIt needs to be exported for different plot types in other packages."}, {Name: "unitContext", Doc: "unitContext is current unit context, only valid during rendering."}}})
 
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.Plotter", IDName: "plotter", Doc: "Plotter is an interface that wraps the Plot method.\nStandard implementations of Plotter are in the [plots] package.", Methods: []types.Method{{Name: "Plot", Doc: "Plot draws the data to the Plot Paint.", Args: []string{"pt"}}, {Name: "UpdateRange", Doc: "UpdateRange updates the given ranges.", Args: []string{"plt"}}, {Name: "SetData", Doc: "SetData sets the plot data, which can be of type [Data],\nor a [Valuer]. This is needed to update the plot data if already\nset previously.", Args: []string{"data"}, Returns: []string{"error"}}, {Name: "Data", Doc: "Data returns the data by roles for this plot, for both the original\ndata and the pixel-transformed X,Y coordinates for that data.\nThis allows a GUI interface to inspect data etc.", Returns: []string{"data", "pixX", "pixY"}}, {Name: "Stylers", Doc: "Stylers returns the styler functions for this element.", Returns: []string{"Stylers"}}, {Name: "ApplyStyle", Doc: "ApplyStyle applies any stylers to this element,\nfirst initializing from the given global plot style, which has\nalready been styled with defaults and all the plot element stylers.", Args: []string{"plotStyle", "idx"}}}})
 
@@ -416,7 +477,7 @@ func (t *Style) SetWidth(v WidthStyle) *Style { t.Width = v; return t }
 // OutOfRangeMark has style properties for drawing points when out of range.
 func (t *Style) SetOutOfRangeMark(v PointStyle) *Style { t.OutOfRangeMark = v; return t }
 
-var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.WidthStyle", IDName: "width-style", Doc: "WidthStyle contains various plot width properties relevant across\ndifferent plot types.", Directives: []types.Directive{{Tool: "types", Directive: "add", Args: []string{"-setters"}}}, Fields: []types.Field{{Name: "Cap", Doc: "Cap is the width of the caps drawn at the top of error bars.\nThe default is 10dp"}, {Name: "Offset", Doc: "Offset for Bar plot is the offset added to each X axis value\nrelative to the Stride computed value (X = offset + index * Stride)\nDefaults to 0."}, {Name: "Stride", Doc: "Stride for Bar plot is distance between bars. Defaults to 1."}, {Name: "Width", Doc: "Width for Bar plot is the width of the bars, as a fraction of the Stride,\nto prevent bar overlap. Defaults to .8."}, {Name: "Pad", Doc: "Pad for Bar plot is additional space at start / end of data range,\nto keep bars from overflowing ends. This amount is subtracted from Offset\nand added to (len(Values)-1)*Stride -- no other accommodation for bar\nwidth is provided, so that should be built into this value as well.\nDefaults to 1."}}})
+var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.WidthStyle", IDName: "width-style", Doc: "WidthStyle contains various plot width properties relevant across\ndifferent plot types.", Directives: []types.Directive{{Tool: "types", Directive: "add", Args: []string{"-setters"}}}, Fields: []types.Field{{Name: "Cap", Doc: "Cap is the width of the caps drawn at the top of error bars.\nThe default is 10dp"}, {Name: "Offset", Doc: "Offset for Bar plot is the offset added to each X axis value\nrelative to the Stride computed value (X = offset + index * Stride)\nDefaults to 0."}, {Name: "Stride", Doc: "Stride for Bar plot is distance between bars. Defaults to 1."}, {Name: "Width", Doc: "Width for Bar plot is the width of the bars, as a fraction of the Stride,\nto prevent bar overlap. Defaults to .8."}, {Name: "Pad", Doc: "Pad for Bar plot is additional space at start / end of data range,\nto keep bars from overflowing ends. This amount is subtracted from Offset\nand added to (len(Values)-1)*Stride -- no other accommodation for bar\nwidth is provided, so that should be built into this value as well.\nDefaults to 1."}, {Name: "TickOffset", Doc: "TickOffset is added to the positions of the category axis tick\nlabels of a Bar or Box plot, to center them on a group of such\nplots next to each other, as set by [NewTablePlot] for multiple\nsuch plots."}}})
 
 // SetCap sets the [WidthStyle.Cap]:
 // Cap is the width of the caps drawn at the top of error bars.
@@ -445,6 +506,13 @@ func (t *WidthStyle) SetWidth(v float64) *WidthStyle { t.Width = v; return t }
 // width is provided, so that should be built into this value as well.
 // Defaults to 1.
 func (t *WidthStyle) SetPad(v float64) *WidthStyle { t.Pad = v; return t }
+
+// SetTickOffset sets the [WidthStyle.TickOffset]:
+// TickOffset is added to the positions of the category axis tick
+// labels of a Bar or Box plot, to center them on a group of such
+// plots next to each other, as set by [NewTablePlot] for multiple
+// such plots.
+func (t *WidthStyle) SetTickOffset(v float64) *WidthStyle { t.TickOffset = v; return t }
 
 var _ = types.AddType(&types.Type{Name: "cogentcore.org/lab/plot.Stylers", IDName: "stylers", Doc: "Stylers is a list of styling functions that set Style properties.\nThese are called in the order added."})
 

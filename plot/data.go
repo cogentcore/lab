@@ -110,6 +110,10 @@ const (
 	// plot data into groups, with each group added to the legend.
 	// A different default color will be used for each such group.
 	Split
+
+	// Color sets the colors of points etc., via the color map of the
+	// [ColorAxis] of the plot, which is shown in a color bar.
+	Color
 )
 
 // CheckFloats returns an error if any of the arguments are Infinity.

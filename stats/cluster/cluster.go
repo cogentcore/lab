@@ -112,7 +112,170 @@ func InitAllLeaves(ntot int) *Node {
 // with the starting clusters, which is all of the
 // leaves by default, but could be anything if you want
 // to start with predefined clusters.
+// The distance matrix must be symmetric.
+//
+// At each step, the closest pair of clusters (the first one, so that
+// ties are deterministic) is merged. The distances between clusters are
+// computed from the leaves once, and then updated for each merge from
+// those of the merged clusters (the Lance-Williams method): the min or
+// max distance, or the sums of distances for Avg and Contrast, along
+// with the within-cluster sums and the sums of distances to all leaves
+// for Contrast. This is O(n^3) in simple operations, instead of
+// O(n^3) metric calls (O(n^4) for Contrast).
 func Glom(root *Node, metric Metrics, dmat tensor.Tensor) *Node {
+	ntot := dmat.DimSize(0) // number of leaves
+	nk := len(root.Kids)
+	if nk < 2 {
+		return root
+	}
+	// the distance matrix and its max
+	dm := make([]float64, ntot*ntot)
+	maxd := math.Inf(-1)
+	for i := range ntot {
+		for j := range ntot {
+			d := dmat.Float(i, j)
+			dm[i*ntot+j] = d
+			if !math.IsNaN(d) {
+				maxd = max(maxd, d)
+			}
+		}
+	}
+
+	// per cluster, in slots that are reused for merged clusters:
+	// size, the sum of the distances of its leaves to all leaves
+	// (rowSum), and to its own leaves (within).
+	size := make([]float64, nk)
+	rowSum := make([]float64, nk)
+	within := make([]float64, nk)
+	// pair has the min, max, or sum of the distances between
+	// the leaves of each pair of clusters (by slot).
+	pair := make([]float64, nk*nk)
+	leaves := make([][]int, nk)
+	ix := make([]int, ntot)
+	for s, kn := range root.Kids {
+		ctr := 0
+		kn.Indexes(ix, &ctr)
+		leaves[s] = append([]int(nil), ix[:ctr]...)
+		size[s] = float64(ctr)
+		for _, i := range leaves[s] {
+			for j := range ntot {
+				rowSum[s] += dm[i*ntot+j]
+			}
+		}
+	}
+	// clusterPair returns the pair value for the leaves of a and b.
+	clusterPair := func(a, b []int) float64 {
+		v := 0.0
+		switch metric {
+		case Min:
+			v = math.MaxFloat64
+		case Max:
+			v = -math.MaxFloat64
+		}
+		for _, i := range a {
+			for _, j := range b {
+				d := dm[i*ntot+j]
+				switch metric {
+				case Min:
+					v = min(v, d)
+				case Max:
+					v = max(v, d)
+				default:
+					v += d
+				}
+			}
+		}
+		return v
+	}
+	for a := range nk {
+		for b := range a {
+			v := clusterPair(leaves[a], leaves[b])
+			pair[a*nk+b], pair[b*nk+a] = v, v
+		}
+		within[a] = clusterPair(leaves[a], leaves[a])
+	}
+	// dist returns the distance between the clusters in slots a and b.
+	dist := func(a, b int) float64 {
+		switch metric {
+		case Min, Max:
+			return pair[a*nk+b]
+		}
+		sab := pair[a*nk+b]
+		wd := sab / (size[a] * size[b])
+		if metric == Avg {
+			return wd
+		}
+		nab := size[a] + size[b]
+		bd := 0.0
+		if nout := float64(ntot) - nab; nout > 0 {
+			bd = (rowSum[a] + rowSum[b] - within[a] - within[b] - 2*sab) / (nab * nout)
+		}
+		return maxd + (wd - bd)
+	}
+
+	// slots has the slot of each kid, in the order of root.Kids.
+	slots := make([]int, nk)
+	for i := range slots {
+		slots[i] = i
+	}
+	for {
+		// the first closest pair is merged, so ties are deterministic
+		na, nb := 0, 0
+		mval := math.MaxFloat64
+		for ai, sa := range slots {
+			for bi := range ai {
+				dv := dist(sa, slots[bi])
+				if dv < mval {
+					mval = dv
+					na, nb = ai, bi
+				}
+			}
+		}
+		sa, sb := slots[na], slots[nb]
+		nn := NewNode(root.Kids[na], root.Kids[nb], mval)
+		// merge b into the slot of a
+		for _, sk := range slots {
+			if sk == sa || sk == sb {
+				continue
+			}
+			pa, pb := pair[sa*nk+sk], pair[sb*nk+sk]
+			v := pa + pb
+			switch metric {
+			case Min:
+				v = min(pa, pb)
+			case Max:
+				v = max(pa, pb)
+			}
+			pair[sa*nk+sk], pair[sk*nk+sa] = v, v
+		}
+		within[sa] += within[sb] + 2*pair[sa*nk+sb]
+		rowSum[sa] += rowSum[sb]
+		size[sa] += size[sb]
+		for i := len(root.Kids) - 1; i >= 0; i-- {
+			if i == na || i == nb {
+				root.Kids = append(root.Kids[:i], root.Kids[i+1:]...)
+				slots = append(slots[:i], slots[i+1:]...)
+			}
+		}
+		root.Kids = append(root.Kids, nn)
+		slots = append(slots, sa)
+		if len(root.Kids) == 1 {
+			break
+		}
+	}
+	return root
+}
+
+// glomGeneric is the direct implementation of [Glom], which computes
+// the metric function on the leaves of every pair of clusters at each step:
+// O(n^3) metric calls, and O(n^4) for Contrast. It is used in tests of Glom.
+// Glom does the iterative agglomerative clustering,
+// based on a raw similarity matrix as given,
+// using a root node that has already been initialized
+// with the starting clusters, which is all of the
+// leaves by default, but could be anything if you want
+// to start with predefined clusters.
+func glomGeneric(root *Node, metric Metrics, dmat tensor.Tensor) *Node {
 	ntot := dmat.DimSize(0) // number of leaves
 	mout := tensor.NewFloat64Scalar(0)
 	stats.MaxOut(tensor.As1D(dmat), mout)

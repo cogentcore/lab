@@ -181,7 +181,7 @@ func (sk *Skin) PlaneInit(sld *xyz.Solid) {
 func (sk *Skin) CylinderInit(sld *xyz.Solid) {
 	mnm := "physics.Cylinder"
 	if ms, _ := sld.Scene.MeshByName(mnm); ms == nil {
-		xyz.NewCylinder(sld.Scene, mnm, 1, 1, 32, 1, true, true)
+		xyz.NewCylinder(sld.Scene, mnm, 1, 1, 32, 1, xyz.WithTop, xyz.WithBottom)
 	}
 	sld.SetMeshName(mnm)
 	sld.Pose.Scale = sk.HSize

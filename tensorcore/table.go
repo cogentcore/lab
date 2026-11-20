@@ -20,6 +20,7 @@ import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fileinfo"
 	"cogentcore.org/core/base/fileinfo/mimedata"
+	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
@@ -481,7 +482,7 @@ func (tb *Table) SortColumn(fldIndex int) {
 	} else {
 		tb.Table.IndexesNeeded()
 		col := tb.Table.ColumnByIndex(tb.SortIndex)
-		col.Sort(!tb.SortDescending)
+		col.Sort(tensor.SortOrder(!tb.SortDescending))
 		tb.Table.IndexesFromTensor(col)
 	}
 	tb.Update() // requires full update due to sort button icon
@@ -653,7 +654,7 @@ func (tb *Table) SizeFinal() {
 // SelectedColumnStrings returns the string values of given column name.
 func (tb *Table) SelectedColumnStrings(colName string) []string {
 	dt := tb.Table
-	jis := tb.SelectedIndexesList(false)
+	jis := tb.SelectedIndexesList(reflectx.Ascending)
 	if len(jis) == 0 || dt == nil {
 		return nil
 	}
@@ -709,7 +710,7 @@ func (tb *Table) CopySelectToMime() mimedata.Mimes {
 		return nil
 	}
 	ix := table.NewView(tb.Table)
-	idx := tb.SelectedIndexesList(false) // ascending
+	idx := tb.SelectedIndexesList(reflectx.Ascending)
 	iidx := make([]int, len(idx))
 	for i, di := range idx {
 		iidx[i] = tb.Table.RowIndex(di)
@@ -783,7 +784,7 @@ func (tb *Table) TextRunes() []rune {
 // to define the meaning of the Region line, char values for the matches.
 // The bool return value indicates whether this widget handled the search,
 // thereby excluding further searching within the elements under it.
-func (tb *Table) Search(find string, useCase bool) ([]textpos.Match, bool) {
+func (tb *Table) Search(find string, useCase core.CaseSensitive) ([]textpos.Match, bool) {
 	var results []textpos.Match
 	nr := tb.Table.NumRows()
 	for rw := range nr {
@@ -841,14 +842,14 @@ func (tb *Table) HighlightMatches(matches []textpos.Match) bool {
 // SelectMatch selects match at given index from among those returned
 // from the Search method. scroll = scroll widget into view.
 // reset = clear selection instead of selecting.
-func (tb *Table) SelectMatch(matches []textpos.Match, index int, scroll, reset bool) {
+func (tb *Table) SelectMatch(matches []textpos.Match, index int, scroll core.SelectionScroll, reset core.SelectionReset) {
 	nWidgPerRow, idxOff := tb.RowWidgetNs()
 	match := matches[index]
 	lg := tb.ListGrid
 	ln := match.Region.Start.Line
 	rw := ln / tb.nCols
 	if rw < tb.StartIndex || rw >= tb.StartIndex+tb.VisibleRows {
-		if reset || !scroll {
+		if reset == core.SelectReset || scroll == core.SelectNoScroll {
 			return
 		}
 		tb.ScrollToIndex(rw)

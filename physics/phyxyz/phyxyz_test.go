@@ -108,15 +108,15 @@ func TestDepth(t *testing.T) {
 	cam.Size = image.Pt(2, 2)
 	depth := []float32{0, 0.5, 0.9, 1} // bottom row first
 	var nd []float32
-	DepthNorm(&nd, depth, &cam, false)
+	DepthNorm(&nd, depth, &cam, math32.NoFlipY)
 	require.Len(t, nd, 4)
 	assert.Less(t, nd[0], nd[1], "farther is larger")
 	assert.Equal(t, float32(1), nd[3], "beyond MaxD")
 	var fl []float32
-	DepthNorm(&fl, depth, &cam, true)
+	DepthNorm(&fl, depth, &cam, math32.FlipY)
 	assert.Equal(t, nd[0], fl[2], "flipped in Y")
 	cam.LogD = false
-	DepthNorm(&nd, depth, &cam, false)
+	DepthNorm(&nd, depth, &cam, math32.NoFlipY)
 	assert.Less(t, nd[0], nd[1])
 
 	img := image.NewRGBA(image.Rect(0, 0, 2, 2))

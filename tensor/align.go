@@ -72,6 +72,91 @@ func WrapIndex1D(sh *Shape, i ...int) int {
 	return sh.IndexTo1D(ai...)
 }
 
+// broadcaster maps a 1D index into an output shape to the 1D indexes
+// into the shapes of two inputs a and b that are aligned with it (see
+// [AlignShapes]), without allocating, as [Shape.IndexFrom1D] and
+// [WrapIndex1D] do. The common cases of the same shape and of a single
+// value (scalar) are direct.
+type broadcaster struct {
+	osz        []int // output sizes
+	astr, bstr []int // strides, 0 for broadcast dimensions
+	a, b       bcast
+	anyGeneral bool
+}
+
+// bcast is the mapping for one input of a [broadcaster].
+type bcast int
+
+const (
+	bcastSame    bcast = iota // the same index as the output
+	bcastScalar               // a single value: index 0
+	bcastGeneral              // via the strides
+)
+
+// newBroadcaster returns a [broadcaster] for the given aligned
+// input shapes and output shape.
+func newBroadcaster(as, bs, os *Shape) *broadcaster {
+	br := &broadcaster{osz: os.Sizes}
+	olen := os.Len()
+	mode := func(sh *Shape) bcast {
+		switch sh.Len() {
+		case olen:
+			return bcastSame
+		case 1:
+			return bcastScalar
+		}
+		return bcastGeneral
+	}
+	br.a, br.b = mode(as), mode(bs)
+	if br.a == bcastGeneral || br.b == bcastGeneral {
+		br.anyGeneral = true
+		br.astr = broadcastStrides(as)
+		br.bstr = broadcastStrides(bs)
+	}
+	return br
+}
+
+// broadcastStrides returns the row-major strides of the given shape,
+// with a stride of 0 for dimensions of size 1, which are broadcast.
+func broadcastStrides(sh *Shape) []int {
+	nd := len(sh.Sizes)
+	str := make([]int, nd)
+	s := 1
+	for d := nd - 1; d >= 0; d-- {
+		if sh.Sizes[d] != 1 {
+			str[d] = s
+		}
+		s *= sh.Sizes[d]
+	}
+	return str
+}
+
+// index returns the 1D indexes into a and b for the given 1D output index.
+func (br *broadcaster) index(idx int) (ai, bi int) {
+	if br.anyGeneral {
+		rem := idx
+		for d := len(br.osz) - 1; d >= 0; d-- {
+			c := rem % br.osz[d]
+			rem /= br.osz[d]
+			ai += c * br.astr[d]
+			bi += c * br.bstr[d]
+		}
+	}
+	switch br.a {
+	case bcastSame:
+		ai = idx
+	case bcastScalar:
+		ai = 0
+	}
+	switch br.b {
+	case bcastSame:
+		bi = idx
+	case bcastScalar:
+		bi = 0
+	}
+	return
+}
+
 // AlignForAssign ensures that the shapes of two tensors, a and b
 // have the proper alignment for assigning b into a.
 // Alignment proceeds from the innermost dimension out, with 1s provided
@@ -140,10 +225,10 @@ func FloatAssignFunc(fun func(a, b float64) float64, a, b Tensor) error {
 		return err
 	}
 	alen := as.Len()
+	br := newBroadcaster(as, bs, as)
 	VectorizeThreaded(1, func(tsr ...Tensor) int { return alen },
 		func(idx int, tsr ...Tensor) {
-			ai := as.IndexFrom1D(idx)
-			bi := WrapIndex1D(bs, ai...)
+			_, bi := br.index(idx)
 			tsr[0].SetFloat1D(fun(tsr[0].Float1D(idx), tsr[1].Float1D(bi)), idx)
 		}, a, b)
 	return nil
@@ -156,10 +241,10 @@ func StringAssignFunc(fun func(a, b string) string, a, b Tensor) error {
 		return err
 	}
 	alen := as.Len()
+	br := newBroadcaster(as, bs, as)
 	VectorizeThreaded(1, func(tsr ...Tensor) int { return alen },
 		func(idx int, tsr ...Tensor) {
-			ai := as.IndexFrom1D(idx)
-			bi := WrapIndex1D(bs, ai...)
+			_, bi := br.index(idx)
 			tsr[0].SetString1D(fun(tsr[0].String1D(idx), tsr[1].String1D(bi)), idx)
 		}, a, b)
 	return nil
@@ -181,11 +266,10 @@ func FloatBinaryFuncOut(flops int, fun func(a, b float64) float64, a, b Tensor, 
 	}
 	out.SetShapeSizes(os.Sizes...)
 	olen := os.Len()
+	br := newBroadcaster(as, bs, os)
 	VectorizeThreaded(flops, func(tsr ...Tensor) int { return olen },
 		func(idx int, tsr ...Tensor) {
-			oi := os.IndexFrom1D(idx)
-			ai := WrapIndex1D(as, oi...)
-			bi := WrapIndex1D(bs, oi...)
+			ai, bi := br.index(idx)
 			out.SetFloat1D(fun(tsr[0].Float1D(ai), tsr[1].Float1D(bi)), idx)
 		}, a, b, out)
 	return nil
@@ -204,11 +288,10 @@ func StringBinaryFuncOut(fun func(a, b string) string, a, b Tensor, out Values) 
 	}
 	out.SetShapeSizes(os.Sizes...)
 	olen := os.Len()
+	br := newBroadcaster(as, bs, os)
 	VectorizeThreaded(1, func(tsr ...Tensor) int { return olen },
 		func(idx int, tsr ...Tensor) {
-			oi := os.IndexFrom1D(idx)
-			ai := WrapIndex1D(as, oi...)
-			bi := WrapIndex1D(bs, oi...)
+			ai, bi := br.index(idx)
 			out.SetString1D(fun(tsr[0].String1D(ai), tsr[1].String1D(bi)), idx)
 		}, a, b, out)
 	return nil
@@ -266,11 +349,10 @@ func BoolStringsFuncOut(fun func(a, b string) bool, a, b Tensor, out *Bool) erro
 	}
 	out.SetShapeSizes(os.Sizes...)
 	olen := os.Len()
+	br := newBroadcaster(as, bs, os)
 	VectorizeThreaded(5, func(tsr ...Tensor) int { return olen },
 		func(idx int, tsr ...Tensor) {
-			oi := os.IndexFrom1D(idx)
-			ai := WrapIndex1D(as, oi...)
-			bi := WrapIndex1D(bs, oi...)
+			ai, bi := br.index(idx)
 			out.SetBool1D(fun(tsr[0].String1D(ai), tsr[1].String1D(bi)), idx)
 		}, a, b, out)
 	return nil
@@ -293,11 +375,10 @@ func BoolFloatsFuncOut(fun func(a, b float64) bool, a, b Tensor, out *Bool) erro
 	}
 	out.SetShapeSizes(os.Sizes...)
 	olen := os.Len()
+	br := newBroadcaster(as, bs, os)
 	VectorizeThreaded(5, func(tsr ...Tensor) int { return olen },
 		func(idx int, tsr ...Tensor) {
-			oi := os.IndexFrom1D(idx)
-			ai := WrapIndex1D(as, oi...)
-			bi := WrapIndex1D(bs, oi...)
+			ai, bi := br.index(idx)
 			out.SetBool1D(fun(tsr[0].Float1D(ai), tsr[1].Float1D(bi)), idx)
 		}, a, b, out)
 	return nil
@@ -320,11 +401,10 @@ func BoolIntsFuncOut(fun func(a, b int) bool, a, b Tensor, out *Bool) error {
 	}
 	out.SetShapeSizes(os.Sizes...)
 	olen := os.Len()
+	br := newBroadcaster(as, bs, os)
 	VectorizeThreaded(5, func(tsr ...Tensor) int { return olen },
 		func(idx int, tsr ...Tensor) {
-			oi := os.IndexFrom1D(idx)
-			ai := WrapIndex1D(as, oi...)
-			bi := WrapIndex1D(bs, oi...)
+			ai, bi := br.index(idx)
 			out.SetBool1D(fun(tsr[0].Int1D(ai), tsr[1].Int1D(bi)), idx)
 		}, a, b, out)
 	return nil

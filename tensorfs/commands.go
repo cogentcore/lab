@@ -97,7 +97,7 @@ func List(opts ...string) error {
 			dir = nd
 		}
 	}
-	ls := dir.List(long, recursive)
+	ls := dir.List(ListDetail(long), ListDepth(recursive))
 	if ListOutput != nil {
 		fmt.Fprintln(ListOutput, ls)
 	} else {

@@ -382,10 +382,26 @@ func TestPlotterChooser(t *testing.T) {
 		assert.Equal(t, plot.PlotterName(""), pc.Items[0].Value)
 		assert.Equal(t, "Default", pc.Items[0].Text)
 		assert.Equal(t, plot.PlotterName(plots.BarType), pc.CurrentItem.Value)
-		assert.Equal(t, 1, pc.CurrentIndex)
+		assert.Equal(t, plot.PlotterName(plots.BarType), pc.Items[pc.CurrentIndex].Value)
 		pc.SetCurrentIndex(len(pc.Items) - 1)
 		pc.SendChange()
 		assert.Equal(t, plot.PlotterName(plots.YErrorBarsType), name)
+	}))
+}
+
+// TestColorMapName tests that the color map of the color axis style
+// is edited with a color map button.
+func TestColorMapName(t *testing.T) {
+	b := core.NewBody()
+	name := plot.ColorMapName("ColdHot")
+	w := core.NewValue(&name, "", b)
+	cb, ok := w.(*core.ColorMapButton)
+	require.True(t, ok)
+	core.RenderImage(b, core.Locked(b, func() {
+		assert.Equal(t, "ColdHot", cb.MapName)
+		cb.MapName = "Viridis"
+		cb.SendChange()
+		assert.Equal(t, plot.ColorMapName("Viridis"), name)
 	}))
 }
 
@@ -658,7 +674,7 @@ func TestEditorTypeMenu(t *testing.T) {
 				}
 				return tree.Continue
 			})
-			assert.Equal(t, []string{"Default", "Bar", "Labels", "XErrorBars", "XY", "YErrorBars"}, texts)
+			assert.Equal(t, []string{"Default", "Band", "Bar", "Box", "Contour", "FilledContour", "HLine", "HSpan", "Heatmap", "Labels", "Pie", "VLine", "VSpan", "Vector", "XBand", "XBar", "XBox", "XErrorBars", "XY", "YErrorBars"}, texts)
 		})()
 	})
 }

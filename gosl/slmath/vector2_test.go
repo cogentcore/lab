@@ -97,8 +97,8 @@ func TestVector2WindowToNDC(t *testing.T) {
 	size := math32.Vec2(800, 600)
 	off := math32.Vec2(10, 20)
 	for _, v := range testVec2s {
-		eq3(t, v.WindowToNDC(size, off, false), WindowToNDC2(v, size, off, false), "WindowToNDC2")
-		eq3(t, v.WindowToNDC(size, off, true), WindowToNDC2(v, size, off, true), "WindowToNDC2 flipY")
+		eq3(t, v.WindowToNDC(size, off, math32.NoFlipY), WindowToNDC2(v, size, off, false), "WindowToNDC2")
+		eq3(t, v.WindowToNDC(size, off, math32.FlipY), WindowToNDC2(v, size, off, true), "WindowToNDC2 flipY")
 	}
 }
 

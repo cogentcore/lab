@@ -18,7 +18,7 @@ import (
 // Camera params determine whether log is used, and max cutoff distance for sensitive
 // range of distances -- also has Near / Far required to transform numbers into
 // linearized distance values.
-func DepthNorm(nd *[]float32, depth []float32, cam *Camera, flipY bool) {
+func DepthNorm(nd *[]float32, depth []float32, cam *Camera, flipY math32.YFlip) {
 	sz := cam.Size
 	totn := sz.X * sz.Y
 	*nd = slicesx.SetLength(*nd, totn)

@@ -88,6 +88,7 @@ func (ps *PointStyle) SetStroke(pt *Plot) bool {
 	pc.Stroke.Width = ps.Width
 	pc.Stroke.Color = ps.Color
 	pc.Stroke.ToDots(uc)
+	pc.Stroke.Dashes = nil
 	if ps.Shape <= Pyramid {
 		pc.Fill.Color = ps.Fill
 	} else {

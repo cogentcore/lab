@@ -125,7 +125,8 @@ func TestStatsEmpty(t *testing.T) {
 }
 
 // TestQuantiles tests multiple quantiles at once, including out-of-range
-// quantile values, and the errors for non-1D inputs.
+// quantile values, quantiles of each cell of higher-dimensional inputs,
+// and the error for non-1D quantiles.
 func TestQuantiles(t *testing.T) {
 	in := tensor.NewFloat64FromValues(5, 1, 4, 2, 3)
 	qs := tensor.NewFloat64FromValues(-0.5, 0, 0.25, 0.5, 1, 1.5)
@@ -141,8 +142,51 @@ func TestQuantiles(t *testing.T) {
 	assert.Equal(t, 0.0, Median(empty).Float1D(0))
 
 	o2 := tensor.NewFloat64()
-	assert.Error(t, QuantilesOut(tensor.NewFloat64(2, 2), qs, o2))
 	assert.Error(t, QuantilesOut(in, tensor.NewFloat64(2, 2), o2))
+
+	// per cell, across rows: column 0 is in, column 1 is 10*in with a NaN
+	in2 := tensor.NewFloat64(5, 2)
+	for i := range 5 {
+		in2.Set(in.Float1D(i), i, 0)
+		in2.Set(10*in.Float1D(i), i, 1)
+	}
+	in2.Set(math.NaN(), 0, 1) // removes 50
+	assert.NoError(t, QuantilesOut(in2, qs, o2))
+	assert.Equal(t, []int{6, 2}, o2.ShapeSizes())
+	assert.Equal(t, 3.0, o2.Float(3, 0))
+	assert.Equal(t, 25.0, o2.Float(3, 1)) // median of 10, 20, 30, 40
+	assert.Equal(t, 40.0, o2.Float(4, 1))
+	med := Median(in2)
+	assert.Equal(t, []int{2}, med.ShapeSizes())
+	assert.Equal(t, 3.0, med.Float1D(0))
+	// indexed rows
+	assert.Equal(t, 4.5, Median(tensor.NewRows(in, 0, 2)).Float1D(0)) // 5, 4
+}
+
+// TestBoxStats tests the box plot stats, with outliers beyond the whiskers.
+func TestBoxStats(t *testing.T) {
+	in := tensor.NewFloat64FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 30, -20, math.NaN())
+	bs := BoxStats(in, 1.5)
+	assert.Equal(t, []int{5}, bs.ShapeSizes())
+	// sorted: -20 1 2 3 4 5 6 7 8 9 30: q1 = 2.5, med = 5, q3 = 7.5, iqr = 5
+	assert.Equal(t, []float64{1, 2.5, 5, 7.5, 9}, tensor.AsFloat64(bs).Values)
+	// min and max whiskers
+	assert.Equal(t, []float64{-20, 2.5, 5, 7.5, 30}, tensor.AsFloat64(BoxStats(in, 0)).Values)
+
+	// per cell
+	in2 := tensor.NewFloat64(11, 2)
+	for i := range 11 {
+		in2.Set(in.Float1D(i), i, 0)
+		in2.Set(float64(i), i, 1)
+	}
+	bs = BoxStats(in2, 1.5)
+	assert.Equal(t, []int{5, 2}, bs.ShapeSizes())
+	assert.Equal(t, 9.0, bs.Float(4, 0))
+	assert.Equal(t, 0.0, bs.Float(0, 1))
+	assert.Equal(t, 10.0, bs.Float(4, 1))
+
+	// no values
+	assert.Equal(t, []float64{0, 0, 0, 0, 0}, tensor.AsFloat64(BoxStats(tensor.NewFloat64FromValues(math.NaN()), 1.5)).Values)
 }
 
 // TestStatsHelpers tests StripPackage, AsStatsFunc, and the generated

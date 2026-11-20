@@ -123,6 +123,12 @@ type WidthStyle struct { //types:add -setters
 	// width is provided, so that should be built into this value as well.
 	// Defaults to 1.
 	Pad float64
+
+	// TickOffset is added to the positions of the category axis tick
+	// labels of a Bar or Box plot, to center them on a group of such
+	// plots next to each other, as set by [NewTablePlot] for multiple
+	// such plots.
+	TickOffset float64
 }
 
 func (ws *WidthStyle) Defaults() {

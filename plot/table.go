@@ -33,6 +33,11 @@ import (
 //     then Group can be empty and all other such columns will be grouped.
 //   - Plotter: Determines the type of Plotter element to use, which in turn
 //     determines the additional Roles that can be used within a Group.
+//     Another On column in the Group with a different Plotter set
+//     makes another plotter with the data of the Group, which has
+//     the color of the first one and no legend entry: e.g., a High
+//     column with a Band or YErrorBars Plotter draws error bands or
+//     bars around the XY line of the Y column of the Group.
 //
 // Returns nil if no valid plot elements were present.
 func NewTablePlot(dt *table.Table) (*Plot, error) {
@@ -81,10 +86,17 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		lbl  string
 		ci   int
 		clr  image.Image // if set, set styler
+
+		// main is the first plotter of the group of a secondary plotter,
+		// whose color it shares.
+		main *pitem
 	}
 	var ptrs []*pitem // accumulate in case of grouping
 
-	doneGps := map[string]bool{}
+	// the plotters of each (non-empty) group, by plotter type: a group makes
+	// a plotter for each different type of plotter of its On columns.
+	doneGps := map[string]map[string]*pitem{}
+	gpMain := map[string]*pitem{}
 	var split *tensor.Rows
 	nLegends := 0
 
@@ -108,13 +120,16 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 			lbl = st.Label
 		}
 		gp := st.Group
-		if doneGps[gp] {
-			continue
-		}
-		if gp != "" {
-			doneGps[gp] = true
-		}
 		ptyp := string(st.PlotterOrDefault(cl.IsString(), &psty))
+		var main *pitem
+		if gp != "" && doneGps[gp] != nil {
+			// another plotter for the group only for a column with
+			// a different, explicitly set plotter (e.g., an error Band)
+			if st.Plotter == "" || doneGps[gp][ptyp] != nil {
+				continue
+			}
+			main = gpMain[gp]
+		}
 		pt, err := PlotterByType(ptyp)
 		if err != nil {
 			errs = append(errs, err)
@@ -189,8 +204,16 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		if gotX >= 0 {
 			xidxs[gotX] = true
 		}
-		ptrs = append(ptrs, &pitem{ptyp: ptyp, pt: pt, data: data, lbl: lbl, ci: ci})
-		if !st.NoLegend {
+		pi := &pitem{ptyp: ptyp, pt: pt, data: data, lbl: lbl, ci: ci, main: main}
+		ptrs = append(ptrs, pi)
+		if gp != "" {
+			if doneGps[gp] == nil {
+				doneGps[gp] = map[string]*pitem{}
+				gpMain[gp] = pi
+			}
+			doneGps[gp][ptyp] = pi
+		}
+		if !st.NoLegend && main == nil {
 			nLegends++
 		}
 	}
@@ -242,6 +265,13 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		nptrs := make([]*pitem, 0, len(gps)*len(ptrs))
 		nLegends = len(gps) * nLegends
 		idx := 0
+		// the colors of the main plotters in each split group,
+		// which their secondary plotters share
+		type mainGroup struct {
+			main *pitem
+			gp   tensor.Tensor
+		}
+		mainClr := map[mainGroup]image.Image{}
 		for _, pt := range ptrs {
 			for _, gp := range gps {
 				nd := Data{}
@@ -251,18 +281,24 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 					nd[rl] = rv
 				}
 				npt := *pt
-				npt.clr = colors.Uniform(colors.Spaced(idx))
+				if pt.main != nil {
+					npt.clr = mainClr[mainGroup{pt.main, gp}]
+				} else {
+					npt.clr = colors.Uniform(colors.Spaced(idx))
+					mainClr[mainGroup{pt, gp}] = npt.clr
+					idx++
+				}
 				npt.data = nd
 				npt.lbl = metadata.Name(gp) + " " + pt.lbl
 				nptrs = append(nptrs, &npt)
-				idx++
 			}
 		}
 		ptrs = nptrs
 	}
 
-	var barCols []int  // column indexes of bar plots
-	var barPlots []int // plotter indexes of bar plots
+	var barCols []int             // column indexes of bar plots
+	var barPlots []int            // plotter indexes of bar plots
+	plotIndex := map[*pitem]int{} // the plotter index of each main item
 	for _, pt := range ptrs {
 		pl := pt.pt.New(plt, pt.data)
 		if reflectx.IsNil(reflect.ValueOf(pl)) {
@@ -272,22 +308,39 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		}
 		if pt.clr != nil {
 			pl.Stylers().Add(func(s *Style) {
-				s.Line.Color = pt.clr
-				if pt.ptyp == "Bar" {
+				// box lines (incl. the median) stay in contrast to the fill
+				if !isBox(pt.ptyp) {
+					s.Line.Color = pt.clr
+				}
+				if isBarLike(pt.ptyp) {
 					s.Line.Fill = pt.clr
 				}
 				s.Point.Color = pt.clr
 				s.Point.Fill = pt.clr
 			})
 		}
+		if pt.main != nil && pt.clr == nil && csty[pt.ci].Line.Color == colors.Scheme.OnSurface {
+			// a secondary plotter has the color of the main one of its group
+			clr := csty[pt.main.ci].Line.Color
+			if clr == colors.Scheme.OnSurface {
+				clr = colors.Uniform(colors.Spaced(plotIndex[pt.main]))
+			}
+			pl.Stylers().Add(func(s *Style) {
+				s.Line.Color = clr
+				s.Point.Color = clr
+			})
+		}
 		plt.Add(pl)
+		if pt.main == nil {
+			plotIndex[pt] = len(plt.Plotters) - 1
+		}
 		st := csty[pt.ci]
-		if !st.NoLegend && nLegends > 1 {
+		if !st.NoLegend && nLegends > 1 && pt.main == nil {
 			if tn, ok := pl.(Thumbnailer); ok {
 				plt.Legend.Add(pt.lbl, tn)
 			}
 		}
-		if pt.ptyp == "Bar" {
+		if isBarLike(pt.ptyp) {
 			barCols = append(barCols, pt.ci)
 			barPlots = append(barPlots, len(plt.Plotters)-1)
 		}
@@ -304,27 +357,90 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		if len(plt.Plotters) > 0 {
 			pl0 := plt.Plotters[0]
 			if pl0 != nil {
-				pl0.Stylers().Add(func(s *Style) {
-					s.Plot.XAxis.Label = lbl
-				})
+				if isHorizontal(ptrs[0].ptyp) {
+					// the X column has the categories along the Y axis,
+					// and the values are along the X axis
+					vlbl := dt.Columns.Keys[ptrs[0].ci]
+					if csty[ptrs[0].ci].Label != "" {
+						vlbl = csty[ptrs[0].ci].Label
+					}
+					pl0.Stylers().Add(func(s *Style) {
+						if s.Plot.YAxisLabel == "" {
+							s.Plot.YAxisLabel = lbl
+						}
+						s.Plot.XAxis.Label = vlbl
+					})
+				} else {
+					pl0.Stylers().Add(func(s *Style) {
+						s.Plot.XAxis.Label = lbl
+					})
+				}
 			}
 		}
 	}
 
-	// Set bar spacing based on total number of bars present.
+	// Set bar spacing based on total number of bar-like plots present.
 	nbar := len(barCols)
 	if nbar > 1 {
-		sz := 1.0 / (float64(nbar) + 0.5)
+		sz := BarSeriesWidth(nbar)
 		for bi, bp := range barPlots {
 			pl := plt.Plotters[bp]
 			pl.Stylers().Add(func(s *Style) {
 				s.Width.Stride = 1
-				s.Width.Offset = float64(bi) * sz
-				s.Width.Width = psty.BarWidth * sz
+				s.Width.Offset = BarPosition(0, bi, nbar)
+				s.Width.Width *= sz // the BarWidth by default
+				s.Width.TickOffset = 0.5*float64(nbar-1)*sz - float64(bi)*sz
 			})
 		}
 	}
 	return plt, errors.Join(errs...)
+}
+
+// BarSeriesWidth returns the width of each of the given number of series
+// of bar-like plots (Bar, Box, etc) next to each other, as spaced by
+// [NewTablePlot]: the width of a bar is this times the BarWidth style.
+func BarSeriesWidth(nseries int) float64 {
+	if nseries <= 1 {
+		return 1
+	}
+	return 1.0 / (float64(nseries) + 0.5)
+}
+
+// BarPosition returns the position along the category axis of the
+// bar-like plot (Bar, Box, etc) of the given category index,
+// in the given series of the given number of series next to each other,
+// as spaced by [NewTablePlot] (with the default [WidthStyle] for one
+// series), e.g., to plot other elements at the same positions.
+func BarPosition(category, series, nseries int) float64 {
+	if nseries <= 1 {
+		var ws WidthStyle
+		ws.Defaults()
+		return ws.Offset + float64(category)*ws.Stride
+	}
+	return float64(category) + float64(series)*BarSeriesWidth(nseries)
+}
+
+// isBarLike returns whether the given plotter type is positioned
+// along the category axis as a Bar (Bar, XBar, Box, XBox), so that multiple
+// such plots are spaced out next to each other, and filled with the
+// group color for Split plots.
+func isBarLike(ptyp string) bool {
+	switch ptyp {
+	case "Bar", "XBar", "Box", "XBox":
+		return true
+	}
+	return false
+}
+
+// isHorizontal returns whether the given plotter type is a horizontal
+// bar-like plot (XBar, XBox), with the categories along the Y axis.
+func isHorizontal(ptyp string) bool {
+	return ptyp == "XBar" || ptyp == "XBox"
+}
+
+// isBox returns whether the given plotter type is a Box or XBox.
+func isBox(ptyp string) bool {
+	return ptyp == "Box" || ptyp == "XBox"
 }
 
 // todo: bar chart rows, if needed

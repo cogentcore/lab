@@ -65,6 +65,53 @@ plt := lab.NewPlot(b)
 plots.NewLine(plt, plot.Data{plot.X: tx, plot.Y: ty})
 ```
 
+### Colors
+
+The `Color` data role maps values onto colors, using the color axis of the plot, which is shown in a color bar at the right of the plot. The `ColorAxis` plot style sets the color map (`ColdHot` by default), the range of values mapped onto it (the range of the data by default, where either end can be fixed), and a label for the color bar, which can also be turned off:
+
+```Goal
+xs, ys, cs := make(plot.Values, 21), make(plot.Values, 21), make(plot.Values, 21)
+for i := range 21 {
+	xs[i] = float64(i)
+	ys[i] = math.Sin(float64(i) / 3)
+	cs[i] = 0.15 + 0.1*math.Cos(float64(i)/4)
+}
+plt := lab.NewPlot(b)
+plots.NewScatter(plt, plot.Data{plot.X: xs, plot.Y: ys, plot.Color: cs}).Styler(func(s *plot.Style) {
+	s.Point.Size.Pt(6)
+	s.Plot.ColorAxis.ColorMap = "Viridis"
+	s.Plot.ColorAxis.Label = "C"
+})
+```
+
+### Grid
+
+The `Grid` plot style draws grid lines behind the data at the major ticks of the `X` and / or `Y` axes, in its `Line` style (a thin light line by default):
+
+```Goal
+plt := lab.NewPlot(b)
+plots.NewLine(plt, plot.Data{plot.X: xs, plot.Y: ys}).Styler(func(s *plot.Style) {
+	s.Plot.Grid.X = true
+	s.Plot.Grid.Y = true
+})
+```
+
+### Reference lines and spans
+
+`HLine` and `VLine` draw horizontal and vertical reference lines across the whole plot, at the given `Y` or `X` values (e.g., at chance level or zero, or at the time of an event), and `HSpan` and `VSpan` fill spans across the whole plot between pairs of `Low` and `High` values (e.g., an epoch of time). The values are included in the range of their axis. Lines are drawn in the `Line` style, which has a neutral color by default, and spans are filled with the `Line.Fill`, or the `Line.Color` at 15% opacity, with their edges drawn if `Line.On` is `On`.
+
+```Goal
+plt := lab.NewPlot(b)
+plots.NewVSpan(plt, 6, 12)
+plots.NewLine(plt, plot.Data{plot.X: xs, plot.Y: ys})
+plots.NewHLine(plt, 0).Styler(func(s *plot.Style) {
+	s.Line.Dashes = []float32{4, 2}
+})
+plots.NewVLine(plt, 3, 15)
+```
+
+In a table plot, the values of a line are those of its column, whatever its role (other than `X`, which is the X axis), so a column with the times of events (and `NaN` elsewhere) can be plotted as `VLine`s.
+
 ## Missing data: NaN
 
 Consistent with the [[tensor]] convention, missing data points are marked by a `NaN` value (i.e., `math.NaN()`), and are processed appropriately by all plot types.
@@ -97,93 +144,12 @@ plt := lab.NewPlot(b)
 plots.NewLine(plt, data)
 ```
 
-## Plot Types
+## Plot types
 
-The following are the builtin standard plot types, in the `plots` package:
+The builtin plot types, in the `plots` package, are described in these pages:
 
-## 1D and 2D XY Data
-
-### XY
-
-`XY` is the workhorse standard Plotter, taking at least `X` and `Y` inputs, and plotting lines and / or points at each X, Y point. 
-
-Optionally `Size` and / or `Color` inputs can be provided, which apply to the points. Thus, by using a `Point.Shape` of `Ring` or `Circle`, you can create a bubble plot by providing Size and Color data.
-
-### Bar
-
-`Bar` takes `Y` inputs, and draws bars of corresponding height.
-
-An optional `High` input can be provided to also plot error bars above each bar.
-
-To create a plot with multiple error bars, multiple Bar Plotters are created, with `Style.Width` parameters that have a shared `Stride = 1 / number of bars` and `Offset` that increments for each bar added.  The `plots.NewBars` function handles this directly.
-
-### ErrorBar
-
-`XErrorBar` and `YErrorBar` take `X`, `Y`, `Low`, and `High` inputs, and draws an `I` shaped error bar at the X, Y coordinate with the error "handles" around it.
-
-### Labels
-
-`Labels` takes `X`, `Y` and `Labels` string inputs and plots labels at the given coordinates.
-
-### Box
-
-`Box` takes `X`, `Y` (median line), `U`, `V` (box first and 3rd quartile values), and `Low`, `High` (Min, Max) inputs, and renders a box plot with error bars.
-
-### XFill, YFill
-
-`XFill` and `YFill` are used to draw filled regions between pairs of X or Y points, using the `X`, `Y`, and `Low`, `High` values to specify the center point (X, Y) and the region below / left and above / right to fill around that central point.
-
-XFill along with an XY line can be used to draw the equivalent of the [matplotlib fill_between](https://matplotlib.org/stable/plot_types/basic/fill_between.html#sphx-glr-plot-types-basic-fill-between-py) plot.
-
-YFill can be used to draw the equivalent of the [matplotlib violin plot](https://matplotlib.org/stable/plot_types/stats/violin.html#sphx-glr-plot-types-stats-violin-py).
-
-### Pie
-
-`Pie` takes a list of `Y` values that are plotted as the size of segments of a circular pie plot.  Y values are automatically normalized for plotting.
-
-TODO: implement, details on mapping, 
-
-## 2D Grid-based
-
-### ColorGrid
-
-Input = Values and X, Y size
-
-### Contour
-
-??
-
-### Vector
-
-X,Y,U,V
-
-Quiver?
-
-## 3D 
-
-TODO: use math32 3D projection math and you can just take each 3d point and reduce to 2D. For stuff you want to actually be able to use in SVG, it needs to ultimately be 2D, so it makes sense to support basic versions here, including XYZ (points, lines), Bar3D, wireframe.
-
-Could also have a separate plot3d package based on `xyz` that is true 3D for interactive 3D plots of surfaces or things that don't make sense in this more limited 2D world.
-
-# Statistical plots
-
-The `statplot` package provides functions taking `tensor` data that produce statistical plots of the data, including Quartiles (Box with Median, Quartile, Min, Max), Histogram (Bar), Violin (YFill), Range (XFill), Cluster... 
-
-TODO: add a Data scatter that plots points to overlay on top of Violin or Box.
-
-## LegendGroups
-
-* implements current legend grouping logic -- ends up being a multi-table output -- not sure how to interface.
-
-## Histogram
-
-## Quartiles
-
-## Violin
-
-## Range
-
-## Cluster
+* [[Plot types]]: plots of `X`, `Y` data (lines, points, bars, error bars, labels, box plots, bands, and pie charts).
+* [[Plot area]]: plots of the values of a 2D grid (heatmaps and contours).
+* [[Plot stats]]: statistical plots of the columns of a [[table]] (mean and error, histograms, box and violin plots), computed by the `statsplot` package.
 
 ## Plot pages
-

@@ -15,6 +15,7 @@ import (
 
 func init() {
 	core.AddValueType[plot.PlotterName, PlotterChooser]()
+	core.AddValueType[plot.ColorMapName, core.ColorMapButton]()
 }
 
 // PlotterChooser represents a [Plottername] value with a [core.Chooser]

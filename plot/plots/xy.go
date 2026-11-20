@@ -24,15 +24,16 @@ import (
 const XYType = "XY"
 
 func init() {
-	plot.RegisterPlotter(XYType, "draws lines between and / or points for X,Y data values, using optional Size data for the points, for a bubble plot.", []plot.Roles{plot.Y}, []plot.Roles{plot.X, plot.Size}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
+	plot.RegisterPlotter(XYType, "draws lines between and / or points for X,Y data values, using optional Size data for the points, for a bubble plot, and optional Color data for the colors of the points, via the color map of the plot.", []plot.Roles{plot.Y}, []plot.Roles{plot.X, plot.Size, plot.Color}, func(plt *plot.Plot, data plot.Data) plot.Plotter {
 		return NewXY(plt, data)
 	})
 }
 
 // XY draws lines between and / or points for XY data values.
 type XY struct {
-	// copies of data for this line
-	X, Y, Size plot.Values
+	// copies of data for this line: Size and Color are optional,
+	// for the sizes and colors of the points (via the [plot.ColorAxis]).
+	X, Y, Size, Color plot.Values
 
 	// PX, PY are the actual pixel plotting coordinates for each XY value.
 	PX, PY []float32
@@ -83,6 +84,7 @@ func (ln *XY) SetData(data any) error {
 	}
 	ln.stylers = plot.GetStylersFromData(dt, plot.X, plot.Y)
 	ln.Size = plot.CopyRole(dt, plot.Size)
+	ln.Color = plot.CopyRole(dt, plot.Color)
 	return nil
 }
 
@@ -149,6 +151,9 @@ func (ln *XY) Data() (data plot.Data, pixX, pixY []float32) {
 	data[plot.Y] = ln.Y
 	if ln.Size != nil {
 		data[plot.Size] = ln.Size
+	}
+	if ln.Color != nil {
+		data[plot.Color] = ln.Color
 	}
 	return
 }
@@ -352,6 +357,17 @@ func (ln *XY) Plot(plt *plot.Plot) {
 				ln.Style.Point.Size.Dots = 1 + ln.Style.Point.Size.Dots*float32(plt.SizeAxis.Norm(sz))
 			}
 			ln.Style.Point.SetColorIndex(pc, i)
+			if ln.Color != nil {
+				cv := ln.Color.Float1D(i)
+				if math.IsNaN(cv) {
+					continue
+				}
+				clr := plt.ColorAxis.Uniform(cv)
+				pc.Stroke.Color = clr
+				if ln.Style.Point.Shape <= plot.Pyramid {
+					pc.Fill.Color = clr
+				}
+			}
 			ln.Style.Point.DrawShape(pc, math32.Vec2(ptx, pty))
 		}
 		ln.Style.Point.Size = origSize
@@ -385,6 +401,9 @@ func (ln *XY) UpdateRange(plt *plot.Plot) {
 	yFits := plot.RangeLogic(plt.Style.OutOfRange, &yax.Range, &ln.Style.Range)
 	yax.DataRange = yax.Range
 
+	if ln.Color != nil {
+		plt.ColorAxis.AddRange(ln.Color)
+	}
 	ln.Style.OutOfRangeMark.IsOn(plt) // does dots
 	if !ln.Style.Point.IsOn(plt) && (!plt.Style.OutOfRange.HasMark() || yFits) {
 		return

@@ -139,7 +139,7 @@ func (tg *TensorGrid) MinSize() math32.Vector2 {
 	if tg.GridStyle.Image {
 		return math32.Vec2(float32(tg.Tensor.DimSize(1)), float32(tg.Tensor.DimSize(0)))
 	}
-	rows, cols, rowEx, colEx := tensor.Projection2DShape(tg.Tensor.Shape(), tg.GridStyle.OddRow)
+	rows, cols, rowEx, colEx := tensor.Projection2DShape(tg.Tensor.Shape(), tensor.OnedRows(tg.GridStyle.OddRow))
 	frw := float32(rows) + float32(rowEx)*tg.GridStyle.DimExtra // extra spacing
 	fcl := float32(cols) + float32(colEx)*tg.GridStyle.DimExtra // extra spacing
 	mx := float32(max(frw, fcl))
@@ -278,7 +278,7 @@ func (tg *TensorGrid) Render() {
 
 	pc.FillBox(pos, sz, tg.Styles.Background)
 
-	rows, cols, rowEx, colEx := tensor.Projection2DShape(tsr.Shape(), tg.GridStyle.OddRow)
+	rows, cols, rowEx, colEx := tensor.Projection2DShape(tsr.Shape(), tensor.OnedRows(tg.GridStyle.OddRow))
 	rowsInner := rows
 	colsInner := cols
 	if rowEx > 0 {
@@ -393,7 +393,7 @@ func (tg *TensorGrid) Render() {
 				}
 				xex += float32(xgp) * dimEx
 			}
-			val := tensor.Projection2DValue(tsr, tg.GridStyle.OddRow, ey, x)
+			val := tensor.Projection2DValue(tsr, tensor.OnedRows(tg.GridStyle.OddRow), ey, x)
 			cr := math32.Vec2(float32(x)+xex, float32(y)+yex)
 			pr := pos.Add(cr.Mul(gsz))
 			_, clr := tg.Color(val)

@@ -35,6 +35,7 @@ func InsertColumn[T tensor.DataTypes](dt *Table, name string, idx int, cellSizes
 		"cogentcore.org/lab/table": {
 			"AllNA":                  reflect.ValueOf(p_cogentcore_org_lab_table.AllNA),
 			"AnyNA":                  reflect.ValueOf(p_cogentcore_org_lab_table.AnyNA),
+			"CSVHeaders":             reflect.ValueOf((*p_cogentcore_org_lab_table.CSVHeaders)(nil)),
 			"CleanCatTSV":            reflect.ValueOf(p_cogentcore_org_lab_table.CleanCatTSV),
 			"Columns":                reflect.ValueOf((*p_cogentcore_org_lab_table.Columns)(nil)),
 			"ConfigFromDataValues":   reflect.ValueOf(p_cogentcore_org_lab_table.ConfigFromDataValues),
@@ -45,6 +46,7 @@ func InsertColumn[T tensor.DataTypes](dt *Table, name string, idx int, cellSizes
 			"FilterFunc":             reflect.ValueOf((*p_cogentcore_org_lab_table.FilterFunc)(nil)),
 			"Headers":                reflect.ValueOf(p_cogentcore_org_lab_table.Headers),
 			"InferDataType":          reflect.ValueOf(p_cogentcore_org_lab_table.InferDataType),
+			"NAFilter":               reflect.ValueOf((*p_cogentcore_org_lab_table.NAFilter)(nil)),
 			"New":                    reflect.ValueOf(p_cogentcore_org_lab_table.New),
 			"NewColumns":             reflect.ValueOf(p_cogentcore_org_lab_table.NewColumns),
 			"NewSliceTable":          reflect.ValueOf(p_cogentcore_org_lab_table.NewSliceTable),

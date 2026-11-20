@@ -26,7 +26,7 @@ type LineStyle struct { //types:add -setters
 	Width units.Value
 
 	// Dashes are the dashes of the stroke. Each pair of values specifies
-	// the amount to paint and then the amount to skip.
+	// the amount to paint and then the amount to skip, in points (Pt).
 	Dashes []float32
 
 	// Fill is the color to fill solid regions, in a plot-specific
@@ -90,6 +90,15 @@ func (ls *LineStyle) SetStroke(pt *Plot) bool {
 	pc.Stroke.Width = ls.Width
 	pc.Stroke.Color = ls.Color
 	pc.Stroke.ToDots(uc)
+	pc.Stroke.Dashes = nil
+	if len(ls.Dashes) > 0 {
+		pc.Stroke.Dashes = make([]float32, len(ls.Dashes))
+		for i, d := range ls.Dashes {
+			dv := units.Pt(d)
+			dv.ToDots(uc)
+			pc.Stroke.Dashes[i] = dv.Dots
+		}
+	}
 	return true
 }
 

@@ -107,7 +107,7 @@ func (dt *Table) Permuted() *Table {
 // (use [tensor.Ascending] or [tensor.Descending] for self-documentation).
 // Uses first cell of higher dimensional data.
 // Returns error if column name not found.
-func (dt *Table) SortColumn(columnName string, ascending bool) error { //types:add
+func (dt *Table) SortColumn(columnName string, ascending tensor.SortOrder) error { //types:add
 	dt.IndexesNeeded()
 	cl, err := dt.ColumnTry(columnName)
 	if err != nil {
@@ -154,7 +154,7 @@ func (dt *Table) SortStableFunc(cmp func(dt *Table, i, j int) int) *Table {
 // and optionally using a stable sort.
 // Uses first cell of higher dimensional data.
 // returns the table itself, for chaining operations.
-func (dt *Table) SortColumns(ascending, stable bool, columns ...string) *Table { //types:add
+func (dt *Table) SortColumns(ascending tensor.SortOrder, stable tensor.SortStability, columns ...string) *Table { //types:add
 	return dt.SortColumnIndexes(ascending, stable, dt.ColumnIndexList(columns...)...)
 }
 
@@ -162,15 +162,20 @@ func (dt *Table) SortColumns(ascending, stable bool, columns ...string) *Table {
 // given list of column indexes, using either ascending or descending order for
 // all of the columns. Uses first cell of higher dimensional data.
 // returns the table itself, for chaining operations.
-func (dt *Table) SortColumnIndexes(ascending, stable bool, colIndexes ...int) *Table {
+func (dt *Table) SortColumnIndexes(ascending tensor.SortOrder, stable tensor.SortStability, colIndexes ...int) *Table {
 	dt.IndexesNeeded()
 	sf := dt.SortFunc
 	if stable {
 		sf = dt.SortStableFunc
 	}
+	// the columns, without the indexes: ColumnByIndex copies the indexes,
+	// which in the comparison function made the sort O(N^2 log N).
+	cols := make([]tensor.Values, len(colIndexes))
+	for k, ci := range colIndexes {
+		cols[k] = dt.Columns.Values[ci]
+	}
 	sf(func(dt *Table, i, j int) int {
-		for _, ci := range colIndexes {
-			cl := dt.ColumnByIndex(ci).Tensor
+		for _, cl := range cols {
 			if cl.IsString() {
 				v := tensor.CompareAscending(cl.StringRow(i, 0), cl.StringRow(j, 0), ascending)
 				if v != 0 {
@@ -236,20 +241,24 @@ func (dt *Table) FilterString(columnName string, str string, opts tensor.StringM
 	return nil
 }
 
+// NAFilter specifies which rows [Table.FilterNA] removes: those with any NA
+// value ([AnyNA]) or only those with all NA values ([AllNA]).
+type NAFilter bool
+
 const (
 	// AnyNA is used for the FilterNA method, to specify that any
 	// NA in any column will be filtered.
-	AnyNA = false
+	AnyNA NAFilter = false
 
 	// AllNA is used for the FilterNA method, to specify that only
 	// rows with all NA values across all columns will be filtered.
-	AllNA = true
+	AllNA NAFilter = true
 )
 
 // FilterNA filters the indexes into our Table to remove NA = not available
 // data, which is represented as NaN values in numeric columns.
 // returns the table itself, for chaining operations.
-func (dt *Table) FilterNA(all bool) *Table {
+func (dt *Table) FilterNA(all NAFilter) *Table {
 	dt.Filter(func(dt *Table, row int) bool {
 		nNA, nTot := dt.NAInRow(row)
 		if all {

@@ -23,7 +23,7 @@ func NewTab[T any](tb Tabber, label string, mkfun func(tab *core.Frame) T) T {
 		if tt, ok := lc.(T); ok {
 			return tt
 		}
-		err := fmt.Errorf("Name / Type conflict: tab %q does not have the expected type of content: is %T", label, lc)
+		err := fmt.Errorf("name / type conflict: tab %q does not have the expected type of content: is %T", label, lc)
 		core.ErrorSnackbar(tb.AsLab(), err)
 		return zv
 	}
@@ -46,7 +46,7 @@ func TabAt[T any](tb Tabber, label string) T {
 		return tt
 	}
 
-	err := fmt.Errorf("Name / Type conflict: tab %q does not have the expected type of content: %T", label, lc)
+	err := fmt.Errorf("name / type conflict: tab %q does not have the expected type of content: %T", label, lc)
 	core.ErrorSnackbar(tb.AsLab(), err)
 	return zv
 }

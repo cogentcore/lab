@@ -37,6 +37,7 @@ import (
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorcore"
+	"cogentcore.org/lab/tensorfs"
 	"golang.org/x/exp/maps"
 )
 
@@ -71,6 +72,15 @@ type Editor struct { //types:add
 
 	// columns has the style of each column, by name.
 	columns map[string]*editorColumn
+
+	// PlotTableFunc, if set, shows the table of a new plot made from this
+	// one, with the given name, such as a statistical plot of the Stats
+	// menu (e.g., in a new tab), instead of in a new window.
+	PlotTableFunc func(name string, dt *table.Table) `display:"-"`
+
+	// StatsDir is the tensorfs directory of the data of the statistical
+	// plots of the Stats menu.
+	StatsDir *tensorfs.Node `display:"-"`
 }
 
 // editorColumn has the style of a column in the [Editor],
@@ -104,6 +114,35 @@ func NewSubPlot(parent ...tree.Node) *Editor {
 		s.Direction = styles.Column
 		s.Grow.Set(1, 1)
 	})
+	tb.Maker(pl.MakeToolbar)
+	return pl
+}
+
+// ToolbarPlace specifies where the toolbar of an editor made by
+// [NewEditorWithBar] goes: [TopBar] or [InlineBar].
+type ToolbarPlace bool
+
+const (
+	// TopBar puts the toolbar of the editor in the top bar of its [core.Body].
+	TopBar ToolbarPlace = true
+
+	// InlineBar puts the toolbar of the editor in its parent, before it.
+	InlineBar ToolbarPlace = false
+)
+
+// NewEditorWithBar returns a new [Editor] in the given parent, with its
+// toolbar: in the top bar of the parent if topBar is [TopBar] and the parent
+// is a [core.Body], or else ([InlineBar]) in the parent, before the editor.
+func NewEditorWithBar(parent tree.Node, topBar ToolbarPlace) *Editor {
+	if b, ok := parent.(*core.Body); ok && topBar == TopBar {
+		pl := NewEditor(b)
+		b.AddTopBar(func(bar *core.Frame) {
+			core.NewToolbar(bar).Maker(pl.MakeToolbar)
+		})
+		return pl
+	}
+	tb := core.NewToolbar(parent)
+	pl := NewEditor(parent)
 	tb.Maker(pl.MakeToolbar)
 	return pl
 }
@@ -669,7 +708,8 @@ func (pl *Editor) defaultColumnStyle(cl tensor.Values, isX bool, colorIdx *int, 
 			cst.Role = plot.X
 			mods["Role"] = true
 		}
-	case cst.Role == plot.NoRole || cst.Role == plot.X:
+	case cst.Role == plot.NoRole || (cst.Role == plot.X && cst.Group == ""):
+		// an X column of a group is the X data of its plotter
 		mods["Role"] = true
 		if isString {
 			cst.Role = plot.Label
@@ -678,11 +718,22 @@ func (pl *Editor) defaultColumnStyle(cl tensor.Values, isX bool, colorIdx *int, 
 		}
 	}
 	clr := cst.Line.Color
-	if clr == colors.Scheme.OnSurface {
+	ptyp := cst.PlotterOrDefault(isString, &pl.PlotStyle)
+	isBox := ptyp == plots.BoxType || ptyp == plots.XBoxType
+	if isBox && cst.Line.Fill != nil {
+		if cst.Line.Fill != colors.Scheme.Surface { // white boxes: the line color
+			clr = cst.Line.Fill // the color of a box is its fill
+		}
+	} else if clr == colors.Scheme.OnSurface {
 		if cst.Role == plot.Y && !isString {
 			clr = colors.Uniform(colors.Spaced(*colorIdx))
 			(*colorIdx)++
-			if !*hasSplit {
+			switch {
+			case *hasSplit:
+			case isBox: // the lines of boxes stay in contrast with the fill
+				cst.Line.Fill = clr
+				mods["Line.Fill"] = true
+			default:
 				cst.Line.Color = clr
 				mods["Line.Color"] = true
 				cst.Point.Color = clr
@@ -792,6 +843,10 @@ func (pl *Editor) MakeToolbar(p *tree.Plan) {
 			}
 			w.Args[0].SetValue(ptyp)
 		})
+	})
+	tree.Add(p, func(w *core.Button) {
+		w.SetText("Stats").SetIcon(icons.QueryStats).SetMenu(pl.makeStatsMenu)
+		w.SetTooltip("Make a statistical plot of the data in a new plot: the mean and error of columns, a histogram, a box plot, or a violin plot")
 	})
 	tree.Add(p, func(w *core.Button) {
 		w.SetText("Table").SetIcon(icons.Edit).
