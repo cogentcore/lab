@@ -250,12 +250,12 @@ func TestTableSearch(t *testing.T) {
 	core.RenderImage(b, core.Locked(b, func() {
 		assert.Nil(t, tw.TextRunes())
 		tw.SortColumn(0) // a = row 4 is first
-		ms, handled := tw.Search("a", false)
+		ms, handled := tw.Search("a", core.IgnoreCase)
 		assert.True(t, handled)
 		require.Len(t, ms, 1)
 		assert.Equal(t, 0, ms[0].Region.Start.Line/tw.nCols, "the row of the view")
 		assert.Equal(t, 0, ms[0].Region.Start.Line%tw.nCols, "the Name column")
-		ms, _ = tw.Search("4", false) // also 0.4 in the cells of the row of c
+		ms, _ = tw.Search("4", core.IgnoreCase) // also 0.4 in the cells of the row of c
 		require.Len(t, ms, 2)
 		assert.Equal(t, 2, ms[1].Region.Start.Line/tw.nCols, "the row of the view")
 		assert.Equal(t, 2, ms[1].Region.Start.Line%tw.nCols, "the Cells column")
@@ -263,7 +263,7 @@ func TestTableSearch(t *testing.T) {
 		assert.Equal(t, 1, ms[0].Region.Start.Line%tw.nCols, "the Value column")
 
 		assert.True(t, tw.HighlightMatches(ms))
-		tw.SelectMatch(ms, 0, true, false)
+		tw.SelectMatch(ms, 0, core.SelectScroll, core.SelectSet)
 		assert.True(t, tw.HighlightMatches(nil))
 	}))
 }
@@ -281,12 +281,12 @@ func TestTableSearchScroll(t *testing.T) {
 	tw := NewTable(b)
 	tw.SetTable(dt)
 	core.RenderImage(b, core.Locked(b, func() {
-		ms, _ := tw.Search("150", false)
+		ms, _ := tw.Search("150", core.IgnoreCase)
 		require.Len(t, ms, 1)
 		assert.Equal(t, 0, tw.StartIndex)
-		tw.SelectMatch(ms, 0, false, false) // not scrolled
+		tw.SelectMatch(ms, 0, core.SelectNoScroll, core.SelectSet) // not scrolled
 		assert.Equal(t, 0, tw.StartIndex)
-		tw.SelectMatch(ms, 0, true, false)
+		tw.SelectMatch(ms, 0, core.SelectScroll, core.SelectSet)
 		assert.LessOrEqual(t, tw.StartIndex, 150)
 		assert.Greater(t, tw.StartIndex+tw.VisibleRows, 150)
 	}))

@@ -59,7 +59,7 @@ func TestSortColumns(t *testing.T) {
 	assert.Equal(t, []string{"e", "c", "b", "a", "d"}, columnStrings(dt, "Name"))
 
 	dt.Sequential()
-	dt.SortColumns(tensor.Ascending, false, "Val", "Name")
+	dt.SortColumns(tensor.Ascending, tensor.UnstableSort, "Val", "Name")
 	assert.Equal(t, []string{"d", "a", "b", "c", "e"}, columnStrings(dt, "Name"))
 	// the cells follow their rows.
 	assert.Equal(t, 41.0, dt.Column("Cell").FloatRow(0, 1))

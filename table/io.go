@@ -59,7 +59,7 @@ func (dt *Table) SaveCSV(filename fsx.Filename, delim tensor.Delims, headers CSV
 // String returns a string of the CSV formatted file for the table.
 func (dt *Table) String() string {
 	var b bytes.Buffer
-	dt.WriteCSV(&b, tensor.Tab, true)
+	dt.WriteCSV(&b, tensor.Tab, Headers)
 	return b.String()
 }
 
@@ -518,7 +518,7 @@ func CleanCatTSV(filename string, sorts ...string) error {
 	}
 	dt.SortColumns(tensor.Ascending, tensor.StableSort, sorts...)
 	st := dt.New()
-	err = st.SaveCSV(fsx.Filename(filename), tensor.Tab, true)
+	err = st.SaveCSV(fsx.Filename(filename), tensor.Tab, Headers)
 	if err != nil {
 		slog.Error(err.Error())
 	}

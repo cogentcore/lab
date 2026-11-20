@@ -82,7 +82,7 @@ func TestTensorEditorString(t *testing.T) {
 		tf.SendChange()
 		assert.Equal(t, "x", tsr.String1D(1))
 
-		ms, _ := te.Search("x", true)
+		ms, _ := te.Search("x", core.UseCase)
 		require.Len(t, ms, 1)
 		assert.Equal(t, 1, ms[0].Region.Start.Line)
 	}))
@@ -97,14 +97,14 @@ func TestTensorEditorSearch(t *testing.T) {
 	te.SetTensor(newTestTensor())
 	core.RenderImage(b, core.Locked(b, func() {
 		assert.Nil(t, te.TextRunes())
-		ms, handled := te.Search("21", false)
+		ms, handled := te.Search("21", core.IgnoreCase)
 		assert.True(t, handled)
 		require.Len(t, ms, 1)
 		assert.Equal(t, 0, ms[0].Region.Start.Line/te.NCols, "the top row")
 		assert.Equal(t, 1, ms[0].Region.Start.Line%te.NCols)
 		assert.True(t, te.HighlightMatches(ms))
-		te.SelectMatch(ms, 0, true, false)
-		te.SelectMatch(ms, 0, true, true)
+		te.SelectMatch(ms, 0, core.SelectScroll, core.SelectSet)
+		te.SelectMatch(ms, 0, core.SelectScroll, core.SelectReset)
 		assert.True(t, te.HighlightMatches(nil))
 	}))
 }

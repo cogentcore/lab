@@ -47,7 +47,7 @@ func (nd *Node) String() string {
 
 // ListAll returns a Long, Recursive listing of nodes in the given directory.
 func (dir *Node) ListAll() string {
-	return dir.listLong(true, 0)
+	return dir.listLong(Recursive, 0)
 }
 
 // List returns a listing of nodes in the given directory.
