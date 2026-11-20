@@ -25,7 +25,7 @@ func main() {
 	pst := func(s *plot.Style) {
 		s.Plot.Title = "RA25 Epoch Train"
 	}
-	perr := epc.Column("PctErr")
+	perr := epc.Column("Err")
 	plot.SetStyler(perr, pst, func(s *plot.Style) {
 		s.On = true
 		s.Role = plot.Y
