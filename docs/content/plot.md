@@ -96,6 +96,22 @@ plots.NewLine(plt, plot.Data{plot.X: xs, plot.Y: ys}).Styler(func(s *plot.Style)
 })
 ```
 
+### Reference lines and spans
+
+`HLine` and `VLine` draw horizontal and vertical reference lines across the whole plot, at the given `Y` or `X` values (e.g., at chance level or zero, or at the time of an event), and `HSpan` and `VSpan` fill spans across the whole plot between pairs of `Low` and `High` values (e.g., an epoch of time). The values are included in the range of their axis. Lines are drawn in the `Line` style, which has a neutral color by default, and spans are filled with the `Line.Fill`, or the `Line.Color` at 15% opacity, with their edges drawn if `Line.On` is `On`.
+
+```Goal
+plt := lab.NewPlot(b)
+plots.NewVSpan(plt, 6, 12)
+plots.NewLine(plt, plot.Data{plot.X: xs, plot.Y: ys})
+plots.NewHLine(plt, 0).Styler(func(s *plot.Style) {
+	s.Line.Dashes = []float32{4, 2}
+})
+plots.NewVLine(plt, 3, 15)
+```
+
+In a table plot, the values of a line are those of its column, whatever its role (other than `X`, which is the X axis), so a column with the times of events (and `NaN` elsewhere) can be plotted as `VLine`s.
+
 ## Missing data: NaN
 
 Consistent with the [[tensor]] convention, missing data points are marked by a `NaN` value (i.e., `math.NaN()`), and are processed appropriately by all plot types.
@@ -132,7 +148,7 @@ plots.NewLine(plt, data)
 
 The builtin plot types, in the `plots` package, are described in these pages:
 
-* [[Plot types]]: plots of `X`, `Y` data (lines, points, bars, error bars, labels, box plots, bands, and reference lines and spans).
+* [[Plot types]]: plots of `X`, `Y` data (lines, points, bars, error bars, labels, box plots, and bands).
 * [[Plot area]]: plots of the values of a 2D grid (heatmaps and contours).
 * [[Plot stats]]: statistical plots of the columns of a [[table]] (mean and error, histograms, box and violin plots), computed by the `statsplot` package.
 

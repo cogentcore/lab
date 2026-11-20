@@ -196,22 +196,6 @@ plots.NewBox(plt, plot.Data{plot.X: tensor.NewStringFromValues("A", "B", "C"), p
 plots.NewScatter(plt, plot.Data{plot.X: ox, plot.Y: oy})
 ```
 
-## Reference lines and spans
-
-`HLine` and `VLine` draw horizontal and vertical reference lines across the whole plot, at the given `Y` or `X` values (e.g., at chance level or zero, or at the time of an event), and `HSpan` and `VSpan` fill spans across the whole plot between pairs of `Low` and `High` values (e.g., an epoch of time). The values are included in the range of their axis. Lines are drawn in the `Line` style, which has a neutral color by default, and spans are filled with the `Line.Fill`, or the `Line.Color` at 15% opacity, with their edges drawn if `Line.On` is `On`.
-
-```Goal
-plt := lab.NewPlot(b)
-plots.NewVSpan(plt, 6, 12)
-plots.NewLine(plt, plot.Data{plot.X: x, plot.Y: y})
-plots.NewHLine(plt, 0).Styler(func(s *plot.Style) {
-	s.Line.Dashes = []float32{4, 2}
-})
-plots.NewVLine(plt, 3, 15)
-```
-
-In a table plot, the values of a line are those of its column, whatever its role (other than `X`, which is the X axis), so a column with the times of events (and `NaN` elsewhere) can be plotted as `VLine`s.
-
 ## Pie
 
 `Pie` takes a list of `Y` values that are plotted as the size of segments of a circular pie plot.  Y values are automatically normalized for plotting.
