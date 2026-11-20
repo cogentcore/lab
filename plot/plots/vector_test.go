@@ -43,6 +43,7 @@ func TestVector(t *testing.T) {
 	vc := NewVector(plt, plot.Data{plot.X: x, plot.Y: y, plot.U: u, plot.V: v, plot.Color: mag})
 	require.NotNil(t, vc)
 	vc.Styler(func(s *plot.Style) { s.Plot.ColorAxis.Label = "Speed" })
+	vc.Key = true
 	assert.Equal(t, 13*13, len(vc.X), "the grid is expanded")
 	assert.Equal(t, x.Float1D(3), vc.X[13+3])
 	assert.Equal(t, y.Float1D(1), vc.Y[13+3])
@@ -58,6 +59,9 @@ func TestVector(t *testing.T) {
 	vc = NewVector(plt, plot.Data{plot.X: x, plot.Y: y, plot.U: u, plot.V: v})
 	vc.Pivot = PivotMiddle
 	vc.Scale = 0.7
+	vc.Key = true
+	vc.KeyValue = 0.5
+	vc.KeyLabel = "0.5 m/s"
 	imagex.Assert(t, plt.RenderImage(), "vector-middle")
 	assert.False(t, plt.ColorAxis.Used)
 	assert.False(t, vc.valid(6*13+6))
@@ -101,4 +105,14 @@ func TestVectorTable(t *testing.T) {
 	vp := plt.Plotters[0].(*Vector)
 	assert.Equal(t, n, len(vp.X))
 	assert.Equal(t, yc.Float1D(5), vp.Y[5])
+}
+
+func TestVectorKeyValue(t *testing.T) {
+	vc := &Vector{}
+	assert.Equal(t, 0.5, vc.keyValue(0.78))
+	assert.Equal(t, 2.0, vc.keyValue(4.9))
+	assert.Equal(t, 10.0, vc.keyValue(19))
+	assert.Equal(t, 5.0, vc.keyValue(5))
+	vc.KeyValue = 3
+	assert.Equal(t, 3.0, vc.keyValue(19))
 }

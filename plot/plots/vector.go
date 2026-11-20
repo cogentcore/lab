@@ -6,7 +6,12 @@ package plots
 
 import (
 	"fmt"
+	"image"
 	"math"
+	"strconv"
+
+	"cogentcore.org/core/colors"
+	"cogentcore.org/core/paint"
 
 	"cogentcore.org/core/math32"
 	"cogentcore.org/core/math32/minmax"
@@ -66,6 +71,18 @@ type Vector struct {
 
 	// Pivot is the point of each arrow at its position.
 	Pivot Pivots
+
+	// Key draws a key arrow at the top right of the plot, for the scale
+	// of the arrows (as quiverkey does in matplotlib): a horizontal arrow
+	// with the length of a vector of magnitude KeyValue, with its KeyLabel.
+	Key bool
+
+	// KeyValue is the magnitude of the vector of the key arrow: a round
+	// value about the largest magnitude of the vectors if 0.
+	KeyValue float64
+
+	// KeyLabel is the label of the key arrow: the KeyValue if empty.
+	KeyLabel string
 
 	// PX, PY are the pixel coordinates of the positions of the arrows.
 	PX, PY []float32
@@ -253,27 +270,84 @@ func (vc *Vector) Plot(plt *plot.Plot) {
 			}
 			clr = plt.ColorAxis.Uniform(vc.Color[i])
 		}
-		// the head: a triangle at the tip, smaller for short arrows
-		dir := d.DivScalar(ln)
-		hl := min(0.4*ln, 4*width+3)
-		hw := 0.6 * hl
-		tip := p.Add(d)
-		base := tip.Sub(dir.MulScalar(hl))
-		perp := math32.Vec2(-dir.Y, dir.X).MulScalar(hw)
-		pc.Fill.Color = nil
-		pc.Stroke.Color = clr
-		pc.MoveTo(p.X, p.Y)
-		pc.LineTo(base.X, base.Y)
-		pc.Draw()
-		pc.Stroke.Color = nil
-		pc.Fill.Color = clr
-		pc.MoveTo(tip.X, tip.Y)
-		pc.LineTo(base.X+perp.X, base.Y+perp.Y)
-		pc.LineTo(base.X-perp.X, base.Y-perp.Y)
-		pc.Close()
-		pc.Draw()
+		drawArrow(pc, p, d, clr, width)
 	}
 	pc.Fill.Color = nil
+	if vc.Key {
+		vc.drawKey(plt, scale, maxMag, lineColor, width)
+	}
+}
+
+// drawArrow draws an arrow from the given point along the given vector,
+// in pixels, with the given color and line width.
+func drawArrow(pc *paint.Painter, p, d math32.Vector2, clr image.Image, width float32) {
+	ln := d.Length()
+	if ln == 0 {
+		return
+	}
+	// the head: a triangle at the tip, smaller for short arrows
+	dir := d.DivScalar(ln)
+	hl := min(0.4*ln, 4*width+3)
+	hw := 0.6 * hl
+	tip := p.Add(d)
+	base := tip.Sub(dir.MulScalar(hl))
+	perp := math32.Vec2(-dir.Y, dir.X).MulScalar(hw)
+	pc.Fill.Color = nil
+	pc.Stroke.Color = clr
+	pc.MoveTo(p.X, p.Y)
+	pc.LineTo(base.X, base.Y)
+	pc.Draw()
+	pc.Stroke.Color = nil
+	pc.Fill.Color = clr
+	pc.MoveTo(tip.X, tip.Y)
+	pc.LineTo(base.X+perp.X, base.Y+perp.Y)
+	pc.LineTo(base.X-perp.X, base.Y-perp.Y)
+	pc.Close()
+	pc.Draw()
+	pc.Fill.Color = nil
+}
+
+// keyValue returns the magnitude of the vector of the key arrow: the
+// KeyValue, or else the largest round value (1, 2, or 5 times a power
+// of 10) up to the given largest magnitude of the vectors.
+func (vc *Vector) keyValue(maxMag float64) float64 {
+	if vc.KeyValue > 0 {
+		return vc.KeyValue
+	}
+	p := math.Pow(10, math.Floor(math.Log10(maxMag)))
+	for _, f := range []float64{5, 2} {
+		if f*p <= maxMag*(1+1e-9) {
+			return f * p
+		}
+	}
+	return p
+}
+
+// drawKey draws the key arrow at the top right of the plot, with its label
+// to its left, on a translucent background, for the given scale of the
+// arrows, in pixels per unit of magnitude.
+func (vc *Vector) drawKey(plt *plot.Plot, scale float32, maxMag float64, clr image.Image, width float32) {
+	pc := plt.Painter
+	val := vc.keyValue(maxMag)
+	lbl := vc.KeyLabel
+	if lbl == "" {
+		lbl = strconv.FormatFloat(val, 'g', 4, 64)
+	}
+	tx := &plot.Text{Text: lbl}
+	tx.Defaults()
+	tx.Style = plt.Style.Axis.TickText
+	tx.Config(plt)
+	tsz := tx.PaintText.Bounds.Size()
+	pad := 0.5 * tsz.Y
+	ln := float32(val) * scale
+	pb := plt.PlotBox
+	right := pb.Max.X - pad
+	y := pb.Min.Y + pad + 0.5*tsz.Y
+	left := right - ln - pad - tsz.X
+	bg := colors.Uniform(colors.ApplyOpacity(colors.ToUniform(colors.Scheme.Surface), 0.85))
+	pc.FillBox(math32.Vec2(left-0.5*pad, y-0.5*tsz.Y-0.5*pad), math32.Vec2(right-left+pad, tsz.Y+pad), bg)
+	pc.DrawText(tx.PaintText, math32.Vec2(left, y-0.5*tsz.Y))
+	drawArrow(pc, math32.Vec2(right-ln, y), math32.Vec2(ln, 0), clr, width)
 }
 
 // UpdateRange updates the given ranges.
