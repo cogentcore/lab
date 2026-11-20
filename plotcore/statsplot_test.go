@@ -162,3 +162,27 @@ func TestEditorStatsTables(t *testing.T) {
 		assert.True(t, ok)
 	}))
 }
+
+// TestNewEditorWithBar tests the toolbar of an editor made with
+// [NewEditorWithBar], in the top bar of a body, and inline in a frame.
+func TestNewEditorWithBar(t *testing.T) {
+	b := core.NewBody()
+	pl := NewEditorWithBar(b, TopBar)
+	pl.SetTable(newResultsTable())
+	core.RenderImage(b, core.Locked(b, func() {
+		assert.Equal(t, 1, len(b.Children)) // the toolbar is in the top bar
+		assert.NotNil(t, findWidget[*core.Toolbar](b.Scene))
+	}))
+
+	b = core.NewBody()
+	fr := core.NewFrame(b)
+	pl = NewEditorWithBar(fr, InlineBar)
+	pl.SetTable(newResultsTable())
+	core.RenderImage(b, core.Locked(b, func() {
+		require.Equal(t, 2, len(fr.Children))
+		tb, ok := fr.Children[0].(*core.Toolbar)
+		require.True(t, ok)
+		assert.Greater(t, len(tb.Children), 3)
+		assert.Equal(t, pl, fr.Children[1])
+	}))
+}

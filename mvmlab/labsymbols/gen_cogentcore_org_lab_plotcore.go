@@ -13,13 +13,16 @@ var _ = register(func() {
 			"ClusterPlot":       reflect.ValueOf(p_cogentcore_org_lab_plotcore.ClusterPlot),
 			"ColumnChooser":     reflect.ValueOf((*p_cogentcore_org_lab_plotcore.ColumnChooser)(nil)),
 			"Editor":            reflect.ValueOf((*p_cogentcore_org_lab_plotcore.Editor)(nil)),
+			"InlineBar":         reflect.ValueOf(p_cogentcore_org_lab_plotcore.InlineBar),
 			"NewColumnChooser":  reflect.ValueOf(p_cogentcore_org_lab_plotcore.NewColumnChooser),
 			"NewEditor":         reflect.ValueOf(p_cogentcore_org_lab_plotcore.NewEditor),
+			"NewEditorWithBar":  reflect.ValueOf(p_cogentcore_org_lab_plotcore.NewEditorWithBar),
 			"NewPlot":           reflect.ValueOf(p_cogentcore_org_lab_plotcore.NewPlot),
 			"NewPlotterChooser": reflect.ValueOf(p_cogentcore_org_lab_plotcore.NewPlotterChooser),
 			"NewSubPlot":        reflect.ValueOf(p_cogentcore_org_lab_plotcore.NewSubPlot),
 			"Plot":              reflect.ValueOf((*p_cogentcore_org_lab_plotcore.Plot)(nil)),
 			"PlotterChooser":    reflect.ValueOf((*p_cogentcore_org_lab_plotcore.PlotterChooser)(nil)),
+			"TopBar":            reflect.ValueOf(p_cogentcore_org_lab_plotcore.TopBar),
 		},
 	})
 })

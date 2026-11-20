@@ -472,7 +472,7 @@ plot.SetStyler(results.Column("Cond"), func(s *plot.Style) {
 	s.On = true
 	s.Role = plot.Split
 })
-plotcore.NewEditor(b).SetTable(results)
+plotcore.NewEditorWithBar(b, plotcore.InlineBar).SetTable(results)
 ```
 
 ## Plot pages

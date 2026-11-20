@@ -15,7 +15,7 @@ plot.SetStyler(values, func(s *plot.Style) {
 errors.Log(dt.AddColumn("Values", values.AsValues()))
 moreValues := tensor.NewFloat32FromValues(5, 3, 2)
 errors.Log(dt.AddColumn("More values", moreValues.AsValues()))
-plotcore.NewEditor(b).SetTable(dt)
+plotcore.NewEditorWithBar(b, plotcore.InlineBar).SetTable(dt)
 ```
 
 The **Stats** menu of the plot editor makes statistical plots of its data in a new plot: the mean and error of columns, a histogram, a box plot, or a violin plot (see the statistical plots section of [[plot]]).
