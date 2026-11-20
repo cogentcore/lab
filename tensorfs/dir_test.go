@@ -6,6 +6,7 @@ package tensorfs
 
 import (
 	"bytes"
+	"io/fs"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -114,4 +115,34 @@ func TestDirTar(t *testing.T) {
 	nls := ndir.ListAll()
 	// fmt.Println(nls)
 	assert.Equal(t, lsc, nls)
+}
+
+func TestDelete(t *testing.T) {
+	dir, err := NewDir("root")
+	assert.NoError(t, err)
+	stats := dir.Dir("Stats")
+	stats.Float64("A", 3)
+	stats.Float64("B", 3)
+	dir.Dir("Patterns")
+	assert.Equal(t, 2, len(DirTable(stats, nil).Columns.Values))
+
+	assert.NoError(t, stats.Delete("A"))
+	assert.Nil(t, stats.Node("A"))
+	assert.NotNil(t, stats.Node("B"))
+	assert.Equal(t, 1, len(DirTable(stats, nil).Columns.Values))
+
+	err = stats.Delete("A", "B")
+	assert.ErrorIs(t, err, fs.ErrNotExist)
+	assert.Nil(t, stats.Node("B")) // still deleted
+
+	assert.NoError(t, dir.DeleteAll())
+	assert.Nil(t, dir.Node("Stats"))
+	assert.Nil(t, stats.Parent)
+	assert.Equal(t, 0, len(dir.ListAll()))
+
+	nst := dir.Dir("Stats") // a new one
+	assert.NotSame(t, stats, nst)
+
+	nst.Float64("C", 1)
+	assert.Error(t, nst.Node("C").Delete("x")) // not a directory
 }
