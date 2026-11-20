@@ -387,7 +387,7 @@ func contentGoal2() content.GoalBlock {
 							tensorfs.Record(c, `c`)
 							d := tensor.Tensor(tensor.NewIntRange(1, 11))
 							tensorfs.Record(d, `d`)
-							e := tensor.Tensor(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(1.), tensor.NewFloat64Scalar(3.), 11, true))
+							e := tensor.Tensor(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(1.), tensor.NewFloat64Scalar(3.), 11, tensor.IncludeEnd))
 							tensorfs.Record(e, `e`)
 
 							fmt.Fprintln(contentCodeOut, "a:", a)
@@ -460,7 +460,7 @@ func contentGoal2() content.GoalBlock {
 												{
 													// contentcode:block 5 content/math.md #6
 
-													x := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., false), 3, 4))
+													x := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., tensor.ExcludeEnd), 3, 4))
 													tensorfs.Record(x, `x`)
 
 													row1 := tensor.Tensor(tensor.AnySlice(x, 1))
@@ -481,7 +481,7 @@ func contentGoal2() content.GoalBlock {
 														{
 															// contentcode:block 6 content/math.md #7
 
-															x := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., false), 3, 4))
+															x := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., tensor.ExcludeEnd), 3, 4))
 															tensorfs.Record(x, `x`)
 
 															col1 := tensor.Tensor(tensor.AnySlice(x, tensor.FullAxis, 1, tensor.NewAxis))
@@ -498,7 +498,7 @@ func contentGoal2() content.GoalBlock {
 																{
 																	// contentcode:block 7 content/math.md #8
 
-																	x := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., false), 3, 4))
+																	x := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., tensor.ExcludeEnd), 3, 4))
 																	tensorfs.Record(x, `x`)
 
 																	row1 := tensor.Tensor(tensor.AnySlice(x, 1, tensor.Slice{Start: 1, Stop: 3}))
@@ -518,7 +518,7 @@ func contentGoal2() content.GoalBlock {
 																		{
 																			// contentcode:block 8 content/math.md #9
 
-																			x := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., false), 3, 2, 2))
+																			x := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., tensor.ExcludeEnd), 3, 2, 2))
 																			tensorfs.Record(x, `x`)
 
 																			last1 := tensor.Tensor(tensor.AnySlice(x, tensor.Ellipsis, 1))
@@ -536,7 +536,7 @@ func contentGoal2() content.GoalBlock {
 																				{
 																					// contentcode:block 9 content/math.md #10
 
-																					x := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., false), 3, 2, 2))
+																					x := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., tensor.ExcludeEnd), 3, 2, 2))
 																					tensorfs.Record(x, `x`)
 
 																					last1 := tensor.Tensor(tensor.AnySlice(x, tensor.Ellipsis, 1))
@@ -559,7 +559,7 @@ func contentGoal2() content.GoalBlock {
 																						{
 																							// contentcode:block 10 content/math.md #11
 
-																							x := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., false), 3, 4))
+																							x := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., tensor.ExcludeEnd), 3, 4))
 																							tensorfs.Record(x, `x`)
 
 																							m := tensor.Tensor(tensor.AnySlice(x, tmath.GreaterEqual(x, tensor.NewIntScalar(6))))
@@ -579,7 +579,7 @@ func contentGoal2() content.GoalBlock {
 																								{
 																									// contentcode:block 11 content/math.md #12
 
-																									x := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., false), 3, 4))
+																									x := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., tensor.ExcludeEnd), 3, 4))
 																									tensorfs.Record(x, `x`)
 
 																									ixs := tensor.Tensor(tensor.Reshape(tensor.Reshape(tensor.NewIntFromValues([]int{0, 1, 0, 1, 0, 2, 0, 2, 1, 1, 1, 1, 2, 2, 2, 2}...), 8, 2), 2, 4, 2))
@@ -631,7 +631,7 @@ func contentGoal3() content.GoalBlock {
 		{
 			// contentcode:block 0 content/matrix.md #1
 
-			a := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(1.), tensor.NewFloat64Scalar(4.), 4., true), 2, 2))
+			a := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(1.), tensor.NewFloat64Scalar(4.), 4., tensor.IncludeEnd), 2, 2))
 			tensorfs.Record(a, `a`)
 			v := tensor.Tensor(tensor.NewFloat64FromValues([]float64{2., 3.}...))
 			tensorfs.Record(v, `v`)
@@ -657,7 +657,7 @@ func contentGoal3() content.GoalBlock {
 				{
 					// contentcode:block 1 content/matrix.md #2
 
-					a := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(1.), tensor.NewFloat64Scalar(4.), 4., true), 2, 2))
+					a := tensor.Tensor(tensor.Reshape(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(1.), tensor.NewFloat64Scalar(4.), 4., tensor.IncludeEnd), 2, 2))
 					tensorfs.Record(a, `a`)
 
 					t := tensor.Tensor(tensor.Transpose(a))
@@ -1594,7 +1594,7 @@ func contentGoal8() content.GoalBlock {
 		{
 			// contentcode:block 0 content/stats.md #1
 
-			x := tensor.Tensor(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., false))
+			x := tensor.Tensor(tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(0.), tensor.NewFloat64Scalar(12.), 12., tensor.ExcludeEnd))
 			tensorfs.Record(x, `x`)
 			d := tensor.Tensor(tensor.Reshape(x, 3, 2, 2))
 			tensorfs.Record(d, `d`)

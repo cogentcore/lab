@@ -20,6 +20,7 @@ import (
 	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/base/fileinfo"
 	"cogentcore.org/core/base/fileinfo/mimedata"
+	"cogentcore.org/core/base/reflectx"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/events"
 	"cogentcore.org/core/icons"
@@ -653,7 +654,7 @@ func (tb *Table) SizeFinal() {
 // SelectedColumnStrings returns the string values of given column name.
 func (tb *Table) SelectedColumnStrings(colName string) []string {
 	dt := tb.Table
-	jis := tb.SelectedIndexesList(false)
+	jis := tb.SelectedIndexesList(reflectx.Ascending)
 	if len(jis) == 0 || dt == nil {
 		return nil
 	}
@@ -709,7 +710,7 @@ func (tb *Table) CopySelectToMime() mimedata.Mimes {
 		return nil
 	}
 	ix := table.NewView(tb.Table)
-	idx := tb.SelectedIndexesList(false) // ascending
+	idx := tb.SelectedIndexesList(reflectx.Ascending)
 	iidx := make([]int, len(idx))
 	for i, di := range idx {
 		iidx[i] = tb.Table.RowIndex(di)

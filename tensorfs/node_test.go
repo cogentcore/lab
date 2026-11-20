@@ -338,9 +338,9 @@ func TestTarOptions(t *testing.T) {
 	dir.Dir("sub").Int("x", 3)
 
 	var b bytes.Buffer
-	require.NoError(t, Tar(&b, dir, false, func(nd *Node) bool { return nd.Name() != "skip" }))
+	require.NoError(t, Tar(&b, dir, NoGzip, func(nd *Node) bool { return nd.Name() != "skip" }))
 	nd, _ := NewDir("root")
-	require.NoError(t, Untar(&b, nd, false))
+	require.NoError(t, Untar(&b, nd, NoGzip))
 	assert.Equal(t, "keep [2]\nsub/\n\tx [3]\n", nd.ListAll())
 	assert.Equal(t, 1.5, nd.Value("keep").Float1D(1))
 
@@ -350,15 +350,15 @@ func TestTarOptions(t *testing.T) {
 		big.SetFloat1D(float64(i), i)
 	}
 	b.Reset()
-	require.NoError(t, Tar(&b, dir, true, nil))
+	require.NoError(t, Tar(&b, dir, Gzip, nil))
 	nd, _ = NewDir("root")
-	require.NoError(t, Untar(&b, nd, true))
+	require.NoError(t, Untar(&b, nd, Gzip))
 	nb := nd.Value("big")
 	require.Equal(t, big.Len(), nb.Len())
 	assert.Equal(t, float64(big.Len()-1), nb.Float1D(big.Len()-1))
 
-	assert.Error(t, Untar(strings.NewReader("not gzip"), nd, true))
-	err := Untar(strings.NewReader(strings.Repeat("x", 1024)), nd, false)
+	assert.Error(t, Untar(strings.NewReader("not gzip"), nd, Gzip))
+	err := Untar(strings.NewReader(strings.Repeat("x", 1024)), nd, NoGzip)
 	assert.Error(t, err)
 }
 

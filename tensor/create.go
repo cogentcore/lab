@@ -186,6 +186,18 @@ func NewIntRange(svals ...int) *Int {
 	return sl.IntTensor(sl.Stop)
 }
 
+// Endpoint specifies whether a linear spacing includes its stop value:
+// [IncludeEnd] or [ExcludeEnd].
+type Endpoint bool
+
+const (
+	// IncludeEnd includes the stop value as the last value.
+	IncludeEnd Endpoint = true
+
+	// ExcludeEnd excludes the stop value.
+	ExcludeEnd Endpoint = false
+)
+
 // NewFloat64SpacedLinear returns a new [Float64] tensor with num linearly
 // spaced numbers between start and stop values, as tensors, which
 // must be the same length and determine the cell shape of the output.
@@ -193,7 +205,7 @@ func NewIntRange(svals ...int) *Int {
 // If endpoint = true, then the stop value is _inclusive_, i.e., it will
 // be the final value, otherwise it is exclusive.
 // This corresponds to the NumPy linspace function.
-func NewFloat64SpacedLinear(start, stop Tensor, num int, endpoint bool) *Float64 {
+func NewFloat64SpacedLinear(start, stop Tensor, num int, endpoint Endpoint) *Float64 {
 	if num <= 0 {
 		num = 50
 	}

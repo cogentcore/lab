@@ -12,6 +12,7 @@ var _ = register(func() {
 		"cogentcore.org/lab/tensorfs": {
 			"AllFiles":       reflect.ValueOf(p_cogentcore_org_lab_tensorfs.AllFiles),
 			"Chdir":          reflect.ValueOf(p_cogentcore_org_lab_tensorfs.Chdir),
+			"Compression":    reflect.ValueOf((*p_cogentcore_org_lab_tensorfs.Compression)(nil)),
 			"CopyMode":       reflect.ValueOf((*p_cogentcore_org_lab_tensorfs.CopyMode)(nil)),
 			"CurDir":         reflect.ValueOf(&p_cogentcore_org_lab_tensorfs.CurDir),
 			"CurRoot":        reflect.ValueOf(&p_cogentcore_org_lab_tensorfs.CurRoot),
@@ -22,6 +23,7 @@ var _ = register(func() {
 			"DirTableMatrix": reflect.ValueOf(p_cogentcore_org_lab_tensorfs.DirTableMatrix),
 			"File":           reflect.ValueOf((*p_cogentcore_org_lab_tensorfs.File)(nil)),
 			"Get":            reflect.ValueOf(p_cogentcore_org_lab_tensorfs.Get),
+			"Gzip":           reflect.ValueOf(p_cogentcore_org_lab_tensorfs.Gzip),
 			"List":           reflect.ValueOf(p_cogentcore_org_lab_tensorfs.List),
 			"ListDepth":      reflect.ValueOf((*p_cogentcore_org_lab_tensorfs.ListDepth)(nil)),
 			"ListDetail":     reflect.ValueOf((*p_cogentcore_org_lab_tensorfs.ListDetail)(nil)),
@@ -29,6 +31,7 @@ var _ = register(func() {
 			"Long":           reflect.ValueOf(p_cogentcore_org_lab_tensorfs.Long),
 			"Mkdir":          reflect.ValueOf(p_cogentcore_org_lab_tensorfs.Mkdir),
 			"NewDir":         reflect.ValueOf(p_cogentcore_org_lab_tensorfs.NewDir),
+			"NoGzip":         reflect.ValueOf(p_cogentcore_org_lab_tensorfs.NoGzip),
 			"Node":           reflect.ValueOf((*p_cogentcore_org_lab_tensorfs.Node)(nil)),
 			"Nodes":          reflect.ValueOf((*p_cogentcore_org_lab_tensorfs.Nodes)(nil)),
 			"Overwrite":      reflect.ValueOf(p_cogentcore_org_lab_tensorfs.Overwrite),

@@ -43,12 +43,24 @@ func AllFiles(dir string, exclude ...string) ([]string, error) {
 // note: Tar code helped significantly by Steve Domino examples:
 // https://medium.com/@skdomino/taring-untaring-files-in-go-6b07cf56bc07
 
+// Compression specifies whether a tar file is compressed with gzip:
+// [Gzip] or [NoGzip].
+type Compression bool
+
+const (
+	// Gzip compresses the tar file with gzip.
+	Gzip Compression = true
+
+	// NoGzip does not compress the tar file.
+	NoGzip Compression = false
+)
+
 // Tar writes a tar file to given writer, from given source directory,
 // using given include function to select nodes to include (all if nil).
 // If gz is true, then tar is gzipped.
 // The tensor data is written using the [tensor.ToBinary] format, so the
 // files are effectively opaque binary files.
-func Tar(w io.Writer, dir *Node, gz bool, include func(nd *Node) bool) error {
+func Tar(w io.Writer, dir *Node, gz Compression, include func(nd *Node) bool) error {
 	ow := w
 	if gz {
 		gzw := gzip.NewWriter(w)
@@ -97,7 +109,7 @@ func tarWrite(w *tar.Writer, dir *Node, parPath string, include func(nd *Node) b
 
 // Untar extracts a tar file from given reader, into given directory node.
 // If gz is true, then tar is gzipped.
-func Untar(r io.Reader, dir *Node, gz bool) error {
+func Untar(r io.Reader, dir *Node, gz Compression) error {
 	or := r
 	if gz {
 		gzr, err := gzip.NewReader(r)

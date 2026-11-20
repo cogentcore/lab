@@ -67,9 +67,9 @@ func TestVector3NDCToWindow(t *testing.T) {
 	size := math32.Vec2(800, 600)
 	off := math32.Vec2(10, 20)
 	for _, v := range testVec3s {
-		eq3(t, v.NDCToWindow(size, off, 0, 1, false), NDCToWindow3(v, size, off, 0, 1, false), "NDCToWindow3")
-		eq3(t, v.NDCToWindow(size, off, 0, 1, true), NDCToWindow3(v, size, off, 0, 1, true), "NDCToWindow3 flipY")
-		eq3(t, v.NDCToWindow(size, off, -1, 2, false), NDCToWindow3(v, size, off, -1, 2, false), "NDCToWindow3 near far")
+		eq3(t, v.NDCToWindow(size, off, 0, 1, math32.NoFlipY), NDCToWindow3(v, size, off, 0, 1, false), "NDCToWindow3")
+		eq3(t, v.NDCToWindow(size, off, 0, 1, math32.FlipY), NDCToWindow3(v, size, off, 0, 1, true), "NDCToWindow3 flipY")
+		eq3(t, v.NDCToWindow(size, off, -1, 2, math32.NoFlipY), NDCToWindow3(v, size, off, -1, 2, false), "NDCToWindow3 near far")
 	}
 }
 

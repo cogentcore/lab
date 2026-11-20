@@ -93,6 +93,22 @@ func TestGoFile(t *testing.T) {
 	_, err = st.GoFile("c.goal", "c.go", "package c\n\nfunc F( {\n")
 	assert.Error(t, err)
 	assert.Error(t, NewState().TranspileFile(filepath.Join(dir, "missing.goal"), out))
+
+	// the //line directive names the goal file relative to the Go file,
+	// however the paths are given (absolute, as from goalls, or relative,
+	// as from goal build).
+	b, err = os.ReadFile(out)
+	require.NoError(t, err)
+	assert.Contains(t, string(b), "\n//line a.goal:1\n")
+	res, err = NewState().GoFile(filepath.Join(dir, "d.goal"), filepath.Join(dir, "d.go"), "package d\n")
+	require.NoError(t, err)
+	assert.Contains(t, string(res), "\n//line d.goal:1\n")
+	res, err = NewState().GoFile("e.goal", "e.go", "package e\n")
+	require.NoError(t, err)
+	assert.Contains(t, string(res), "\n//line e.goal:1\n")
+	res, err = NewState().GoFile(filepath.Join("sub", "f.goal"), filepath.Join("out", "f.go"), "package f\n")
+	require.NoError(t, err)
+	assert.Contains(t, string(res), "\n//line ../sub/f.goal:1\n")
 }
 
 // TestTensorfsCommands tests the tensorfs commands of math mode.

@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"cogentcore.org/core/base/exec"
 	"cogentcore.org/core/base/logx"
 )
 
@@ -101,13 +102,13 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 			}
 			return st.TranspileMath(toks[1:], code, true)
 		}
-		return st.TranspileExec(ewords, false)
+		return st.TranspileExec(ewords, exec.NoCapture)
 	case t0.Tok == token.LBRACE:
 		logx.PrintlnDebug("go:   { } line")
 		return st.TranspileGoRange(toks, code, 1, n-1)
 	case t0.Tok == token.LBRACK:
 		logx.PrintlnDebug("exec: [ ] line")
-		return st.TranspileExec(ewords, false) // it processes the [ ]
+		return st.TranspileExec(ewords, exec.NoCapture) // it processes the [ ]
 	case t0.Tok == token.IDENT && t0.Str == "command":
 		st.lastCommand = toks[1].Str // 1 is the name -- triggers AddCommand
 		toks = toks[2:]              // get rid of first
@@ -126,7 +127,7 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 		if t0.Tok == token.GO {
 			if !toks.Contains(token.LPAREN) {
 				logx.PrintlnDebug("exec: go command")
-				return st.TranspileExec(ewords, false)
+				return st.TranspileExec(ewords, exec.NoCapture)
 			}
 		}
 		logx.PrintlnDebug("go    keyword")
@@ -136,13 +137,13 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 		return st.TranspileGo(toks, code)
 	case t0pn > 0: // path expr
 		logx.PrintlnDebug("exec: path...")
-		return st.TranspileExec(ewords, false)
+		return st.TranspileExec(ewords, exec.NoCapture)
 	case t0.Tok == token.STRING:
 		logx.PrintlnDebug("exec: string...")
-		return st.TranspileExec(ewords, false)
+		return st.TranspileExec(ewords, exec.NoCapture)
 	case f0exec && en == 1:
 		logx.PrintlnDebug("exec: 1 word")
-		return st.TranspileExec(ewords, false)
+		return st.TranspileExec(ewords, exec.NoCapture)
 	case !f0exec: // exec must be IDENT
 		logx.PrintlnDebug("go:   not ident")
 		return st.TranspileGo(toks, code)
@@ -154,7 +155,7 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 		return st.TranspileGo(toks, code)
 	case f0exec: // now any ident
 		logx.PrintlnDebug("exec: ident..")
-		return st.TranspileExec(ewords, false)
+		return st.TranspileExec(ewords, exec.NoCapture)
 	default:
 		logx.PrintlnDebug("go:   default")
 		return st.TranspileGo(toks, code)
@@ -201,7 +202,7 @@ func (st *State) TranspileGo(toks Tokens, code string) Tokens {
 				if tok.Str == "#" {
 					gtoks.AddTokens(st.TranspileMath(toks[i+1:i+et], code, false)...)
 				} else {
-					gtoks.AddTokens(st.TranspileExecTokens(toks[i+1:i+et+1], code, true)...)
+					gtoks.AddTokens(st.TranspileExecTokens(toks[i+1:i+et+1], code, exec.CaptureOutput)...)
 				}
 				i += et
 				continue
@@ -230,7 +231,7 @@ func (st *State) TranspileGo(toks Tokens, code string) Tokens {
 
 // TranspileExecString returns transpiled tokens assuming Exec code,
 // from a string, with the given bool indicating whether [Output] is needed.
-func (st *State) TranspileExecString(str string, output bool) Tokens {
+func (st *State) TranspileExecString(str string, output exec.OutputMode) Tokens {
 	if len(str) <= 1 {
 		return nil
 	}
@@ -254,7 +255,7 @@ func (st *State) addWordsError(err error, offset int) {
 // TranspileExecTokens returns transpiled tokens assuming Exec code,
 // from given tokens, with the given bool indicating
 // whether [Output] is needed.
-func (st *State) TranspileExecTokens(toks Tokens, code string, output bool) Tokens {
+func (st *State) TranspileExecTokens(toks Tokens, code string, output exec.OutputMode) Tokens {
 	nt := len(toks)
 	if nt == 0 {
 		return nil
@@ -265,7 +266,7 @@ func (st *State) TranspileExecTokens(toks Tokens, code string, output bool) Toke
 
 // TranspileExec returns transpiled tokens assuming Exec code,
 // with the given bools indicating the type of run to execute.
-func (st *State) TranspileExec(ewords []string, output bool) Tokens {
+func (st *State) TranspileExec(ewords []string, output exec.OutputMode) Tokens {
 	etoks := st.transpileExec(ewords, output)
 	if !output {
 		return etoks
@@ -296,7 +297,7 @@ func (st *State) TranspileExec(ewords []string, output bool) Tokens {
 
 // transpileExec returns the transpiled tokens of [State.TranspileExec],
 // as a list of statements.
-func (st *State) transpileExec(ewords []string, output bool) Tokens {
+func (st *State) transpileExec(ewords []string, output exec.OutputMode) Tokens {
 	n := len(ewords)
 	if n == 0 {
 		return nil
@@ -314,14 +315,15 @@ func (st *State) transpileExec(ewords []string, output bool) Tokens {
 		bgJob = false
 		etoks.Add(token.IDENT, "goalrun")
 		etoks.Add(token.PERIOD)
+		out := output == exec.CaptureOutput
 		switch {
-		case output && noStop:
+		case out && noStop:
 			execTok = etoks.Add(token.IDENT, "OutputErrOK")
-		case output && !noStop:
+		case out && !noStop:
 			execTok = etoks.Add(token.IDENT, "Output")
-		case !output && noStop:
+		case !out && noStop:
 			execTok = etoks.Add(token.IDENT, "RunErrOK")
-		case !output && !noStop:
+		case !out && !noStop:
 			execTok = etoks.Add(token.IDENT, "Run")
 		}
 		etoks.Add(token.LPAREN)
