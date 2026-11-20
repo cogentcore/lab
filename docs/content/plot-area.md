@@ -2,7 +2,7 @@
 Categories = ["Plot"]
 +++
 
-These [[plot]] types draw the values of a 2D grid (e.g., a matrix, or a function of two variables), with colors via the color axis of the plot (see Colors in [[plot]]), in the `plots` package.
+These [[plot]] types draw the values of a 2D grid (e.g., a matrix, or a function of two variables), with colors via the color axis of the plot (see Colors in [[plot]]), and fields of vectors, in the `plots` package.
 
 ## Heatmap
 
@@ -76,9 +76,28 @@ ct.Styler(func(s *plot.Style) {
 
 ## Vector
 
-X,Y,U,V
+`Vector` draws arrows at `X`, `Y` positions with the vector components `U`, `V` (a quiver plot), e.g., for a flow field or a gradient. The arrows point in the direction of `U`, `V` on the screen (`U` to the right and `V` up), independent of the scales of the axes, and their lengths are proportional to the magnitudes of the vectors, scaled so that the longest arrow is about the spacing of the arrows, times `Scale`. `Pivot` sets the point of each arrow at its position: its tail (the default), middle, or tip. Optional `Color` data colors each arrow via the color axis of the plot; otherwise they are drawn in the `Line.Color`. NaN values leave out their arrows.
 
-Quiver?
+The data are `X`, `Y`, `U`, `V` (and `Color`) values of the same length, e.g., columns of a [[table]] (where the `Y` column is On, with the `Vector` plotter, and the `U` and `V` columns are in its group), or a grid: `X` and `Y` with the coordinates of the columns and rows, and `U`, `V` (and `Color`) 2D tensors of the values of the grid, as for a `Contour`. Here is a flow rotating around the origin, colored by its speed:
+
+```Goal
+plt := lab.NewPlot(b)
+n := 13
+x := tensor.NewFloat64SpacedLinear(tensor.NewFloat64Scalar(-2), tensor.NewFloat64Scalar(2), n, tensor.IncludeEnd)
+u, v, speed := tensor.NewFloat64(n, n), tensor.NewFloat64(n, n), tensor.NewFloat64(n, n)
+for r := range n {
+	for c := range n {
+		xv, yv := x.Float1D(c), x.Float1D(r)
+		d := math.Exp(-0.3 * (xv*xv + yv*yv))
+		u.Set(-yv*d, r, c)
+		v.Set(xv*d, r, c)
+		speed.Set(math.Hypot(xv, yv)*d, r, c)
+	}
+}
+plots.NewVector(plt, plot.Data{plot.X: x, plot.Y: x, plot.U: u, plot.V: v, plot.Color: speed}).Styler(func(s *plot.Style) {
+	s.Plot.ColorAxis.Label = "Speed"
+})
+```
 
 ## 3D 
 

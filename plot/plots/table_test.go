@@ -43,7 +43,7 @@ func TestTable(t *testing.T) {
 	ptyps := maps.Keys(plot.Plotters)
 	slices.Sort(ptyps)
 	for _, ttyp := range ptyps {
-		if ttyp == HeatmapType || ttyp == ContourType || ttyp == FilledContourType { // need a Color tensor: TestHeatmapRows
+		if ttyp == HeatmapType || ttyp == ContourType || ttyp == FilledContourType || ttyp == VectorType { // need a Color tensor, or U and V: TestHeatmapRows, TestVectorTable
 			continue
 		}
 		// attach stylers to the Y axis data: that is where plotter looks for it

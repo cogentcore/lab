@@ -129,7 +129,7 @@ func TestContourLevels(t *testing.T) {
 
 func TestContourLabelLine(t *testing.T) {
 	// a straight line along X, 100 pixels long, with a 20 by 10 label
-	pts := []math32.Vector2{{0, 0}, {50, 0}, {100, 0}}
+	pts := []math32.Vector2{math32.Vec2(0, 0), math32.Vec2(50, 0), math32.Vec2(100, 0)}
 	parts, lb, ok := labelLine(pts, math32.Vec2(20, 10), nil)
 	require.True(t, ok)
 	require.Equal(t, 2, len(parts))
@@ -142,11 +142,11 @@ func TestContourLabelLine(t *testing.T) {
 	assert.Equal(t, pts[2], parts[1][len(parts[1])-1])
 
 	// right to left is upright
-	_, lb, _ = labelLine([]math32.Vector2{{100, 0}, {0, 0}}, math32.Vec2(20, 10), nil)
+	_, lb, _ = labelLine([]math32.Vector2{math32.Vec2(100, 0), math32.Vec2(0, 0)}, math32.Vec2(20, 10), nil)
 	assert.InDelta(t, 0, lb.angle, 1e-6)
 
 	// too short for a label
-	parts, _, ok = labelLine([]math32.Vector2{{0, 0}, {50, 0}}, math32.Vec2(20, 10), nil)
+	parts, _, ok = labelLine([]math32.Vector2{math32.Vec2(0, 0), math32.Vec2(50, 0)}, math32.Vec2(20, 10), nil)
 	assert.False(t, ok)
 	assert.Equal(t, 1, len(parts))
 
