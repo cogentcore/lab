@@ -450,3 +450,76 @@ func TestTableKeys(t *testing.T) {
 		assert.Equal(t, "a", recs[1][0])
 	}))
 }
+
+// tableNames returns the names of the rows of the given table, in the
+// order of its view, as a [Table] shows them (its edits change the
+// indexes of its view of the table).
+func tableNames(dt *table.Table) []string {
+	var names []string
+	for i := range dt.NumRows() {
+		names = append(names, dt.Column("Name").String1D(i))
+	}
+	return names
+}
+
+// dragTableRow drags the given row of the given table by its index to
+// the other given row of the other given table (which can be the same),
+// and inserts it after that row with the menu of the drop.
+func dragTableRow(t *testing.T, b *core.Body, from *Table, fromRow int, to *Table, toRow int) {
+	t.Helper()
+	var fp, tp image.Point
+	core.Locked(b, func() {
+		index := func(tw *Table, row int) image.Point {
+			nw, _ := tw.RowWidgetNs()
+			bb := tw.ListGrid.Child(row * nw).(core.Widget).AsWidget().Geom.TotalBBox
+			return bb.Min.Add(bb.Size().Div(2))
+		}
+		fp, tp = index(from, fromRow), index(to, toRow)
+	})()
+	core.DragMouse(b, fp, tp)
+	var after *core.Button
+	require.Eventually(t, func() bool {
+		core.Locked(b, func() {
+			if pops := core.Popups(b); len(pops) > 0 {
+				after = core.ButtonByText(pops[len(pops)-1], "Insert after")
+			}
+		})()
+		return after != nil
+	}, 5*time.Second, 20*time.Millisecond, "the drop menu")
+	core.Locked(b, func() { after.Send(events.Click) })()
+	time.Sleep(100 * time.Millisecond)
+}
+
+// TestTableDragMoves tests dragging the rows of tables by their indexes:
+// with DragMoves, a drag moves the row that is dragged, also to another
+// table, deleting it from its table, and without it, a drag copies it.
+func TestTableDragMoves(t *testing.T) {
+	b := core.NewBody()
+	b.Styler(func(s *styles.Style) { s.Min.Set(units.Dp(600), units.Dp(600)) })
+	dt := newTestTable(4) // d c b a
+	tw := NewTable(b)
+	tw.ShowIndexes = true
+	tw.DragMoves = true
+	tw.SetTable(dt)
+	dt2 := newTestTable(2) // b a
+	tw2 := NewTable(b)
+	tw2.ShowIndexes = true
+	tw2.SetTable(dt2)
+	core.RenderImage(b, func() {
+		dragTableRow(t, b, tw, 0, tw, 2)
+		core.Locked(b, func() {
+			assert.Equal(t, []string{"c", "b", "d", "a"}, tableNames(tw.Table), "d moved after b")
+		})()
+
+		dragTableRow(t, b, tw, 3, tw2, 0)
+		core.Locked(b, func() {
+			assert.Equal(t, []string{"b", "a", "a"}, tableNames(tw2.Table), "a moved after b in the other table")
+			assert.Equal(t, []string{"c", "b", "d"}, tableNames(tw.Table), "a deleted from its table")
+		})()
+
+		dragTableRow(t, b, tw2, 0, tw2, 1)
+		core.Locked(b, func() {
+			assert.Equal(t, []string{"b", "a", "b", "a"}, tableNames(tw2.Table), "b copied after a, without DragMoves")
+		})()
+	})
+}
