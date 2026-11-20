@@ -111,8 +111,44 @@ func TestContourGridRegion(t *testing.T) {
 }
 
 func TestContourLevels(t *testing.T) {
-	assert.Equal(t, []float64{0.25, 0.5, 0.75, 1}, contourLevels(0, 1, 5, nil))
-	assert.Equal(t, []float64{0.5, 0.7}, contourLevels(0, 1, 5, []float64{0.7, 2, 0.5, 0.5}))
+	values := func(ticks []plot.Tick) []float64 {
+		v := make([]float64, len(ticks))
+		for i, t := range ticks {
+			v[i] = t.Value
+		}
+		return v
+	}
+	lv := contourLevels(0, 1, 5, nil)
+	assert.Equal(t, []float64{0.25, 0.5, 0.75, 1}, values(lv))
+	assert.Equal(t, "0.25", lv[0].Label)
+	lv = contourLevels(0, 1, 5, []float64{0.7, 2, 0.5, 0.5})
+	assert.Equal(t, []float64{0.5, 0.7}, values(lv))
+	assert.Equal(t, "0.7", lv[1].Label)
+	assert.Empty(t, contourLevels(1, 1, 5, nil))
+}
+
+func TestContourLabelLine(t *testing.T) {
+	// a straight line along X, 100 pixels long, with a 20 by 10 label
+	pts := []math32.Vector2{{0, 0}, {50, 0}, {100, 0}}
+	parts, lb, ok := labelLine(pts, math32.Vec2(20, 10))
+	require.True(t, ok)
+	require.Equal(t, 2, len(parts))
+	assert.Equal(t, math32.Vec2(50, 0), lb.pos)
+	assert.Equal(t, float32(0), lb.angle)
+	// the gap is half the width plus a quarter of the height on each side
+	assert.Equal(t, math32.Vec2(37.5, 0), parts[0][len(parts[0])-1])
+	assert.Equal(t, math32.Vec2(62.5, 0), parts[1][0])
+	assert.Equal(t, pts[0], parts[0][0])
+	assert.Equal(t, pts[2], parts[1][len(parts[1])-1])
+
+	// right to left is upright
+	_, lb, _ = labelLine([]math32.Vector2{{100, 0}, {0, 0}}, math32.Vec2(20, 10))
+	assert.InDelta(t, 0, lb.angle, 1e-6)
+
+	// too short for a label
+	parts, _, ok = labelLine([]math32.Vector2{{0, 0}, {50, 0}}, math32.Vec2(20, 10))
+	assert.False(t, ok)
+	assert.Equal(t, 1, len(parts))
 }
 
 func TestContour(t *testing.T) {
@@ -139,6 +175,26 @@ func TestContour(t *testing.T) {
 	})
 	ct.Levels = 8
 	imagex.Assert(t, plt.RenderImage(), "contour-filled")
+	// the color bar has the steps of the levels
+	steps := plt.ColorAxis.Steps
+	require.Greater(t, len(steps), 3)
+	assert.Equal(t, "", steps[0].Label, "the minimum")
+	assert.Equal(t, ct.valueRange().Max, steps[len(steps)-1].Value)
+
+	// labels on the lines
+	plt = plot.New()
+	plt.Title.Text = "Contour labels"
+	ct = NewContour(plt, plot.Data{plot.Color: z, plot.X: x, plot.Y: y})
+	ct.Labels = true
+	imagex.Assert(t, plt.RenderImage(), "contour-labels")
+	assert.Empty(t, plt.ColorAxis.Steps, "continuous for lines")
+
+	plt = plot.New()
+	plt.Title.Text = "Filled contour labels"
+	ct = NewFilledContour(plt, plot.Data{plot.Color: z, plot.X: x, plot.Y: y})
+	ct.Labels = true
+	ct.Styler(func(s *plot.Style) { s.Line.On = plot.On })
+	imagex.Assert(t, plt.RenderImage(), "contour-filled-labels")
 
 	// explicit levels, the grid indexes, and NaN holes
 	z.Set(math.NaN(), 20, 20)

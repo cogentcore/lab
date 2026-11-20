@@ -371,9 +371,9 @@ The `tensorcore.TensorGrid` widget also shows tensors as colored grids, includin
 
 ### Contour
 
-`Contour` draws the contour lines of the values of a 2D tensor in the `Color` role (rows by columns, as for a `Heatmap`): the lines along which the values are equal to each of a number of levels, colored by their level via the color axis of the plot. `FilledContour` fills the regions between the levels instead. The levels are about `Levels` (10 by default) round values across the range of the values, as for axis ticks, or the given `LevelValues`. Optional `X` and `Y` data are the coordinates of the columns and rows; otherwise column j is at X = j and row i at Y = i, with row 0 at the bottom. The values are interpolated linearly between the grid points, and NaN values leave holes.
+`Contour` draws the contour lines of the values of a 2D tensor in the `Color` role (rows by columns, as for a `Heatmap`): the lines along which the values are equal to each of a number of levels, colored by their level via the color axis of the plot. `FilledContour` fills the regions between the levels instead. The levels are about `Levels` (10 by default) round values across the range of the values, as for axis ticks, or the given `LevelValues`. Optional `X` and `Y` data are the coordinates of the columns and rows; otherwise column j is at X = j and row i at Y = i, with row 0 at the bottom. The values are interpolated linearly between the grid points, and NaN values leave holes. `Labels` draws the value of each level on its lines, in a gap along the middle of each line that is long enough. For `FilledContour`, the color bar shows the colors of the regions between the levels, as steps.
 
-Here are the contours of two gaussian peaks, of opposite signs:
+Here are the contours of two gaussian peaks, of opposite signs, with labels:
 
 ```Goal
 plt := lab.NewPlot(b)
@@ -387,7 +387,8 @@ for r := range n {
 		z.Set(math.Exp(-xv*xv-yv*yv)-math.Exp(-(xv-1)*(xv-1)-(yv-1)*(yv-1)), r, c)
 	}
 }
-plots.NewContour(plt, plot.Data{plot.Color: z, plot.X: x, plot.Y: y})
+ct := plots.NewContour(plt, plot.Data{plot.Color: z, plot.X: x, plot.Y: y})
+ct.Labels = true
 ```
 
 The filled regions, with the contour lines between them, which are drawn if `Line.On` is `On`, in the `Line.Color`:

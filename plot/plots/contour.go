@@ -6,6 +6,7 @@ package plots
 
 import (
 	"math"
+	"slices"
 
 	"cogentcore.org/core/colors"
 	"cogentcore.org/core/math32"
@@ -67,6 +68,11 @@ type Contour struct {
 	// The lines between the regions are also drawn if Style.Line.On is On,
 	// with the Style.Line.Color.
 	Filled bool
+
+	// Labels draws the value of each level on its contour lines, along
+	// the middle of each line that is long enough, in a gap in the line,
+	// with the tick text style of the axes, in the color of the line.
+	Labels bool
 
 	// Row is the row of the outer dimension of a higher-dimensional
 	// tensor that is drawn; -1 (the default) is the last row.
@@ -172,8 +178,9 @@ func (ct *Contour) valueRange() minmax.F64 {
 	return rng
 }
 
-// levels returns the levels of the contours (see [contourLevels]).
-func (ct *Contour) levels() []float64 {
+// levels returns the levels of the contours, with their labels
+// (see [contourLevels]).
+func (ct *Contour) levels() []plot.Tick {
 	rng := ct.valueRange()
 	return contourLevels(rng.Min, rng.Max, ct.Levels, ct.LevelValues)
 }
@@ -197,57 +204,157 @@ func (ct *Contour) Plot(plt *plot.Plot) {
 	}
 	g := newContourGrid(ct.Values, ct.Rows, ct.Columns, ct.X, ct.Y)
 	levels := ct.levels()
-	// path adds the given points, in data coordinates, to the path
+	// pixels returns the given points, in data coordinates, in pixels
+	pixels := func(pts []math32.Vector2) []math32.Vector2 {
+		px := make([]math32.Vector2, len(pts))
+		for i, p := range pts {
+			px[i] = math32.Vec2(plt.PX(float64(p.X)), py(float64(p.Y)))
+		}
+		return px
+	}
+	// path adds the given points, in pixels, to the path
 	path := func(pts []math32.Vector2) {
 		for i, p := range pts {
-			x, y := plt.PX(float64(p.X)), py(float64(p.Y))
 			if i == 0 {
-				pc.MoveTo(x, y)
+				pc.MoveTo(p.X, p.Y)
 			} else {
-				pc.LineTo(x, y)
+				pc.LineTo(p.X, p.Y)
 			}
 		}
 	}
 	if ct.Filled {
 		// each region at or above a level is filled over the one below
-		bounds := append([]float64{rng.Min}, levels...)
-		for i, lo := range bounds {
-			hi := rng.Max
-			if i+1 < len(bounds) {
-				hi = bounds[i+1]
-			}
-			for _, poly := range g.region(lo) {
-				path(poly)
+		bounds := ct.steps(rng, levels)
+		for i, b := range bounds[:len(bounds)-1] {
+			for _, poly := range g.region(b.Value) {
+				path(pixels(poly))
 				pc.Close()
 			}
-			pc.Fill.Color = plt.ColorAxis.Uniform(0.5 * (lo + hi))
+			pc.Fill.Color = plt.ColorAxis.Uniform(0.5 * (b.Value + bounds[i+1].Value))
 			pc.Stroke.Color = nil
 			pc.Draw()
 		}
 		pc.Fill.Color = nil
-		if ct.Style.Line.On != plot.On || !ct.Style.Line.SetStroke(plt) {
+		if ct.Style.Line.On != plot.On {
 			return
 		}
-		pc.Fill.Color = nil
-		for _, lv := range levels {
-			for _, ln := range g.lines(lv) {
-				path(ln)
+	} else if ct.Style.Line.On == plot.Off {
+		return
+	}
+	var labels []contourLabel
+	for _, lv := range levels {
+		if !ct.Style.Line.SetStroke(plt) {
+			return
+		}
+		pc.Fill.Color = nil // the lines are closed for loops
+		if !ct.Filled {
+			pc.Stroke.Color = plt.ColorAxis.Uniform(lv.Value)
+		}
+		var tx *plot.Text
+		if ct.Labels {
+			tx = &plot.Text{Text: lv.Label}
+			tx.Defaults()
+			tx.Style = plt.Style.Axis.TickText
+			tx.Style.Color = pc.Stroke.Color
+			tx.Config(plt)
+		}
+		for _, ln := range g.lines(lv.Value) {
+			px := pixels(ln)
+			if tx == nil {
+				path(px)
+				continue
+			}
+			parts, lb, ok := labelLine(px, tx.PaintText.Bounds.Size())
+			for _, p := range parts {
+				path(p)
+			}
+			if ok {
+				lb.text = tx
+				labels = append(labels, lb)
 			}
 		}
 		pc.Draw()
-		return
 	}
-	if ct.Style.Line.On == plot.Off || !ct.Style.Line.SetStroke(plt) {
-		return
+	for _, lb := range labels {
+		lb.draw(plt)
 	}
-	pc.Fill.Color = nil // the lines are closed for loops
-	for _, lv := range levels {
-		for _, ln := range g.lines(lv) {
-			path(ln)
+}
+
+// steps returns the bounds of the filled regions: the minimum, the
+// levels, and the maximum.
+func (ct *Contour) steps(rng minmax.F64, levels []plot.Tick) []plot.Tick {
+	bounds := append([]plot.Tick{{Value: rng.Min}}, levels...)
+	if len(levels) == 0 || levels[len(levels)-1].Value < rng.Max {
+		bounds = append(bounds, plot.Tick{Value: rng.Max})
+	}
+	return bounds
+}
+
+// contourLabel is a label of a contour line.
+type contourLabel struct {
+	// text is the text of the label.
+	text *plot.Text
+
+	// pos is the center of the label, in pixels.
+	pos math32.Vector2
+
+	// angle is the rotation of the label, in radians.
+	angle float32
+}
+
+// draw draws the label centered at its position, rotated.
+func (lb *contourLabel) draw(plt *plot.Plot) {
+	pc := plt.Painter
+	sz := lb.text.PaintText.Bounds.Size()
+	m := pc.Transform
+	pc.Transform = m.Mul(math32.Rotate2DAround(lb.angle, lb.pos))
+	pc.DrawText(lb.text.PaintText, lb.pos.Sub(sz.MulScalar(0.5)))
+	pc.Transform = m
+}
+
+// labelLine returns the parts of the given line, in pixels, around a gap
+// for a label of the given size at the middle of the line, and the label,
+// which is upright along the line there. The line is returned as is,
+// without a label, if it is not long enough for one.
+func labelLine(pts []math32.Vector2, size math32.Vector2) ([][]math32.Vector2, contourLabel, bool) {
+	// cumulative lengths
+	cum := make([]float32, len(pts))
+	for i := 1; i < len(pts); i++ {
+		cum[i] = cum[i-1] + pts[i].Sub(pts[i-1]).Length()
+	}
+	total := cum[len(cum)-1]
+	gap := 0.5*size.X + 0.25*size.Y
+	if total < 3*size.X {
+		return [][]math32.Vector2{pts}, contourLabel{}, false
+	}
+	// at returns the point at the given length along the line, and the
+	// index of the segment it is on
+	at := func(l float32) (math32.Vector2, int) {
+		i := 1
+		for i < len(pts)-1 && cum[i] < l {
+			i++
 		}
-		pc.Stroke.Color = plt.ColorAxis.Uniform(lv)
-		pc.Draw()
+		seg := cum[i] - cum[i-1]
+		t := float32(0)
+		if seg > 0 {
+			t = (l - cum[i-1]) / seg
+		}
+		return pts[i-1].Add(pts[i].Sub(pts[i-1]).MulScalar(t)), i
 	}
+	mid := 0.5 * total
+	p0, i0 := at(mid - gap)
+	p1, i1 := at(mid + gap)
+	before := append(slices.Clone(pts[:i0]), p0)
+	after := append([]math32.Vector2{p1}, pts[i1:]...)
+	pos, _ := at(mid)
+	d := p1.Sub(p0)
+	angle := math32.Atan2(d.Y, d.X)
+	if angle > math32.Pi/2 { // upright
+		angle -= math32.Pi
+	} else if angle < -math32.Pi/2 {
+		angle += math32.Pi
+	}
+	return [][]math32.Vector2{before, after}, contourLabel{pos: pos, angle: angle}, true
 }
 
 // UpdateRange updates the given ranges.
@@ -259,6 +366,11 @@ func (ct *Contour) UpdateRange(plt *plot.Plot) {
 	plot.Range(ct.X, &plt.X.Range)
 	plot.Range(ct.Y, &yax.Range)
 	plt.ColorAxis.AddRange(ct.Values)
+	if ct.Filled {
+		if rng := ct.valueRange(); rng.Min < rng.Max {
+			plt.ColorAxis.SetSteps(ct.steps(rng, ct.levels()))
+		}
+	}
 	plot.RangeLogic(plt.Style.OutOfRange, &plt.X.Range, &plt.Style.XAxis.Range)
 	plt.X.DataRange = plt.X.Range
 	plot.RangeLogic(plt.Style.OutOfRange, &yax.Range, &ct.Style.Range)

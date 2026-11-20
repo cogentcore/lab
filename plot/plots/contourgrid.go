@@ -5,8 +5,10 @@
 package plots
 
 import (
+	"cmp"
 	"math"
 	"slices"
+	"strconv"
 
 	"cogentcore.org/core/math32"
 	"cogentcore.org/lab/plot"
@@ -187,27 +189,33 @@ func (g *contourGrid) region(level float64) [][]math32.Vector2 {
 }
 
 // contourLevels returns the levels of the contours for the values with
-// the given range: the given levels within the range, if any, or else
-// about n round values within the range, as for the ticks of an axis.
-func contourLevels(mn, mx float64, n int, levels []float64) []float64 {
-	var lv []float64
+// the given range, with their labels: the given levels within the range,
+// if any, or else about n round values within the range, as for the
+// ticks of an axis.
+func contourLevels(mn, mx float64, n int, levels []float64) []plot.Tick {
+	var lv []plot.Tick
 	if len(levels) > 0 {
-		for _, l := range levels {
+		vals := slices.Clone(levels)
+		slices.Sort(vals)
+		for _, l := range slices.Compact(vals) {
 			if l >= mn && l <= mx {
-				lv = append(lv, l)
+				lv = append(lv, plot.Tick{Value: l, Label: strconv.FormatFloat(l, 'g', 4, 64)})
 			}
 		}
-		slices.Sort(lv)
-		return slices.Compact(lv)
+		return lv
 	}
 	if n <= 0 {
 		n = 10
+	}
+	if mx <= mn {
+		return nil
 	}
 	for _, t := range (plot.DefaultTicks{}).Ticks(mn, mx, n) {
 		if t.IsMinor() || t.Value <= mn || t.Value > mx {
 			continue
 		}
-		lv = append(lv, t.Value)
+		lv = append(lv, t)
 	}
+	slices.SortFunc(lv, func(a, b plot.Tick) int { return cmp.Compare(a.Value, b.Value) })
 	return lv
 }

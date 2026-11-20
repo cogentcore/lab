@@ -77,6 +77,19 @@ type ColorAxis struct {
 
 	// Used is set when any plotter uses colors, by [ColorAxis.AddRange].
 	Used bool
+
+	// Steps are the bounds of discrete steps of colors, in increasing order,
+	// if a plotter uses them (e.g., the levels of a filled contour plot),
+	// set with [ColorAxis.SetSteps]. The color bar then shows a block of the
+	// color of the middle of each step, with ticks at the labeled bounds,
+	// instead of a continuous range of colors.
+	Steps []Tick
+}
+
+// SetSteps sets the bounds of discrete steps of colors (see [ColorAxis.Steps]),
+// which plotters call in UpdateRange.
+func (ca *ColorAxis) SetSteps(steps []Tick) {
+	ca.Steps = steps
 }
 
 // drawConfig configures for drawing.
@@ -99,6 +112,7 @@ func (ca *ColorAxis) AddRange(data Valuer) {
 // resetRange resets the range for a new update.
 func (ca *ColorAxis) resetRange() {
 	ca.Used = false
+	ca.Steps = nil
 	ca.Range.SetInfinity()
 }
 
@@ -177,7 +191,10 @@ func (pt *Plot) colorBarConfig() *colorBar {
 	ast.Padding.ToDots(uc)
 	ast.TickLength.ToDots(uc)
 	cb := &colorBar{}
-	if !ca.Map.Indexed {
+	switch {
+	case len(ca.Steps) >= 2:
+		cb.ticks = ca.Steps
+	case !ca.Map.Indexed:
 		cb.ticks = DefaultTicks{}.Ticks(ca.Range.Min, ca.Range.Max, ast.NTicks)
 	}
 	cb.tick.Defaults()
@@ -216,7 +233,18 @@ func (pt *Plot) drawColorBar(cb *colorBar, left float32) {
 	ht := pb.Size().Y
 
 	// the colors, from the bottom (Min) to the top (Max)
+	ypos := func(v float64) float32 {
+		return pb.Max.Y - ht*float32(ca.Scale.Normalize(ca.Range.Min, ca.Range.Max, v))
+	}
 	n := 64
+	if len(ca.Steps) >= 2 {
+		n = 0 // the steps instead
+		for i := range len(ca.Steps) - 1 {
+			lo, hi := ca.Steps[i].Value, ca.Steps[i+1].Value
+			y0, y1 := ypos(hi), ypos(lo)
+			pc.FillBox(math32.Vec2(x0, y0), math32.Vec2(bw, y1-y0+0.5), ca.Uniform(0.5*(lo+hi)))
+		}
+	}
 	if ca.Map.Indexed {
 		n = len(ca.Map.Colors)
 	}
@@ -241,7 +269,7 @@ func (pt *Plot) drawColorBar(cb *colorBar, left float32) {
 	tx := x0 + bw
 	tl := 0.5 * ast.TickLength.Dots
 	for _, t := range cb.ticks {
-		y := pb.Max.Y - ht*float32(ca.Scale.Normalize(ca.Range.Min, ca.Range.Max, t.Value))
+		y := ypos(t.Value)
 		if y < pb.Min.Y-0.5 || y > pb.Max.Y+0.5 {
 			continue
 		}
