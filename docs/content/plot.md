@@ -148,7 +148,7 @@ plots.NewLine(plt, data)
 
 The builtin plot types, in the `plots` package, are described in these pages:
 
-* [[Plot types]]: plots of `X`, `Y` data (lines, points, bars, error bars, labels, box plots, and bands).
+* [[Plot types]]: plots of `X`, `Y` data (lines, points, bars, error bars, labels, box plots, bands, and pie charts).
 * [[Plot area]]: plots of the values of a 2D grid (heatmaps and contours).
 * [[Plot stats]]: statistical plots of the columns of a [[table]] (mean and error, histograms, box and violin plots), computed by the `statsplot` package.
 

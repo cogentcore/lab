@@ -198,6 +198,12 @@ plots.NewScatter(plt, plot.Data{plot.X: ox, plot.Y: oy})
 
 ## Pie
 
-`Pie` takes a list of `Y` values that are plotted as the size of segments of a circular pie plot.  Y values are automatically normalized for plotting.
+`Pie` draws a pie chart of `Y` values: wedges of a circle with angles proportional to the values, as fractions of their total, going clockwise from the `StartAngle` (90 degrees, at the top, by default; `CounterClockwise` goes the other way). Each wedge has a different color, or is colored by optional `Color` data via the color axis of the plot. Optional `Label` data has the labels of the wedges, drawn outside of them, and `Percent` draws the percentage of each wedge inside of it. `Hole` makes a donut chart, and the edges of the wedges are drawn if `Line.On` is `On`. The pie is centered in the plot area, which has no axes.
 
-TODO: implement, details on mapping, 
+```Goal
+plt := lab.NewPlot(b)
+fruit := tensor.NewStringFromValues("Apples", "Bananas", "Cherries", "Dates")
+pe := plots.NewPie(plt, plot.Data{plot.Y: plot.Values{35, 25, 25, 15}, plot.Label: fruit})
+pe.Percent = true
+pe.Hole = 0.4
+```
