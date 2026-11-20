@@ -72,10 +72,15 @@ type Vector struct {
 	// Pivot is the point of each arrow at its position.
 	Pivot Pivots
 
-	// Key draws a key arrow at the top right of the plot, for the scale
-	// of the arrows (as quiverkey does in matplotlib): a horizontal arrow
-	// with the length of a vector of magnitude KeyValue, with its KeyLabel.
+	// Key draws a key arrow in a corner of the plot (KeyPosition, the top
+	// right by default), for the scale of the arrows (as quiverkey does in
+	// matplotlib): a horizontal arrow with the length of a vector of
+	// magnitude KeyValue, with its KeyLabel.
 	Key bool
+
+	// KeyPosition is the corner of the plot for the key arrow (Top and
+	// Left), with offsets from it (XOffs and YOffs), as for the legend.
+	KeyPosition plot.LegendPosition `display:"inline"`
 
 	// KeyValue is the magnitude of the vector of the key arrow: a round
 	// value about the largest magnitude of the vectors if 0.
@@ -99,6 +104,7 @@ type Vector struct {
 // if present (the column that is On in a table).
 func NewVector(plt *plot.Plot, data plot.Data) *Vector {
 	vc := &Vector{Scale: 1}
+	vc.KeyPosition.Defaults()
 	if err := vc.SetData(data); err != nil {
 		return nil
 	}
@@ -323,7 +329,7 @@ func (vc *Vector) keyValue(maxMag float64) float64 {
 	return p
 }
 
-// drawKey draws the key arrow at the top right of the plot, with its label
+// drawKey draws the key arrow in its corner of the plot, with its label
 // to its left, on a translucent background, for the given scale of the
 // arrows, in pixels per unit of magnitude.
 func (vc *Vector) drawKey(plt *plot.Plot, scale float32, maxMag float64, clr image.Image, width float32) {
@@ -341,9 +347,20 @@ func (vc *Vector) drawKey(plt *plot.Plot, scale float32, maxMag float64, clr ima
 	pad := 0.5 * tsz.Y
 	ln := float32(val) * scale
 	pb := plt.PlotBox
-	right := pb.Max.X - pad
-	y := pb.Min.Y + pad + 0.5*tsz.Y
-	left := right - ln - pad - tsz.X
+	kp := &vc.KeyPosition
+	uc := plt.UnitContext()
+	kp.XOffs.ToDots(uc)
+	kp.YOffs.ToDots(uc)
+	kw := tsz.X + pad + ln // label, gap, and arrow
+	left := pb.Max.X - pad - kp.XOffs.Dots - kw
+	if kp.Left {
+		left = pb.Min.X + pad + kp.XOffs.Dots
+	}
+	right := left + kw
+	y := pb.Min.Y + pad + kp.YOffs.Dots + 0.5*tsz.Y
+	if !kp.Top {
+		y = pb.Max.Y - pad - kp.YOffs.Dots - 0.5*tsz.Y
+	}
 	bg := colors.Uniform(colors.ApplyOpacity(colors.ToUniform(colors.Scheme.Surface), 0.85))
 	pc.FillBox(math32.Vec2(left-0.5*pad, y-0.5*tsz.Y-0.5*pad), math32.Vec2(right-left+pad, tsz.Y+pad), bg)
 	pc.DrawText(tx.PaintText, math32.Vec2(left, y-0.5*tsz.Y))

@@ -60,6 +60,10 @@ func TestVector(t *testing.T) {
 	vc.Pivot = PivotMiddle
 	vc.Scale = 0.7
 	vc.Key = true
+	assert.True(t, vc.KeyPosition.Top, "top right by default")
+	assert.False(t, vc.KeyPosition.Left)
+	vc.KeyPosition.Top, vc.KeyPosition.Left = false, true
+	vc.KeyPosition.XOffs.Dp(20)
 	vc.KeyValue = 0.5
 	vc.KeyLabel = "0.5 m/s"
 	imagex.Assert(t, plt.RenderImage(), "vector-middle")
