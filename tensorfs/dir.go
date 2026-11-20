@@ -371,3 +371,39 @@ func (dir *Node) Add(it *Node) error {
 	it.Parent = dir
 	return nil
 }
+
+// Delete deletes the nodes with the given names from this directory.
+// It returns an error if this node is not a directory, or an
+// [fs.ErrNotExist] error for any names not found (the others are
+// still deleted). See [Node.DeleteAll] to delete all the nodes.
+func (dir *Node) Delete(names ...string) error {
+	if err := dir.mustDir("Delete", strings.Join(names, ",")); err != nil {
+		return err
+	}
+	var errs []error
+	for _, name := range names {
+		nd, ok := dir.nodes.AtTry(name)
+		if !ok {
+			errs = append(errs, fmt.Errorf("tensorfs Delete %q in %q: %w", name, dir.Path(), fs.ErrNotExist))
+			continue
+		}
+		dir.nodes.DeleteByKey(name)
+		nd.Parent = nil
+	}
+	dir.DirTable = nil
+	return errors.Join(errs...)
+}
+
+// DeleteAll deletes all the nodes in this directory, leaving it empty.
+// It returns an error if this node is not a directory.
+func (dir *Node) DeleteAll() error {
+	if err := dir.mustDir("DeleteAll", ""); err != nil {
+		return err
+	}
+	for _, nd := range dir.nodes.Values {
+		nd.Parent = nil
+	}
+	dir.nodes.Reset()
+	dir.DirTable = nil
+	return nil
+}
