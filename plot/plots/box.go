@@ -259,10 +259,30 @@ func (bx *Box) Plot(plt *plot.Plot) {
 	}
 }
 
+// numCategories returns the number of categories, up to the last one with
+// a median or a label: the categories are shared by series of boxes next
+// to each other (e.g., from a Split column), which can have no values
+// for some of them.
+func (bx *Box) numCategories() int {
+	n := len(bx.Median)
+	for n > 0 && math.IsNaN(bx.Median[n-1]) && bx.label(n-1) == "" {
+		n--
+	}
+	return n
+}
+
+// label returns the label of the given category, if any.
+func (bx *Box) label(i int) string {
+	if i < len(bx.XLabels) {
+		return bx.XLabels[i]
+	}
+	return ""
+}
+
 // UpdateRange updates the given ranges.
 func (bx *Box) UpdateRange(plt *plot.Plot) {
 	bw := bx.Style.Width
-	n := bx.numValid()
+	n := bx.numCategories()
 	catMin := bw.Offset - bw.Pad
 	catMax := bw.Offset + float64(n-1)*bw.Stride + bw.Pad
 	yax := &plt.Y
@@ -280,13 +300,17 @@ func (bx *Box) UpdateRange(plt *plot.Plot) {
 				valRange.FitValInRange(v)
 			}
 		}
-		if bx.XLabels != nil && !math.IsNaN(bx.Median[i]) {
-			lb := fmt.Sprintf("%d", i)
-			if i < len(bx.XLabels) {
-				lb = bx.XLabels[i]
-			}
-			ticks = append(ticks, plot.Tick{Value: bx.pos(i) + bw.TickOffset, Label: lb})
+		if bx.XLabels == nil {
+			continue
 		}
+		lb := bx.label(i)
+		if lb == "" {
+			if math.IsNaN(bx.Median[i]) {
+				continue
+			}
+			lb = fmt.Sprintf("%d", i)
+		}
+		ticks = append(ticks, plot.Tick{Value: bx.pos(i) + bw.TickOffset, Label: lb})
 	}
 	catRange.FitInRange(minmax.F64{Min: catMin, Max: catMax})
 	if ticks != nil {

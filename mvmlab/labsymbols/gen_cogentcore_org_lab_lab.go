@@ -57,6 +57,7 @@ func TabAt[T any](tb Tabber, label string) T {
 			"Basic":              reflect.ValueOf((*p_cogentcore_org_lab_lab.Basic)(nil)),
 			"Browser":            reflect.ValueOf((*p_cogentcore_org_lab_lab.Browser)(nil)),
 			"DataTree":           reflect.ValueOf((*p_cogentcore_org_lab_lab.DataTree)(nil)),
+			"Datasets":           reflect.ValueOf(&p_cogentcore_org_lab_lab.Datasets),
 			"DirAndFileNoSlash":  reflect.ValueOf(p_cogentcore_org_lab_lab.DirAndFileNoSlash),
 			"FileNode":           reflect.ValueOf((*p_cogentcore_org_lab_lab.FileNode)(nil)),
 			"FirstComment":       reflect.ValueOf(p_cogentcore_org_lab_lab.FirstComment),

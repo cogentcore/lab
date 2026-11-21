@@ -198,3 +198,24 @@ func TestTableBox(t *testing.T) {
 	assert.Equal(t, "B", ticks[1].Label)
 	assert.Equal(t, 3, len(b0.Median))
 }
+
+// TestBoxSharedCategories tests that the categories of series of boxes
+// next to each other all have ticks, when a series has no values for some
+// of them (e.g., NaN medians at the start).
+func TestBoxSharedCategories(t *testing.T) {
+	plt := plot.New()
+	labels := tensor.NewStringFromValues("A", "B", "C")
+	nan := math.NaN()
+	a := NewBox(plt, plot.Data{plot.X: labels, plot.Y: plot.Values{2, 3, 4}, plot.U: plot.Values{1, 2, 3}, plot.V: plot.Values{3, 4, 5}})
+	b := NewBox(plt, plot.Data{plot.X: labels, plot.Y: plot.Values{nan, nan, 5}, plot.U: plot.Values{nan, nan, 4}, plot.V: plot.Values{nan, nan, 6}})
+	for i, bx := range []*Box{a, b} {
+		bx.Styler(func(s *plot.Style) {
+			s.Width.Width = 0.4
+			s.Width.Offset = 0.8 + 0.4*float64(i)
+		})
+	}
+	plt.RenderImage()
+	ticks := plt.X.Ticker.(plot.ConstantTicks)
+	assert.Equal(t, 3, len(ticks), "the last series has all of the categories")
+	assert.Equal(t, "A", ticks[0].Label)
+}
