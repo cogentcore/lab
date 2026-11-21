@@ -3,7 +3,7 @@ module cogentcore.org/lab
 go 1.27.0
 
 require (
-	cogentcore.org/core v0.5.48
+	cogentcore.org/core v0.5.49
 	github.com/cogentcore/mvm v0.0.0-20261120030535-e3f31e8a9ab5
 	github.com/cogentcore/readline v0.1.4-0.20261119092756-95afccb36c85
 	github.com/hack-pad/hackpadfs v0.2.4
