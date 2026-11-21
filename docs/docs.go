@@ -62,22 +62,22 @@ func main() {
 		})
 	})
 
-	ctx.ElementHandlers["physics-balls"] = func(ctx *htmlcore.Context) bool {
-		balls.Config(ctx.BlockParent)
+	ctx.AddElementHandler("physics-balls", func(ctx *htmlcore.Context) bool {
+		balls.Config(ctx.BlockParent())
 		return true
-	}
+	})
 
-	ctx.ElementHandlers["physics-collide"] = func(ctx *htmlcore.Context) bool {
-		collide.Config(ctx.BlockParent)
+	ctx.AddElementHandler("physics-collide", func(ctx *htmlcore.Context) bool {
+		collide.Config(ctx.BlockParent())
 		return true
-	}
+	})
 
-	ctx.ElementHandlers["physics-virtroom"] = func(ctx *htmlcore.Context) bool {
+	ctx.AddElementHandler("physics-virtroom", func(ctx *htmlcore.Context) bool {
 		ev := &virtroom.Env{}
 		ev.Defaults()
-		ev.ConfigGUI(ctx.BlockParent)
+		ev.ConfigGUI(ctx.BlockParent())
 		return true
-	}
+	})
 
 	b.RunMainWindow()
 }
