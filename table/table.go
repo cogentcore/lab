@@ -8,6 +8,7 @@ package table
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"slices"
 
@@ -178,6 +179,67 @@ func InsertColumn[T tensor.DataTypes](dt *Table, name string, idx int, cellSizes
 // Automatically adjusts the shape to fit the current number of rows.
 func (dt *Table) AddColumn(name string, tsr tensor.Values) error {
 	return dt.Columns.AddColumn(name, tsr)
+}
+
+// Table implements tensor.NamedColumns, for math mode indexing by name.
+var _ tensor.NamedColumns = (*Table)(nil)
+
+// SetColumn sets the values of the column of the given name to the given
+// tensor, adding the column if there is none, as math mode does for
+// dt["name"] = x (see [tensor.NamedColumns]). The tensor has the values
+// for each row of the table ([Table.NumRows]), which are set through the
+// [Table.Indexes] of a view, or one value for all of the rows. A new
+// column has the type and cell shape of the tensor, and the rows of the
+// table that are not in a view are NaN (or empty for strings). The values
+// of an existing column are converted to its type.
+func (dt *Table) SetColumn(name string, values tensor.Tensor) error {
+	nr := dt.NumRows()
+	scalar := values.Len() == 1
+	sizes := values.ShapeSizes()
+	if !scalar && (len(sizes) == 0 || sizes[0] != nr) {
+		return fmt.Errorf("table.SetColumn: %q needs %d rows of values, not %d", name, nr, values.DimSize(0))
+	}
+	cl := dt.Columns.At(name)
+	if cl == nil {
+		csz := []int{dt.Columns.Rows}
+		if !scalar {
+			csz = append(csz, sizes[1:]...)
+		}
+		cl = tensor.NewOfType(values.DataType(), csz...)
+		if dt.Indexes != nil && !cl.IsString() {
+			for i := range cl.Len() {
+				cl.SetFloat1D(math.NaN(), i)
+			}
+		}
+		if err := dt.Columns.AddColumn(name, cl); err != nil {
+			return err
+		}
+	}
+	cells := 1
+	if rows := cl.DimSize(0); rows > 0 {
+		cells = cl.Len() / rows
+	}
+	if !scalar && values.Len() != nr*cells {
+		return fmt.Errorf("table.SetColumn: %q has %d values per row, not %d", name, cells, values.Len()/max(nr, 1))
+	}
+	for i := range nr {
+		row := i
+		if dt.Indexes != nil {
+			row = dt.Indexes[i]
+		}
+		for c := range cells {
+			vi := i*cells + c
+			if scalar {
+				vi = 0
+			}
+			if cl.IsString() {
+				cl.SetStringRow(values.String1D(vi), row, c)
+			} else {
+				cl.SetFloatRow(values.Float1D(vi), row, c)
+			}
+		}
+	}
+	return nil
 }
 
 // InsertColumn inserts the given [tensor.Values] as a column to the table at given index,

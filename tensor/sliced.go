@@ -72,6 +72,13 @@ func AnySlice(tsr Tensor, idx ...any) Tensor {
 			if i.Len() > 1 && i.Len() > tsr.NumDims() {
 				return NewIndexed(tsr, AsInt(i))
 			}
+			if i.Len() > 1 { // an index of each of the first dimensions
+				ixs := make([]any, i.Len())
+				for k, ix := range AsIntSlice(i) {
+					ixs[k] = ix
+				}
+				return Reslice(tsr, ixs...)
+			}
 		}
 	}
 	return Reslice(tsr, idx...)
@@ -98,6 +105,11 @@ func resliceIndex(tsr Tensor, dim, index int) int {
 //     Can use negative numbers to index from the end.
 //     This axis will also be removed using a [Reshaped].
 //   - a [Slice] object expressing a range of indexes.
+//   - a tensor of one value, which is an index as an integer is.
+//   - a tensor of more than one value, which are the indexes along that
+//     dimension, in any order (as an integer array does in NumPy).
+//   - a [Bool] tensor with a value for each index of that dimension,
+//     selecting the indexes where it is true (as a boolean array does in NumPy).
 //   - [FullAxis] includes the full original axis (equivalent to `Slice{}`).
 //   - [Ellipsis] creates a flexibly-sized stretch of FullAxis dimensions,
 //     which automatically aligns the remaining slice elements based on the source
@@ -119,12 +131,32 @@ func Reslice(tsr Tensor, sls ...any) Tensor {
 	for d := range ns {
 		s := sls[d]
 		if st, ok := s.(Tensor); ok {
-			doReshape = true // doesn't add to new shape.
-			ni := st.Len()
-			for i := range ni {
-				ixs[ci] = []int{resliceIndex(tsr, ci, st.Int1D(i))}
+			if b, isBool := st.(*Bool); isBool { // the indexes where it is true
+				if b.Len() != tsr.DimSize(ci) {
+					panic(fmt.Sprintf("tensor: boolean index of %d values for dimension %d of size %d", b.Len(), ci, tsr.DimSize(ci)))
+				}
+				ixs[ci] = []int{}
+				for i := range b.Len() {
+					if b.Bool1D(i) {
+						ixs[ci] = append(ixs[ci], i)
+					}
+				}
+				reshape = append(reshape, len(ixs[ci]))
 				ci++
+				continue
 			}
+			if st.Len() == 1 { // an index: doesn't add to new shape.
+				doReshape = true
+				ixs[ci] = []int{resliceIndex(tsr, ci, st.Int1D(0))}
+				ci++
+				continue
+			}
+			ixs[ci] = make([]int, st.Len()) // the indexes along this dimension
+			for i := range st.Len() {
+				ixs[ci][i] = resliceIndex(tsr, ci, st.Int1D(i))
+			}
+			reshape = append(reshape, len(ixs[ci]))
+			ci++
 			continue
 		}
 		switch x := s.(type) {

@@ -7,4 +7,5 @@ This example (source in https://github.com/cogentcore/lab/tree/main/physics/exam
 The pusher target position slider at the bottom controls how much force is imparted by the pusher "paddle" that hits the first object.
 
 <physics-collide>
+</physics-collide>
 

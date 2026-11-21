@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"cogentcore.org/core/base/fsx"
 	"cogentcore.org/core/content"
 	"cogentcore.org/core/core"
 	"cogentcore.org/core/mvmcore"
@@ -50,6 +51,7 @@ func goalSources(t *testing.T, file string) []string {
 // the docs do when they show the page, and the same code in the mvm Goal
 // interpreter, and compares what each block prints.
 func TestCompiledGoal(t *testing.T) {
+	content.Files = fsx.Sub(econtent, "content") // as the app sets it
 	b := core.NewBody("code blocks")
 	parent := core.NewFrame(b)
 	var files []string

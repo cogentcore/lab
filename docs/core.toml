@@ -1,3 +1,5 @@
+Name = "Cogent Lab Docs"
+
 [Web]
   # mvm is loaded when code is first edited (see interp.go)
   DeferredFunctions = ["cogentcore.org/lab/mvmlab.BindTextEditor"]

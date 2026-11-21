@@ -134,6 +134,50 @@ fmt.Println("b:", b)
 
 Note that the filesystem variables are pointers to the live variables, so they always reflect the latest changes, so the `setcp` command is useful for saving a copy that does not get further updated.
 
+### Tables
+
+The columns of a [[table]] are indexed by name, as in pandas: `dt["mass"]` is the column named `mass`, and assigning to a column by name, as in `dt["ratio"] = dt["mass"] / dt["size"]`, sets its values, adding the column if the table does not have it. The functions `unique`, `isin`, and `where` work well with the columns of tables (see [[#Selecting and counting values]]), and a boolean mask selects the rows of a view of a table with `FilterMask`. See the [[planets]] tutorial for a full example.
+
+```Goal
+dt := table.New("sizes")
+dt.AddStringColumn("name")
+dt.AddFloat64Column("size")
+dt.SetNumRows(4)
+##
+dt["name"] = ["small", "big", "small", "medium"]
+dt["size"] = [1., 10., 2., 5.]
+dt["double"] = dt["size"] * 2
+names := unique(dt["name"])
+big := dt["size"] > 3
+##
+fmt.Println("double:", dt.Column("double"))
+fmt.Println("names:", names)
+bigOnes, _ := table.NewView(dt).FilterMask(big)
+fmt.Println("big:", bigOnes.Column("name"))
+```
+
+### Reductions, sorting, and stacking
+
+As in NumPy, `sum(a)`, `max(a)`, `mean(a)`, and so on reduce all of the values of a tensor to one value, and with an axis, as in `a.max(0)` or `sum(a, 1)`, the values along that axis. `sort` and `argsort` sort along the last axis by default, and `vstack`, `hstack`, `concatenate`, `stack`, and `tile` make new tensors from others (see [[#Reference tables]] for all of the functions):
+
+```Goal
+##
+a := [[3., 1., 2.], [9., 7., 8.]]
+total := sum(a)
+colMax := a.max(0)
+rowSum := sum(a, 1)
+sorted := sort(a)
+byFirst := a[argsort(-a[:, 0]), :]
+more := vstack(a, [0., 0., 0.])
+xs, ys := meshgrid([1., 2., 3.], [10., 20.])
+##
+fmt.Println("total:", total, "colMax:", colMax, "rowSum:", rowSum)
+fmt.Println("sorted:", sorted)
+fmt.Println("byFirst:", byFirst)
+fmt.Println("more:", more)
+fmt.Println("xs:", xs, "ys:", ys)
+```
+
 ## Slicing and indexing
 
 Math mode provides NumPy-like ways of extracting data from a tensor (examples follow Go versions in [[tensor#Views and values]]).
@@ -269,16 +313,17 @@ The following tables summarize Goal math-mode syntax in terms of [NumPy](https:/
 | ------------ | ----------- | ------ | ---------------- |
 | `tensor.NewFloat64FromValues(` `1, 2, 3)` | `[1., 2., 3.]` | `np.array([1., 2., 3.])` | define a 1D tensor |
 | (reshape) | `[[1., 2., 3.], [4., 5., 6.]]` or: | `(np.array([[1., 2., 3.], [4., 5., 6.]])` | define a 2x3 2D tensor |
-| TODO: | TODO: | `np.block([[a, b], [c, d]])` | construct a matrix from blocks `a`, `b`, `c`, and `d` |
+| `tensor.VStack(` `tensor.HStack(a, b),` `tensor.HStack(c, d))` | `vstack(hstack(a, b), hstack(c, d))` | `np.block([[a, b], [c, d]])` | construct a matrix from blocks `a`, `b`, `c`, and `d` |
 | `tensor.NewFloat64(3,4)` | `zeros(3,4)` | `np.zeros((3, 4))` | 3x4 2D tensor of float64 zeros; Goal does not use "tuple" so no double parens |
 | `tensor.NewFloat64(3,4,5)` | `zeros(3, 4, 5)` | `np.zeros((3, 4, 5))` | 3x4x5 three-dimensional tensor of float64 zeros |
 | `tensor.NewFloat64Ones(3,4)` | `ones(3, 4)`  | `np.ones((3, 4))` | 3x4 2D tensor of 64-bit floating point ones |
 | `tensor.NewFloat64Full(5.5, 3,4)` | `full(5.5, 3, 4)` | `np.full((3, 4), 5.5)` | 3x4 2D tensor of 5.5; Goal variadic arg structure requires value to come first |
 | `tensor.NewFloat64Rand(3,4)` | `rand(3, 4)` | `rng.random(3, 4)` | 3x4 2D float64 tensor with uniform random 0..1 elements, using the current Go `rand` source |
-| TODO: | TODO: |`np.concatenate((a,b),1)` or `np.hstack((a,b))` or `np.column_stack((a,b))` or `np.c_[a,b]` | concatenate columns of a and b |
-| TODO: | TODO: |`np.concatenate((a,b))` or `np.vstack((a,b))` or `np.r_[a,b]` | concatenate rows of a and b |
-| TODO: | TODO: |`np.tile(a, (m, n))`   | create m by n copies of a |
-| TODO: | TODO: |`a[np.r_[:len(a),0]]`  | `a` with copy of the first row appended to the end |
+| `tensor.Concatenate(1, a, b)` | `concatenate(1, a, b)` or `hstack(a, b)` or `column_stack(a, b)` |`np.concatenate((a,b),1)` or `np.hstack((a,b))` or `np.column_stack((a,b))` or `np.c_[a,b]` | concatenate columns of a and b; Goal has no tuples, so the axis comes first, as the value does in `full`; `column_stack` makes 1D tensors columns |
+| `tensor.Concatenate(0, a, b)` | `concatenate(0, a, b)` or `vstack(a, b)` |`np.concatenate((a,b))` or `np.vstack((a,b))` or `np.r_[a,b]` | concatenate rows of a and b; `vstack` makes 1D tensors rows |
+| `tensor.Stack(0, a, b)` | `stack(0, a, b)` |`np.stack((a,b))` | stack tensors of the same shape along a new axis (here the first) |
+| `tensor.Tile(a, m, n)` | `tile(a, m, n)` |`np.tile(a, (m, n))`   | create m by n copies of a |
+| `tensor.VStack(a,` `tensor.AnySlice(a, 0))` | `vstack(a, a[0])` |`a[np.r_[:len(a),0]]`  | `a` with copy of the first row appended to the end |
 
 ### Ranges and grids
 
@@ -288,12 +333,10 @@ See [NumPy](https://numpy.org/doc/stable/user/how-to-partition.html) docs for de
 | ------------ | ----------- | ------ | ---------------- |
 | `tensor.NewIntRange(1, 11)` | same: |`np.arange(1., 11.)` or `np.r_[1.:11.]` or `np.r_[1:10:10j]` | create an increasing vector; `arange` in goal is always ints; use `linspace` or `tensor.AsFloat64` for floats |
 | . | same: |`np.arange(10.)` or `np.r_[:10.]` or `np.r_[:9:10j]` | create an increasing vector; 1 arg is the stop value in a slice |
-| . | . |`np.arange(1.,11.)` `[:, np.newaxis]` | create a column vector |
+| . | `arange(1, 11)[:, newaxis]` |`np.arange(1.,11.)` `[:, np.newaxis]` | create a column vector |
 | `t.NewFloat64` `SpacedLinear(` `1, 3, 4, true)` | `linspace(1,3,4,true)` |`np.linspace(1,3,4)` | 4 equally spaced samples between 1 and 3, inclusive of end (use `false` at end for exclusive) |
-| . | . |`np.mgrid[0:9.,0:6.]` or `np.meshgrid(r_[0:9.],` `r_[0:6.])` | two 2D tensors: one of x values, the other of y values |
-| . | . |`ogrid[0:9.,0:6.]` or `np.ix_(np.r_[0:9.],` `np.r_[0:6.]` | the best way to eval functions on a grid |
-| . | . |`np.meshgrid([1,2,4],` `[2,4,5])` | . |  ??
-| . | . |`np.ix_([1,2,4],` `[2,4,5])`    |  the best way to eval functions on a grid |
+| `xs, ys := tensor.Meshgrid(x, y)` | `xs, ys := meshgrid(x, y)` |`np.meshgrid(x, y)` or `np.mgrid[0:9.,0:6.]` | two 2D tensors of the points of a grid: one of x values (varying along the columns), the other of y values (varying along the rows), with a row for each y and a column for each x |
+| . | `x[newaxis, :]` and `y[:, newaxis]` |`np.ogrid[0:9.,0:6.]` or `np.ix_(x, y)` | a row of x values and a column of y values, which broadcasting makes into a grid in element-wise operations, as in `x[newaxis, :] * y[:, newaxis]`: the best way to eval functions on a grid |
 
 ### Basic indexing
 
@@ -335,19 +378,32 @@ Note that Goal only supports boolean logical operators (`&&` and `||`) on boolea
 
 See [NumPy integer indexing](https://numpy.org/doc/stable/user/basics.indexing.html#integer-array-indexing).  Note that the current NumPy version of indexed is rather complex and difficult for many people to understand, as articulated in this [NEP 21 proposal](https://numpy.org/neps/nep-0021-advanced-indexing.html). 
 
-**TODO:** not yet implemented:
+In Goal, a list of indexes (a tensor of more than one value) for one dimension selects those indexes of that dimension, in that order, and a `bool` tensor for one dimension selects the indexes where it is true. Lists of indexes for more than one dimension select all of the combinations of them, as `np.ix_` does in NumPy (unlike NumPy without `ix_`).
 
 | `tensor` Go  |   Goal      | NumPy  | Notes            |
 | ------------ | ----------- | ------ | ---------------- |
-| . | . |`a[np.ix_([1, 3, 4], [0, 2])]` | rows 2,4 and 5 and columns 1 and 3. |
-| . | . |`np.nonzero(a > 0.5)` | find the indices where (a > 0.5) |
-| . | . |`a[:, v.T > 0.5]` | extract the columns of `a` where column vector `v` > 0.5 |
-| . | . |`a[:,np.nonzero(v > 0.5)[0]]` | extract the columns of `a` where vector `v` > 0.5 |
-| . | . |`a[:] = 3` | set all values to the same scalar value |
-| . | . |`np.sort(a)` or `a.sort(axis=0)` | sort each column of a 2D tensor, `a` |
-| . | . |`np.sort(a, axis=1)` or `a.sort(axis=1)` | sort the each row of 2D tensor, `a` |
-| . | . |`I = np.argsort(a[:, 0]); b = a[I,:]` | save the tensor `a` as tensor `b` with rows sorted by the first column |
-| . | . |`np.unique(a)` | a vector of unique values in tensor `a` |
+| `t.Reslice(a,` `t.NewIntFromValues(1, 3, 4),` `t.NewIntFromValues(0, 2))` | `a[[1, 3, 4], [0, 2]]` |`a[np.ix_([1, 3, 4], [0, 2])]` | rows 2,4 and 5 and columns 1 and 3. |
+| `t.ArgWhere(` `tmath.Greater(a, 0.5))` | `argwhere(a > 0.5)` |`np.argwhere(a > 0.5)` or `np.nonzero(a > 0.5)` | find the indices where (a > 0.5), as a 2D tensor with a row of the index in each dimension of each value, which are the arbitrary indexes of Goal: `a[argwhere(a > 0.5)]` |
+| `t.Reslice(a,` `t.FullAxis,` `tmath.Greater(v, 0.5))` | `a[:, v > 0.5]` |`a[:, v.T > 0.5]` or `a[:,np.nonzero(v > 0.5)[0]]` | extract the columns of `a` where vector `v` > 0.5 |
+| `tmath.Assign(` `t.Reslice(a,` `t.FullAxis), 3)` | same: |`a[:] = 3` | set all values to the same scalar value |
+| `t.Sorted(a)` | `sort(a)` |`np.sort(a)` or `a.sort()` | sort each row of a 2D tensor, `a` (along its last axis); `NaN` values are last |
+| `t.Sorted(a, 0)` | `sort(a, 0)` |`np.sort(a, axis=0)` or `a.sort(axis=0)` | sort each column of 2D tensor, `a` |
+| `t.ArgSort(a)` | `argsort(a)` |`np.argsort(a)` | the indexes that sort each row of `a` (along its last axis), or along the given axis |
+| `t.Reslice(a,` `t.ArgSort(...),` `t.FullAxis)` | `b := a[argsort(a[:, 0]), :]` |`I = np.argsort(a[:, 0]); b = a[I,:]` | save the tensor `a` as tensor `b` with rows sorted by the first column |
+
+### Selecting and counting values
+
+| `tensor` Go  |   Goal      | NumPy  | Notes            |
+| ------------ | ----------- | ------ | ---------------- |
+| `tensor.Unique(a)` | `unique(a)` | `np.unique(a)` | a sorted vector of the distinct values of tensor `a`, of its type, without `NaN` (missing data) |
+| `tensor.UniqueCounts(a)` | `unique_counts(a)` | `np.unique_counts(a).counts` | the number of times that each value of `unique(a)` occurs |
+| `tmath.IsIn(a, v)` | `isin(a, v)` | `np.isin(a, v)` | `bool` tensor of shape `a`, true where the value of `a` is one of the values of `v` |
+| `tmath.Where(c, a, b)` | `where(c, a, b)` | `np.where(c, a, b)` | the values of `a` where the `bool` tensor `c` is true, and of `b` where it is false, with broadcasting (e.g., a scalar `b`); strings if `a` or `b` has strings |
+| `dt.Column("mass")` | `dt["mass"]` | `df["mass"]` | the column of table `dt` named `mass` (pandas DataFrame `df`) |
+| `dt.SetColumn("x", v)` | `dt["x"] = v` | `df["x"] = v` | set the values of column `x` of table `dt`, adding it if needed |
+| `dt.FilterMask(m)` | same: | `df[m]` | select the rows of table `dt` where the `bool` tensor `m` is true (on a view: `table.NewView(dt).FilterMask(m)`) |
+| `m, rl, cl := tensor.Pivot(` `r, c, v)` | same: | `df.pivot(index="r",` `columns="c", values="v")` | the values `v` of each pair of labels in `r` and `c` (e.g., the columns of the statistics of `stats.GroupCombined`), as a matrix with a row for each unique value of `r` and a column for each of `c`, which are returned as the labels `rl` and `cl`; `NaN` where a pair has no value |
+| `tmath.Clip(a, lo, hi)` | `clip(a, lo, hi)` | `np.clip(a, lo, hi)` | the values of `a` limited to the range from `lo` to `hi` |
 
 ### Basic math operations (add, multiply, etc)
 
@@ -361,6 +417,8 @@ In Goal and NumPy, the standard `+, -, *, /` operators perform _element-wise_ op
 | `tmath.Mod(a,b)` | same: |`a%b`   | element-wise modulous (works for float and int) |
 | `tmath.Pow(a,3)` | same: | `a**3`  | element-wise exponentiation |
 | `tmath.Cos(a)`   | same: | `cos(a)` | element-wise function application |
+| `tmath.CumSum(a)` | `cumsum(a)` or `cumsum(a, 0)` | `np.cumsum(a)` or `np.cumsum(a, axis=0)` | cumulative sums of all of the values (1D), or along the given axis; likewise `cumprod` |
+| `tmath.Diff(a)` | `diff(a)` or `diff(a, 0)` | `np.diff(a)` or `np.diff(a, axis=0)` | differences between successive values along the last axis, or the given axis |
 
 ### 2D Matrix Linear Algebra
 
@@ -369,36 +427,38 @@ In Goal and NumPy, the standard `+, -, *, /` operators perform _element-wise_ op
 | `matrix.Mul(a,b)` | same: |`a @ b` | matrix multiply |
 | `tensor.Transpose(a)` | or `a.T` |`a.transpose()` or `a.T` | transpose of `a` |
 | TODO: | . |`a.conj().transpose() or a.conj().T` | conjugate transpose of `a` |
-| `matrix.Det(a)` | `matrix.Det(a)` | `np.linalg.det(a)` | determinant of `a` |
-| `matrix.Identity(3)` | . |`np.eye(3)` | 3x3 identity matrix |
-| `matrix.Diagonal(a)` | . |`np.diag(a)` | returns a vector of the diagonal elements of 2D tensor, `a`. Goal returns a read / write view. |
-| . | . |`np.diag(v, 0)` | returns a square diagonal matrix whose nonzero values are the elements of vector, v |
-| `matrix.Trace(a)` | . |`np.trace(a)` | returns the sum of the elements along the diagonal of `a`. |
-| `matrix.Tri()` | . |`np.tri()` | returns a new 2D Float64 matrix with 1s in the lower triangular region (including the diagonal) and the remaining upper triangular elements zero |
-| `matrix.TriL(a)` | . |`np.tril(a)` | returns a copy of `a` with the lower triangular elements (including the diagonal) from `a` and the remaining upper triangular elements zeroed out |
-| `matrix.TriU(a)` | . |`np.triu(a)` | returns a copy of `a` with the upper triangular elements (including the diagonal) from `a` and the remaining lower triangular elements zeroed out |
-| . | . |`linalg.inv(a)` | inverse of square 2D tensor a |
-| . | . |`linalg.pinv(a)` | pseudo-inverse of 2D tensor a |
-| . | . |`np.linalg.matrix_rank(a)` | matrix rank of a 2D tensor a |
-| . | . |`linalg.solve(a, b)` if `a` is square; `linalg.lstsq(a, b)` otherwise | solution of `a x = b` for x |
+| `matrix.Det(a)` | `linalg.det(a)` or `matrix.Det(a)` | `np.linalg.det(a)` | determinant of `a` |
+| `matrix.Identity(3)` | `eye(3)` or `identity(3)` |`np.eye(3)` | 3x3 identity matrix |
+| `matrix.Diag(a)` | `diag(a)` |`np.diag(a)` | returns a vector of the diagonal elements of 2D tensor, `a`; `matrix.Diagonal(a)` is a read / write view of them. |
+| `matrix.Diag(v)` | `diag(v)` |`np.diag(v, 0)` | returns a square diagonal matrix whose nonzero values are the elements of vector, v |
+| `matrix.Trace(a)` | `trace(a)` |`np.trace(a)` | returns the sum of the elements along the diagonal of `a`. |
+| `matrix.Tri(3)` | `tri(3)` |`np.tri(3)` | returns a new 2D Float64 matrix with 1s in the lower triangular region (including the diagonal) and the remaining upper triangular elements zero |
+| `matrix.TriL(a)` | `tril(a)` |`np.tril(a)` | returns a copy of `a` with the lower triangular elements (including the diagonal) from `a` and the remaining upper triangular elements zeroed out |
+| `matrix.TriU(a)` | `triu(a)` |`np.triu(a)` | returns a copy of `a` with the upper triangular elements (including the diagonal) from `a` and the remaining lower triangular elements zeroed out |
+| `matrix.Inverse(a)` | `linalg.inv(a)` |`linalg.inv(a)` | inverse of square 2D tensor a |
+| `matrix.PseudoInverse(a)` | `linalg.pinv(a)` |`linalg.pinv(a)` | pseudo-inverse of 2D tensor a |
+| `matrix.Rank(a)` | `linalg.matrix_rank(a)` |`np.linalg.matrix_rank(a)` | matrix rank of a 2D tensor a |
+| `matrix.Solve(a, b)` | `linalg.solve(a, b)` or `linalg.lstsq(a, b)` |`linalg.solve(a, b)` if `a` is square; `linalg.lstsq(a, b)` otherwise | solution of `a x = b` for x; the least squares solution if `a` is not square (Goal's `lstsq` returns only `x`) |
 | . | . |Solve `a.T x.T = b.T` instead | solution of x a = b for x |
-| . | . |`U, S, Vh = linalg.svd(a); V = Vh.T` | singular value decomposition of a |
-| . | . |`linalg.cholesky(a)` | Cholesky factorization of a 2D tensor |
-| . | . |`D,V = linalg.eig(a)` | eigenvalues and eigenvectors of `a`, where `[V,D]=eig(a,b)` eigenvalues and eigenvectors of `a, b` where |
-| . | . |`D,V = eigs(a, k=3)`  | `D,V = linalg.eig(a, b)` |  find the k=3 largest eigenvalues and eigenvectors of 2D tensor, a |
-| . | . |`Q,R = linalg.qr(a)`  | QR decomposition
-| . | . |`P,L,U = linalg.lu(a)` where `a == P@L@U` | LU decomposition with partial pivoting (note: P(MATLAB) == transpose(P(NumPy))) | 
-| . | . |`x = linalg.lstsq(Z, y)` | perform a linear regression of the form |
+| `u, s, vh := matrix.SVDFactors(a)` | `u, s, vh := linalg.svd(a)` |`U, S, Vh = linalg.svd(a, full_matrices=False); V = Vh.T` | singular value decomposition of a; `matrix.SVD` is that of a symmetric matrix, as for principal components analysis |
+| `matrix.Cholesky(a)` | `linalg.cholesky(a)` |`linalg.cholesky(a)` | Cholesky factorization of a 2D tensor: the lower triangular `L` where `a == L @ L.T` |
+| `vecs, vals := matrix.Eig(a)` | `vecs, vals := linalg.eig(a)` |`D,V = linalg.eig(a)` | eigenvalues and eigenvectors of `a`; note that Goal returns the vectors first, and `linalg.eigh` (`matrix.EigSym`) is that of a symmetric matrix |
+| . | . |`D,V = eigs(a, k=3)`  | find the k=3 largest eigenvalues and eigenvectors of 2D tensor, a |
+| `q, r := matrix.QR(a)` | `q, r := linalg.qr(a)` |`Q,R = linalg.qr(a)`  | QR decomposition |
+| `p, l, u := matrix.LU(a)` | `p, l, u := linalg.lu(a)` |`P,L,U = scipy.linalg.lu(a)` where `a == P@L@U` | LU decomposition with partial pivoting of a square matrix (note: P(MATLAB) == transpose(P(NumPy))) |
+| `matrix.Solve(Z, y)` | `x := linalg.lstsq(Z, y)` |`x = linalg.lstsq(Z, y)` | perform a linear regression of the form `Z x = y` |
 
 ### Statistics
 
 | `tensor` Go  |   Goal      | NumPy  | Notes            |
 | ------------ | ----------- | ------ | ---------------- |
-| `stats.Max(a)` | `a.max()` or `max(a)` or `stats.Max(a)` | `a.max()` or `np.nanmax(a)` | maximum element of `a`, Goal always ignores `NaN` as missing data; likewise for `min`, `sum`, `prod`, `mean` and `std` |
-| . | . |`a.max(0)` | maximum element of each column of tensor `a` |
-| . | . |`a.max(1)` | maximum element of each row of tensor `a` |
-| `tmath.Max(a, b)` | `max(a, b)` |`np.maximum(a, b)` | compares a and b element-wise, and returns the maximum value from each pair |
-| `stats.L2Norm(a)` | . | `np.sqrt(v @ v)` or `np.linalg.norm(v)` | L2 norm of vector v |
+| `stats.Reduce(a,` `stats.StatMax)` | `a.max()` or `max(a)` | `a.max()` or `np.nanmax(a)` | maximum element of `a`, Goal always ignores `NaN` as missing data; likewise for `min`, `sum`, `prod`, `mean`, `std`, `median` and `count` (the number of values that are not `NaN`) |
+| `stats.Reduce(a,` `stats.StatMax, 0)` | `a.max(0)` |`a.max(0)` | maximum element of each column of tensor `a`; also `sum(a, 0)` etc, except for `max` and `min` (see below). The Go stats functions such as `stats.Max(a)` compute the statistic of each cell over the rows (the first axis), as for the columns of a table, as `a.max(0)` does |
+| `stats.Reduce(a,` `stats.StatMax, 1)` | `a.max(1)` |`a.max(1)` | maximum element of each row of tensor `a` |
+| `tensor.ArgMax(a)` | `argmax(a)` or `a.argmax()` |`np.nanargmax(a)` | the 1D index of the maximum element of `a`, skipping `NaN` (-1 if all are `NaN`); `a.shape().IndexFrom1D` in Go gives the index of each dimension; likewise `argmin` |
+| `tensor.ArgMax(a, 0)` | `argmax(a, 0)` or `a.argmax(0)` |`np.nanargmax(a, axis=0)` | the row index of the maximum element of each column of `a` |
+| `tmath.Max(a, b)` | `max(a, b)` or `maximum(a, b)` |`np.maximum(a, b)` | compares a and b element-wise, and returns the maximum value from each pair; likewise `min` and `minimum` |
+| `matrix.Norm(v)` | `linalg.norm(v)` | `np.sqrt(v @ v)` or `np.linalg.norm(v)` | L2 norm of vector v |
 | . | . |`cg`  | conjugate gradients solver |
 
 ### FFT and complex numbers

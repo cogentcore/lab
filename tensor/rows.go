@@ -98,8 +98,8 @@ func (rw *Rows) NumRows() int {
 	return len(rw.Indexes)
 }
 
-func (rw *Rows) String() string           { return Sprintf("", rw.Tensor, 0) }
-func (rw *Rows) Label() string            { return rw.Tensor.Label() }
+func (rw *Rows) String() string           { return Sprintf("", rw, 0) }
+func (rw *Rows) Label() string            { return label(metadata.Name(rw), rw.Shape()) }
 func (rw *Rows) Metadata() *metadata.Data { return rw.Tensor.Metadata() }
 func (rw *Rows) NumDims() int             { return rw.Tensor.NumDims() }
 

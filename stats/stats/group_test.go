@@ -5,12 +5,15 @@
 package stats
 
 import (
+	"math"
 	"testing"
 
+	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGroup(t *testing.T) {
@@ -120,4 +123,62 @@ func TestQuantilesOneValue(t *testing.T) {
 	for _, st := range []Stats{StatQ1, StatMedian, StatQ3} {
 		assert.Equal(t, 2007.0, st.Call(one).Float1D(0), st.String())
 	}
+}
+
+// TestGroupsNaN tests that NaN values are missing data, without a group,
+// and that the groups are those of [tensor.UniqueGroups].
+func TestGroupsNaN(t *testing.T) {
+	x := tensor.NewFloat64FromValues(2, math.NaN(), 1, 2, math.NaN())
+	metadata.SetName(x, "x")
+	dir, _ := tensorfs.NewDir("Root")
+	require.NoError(t, Groups(dir, x))
+	gd := dir.Dir("Groups").Dir("x")
+	nodes, _ := gd.Nodes()
+	var names []string
+	for _, nd := range nodes {
+		names = append(names, nd.Name())
+	}
+	assert.Equal(t, []string{"1", "2"}, names)
+	assert.Equal(t, []int{0, 3}, tensor.AsIntSlice(gd.Node("2").Tensor))
+}
+
+func TestGroupCombined(t *testing.T) {
+	dt := table.New()
+	dt.AddStringColumn("method")
+	dt.AddFloat64Column("decade")
+	dt.AddFloat64Column("mass")
+	rows := []struct {
+		method string
+		decade float64
+		mass   float64
+	}{{"T", 2000, 1}, {"R", 1990, 2}, {"T", 2000, 3}, {"R", 2000, 4}, {"T", math.NaN(), 5}, {"R", 1990, 6}}
+	dt.SetNumRows(len(rows))
+	for i, r := range rows {
+		dt.Column("method").SetStringRow(r.method, i, 0)
+		dt.Column("decade").SetFloatRow(r.decade, i, 0)
+		dt.Column("mass").SetFloatRow(r.mass, i, 0)
+	}
+	dir, _ := tensorfs.NewDir("Group")
+	require.NoError(t, TableGroupCombined(dir, dt, "method", "decade"))
+	gd := dir.Dir("Groups").Dir("method_decade")
+	names := []string{}
+	for _, v := range gd.ValuesFunc(nil) {
+		names = append(names, metadata.Name(v))
+	}
+	assert.Equal(t, []string{"R_1990", "R_2000", "T_2000"}, names, "sorted combinations, without NaN")
+	assert.Equal(t, []int{1, 5}, tensor.AsIntSlice(gd.Node("R_1990").Tensor))
+
+	require.NoError(t, TableGroupStats(dir, StatSum, dt, "mass"))
+	st := GroupStatsDirTable(dir.Dir("Stats").Dir("method_decade"))
+	assert.Equal(t, []string{"method", "decade", "mass/Sum"}, st.Columns.Keys)
+	assert.Equal(t, []string{"R", "R", "T"}, tensor.AsStringSlice(st.Column("method")))
+	assert.Equal(t, []string{"1990", "2000", "2000"}, tensor.AsStringSlice(st.Column("decade")))
+	assert.Equal(t, []float64{8, 4, 4}, tensor.AsFloat64Slice(st.Column("mass/Sum")))
+
+	m, rl, cl := tensor.Pivot(st.Column("method"), st.Column("decade"), st.Column("mass/Sum"))
+	assert.Equal(t, []string{"R", "T"}, rl.(*tensor.String).Values)
+	assert.Equal(t, []string{"1990", "2000"}, cl.(*tensor.String).Values)
+	assert.Equal(t, []float64{8, 4}, m.Values[:2])
+	assert.True(t, math.IsNaN(m.Values[2]))
+	assert.Equal(t, 4.0, m.Values[3])
 }

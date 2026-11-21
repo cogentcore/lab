@@ -1293,6 +1293,17 @@ func (mp *mathParse) unaryExpr(ex *ast.UnaryExpr) {
 // composite literal, or of a Go expression (see [mathParse.goExpr]).
 // Otherwise, it defines a tensor.
 func (mp *mathParse) defineStmt(as *ast.AssignStmt) {
+	if mp.isTensorsDefine(as) {
+		mp.exprList(as.Lhs)
+		mp.addToken(as.Tok)
+		mp.expr(as.Rhs[0])
+		for _, l := range as.Lhs {
+			if id, ok := l.(*ast.Ident); ok {
+				mp.state.math.declare(id.Name, mp.depth, mathTensor, "")
+			}
+		}
+		return
+	}
 	if mp.isGoDefine(as) {
 		mp.goStmt(as)
 		for i, l := range as.Lhs {
@@ -1337,6 +1348,42 @@ func (mp *mathParse) defineStmt(as *ast.AssignStmt) {
 			mp.emit(token.IDENT, "tensorfs.Record("+nvar.Name+",`"+nvar.Name+"`)")
 		}
 	}
+}
+
+// isTensorsDefine returns whether the given := definition defines more
+// than one tensor variable with the values of a function call that returns
+// only tensors, as in xs, ys := meshgrid(x, y).
+func (mp *mathParse) isTensorsDefine(as *ast.AssignStmt) bool {
+	if len(as.Lhs) < 2 || len(as.Rhs) != 1 {
+		return false
+	}
+	call, ok := ast.Unparen(as.Rhs[0]).(*ast.CallExpr)
+	if !ok {
+		return false
+	}
+	switch x := call.Fun.(type) {
+	case *ast.Ident:
+		_, ok := numpyFuncs[x.Name]
+		return ok
+	case *ast.SelectorExpr:
+		if _, ok := isLinalg(x); ok {
+			return true
+		}
+		if pkg, ok := x.X.(*ast.Ident); ok {
+			fn, err := tensor.FuncByName(pkg.Name + "." + x.Sel.Name)
+			if err != nil {
+				return false
+			}
+			ft := reflect.TypeOf(fn.Fun)
+			for i := range ft.NumOut() {
+				if !ft.Out(i).Implements(reflect.TypeFor[tensor.Tensor]()) {
+					return false
+				}
+			}
+			return ft.NumOut() == len(as.Lhs)
+		}
+	}
+	return false
 }
 
 // isGoDefine returns whether the given := definition defines Go variables.
@@ -1398,6 +1445,12 @@ func (mp *mathParse) assignStmt(as *ast.AssignStmt) {
 	if mp.isGoStmt(as) || len(as.Lhs) != 1 || len(as.Rhs) != 1 || fn == "" {
 		mp.goStmt(as)
 		return
+	}
+	if il, ok := as.Lhs[0].(*ast.IndexExpr); ok && as.Tok == token.ASSIGN {
+		if _, ok := columnName(il); ok {
+			mp.columnAssign(il, as.Rhs[0])
+			return
+		}
 	}
 	if _, isIdent := as.Lhs[0].(*ast.Ident); !isIdent && mp.isGoExpr(as.Lhs[0]) { // an element or field of a Go value
 		if g, _ := mp.goExpr(as.Rhs[0]); g {
@@ -1574,8 +1627,57 @@ func (mp *mathParse) indexListExpr(il *ast.IndexListExpr) {
 
 func (mp *mathParse) indexExpr(il *ast.IndexExpr) {
 	if _, ok := il.Index.(*ast.IndexListExpr); ok {
+		if _, ok := columnName(il); ok {
+			mp.columnExpr(il)
+			return
+		}
 		mp.basicSlicingExpr(il)
 	}
+}
+
+// columnName returns the name of the column of an index by name, such as
+// dt["mass"]: a single string literal index.
+func columnName(il *ast.IndexExpr) (*ast.BasicLit, bool) {
+	iil, ok := il.Index.(*ast.IndexListExpr)
+	if !ok || len(iil.Indices) != 1 {
+		return nil, false
+	}
+	lit, ok := iil.Indices[0].(*ast.BasicLit)
+	if !ok || lit.Kind != token.STRING {
+		return nil, false
+	}
+	return lit, true
+}
+
+// columnExpr transpiles an index by name, such as dt["mass"], as the
+// column of that name, with [tensor.ColumnByName].
+func (mp *mathParse) columnExpr(il *ast.IndexExpr) {
+	lit, _ := columnName(il)
+	mp.startFunc("tensor.ColumnByName", true)
+	mp.emit(token.LPAREN)
+	mp.anyExpr(il.X)
+	mp.addToken(token.COMMA) // replaces [
+	mp.emit(token.STRING, lit.Value)
+	mp.idx++
+	mp.addToken(token.RPAREN) // replaces ]
+	mp.endFunc()
+}
+
+// columnAssign transpiles an assignment to an index by name, such as
+// dt["mass"] = x, which sets the column of that name, with
+// [tensor.SetColumnByName].
+func (mp *mathParse) columnAssign(il *ast.IndexExpr, rhs ast.Expr) {
+	lit, _ := columnName(il)
+	mp.emit(token.IDENT, "tensor.SetColumnByName")
+	mp.emit(token.LPAREN)
+	mp.anyExpr(il.X)
+	mp.addToken(token.COMMA) // replaces [
+	mp.emit(token.STRING, lit.Value)
+	mp.idx += 2 // the name and ]
+	mp.emit(token.COMMA)
+	mp.idx++ // =
+	mp.anyExpr(rhs)
+	mp.emit(token.RPAREN)
 }
 
 func (mp *mathParse) basicSlicingExpr(il *ast.IndexExpr) {
@@ -1736,6 +1838,57 @@ var numpyFuncs = map[string]funWrap{
 	"setcp":    {"tensorfs.SetCopy", ""},
 	"flatten":  {"tensor.Flatten", "nofun"},
 	"squeeze":  {"tensor.Squeeze", "nofun"},
+
+	"unique":        {"tensor.Unique", ""},
+	"unique_counts": {"tensor.UniqueCounts", ""},
+	"isin":          {"tmath.IsIn", ""},
+	"where":         {"tmath.Where", ""},
+	"argwhere":      {"tensor.ArgWhere", ""},
+	"argmax":        {"tensor.ArgMax", ""},
+	"argmin":        {"tensor.ArgMin", ""},
+	"sort":          {"tensor.Sorted", ""},
+	"argsort":       {"tensor.ArgSort", ""},
+
+	"concatenate":  {"tensor.Concatenate", ""},
+	"stack":        {"tensor.Stack", ""},
+	"vstack":       {"tensor.VStack", ""},
+	"hstack":       {"tensor.HStack", ""},
+	"column_stack": {"tensor.ColumnStack", ""},
+	"tile":         {"tensor.Tile", ""},
+	"meshgrid":     {"tensor.Meshgrid", ""},
+
+	"clip":    {"tmath.Clip", ""},
+	"cumsum":  {"tmath.CumSum", ""},
+	"cumprod": {"tmath.CumProd", ""},
+	"diff":    {"tmath.Diff", ""},
+	"maximum": {"tmath.Max", ""},
+	"minimum": {"tmath.Min", ""},
+
+	"eye":      {"matrix.Identity", ""},
+	"identity": {"matrix.Identity", ""},
+	"diag":     {"matrix.Diag", ""},
+	"trace":    {"matrix.Trace", ""},
+	"tri":      {"matrix.Tri", ""},
+	"tril":     {"matrix.TriL", ""},
+	"triu":     {"matrix.TriU", ""},
+}
+
+// linalgFuncs are the functions of the linalg package of NumPy, called as
+// linalg.inv(a) etc.
+var linalgFuncs = map[string]string{
+	"inv":         "matrix.Inverse",
+	"pinv":        "matrix.PseudoInverse",
+	"det":         "matrix.Det",
+	"solve":       "matrix.Solve",
+	"lstsq":       "matrix.Solve",
+	"svd":         "matrix.SVDFactors",
+	"eig":         "matrix.Eig",
+	"eigh":        "matrix.EigSym",
+	"cholesky":    "matrix.Cholesky",
+	"qr":          "matrix.QR",
+	"lu":          "matrix.LU",
+	"matrix_rank": "matrix.Rank",
+	"norm":        "matrix.Norm",
 }
 
 func (mp *mathParse) callExpr(ex *ast.CallExpr) {
@@ -1749,21 +1902,25 @@ func (mp *mathParse) callExpr(ex *ast.CallExpr) {
 			mp.callPropFun(ex, fw)
 			return
 		}
-		if red, ok := reductions[x.Name]; ok && len(ex.Args) == 1 {
-			mp.startFunc(red)
-			mp.idx++
-			mp.addToken(token.LPAREN)
-			break
+		if stat, ok := isReduction(x.Name, len(ex.Args)); ok {
+			mp.reduceFunc(stat, ex.Args)
+			return
 		}
 		mp.callName(x.Name, "")
 	case *ast.SelectorExpr:
 		fun := x.Sel.Name
+		if lf, ok := isLinalg(x); ok {
+			mp.startFunc(lf)
+			mp.idx += 3
+			mp.addToken(token.LPAREN)
+			break
+		}
 		if fw, ok := numpyFuncs[fun]; ok {
 			mp.callPropSelFun(ex, x.X, fw)
 			return
 		}
-		if red, ok := reductions[fun]; ok && len(ex.Args) == 0 {
-			mp.callPropSelFun(ex, x.X, funWrap{fun: red})
+		if stat, ok := reductions[fun]; ok && len(ex.Args) <= 1 {
+			mp.reduceMethod(stat, x.X, ex.Args)
 			return
 		}
 		pkg, ok := x.X.(*ast.Ident)
@@ -1784,16 +1941,84 @@ func (mp *mathParse) callExpr(ex *ast.CallExpr) {
 	mp.endFunc()
 }
 
-// reductions are the stats functions of the NumPy style reductions of
-// all the values of a tensor to one, as in max(a) or a.max(). With two
-// args, max and min are the element-wise tmath functions.
+// reductions are the statistics of the NumPy style reductions of all the
+// values of a tensor to one, as in max(a) or a.max(), or of the values along
+// an axis, as in sum(a, 0) or a.max(0), with [stats.Reduce]. With two args,
+// max and min are the element-wise tmath functions (maximum and minimum).
 var reductions = map[string]string{
-	"max":  "stats.Max",
-	"min":  "stats.Min",
-	"sum":  "stats.Sum",
-	"prod": "stats.Prod",
-	"mean": "stats.Mean",
-	"std":  "stats.Std",
+	"max":    "StatMax",
+	"min":    "StatMin",
+	"sum":    "StatSum",
+	"prod":   "StatProd",
+	"mean":   "StatMean",
+	"std":    "StatStd",
+	"median": "StatMedian",
+	"count":  "StatCount",
+}
+
+// isReduction returns the statistic of the reduction function of the given
+// name, if it is one with the given number of args: the tensor, and an
+// optional axis, except for max and min, whose two args are tensors.
+func isReduction(name string, nargs int) (string, bool) {
+	stat, ok := reductions[name]
+	if !ok {
+		return "", false
+	}
+	if nargs == 1 || (nargs == 2 && name != "max" && name != "min") {
+		return stat, true
+	}
+	return "", false
+}
+
+// isLinalg returns the Go function of the given selector of the function
+// of the linalg package of NumPy, as linalg.inv, if it is one.
+func isLinalg(x *ast.SelectorExpr) (string, bool) {
+	pkg, ok := x.X.(*ast.Ident)
+	if !ok || pkg.Name != "linalg" {
+		return "", false
+	}
+	lf, ok := linalgFuncs[x.Sel.Name]
+	return lf, ok
+}
+
+// reduceFunc transpiles a reduction function call, as max(a) or sum(a, 0),
+// of the given statistic, with [stats.Reduce].
+func (mp *mathParse) reduceFunc(stat string, args []ast.Expr) {
+	mp.startFunc("stats.Reduce").nargs = len(args) + 1
+	mp.idx++ // the name
+	mp.addToken(token.LPAREN)
+	mp.expr(args[0])
+	mp.nextArg()
+	mp.emit(token.COMMA)
+	mp.emit(token.IDENT, "stats."+stat)
+	if len(args) > 1 {
+		mp.nextArg()
+		mp.addToken(token.COMMA)
+		mp.expr(args[1])
+	}
+	mp.addToken(token.RPAREN)
+	mp.endFunc()
+}
+
+// reduceMethod transpiles a reduction method call on the given tensor, as
+// a.max() or a.max(0), of the given statistic, with [stats.Reduce].
+func (mp *mathParse) reduceMethod(stat string, recv ast.Expr, args []ast.Expr) {
+	mp.startFunc("stats.Reduce").nargs = len(args) + 2
+	mp.emit(token.LPAREN)
+	mp.expr(recv)
+	mp.nextArg()
+	mp.emit(token.COMMA)
+	mp.emit(token.IDENT, "stats."+stat)
+	mp.idx += 2 // the . and the name
+	if len(args) > 0 {
+		mp.nextArg()
+		mp.addToken(token.COMMA) // at the (
+		mp.expr(args[0])
+	} else {
+		mp.idx++ // the (
+	}
+	mp.addToken(token.RPAREN)
+	mp.endFunc()
 }
 
 // callOther transpiles a call of a function that is not named, such as
@@ -1826,15 +2051,18 @@ func (mp *mathParse) callIsTensor(ex *ast.CallExpr) bool {
 		if _, ok := numpyFuncs[x.Name]; ok {
 			return true
 		}
-		if _, ok := reductions[x.Name]; ok && len(ex.Args) == 1 {
+		if _, ok := isReduction(x.Name, len(ex.Args)); ok {
 			return true
 		}
 		return funcReturnsTensor("tmath."+x.Name) || funcReturnsTensor("tmath."+strings.ToUpper(x.Name[:1])+x.Name[1:])
 	case *ast.SelectorExpr:
+		if _, ok := isLinalg(x); ok {
+			return true
+		}
 		if _, ok := numpyFuncs[x.Sel.Name]; ok {
 			return true
 		}
-		if _, ok := reductions[x.Sel.Name]; ok && len(ex.Args) == 0 {
+		if _, ok := reductions[x.Sel.Name]; ok && len(ex.Args) <= 1 {
 			return true
 		}
 		if pkg, ok := x.X.(*ast.Ident); ok {

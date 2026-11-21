@@ -72,5 +72,7 @@ fmt.Println(dir.ListAll())
 fmt.Println("gdt:", gdt)
 ```
 
+To group by the combinations of the values of several columns jointly, as `groupby` with a list of columns does in pandas, use `stats.TableGroupCombined` (or `stats.GroupCombined` for tensors): `GroupStats` then makes a table with a column for each of the grouped columns, followed by the statistics of each combination, which `tensor.Pivot` reshapes into a matrix (a pivot table, or crosstab), as in the [[planets]] tutorial.
+
 ## Stats pages
 
