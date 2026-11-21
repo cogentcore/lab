@@ -5,6 +5,7 @@
 package table
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"slices"
@@ -222,6 +223,29 @@ func (dt *Table) Filter(filterer func(dt *Table, row int) bool) *Table {
 		}
 	}
 	return dt
+}
+
+// FilterMask filters the indexes into our Table using the given mask,
+// which has a value for each row of the table ([Table.NumRows]), true
+// (non-zero) to include the row, or false to filter (exclude) it, such as
+// the result of a comparison of a column in math mode, as in
+// dt.FilterMask(isin(dt["method"], ["Transit", "Imaging"])).
+// Returns the table itself, for chaining operations, and an error if the
+// mask does not have a value for each row.
+func (dt *Table) FilterMask(mask tensor.Tensor) (*Table, error) {
+	nr := dt.NumRows()
+	if mask.Len() != nr {
+		return dt, fmt.Errorf("table.FilterMask: the mask has %d values, not one for each of the %d rows", mask.Len(), nr)
+	}
+	dt.IndexesNeeded()
+	idxs := make([]int, 0, nr)
+	for i, row := range dt.Indexes {
+		if mask.Float1D(i) != 0 {
+			idxs = append(idxs, row)
+		}
+	}
+	dt.Indexes = idxs
+	return dt, nil
 }
 
 // FilterString filters the indexes using string values in column compared to given

@@ -134,6 +134,28 @@ fmt.Println("b:", b)
 
 Note that the filesystem variables are pointers to the live variables, so they always reflect the latest changes, so the `setcp` command is useful for saving a copy that does not get further updated.
 
+### Tables
+
+The columns of a [[table]] are indexed by name, as in pandas: `dt["mass"]` is the column named `mass`, and assigning to a column by name, as in `dt["ratio"] = dt["mass"] / dt["size"]`, sets its values, adding the column if the table does not have it. The functions `unique`, `isin`, and `where` work well with the columns of tables (see [[#Selecting and counting values]]), and a boolean mask selects the rows of a view of a table with `FilterMask`. See the [[planets]] tutorial for a full example.
+
+```Goal
+dt := table.New("sizes")
+dt.AddStringColumn("name")
+dt.AddFloat64Column("size")
+dt.SetNumRows(4)
+##
+dt["name"] = ["small", "big", "small", "medium"]
+dt["size"] = [1., 10., 2., 5.]
+dt["double"] = dt["size"] * 2
+names := unique(dt["name"])
+big := dt["size"] > 3
+##
+fmt.Println("double:", dt.Column("double"))
+fmt.Println("names:", names)
+bigOnes, _ := table.NewView(dt).FilterMask(big)
+fmt.Println("big:", bigOnes.Column("name"))
+```
+
 ## Slicing and indexing
 
 Math mode provides NumPy-like ways of extracting data from a tensor (examples follow Go versions in [[tensor#Views and values]]).
@@ -347,7 +369,18 @@ See [NumPy integer indexing](https://numpy.org/doc/stable/user/basics.indexing.h
 | . | . |`np.sort(a)` or `a.sort(axis=0)` | sort each column of a 2D tensor, `a` |
 | . | . |`np.sort(a, axis=1)` or `a.sort(axis=1)` | sort the each row of 2D tensor, `a` |
 | . | . |`I = np.argsort(a[:, 0]); b = a[I,:]` | save the tensor `a` as tensor `b` with rows sorted by the first column |
-| . | . |`np.unique(a)` | a vector of unique values in tensor `a` |
+
+### Selecting and counting values
+
+| `tensor` Go  |   Goal      | NumPy  | Notes            |
+| ------------ | ----------- | ------ | ---------------- |
+| `tensor.Unique(a)` | `unique(a)` | `np.unique(a)` | a sorted vector of the distinct values of tensor `a`, of its type, without `NaN` (missing data) |
+| `tensor.UniqueCounts(a)` | `unique_counts(a)` | `np.unique_counts(a).counts` | the number of times that each value of `unique(a)` occurs |
+| `tmath.IsIn(a, v)` | `isin(a, v)` | `np.isin(a, v)` | `bool` tensor of shape `a`, true where the value of `a` is one of the values of `v` |
+| `tmath.Where(c, a, b)` | `where(c, a, b)` | `np.where(c, a, b)` | the values of `a` where the `bool` tensor `c` is true, and of `b` where it is false, with broadcasting (e.g., a scalar `b`); strings if `a` or `b` has strings |
+| `dt.Column("mass")` | `dt["mass"]` | `df["mass"]` | the column of table `dt` named `mass` (pandas DataFrame `df`) |
+| `dt.SetColumn("x", v)` | `dt["x"] = v` | `df["x"] = v` | set the values of column `x` of table `dt`, adding it if needed |
+| `dt.FilterMask(m)` | same: | `df[m]` | select the rows of table `dt` where the `bool` tensor `m` is true (on a view: `table.NewView(dt).FilterMask(m)`) |
 
 ### Basic math operations (add, multiply, etc)
 

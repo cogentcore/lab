@@ -1399,6 +1399,12 @@ func (mp *mathParse) assignStmt(as *ast.AssignStmt) {
 		mp.goStmt(as)
 		return
 	}
+	if il, ok := as.Lhs[0].(*ast.IndexExpr); ok && as.Tok == token.ASSIGN {
+		if _, ok := columnName(il); ok {
+			mp.columnAssign(il, as.Rhs[0])
+			return
+		}
+	}
 	if _, isIdent := as.Lhs[0].(*ast.Ident); !isIdent && mp.isGoExpr(as.Lhs[0]) { // an element or field of a Go value
 		if g, _ := mp.goExpr(as.Rhs[0]); g {
 			mp.goStmt(as)
@@ -1574,8 +1580,57 @@ func (mp *mathParse) indexListExpr(il *ast.IndexListExpr) {
 
 func (mp *mathParse) indexExpr(il *ast.IndexExpr) {
 	if _, ok := il.Index.(*ast.IndexListExpr); ok {
+		if _, ok := columnName(il); ok {
+			mp.columnExpr(il)
+			return
+		}
 		mp.basicSlicingExpr(il)
 	}
+}
+
+// columnName returns the name of the column of an index by name, such as
+// dt["mass"]: a single string literal index.
+func columnName(il *ast.IndexExpr) (*ast.BasicLit, bool) {
+	iil, ok := il.Index.(*ast.IndexListExpr)
+	if !ok || len(iil.Indices) != 1 {
+		return nil, false
+	}
+	lit, ok := iil.Indices[0].(*ast.BasicLit)
+	if !ok || lit.Kind != token.STRING {
+		return nil, false
+	}
+	return lit, true
+}
+
+// columnExpr transpiles an index by name, such as dt["mass"], as the
+// column of that name, with [tensor.ColumnByName].
+func (mp *mathParse) columnExpr(il *ast.IndexExpr) {
+	lit, _ := columnName(il)
+	mp.startFunc("tensor.ColumnByName", true)
+	mp.emit(token.LPAREN)
+	mp.anyExpr(il.X)
+	mp.addToken(token.COMMA) // replaces [
+	mp.emit(token.STRING, lit.Value)
+	mp.idx++
+	mp.addToken(token.RPAREN) // replaces ]
+	mp.endFunc()
+}
+
+// columnAssign transpiles an assignment to an index by name, such as
+// dt["mass"] = x, which sets the column of that name, with
+// [tensor.SetColumnByName].
+func (mp *mathParse) columnAssign(il *ast.IndexExpr, rhs ast.Expr) {
+	lit, _ := columnName(il)
+	mp.emit(token.IDENT, "tensor.SetColumnByName")
+	mp.emit(token.LPAREN)
+	mp.anyExpr(il.X)
+	mp.addToken(token.COMMA) // replaces [
+	mp.emit(token.STRING, lit.Value)
+	mp.idx += 2 // the name and ]
+	mp.emit(token.COMMA)
+	mp.idx++ // =
+	mp.anyExpr(rhs)
+	mp.emit(token.RPAREN)
 }
 
 func (mp *mathParse) basicSlicingExpr(il *ast.IndexExpr) {
@@ -1736,6 +1791,11 @@ var numpyFuncs = map[string]funWrap{
 	"setcp":    {"tensorfs.SetCopy", ""},
 	"flatten":  {"tensor.Flatten", "nofun"},
 	"squeeze":  {"tensor.Squeeze", "nofun"},
+
+	"unique":        {"tensor.Unique", ""},
+	"unique_counts": {"tensor.UniqueCounts", ""},
+	"isin":          {"tmath.IsIn", ""},
+	"where":         {"tmath.Where", ""},
 }
 
 func (mp *mathParse) callExpr(ex *ast.CallExpr) {

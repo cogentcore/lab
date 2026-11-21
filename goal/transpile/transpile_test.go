@@ -298,6 +298,14 @@ func TestMath(t *testing.T) {
 	// logx.UserLevel = slog.LevelDebug
 	tests := []exIn{
 		{"# x := 1", `x := tensor.Tensor(tensor.NewIntScalar(1))`},
+		{`# m := dt["mass"]`, `m := tensor.Tensor(tensor.ColumnByName(dt, "mass"))`},
+		{`# dt["decade"] = floor(dt["year"] / 10) * 10`, `tensor.SetColumnByName(dt, "decade", tmath.Mul(tmath.Floor(tmath.Div(tensor.ColumnByName(dt, "year"), tensor.NewIntScalar(10))), tensor.NewIntScalar(10)))`},
+		{`# dt["mass"] += 1`, `tmath.AddAssign(tensor.ColumnByName(dt, "mass"), tensor.NewIntScalar(1))`},
+		{`# x := dt["mass"][1:3]`, `x := tensor.Tensor(tensor.AnySlice(tensor.ColumnByName(dt, "mass"), tensor.Slice { Start:1, Stop:3 } ))`},
+		{`# u := unique(dt["method"])`, `u := tensor.Tensor(tensor.Unique(tensor.ColumnByName(dt, "method")))`},
+		{`# m := isin(dt["method"], ["Transit", "Imaging"])`, `m := tensor.Tensor(tmath.IsIn(tensor.ColumnByName(dt, "method"), tensor.NewStringFromValues([]string { "Transit", "Imaging" }  ...)))`},
+		{`# w := where(x > 0, x, 0)`, `w := tensor.Tensor(tmath.Where(tmath.Greater(x, tensor.NewIntScalar(0)), x, tensor.NewIntScalar(0)))`},
+		{`# c := unique_counts(x)`, `c := tensor.Tensor(tensor.UniqueCounts(x))`},
 		{"# x := a + 1", `x := tensor.Tensor(tmath.Add(tensor.ToTensor(a), tensor.NewIntScalar(1)))`},
 		{"# x = x * 4", `x = tmath.Mul(x, tensor.NewIntScalar(4))`},
 		{"# a = x + y", `tensor.SetVar( & a, tmath.Add(x, tensor.ToTensor(y)))`},

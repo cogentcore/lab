@@ -33,17 +33,8 @@ import (
 // Uses a stable sort on columns, so ordering of other dimensions is preserved.
 func Groups(dir *tensorfs.Node, tsrs ...tensor.Tensor) error {
 	gd := dir.Dir("Groups")
-	makeIdxs := func(dir *tensorfs.Node, srt *tensor.Rows, val string, start, r int) {
-		n := r - start
-		it := tensorfs.Value[int](dir, val, n)
-		for j := range n {
-			it.SetIntRow(srt.Indexes[start+j], j, 0) // key to indirect through sort indexes
-		}
-	}
-
 	for i, tsr := range tsrs {
-		nr := tsr.DimSize(0)
-		if nr == 0 {
+		if tsr.DimSize(0) == 0 {
 			continue
 		}
 		nm := metadata.Name(tsr)
@@ -51,31 +42,16 @@ func Groups(dir *tensorfs.Node, tsrs ...tensor.Tensor) error {
 			nm = strconv.Itoa(i)
 		}
 		td := gd.Dir(nm)
-		srt := tensor.AsRows(tsr).CloneIndexes()
-		srt.SortStable(tensor.Ascending)
-		start := 0
-		if tsr.IsString() {
-			lastVal := srt.StringRow(0, 0)
-			for r := range nr {
-				v := srt.StringRow(r, 0)
-				if v != lastVal {
-					makeIdxs(td, srt, lastVal, start, r)
-					start = r
-					lastVal = v
-				}
+		vals, groups := tensor.UniqueGroups(tsr)
+		for gi, rows := range groups {
+			val := vals.String1D(gi)
+			if !vals.IsString() {
+				val = tensor.Float64ToString(vals.Float1D(gi))
 			}
-			makeIdxs(td, srt, lastVal, start, nr)
-		} else {
-			lastVal := srt.FloatRow(0, 0)
-			for r := range nr {
-				v := srt.FloatRow(r, 0)
-				if v != lastVal {
-					makeIdxs(td, srt, tensor.Float64ToString(lastVal), start, r)
-					start = r
-					lastVal = v
-				}
+			it := tensorfs.Value[int](td, val, len(rows))
+			for j, r := range rows {
+				it.SetIntRow(r, j, 0)
 			}
-			makeIdxs(td, srt, tensor.Float64ToString(lastVal), start, nr)
 		}
 	}
 	return nil

@@ -6,11 +6,11 @@ This [[tutorial]] analyzes data about the planets that have been discovered arou
 
 ## The data
 
-The data is one of the standard datasets in `lab.Datasets`, which we open into a [[table]]:
+The data is a file in the content of these docs, `datasets/planets.csv`, which code on a page opens through `content.Files`, the files of the content of the app, into a [[table]]:
 
 ```Goal
 planets := table.New("planets")
-planets.OpenFS(lab.Datasets, "planets.csv", tensor.Comma)
+planets.OpenFS(content.Files, "datasets/planets.csv", tensor.Comma)
 tensorcore.NewTable(b).SetTable(planets)
 ```
 
@@ -18,11 +18,11 @@ Each row is a planet: the `method` used to discover it, the `number` of planets 
 
 ## Simple aggregation
 
-In [[math]] mode, the functions of NumPy such as `mean` and `std` reduce all of the values of a column to one value, ignoring `NaN` values as missing data:
+In [[math]] mode, a column of a table is `planets["mass"]`, as in pandas, and the functions of NumPy such as `mean` and `std` reduce all of its values to one value, ignoring `NaN` values as missing data:
 
 ```Goal
 ##
-mass := planets.Column("mass")
+mass := planets["mass"]
 n := stats.Count(mass)
 avg := mean(mass)
 sd := std(mass)
@@ -42,17 +42,14 @@ tensorcore.NewTable(b).SetTable(tensorfs.DirTableMatrix(dir.Dir("Describe"), nil
 
 ## Computing new columns
 
-Math mode computes new columns from others, element by element. Here, the decade of each discovery, and the logarithms of the orbital periods and masses, which span many orders of magnitude:
+Math mode computes new columns from others, element by element, and assigning to a column by name adds it to the table. Here, the decade of each discovery, and the logarithms of the orbital periods and masses, which span many orders of magnitude:
 
 ```Goal
 ##
-decade := floor(planets.Column("year") / 10) * 10
-logPeriod := log10(planets.Column("orbital_period"))
-logMass := log10(planets.Column("mass"))
+planets["decade"] = floor(planets["year"] / 10) * 10
+planets["log period"] = log10(planets["orbital_period"])
+planets["log mass"] = log10(planets["mass"])
 ##
-planets.AddColumn("decade", tensor.AsFloat64(decade))
-planets.AddColumn("log period", tensor.AsFloat64(logPeriod))
-planets.AddColumn("log mass", tensor.AsFloat64(logMass))
 ```
 
 A scatter [[plot]] of the masses and orbital periods, colored by the year of discovery, shows that the first planets found were massive, and that lighter planets with shorter orbital periods were found as the methods improved (only the planets with a known mass are shown):
@@ -84,33 +81,28 @@ plots.NewXBar(plt, plot.Data{plot.X: byMethod.Column("method"), plot.Y: byMethod
 })
 ```
 
-Two methods found most of the planets: the motion of their stars (radial velocity), and their passing in front of their stars (transits). Their shares of the discoveries, as a pie chart:
+Two methods found most of the planets: the motion of their stars (radial velocity), and their passing in front of their stars (transits). In math mode, `isin` marks the planets of these methods, `where` names the others `Other`, and `unique` and `unique_counts` give the distinct names and the number of each, for their shares of the discoveries, as a pie chart:
 
 ```Goal
-shares := map[string]float64{}
-for i := range byMethod.NumRows() {
-	m := byMethod.Column("method").String1D(i)
-	if m != "Radial Velocity" && m != "Transit" {
-		m = "Other"
-	}
-	shares[m] += byMethod.Column("number/Count").Float1D(i)
-}
+##
+mainMethod := isin(planets["method"], ["Radial Velocity", "Transit"])
+methodGroup := where(mainMethod, planets["method"], "Other")
+groupNames := unique(methodGroup)
+groupCounts := unique_counts(methodGroup)
+##
 plt := lab.NewPlot(b)
-pe := plots.NewPie(plt, plot.Data{plot.Y: plot.Values{shares["Radial Velocity"], shares["Transit"], shares["Other"]}, plot.Label: tensor.NewStringFromValues("Radial Velocity", "Transit", "Other")})
+pe := plots.NewPie(plt, plot.Data{plot.Y: groupCounts, plot.Label: groupNames})
 pe.Percent = true
 pe.Hole = 0.4
 ```
 
 ## Statistical plots
 
-The two main methods find very different planets, as the statistical plots of the `statsplot` package show (see [[plot stats]]). First, we select the rows of these methods:
+The two main methods find very different planets, as the statistical plots of the `statsplot` package show (see [[plot stats]]). First, we select the rows of these methods, with a view of the table filtered by the `mainMethod` mask:
 
 ```Goal
 twoMethods := table.NewView(planets)
-twoMethods.Filter(func(dt *table.Table, row int) bool {
-	m := dt.Column("method").StringRow(row, 0)
-	return m == "Radial Velocity" || m == "Transit"
-})
+twoMethods.FilterMask(mainMethod)
 statsDir, _ := tensorfs.NewDir("Stats")
 ```
 
@@ -146,9 +138,10 @@ lab.NewPlotFrom(plt, b)
 A pivot table of the number of planets discovered by each method in each decade, as `pivot_table` does in pandas, is a matrix of counts, which a heatmap shows:
 
 ```Goal
-methods := byMethod.Column("method")
-byDecade := stats.GroupStatsDirTable(dir.Dir("Stats").Dir("decade"))
-decades := byDecade.Column("decade")
+##
+methods := unique(planets["method"])
+decades := unique(planets["decade"])
+##
 // the index of each method and decade, by its name
 methodIndex, decadeIndex := map[string]int{}, map[string]int{}
 for i := range methods.Len() {

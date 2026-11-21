@@ -5,12 +5,15 @@
 package stats
 
 import (
+	"math"
 	"testing"
 
+	"cogentcore.org/core/base/metadata"
 	"cogentcore.org/lab/table"
 	"cogentcore.org/lab/tensor"
 	"cogentcore.org/lab/tensorfs"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGroup(t *testing.T) {
@@ -120,4 +123,21 @@ func TestQuantilesOneValue(t *testing.T) {
 	for _, st := range []Stats{StatQ1, StatMedian, StatQ3} {
 		assert.Equal(t, 2007.0, st.Call(one).Float1D(0), st.String())
 	}
+}
+
+// TestGroupsNaN tests that NaN values are missing data, without a group,
+// and that the groups are those of [tensor.UniqueGroups].
+func TestGroupsNaN(t *testing.T) {
+	x := tensor.NewFloat64FromValues(2, math.NaN(), 1, 2, math.NaN())
+	metadata.SetName(x, "x")
+	dir, _ := tensorfs.NewDir("Root")
+	require.NoError(t, Groups(dir, x))
+	gd := dir.Dir("Groups").Dir("x")
+	nodes, _ := gd.Nodes()
+	var names []string
+	for _, nd := range nodes {
+		names = append(names, nd.Name())
+	}
+	assert.Equal(t, []string{"1", "2"}, names)
+	assert.Equal(t, []int{0, 3}, tensor.AsIntSlice(gd.Node("2").Tensor))
 }
