@@ -23,7 +23,7 @@ In [[math]] mode, a column of a table is `planets["mass"]`, as in pandas, and th
 ```Goal
 ##
 mass := planets["mass"]
-n := stats.Count(mass)
+n := count(mass)
 avg := mean(mass)
 sd := std(mass)
 lo := min(mass)
@@ -133,29 +133,23 @@ plt, _ := plot.NewTablePlot(mt)
 lab.NewPlotFrom(plt, b)
 ```
 
-## Pivot table
+## Grouping by two columns
 
-A pivot table of the number of planets discovered by each method in each decade, as `pivot_table` does in pandas, is a matrix of counts, which a heatmap shows:
+The `stats.TableGroupCombined` function groups the rows by the combinations of the values of the `method` and `decade` columns, as `groupby(["method", "decade"])` does in pandas, so that `stats.TableGroupStats` computes the number of planets discovered by each method in each decade, in a table with a column for each of the grouped columns:
 
 ```Goal
-##
-methods := unique(planets["method"])
-decades := unique(planets["decade"])
-##
-// the index of each method and decade, by its name
-methodIndex, decadeIndex := map[string]int{}, map[string]int{}
-for i := range methods.Len() {
-	methodIndex[methods.String1D(i)] = i
-}
-for i := range decades.Len() {
-	decadeIndex[decades.String1D(i)] = i
-}
-counts := tensor.NewFloat64(methods.Len(), decades.Len())
-for row := range planets.NumRows() {
-	mi := methodIndex[planets.Column("method").StringRow(row, 0)]
-	di := decadeIndex[planets.Column("decade").StringRow(row, 0)]
-	counts.Set(counts.Value(mi, di)+1, mi, di)
-}
+stats.TableGroupCombined(dir, planets, "method", "decade")
+stats.TableGroupStats(dir, stats.StatCount, planets, "number")
+byBoth := stats.GroupStatsDirTable(dir.Dir("Stats").Dir("method_decade"))
+tensorcore.NewTable(b).SetTable(byBoth)
+```
+
+## Pivot table
+
+The `tensor.Pivot` function reshapes these counts into a matrix with a row for each method and a column for each decade, as `pivot_table` (or `unstack`) does in pandas, along with the labels of its rows and columns, which a heatmap shows (the cells without any discoveries are empty):
+
+```Goal
+counts, methods, decades := tensor.Pivot(byBoth.Column("method"), byBoth.Column("decade"), byBoth.Column("number/Count"))
 plt := lab.NewPlot(b)
 plots.NewHeatmap(plt, plot.Data{plot.Color: counts, plot.X: decades, plot.Y: methods}).Styler(func(s *plot.Style) {
 	s.Line.On = plot.On

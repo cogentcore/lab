@@ -101,6 +101,8 @@ Stats
 
 Each value directory, such as `Score`, can be turned directly into a `table.Table` with the group values as its first column, and plotted or otherwise used, in the `tensorfs` system and associated `databrowser`. `GroupStatsDirTable` returns a table of all the values of a group, with the group values as the first column, followed by the `Score/Mean` etc. columns.
 
+`GroupCombined` (and `TableGroupCombined`) groups by the combinations of the values of several tensors jointly (like `groupby` with a list of columns in pandas), in one group directory named as the tensors joined with `_` (e.g., `Person_Day`), for which `GroupStats` makes a string tensor of the values of each of the tensors (`Person` and `Day`), followed by the statistics of each combination. `tensor.Pivot` reshapes such statistics into a matrix with a row for each value of one tensor and a column for each value of the other (a pivot table, or crosstab).
+
 `GroupDescribe` (and `TableGroupDescribe`) computes all of the `DescriptiveStats` in this way (like `groupby(...).describe()` in pandas).
 
 See the [examples/planets](../examples/planets) example for an interactive exploration of data on exoplanets using the `Groups` functions.
