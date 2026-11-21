@@ -29,7 +29,11 @@ import (
 //go:embed content citedrefs.json
 var econtent embed.FS
 
+//go:embed icon.svg
+var icon string
+
 func main() {
+	core.AppIcon = icon
 	b := core.NewBody("Cogent Lab")
 	ct := content.NewContent(b).SetContent(econtent)
 	ctx := ct.Context
@@ -50,6 +54,10 @@ func main() {
 			tree.Add(p, func(w *core.Button) {
 				ctx.LinkButton(w, "https://youtube.com/@CogentCore")
 				w.SetText("Videos").SetIcon(icons.VideoLibrary)
+			})
+			tree.Add(p, func(w *core.Button) {
+				ctx.LinkButton(w, "https://cogentcore.org")
+				w.SetText("CogentCore.org").SetIcon(icons.CogentCore)
 			})
 		})
 	})
