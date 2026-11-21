@@ -445,7 +445,7 @@ In Goal and NumPy, the standard `+, -, *, /` operators perform _element-wise_ op
 | `vecs, vals := matrix.Eig(a)` | `vecs, vals := linalg.eig(a)` |`D,V = linalg.eig(a)` | eigenvalues and eigenvectors of `a`; note that Goal returns the vectors first, and `linalg.eigh` (`matrix.EigSym`) is that of a symmetric matrix |
 | . | . |`D,V = eigs(a, k=3)`  | find the k=3 largest eigenvalues and eigenvectors of 2D tensor, a |
 | `q, r := matrix.QR(a)` | `q, r := linalg.qr(a)` |`Q,R = linalg.qr(a)`  | QR decomposition |
-| . | . |`P,L,U = linalg.lu(a)` where `a == P@L@U` | LU decomposition with partial pivoting (note: P(MATLAB) == transpose(P(NumPy))) | 
+| `p, l, u := matrix.LU(a)` | `p, l, u := linalg.lu(a)` |`P,L,U = scipy.linalg.lu(a)` where `a == P@L@U` | LU decomposition with partial pivoting of a square matrix (note: P(MATLAB) == transpose(P(NumPy))) |
 | `matrix.Solve(Z, y)` | `x := linalg.lstsq(Z, y)` |`x = linalg.lstsq(Z, y)` | perform a linear regression of the form `Z x = y` |
 
 ### Statistics
@@ -455,6 +455,8 @@ In Goal and NumPy, the standard `+, -, *, /` operators perform _element-wise_ op
 | `stats.Reduce(a,` `stats.StatMax)` | `a.max()` or `max(a)` | `a.max()` or `np.nanmax(a)` | maximum element of `a`, Goal always ignores `NaN` as missing data; likewise for `min`, `sum`, `prod`, `mean`, `std`, `median` and `count` (the number of values that are not `NaN`) |
 | `stats.Reduce(a,` `stats.StatMax, 0)` | `a.max(0)` |`a.max(0)` | maximum element of each column of tensor `a`; also `sum(a, 0)` etc, except for `max` and `min` (see below). The Go stats functions such as `stats.Max(a)` compute the statistic of each cell over the rows (the first axis), as for the columns of a table, as `a.max(0)` does |
 | `stats.Reduce(a,` `stats.StatMax, 1)` | `a.max(1)` |`a.max(1)` | maximum element of each row of tensor `a` |
+| `tensor.ArgMax(a)` | `argmax(a)` or `a.argmax()` |`np.nanargmax(a)` | the 1D index of the maximum element of `a`, skipping `NaN` (-1 if all are `NaN`); `a.shape().IndexFrom1D` in Go gives the index of each dimension; likewise `argmin` |
+| `tensor.ArgMax(a, 0)` | `argmax(a, 0)` or `a.argmax(0)` |`np.nanargmax(a, axis=0)` | the row index of the maximum element of each column of `a` |
 | `tmath.Max(a, b)` | `max(a, b)` or `maximum(a, b)` |`np.maximum(a, b)` | compares a and b element-wise, and returns the maximum value from each pair; likewise `min` and `minimum` |
 | `matrix.Norm(v)` | `linalg.norm(v)` | `np.sqrt(v @ v)` or `np.linalg.norm(v)` | L2 norm of vector v |
 | . | . |`cg`  | conjugate gradients solver |

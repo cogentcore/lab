@@ -81,6 +81,60 @@ func ArgWhere(tsr Tensor) *Int {
 	return out
 }
 
+// ArgMax returns the index of the maximum value of the given tensor (as
+// argmax does in NumPy): with no axis, the 1D index of the maximum of all
+// of its values, as a tensor of one value, which a.Shape().IndexFrom1D
+// turns into the index of each dimension; with an axis (which can be
+// negative to count from the last), the index along that axis of the
+// maximum of the values along it, for each index of the other dimensions,
+// as a tensor of their shape. NaN values are missing data, which are
+// skipped (as nanargmax does in NumPy), and the index is -1 if all of the
+// values are NaN. The first of equal values is used.
+func ArgMax(tsr Tensor, axis ...int) *Int {
+	return argExtreme(tsr, func(v, best float64) bool { return v > best }, axis...)
+}
+
+// ArgMin returns the index of the minimum value of the given tensor (as
+// argmin does in NumPy), as [ArgMax] does of the maximum.
+func ArgMin(tsr Tensor, axis ...int) *Int {
+	return argExtreme(tsr, func(v, best float64) bool { return v < best }, axis...)
+}
+
+// argExtreme returns the indexes of the extreme values of the given tensor,
+// for [ArgMax] and [ArgMin], with the given function that returns whether
+// a value is better than the best so far.
+func argExtreme(tsr Tensor, better func(v, best float64) bool, axis ...int) *Int {
+	extreme := func(n int, value func(k int) float64) int {
+		bi, best := -1, 0.0
+		for k := range n {
+			v := value(k)
+			if math.IsNaN(v) {
+				continue
+			}
+			if bi < 0 || better(v, best) {
+				bi, best = k, v
+			}
+		}
+		return bi
+	}
+	if len(axis) == 0 {
+		return NewIntScalar(extreme(tsr.Len(), tsr.Float1D))
+	}
+	sizes := tsr.ShapeSizes()
+	ax := axisIndex(axis[0], len(sizes))
+	osizes := slices.Delete(slices.Clone(sizes), ax, ax+1)
+	out := NewInt(osizes...)
+	if len(osizes) == 0 {
+		out.SetShapeSizes(1)
+	}
+	li := 0
+	AxisLanes(tsr.Shape(), ax, func(lane []int) {
+		out.Values[li] = extreme(len(lane), func(k int) float64 { return tsr.Float1D(lane[k]) })
+		li++
+	})
+	return out
+}
+
 // axisArg returns the axis given as an optional argument for a tensor:
 // its last axis by default, and counting from the last if negative.
 func axisArg(tsr Tensor, axis []int) int {

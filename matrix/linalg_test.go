@@ -57,4 +57,11 @@ func TestDecompositions(t *testing.T) {
 	assert.Equal(t, 0.0, l.Value(0, 1), "lower triangular")
 	assertNear(t, sp, Mul(l, tensor.Transpose(l)))
 	assert.InDelta(t, 5.0, Norm(tensor.NewFloat64FromValues(3, 4)).Float1D(0), 1e-12)
+
+	pm, lm, um := LU(tensor.Reshape(tensor.NewFloat64FromValues(1, 2, 3, 4, 5, 6, 7, 8, 10), 3, 3))
+	assert.Equal(t, 1.0, lm.Value(1, 1), "unit diagonal")
+	assert.Equal(t, 0.0, lm.Value(0, 2), "lower triangular")
+	assert.Equal(t, 0.0, um.Value(2, 0), "upper triangular")
+	assert.Equal(t, 1.0, pm.Value(2, 0), "the largest first column value pivoted first")
+	assertNear(t, tensor.Reshape(tensor.NewFloat64FromValues(1, 2, 3, 4, 5, 6, 7, 8, 10), 3, 3), Mul(Mul(pm, lm), um))
 }

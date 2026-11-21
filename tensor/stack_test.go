@@ -132,3 +132,16 @@ func TestPivot(t *testing.T) {
 	assert.Equal(t, []float64{2, 1, 3}, m.Values[:3])
 	assert.True(t, math.IsNaN(m.Values[3]), "no value")
 }
+
+func TestArgMax(t *testing.T) {
+	a := NewFloat64FromValues(3, math.NaN(), 9, 1, 9, 2)
+	a.SetShapeSizes(2, 3)
+	assert.Equal(t, []int{2}, ArgMax(a).Values, "first of equal values, NaN skipped")
+	assert.Equal(t, []int{3}, ArgMin(a).Values)
+	mx := ArgMax(a, 0)
+	assert.Equal(t, []int{3}, mx.ShapeSizes())
+	assert.Equal(t, []int{0, 1, 0}, mx.Values)
+	assert.Equal(t, []int{0, 0}, ArgMin(a, -1).Values)
+	assert.Equal(t, []int{-1}, ArgMax(NewFloat64FromValues(math.NaN())).Values, "all NaN")
+	assert.Equal(t, []int{1}, ArgMax(NewFloat64FromValues(1, 5, 2), 0).Values)
+}

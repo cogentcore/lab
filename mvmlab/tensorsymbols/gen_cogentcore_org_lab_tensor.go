@@ -61,6 +61,8 @@ type DataTypes interface {
 			"AlignShapes":             reflect.ValueOf(p_cogentcore_org_lab_tensor.AlignShapes),
 			"AnySlice":                reflect.ValueOf(p_cogentcore_org_lab_tensor.AnySlice),
 			"Arg":                     reflect.ValueOf((*p_cogentcore_org_lab_tensor.Arg)(nil)),
+			"ArgMax":                  reflect.ValueOf(p_cogentcore_org_lab_tensor.ArgMax),
+			"ArgMin":                  reflect.ValueOf(p_cogentcore_org_lab_tensor.ArgMin),
 			"ArgSort":                 reflect.ValueOf(p_cogentcore_org_lab_tensor.ArgSort),
 			"ArgWhere":                reflect.ValueOf(p_cogentcore_org_lab_tensor.ArgWhere),
 			"As1D":                    reflect.ValueOf(p_cogentcore_org_lab_tensor.As1D),

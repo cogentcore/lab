@@ -318,6 +318,8 @@ func TestMath(t *testing.T) {
 		{`# xs, ys := meshgrid(x, y)`, `xs, ys := tensor.Meshgrid(x, tensor.ToTensor(y))`},
 		{`# srt := a[argsort(a[:, 0]), :]`, `srt := tensor.Tensor(tensor.AnySlice(tensor.ToTensor(a), tensor.ArgSort(tensor.AnySlice(tensor.ToTensor(a), tensor.FullAxis, 0)), tensor.FullAxis))`},
 		{`# i := linalg.inv(a)`, `i := tensor.Tensor(matrix.Inverse(tensor.ToTensor(a)))`},
+		{`# ix := argmax(a, 1)`, `ix := tensor.Tensor(tensor.ArgMax(tensor.ToTensor(a), 1))`},
+		{`# p, l, u := linalg.lu(a)`, `p, l, u := matrix.LU(tensor.ToTensor(a))`},
 		{`# q, r := linalg.qr(a)`, `q, r := matrix.QR(tensor.ToTensor(a))`},
 		{`# e := eye(3)`, `e := tensor.Tensor(matrix.Identity(3))`},
 		{`# c := clip(a, 0, 1)`, `c := tensor.Tensor(tmath.Clip(tensor.ToTensor(a), tensor.NewIntScalar(0), tensor.NewIntScalar(1)))`},

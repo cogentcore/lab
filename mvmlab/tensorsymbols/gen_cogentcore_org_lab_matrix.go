@@ -26,6 +26,7 @@ var _ = register(func() {
 			"Identity":                 reflect.ValueOf(p_cogentcore_org_lab_matrix.Identity),
 			"Inverse":                  reflect.ValueOf(p_cogentcore_org_lab_matrix.Inverse),
 			"InverseOut":               reflect.ValueOf(p_cogentcore_org_lab_matrix.InverseOut),
+			"LU":                       reflect.ValueOf(p_cogentcore_org_lab_matrix.LU),
 			"LogDet":                   reflect.ValueOf(p_cogentcore_org_lab_matrix.LogDet),
 			"Matrix":                   reflect.ValueOf((*p_cogentcore_org_lab_matrix.Matrix)(nil)),
 			"Mul":                      reflect.ValueOf(p_cogentcore_org_lab_matrix.Mul),

@@ -1844,6 +1844,8 @@ var numpyFuncs = map[string]funWrap{
 	"isin":          {"tmath.IsIn", ""},
 	"where":         {"tmath.Where", ""},
 	"argwhere":      {"tensor.ArgWhere", ""},
+	"argmax":        {"tensor.ArgMax", ""},
+	"argmin":        {"tensor.ArgMin", ""},
 	"sort":          {"tensor.Sorted", ""},
 	"argsort":       {"tensor.ArgSort", ""},
 
@@ -1884,6 +1886,7 @@ var linalgFuncs = map[string]string{
 	"eigh":        "matrix.EigSym",
 	"cholesky":    "matrix.Cholesky",
 	"qr":          "matrix.QR",
+	"lu":          "matrix.LU",
 	"matrix_rank": "matrix.Rank",
 	"norm":        "matrix.Norm",
 }

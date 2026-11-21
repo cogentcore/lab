@@ -163,6 +163,35 @@ func QR(a tensor.Tensor) (q, r *tensor.Float64) {
 	return
 }
 
+// LU returns the LU decomposition with partial pivoting of the given
+// square 2D matrix a, such that a = p @ l @ u, with the permutation matrix
+// p, the lower triangular l with ones on its diagonal, and the upper
+// triangular u (as scipy.linalg.lu does).
+func LU(a tensor.Tensor) (p, l, u *tensor.Float64) {
+	p, l, u = tensor.NewFloat64(0), tensor.NewFloat64(0), tensor.NewFloat64(0)
+	if errs.Log(matrix2D("matrix.LU", a)) != nil {
+		return
+	}
+	n := a.DimSize(0)
+	if n != a.DimSize(1) {
+		errs.Log(squareError("matrix.LU", a))
+		return
+	}
+	ma, _ := NewMatrix(a)
+	var lu mat.LU
+	lu.Factorize(ma)
+	var lm, um mat.TriDense
+	lu.LTo(&lm)
+	lu.UTo(&um)
+	CopyFromDense(l, mat.DenseCopyOf(&lm))
+	CopyFromDense(u, mat.DenseCopyOf(&um))
+	p.SetShapeSizes(n, n)
+	for i, r := range lu.RowPivots(nil) {
+		p.Values[i*n+r] = 1
+	}
+	return
+}
+
 // Rank returns the rank of the given 2D matrix (as linalg.matrix_rank
 // does in NumPy): the number of its singular values that are greater than
 // the largest one times the largest dimension times the float64 epsilon.
