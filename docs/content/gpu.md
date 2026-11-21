@@ -1,5 +1,5 @@
 +++
-Categories = ["Gosl"]
+Categories = ["GoSL"]
 Name = "GPU"
 +++
 
