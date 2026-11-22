@@ -199,7 +199,7 @@ func Rank(a tensor.Tensor) *tensor.Int {
 	_, s, _ := SVDFactors(a)
 	rank := 0
 	if s.Len() > 0 {
-		tol := s.Values[0] * float64(max(a.DimSize(0), a.DimSize(1))) * 0x1p-52
+		tol := s.Values[0] * float64(max(a.DimSize(0), a.DimSize(1))) * 2.220446049250313e-16 // the float64 epsilon, 2^-52
 		for _, v := range s.Values {
 			if v > tol {
 				rank++
