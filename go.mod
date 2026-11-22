@@ -3,7 +3,7 @@ module cogentcore.org/lab
 go 1.27.0
 
 require (
-	cogentcore.org/core v0.5.50
+	cogentcore.org/core v0.5.51
 	github.com/cogentcore/mvm v0.0.0-20261120030535-e3f31e8a9ab5
 	github.com/cogentcore/readline v0.1.4-0.20261119092756-95afccb36c85
 	github.com/hack-pad/hackpadfs v0.2.4
@@ -40,6 +40,7 @@ require (
 	github.com/chewxy/math32 v1.11.2 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
+	github.com/cogentcore/glfw4/v3.4/glfw v0.1.0-pre.2.0.20261121165724-248ae4b326b2 // indirect
 	github.com/cogentcore/star-tex v0.7.2-0.20260625151004-a16970c7d698 // indirect
 	github.com/cogentcore/typesetting v0.0.0-20261022123550-2cd93a91580e // indirect
 	github.com/creack/pty v1.1.24 // indirect
@@ -47,7 +48,6 @@ require (
 	github.com/dlclark/regexp2/v2 v2.7.1 // indirect
 	github.com/faiface/beep v1.1.0 // indirect
 	github.com/go-fonts/latin-modern v0.3.3 // indirect
-	github.com/go-gl/glfw/v3.4/glfw v0.1.0-pre.1.0.20260628091122-0bd588dc30cf // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
