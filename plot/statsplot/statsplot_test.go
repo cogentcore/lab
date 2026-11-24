@@ -95,6 +95,18 @@ func TestMeanError(t *testing.T) {
 	_, ok = plt.Plotters[0].(*plots.Bar)
 	assert.True(t, ok)
 
+	// a column of the same name with another type, from an earlier plot:
+	// the Epoch categories of bars, then the Epoch numbers of lines
+	me = &MeanError{X: "Epoch", Values: []Column{"Err"}, Bar: true}
+	rt, err = me.Table(dir, dt)
+	require.NoError(t, err)
+	assert.True(t, rt.Column("Epoch").IsString())
+	me.Bar = false
+	rt, err = me.Table(dir, dt)
+	require.NoError(t, err)
+	assert.False(t, rt.Column("Epoch").IsString())
+	assert.Equal(t, 19.0, rt.Column("Epoch").Float1D(19))
+
 	_, err = (&MeanError{X: "Nope"}).Table(dir, dt)
 	assert.Error(t, err)
 }
