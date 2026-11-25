@@ -114,6 +114,12 @@ const (
 	// Color sets the colors of points etc., via the color map of the
 	// [ColorAxis] of the plot, which is shown in a color bar.
 	Color
+
+	// Title is a special role for table-based plots: the value of this
+	// (string) column in the last row of the table is the title of the plot,
+	// unless the Plot style sets one. This allows the title to come from the
+	// data, e.g., the name of the current trial of a simulation.
+	Title
 )
 
 // CheckFloats returns an error if any of the arguments are Infinity.

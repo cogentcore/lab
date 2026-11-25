@@ -708,3 +708,35 @@ func TestEditorColumnsHeader(t *testing.T) {
 		assert.Less(t, core.ButtonByText(pl.columnsFrame, "Col00").Geom.TotalBBox.Min.Y, colY, "scrolled")
 	}))
 }
+
+// TestEditorTitleRole tests that a column with the Title role sets the
+// title of the plot, which follows the data on each update, instead of
+// the name of the table.
+func TestEditorTitleRole(t *testing.T) {
+	b := core.NewBody()
+	pl := NewEditor(b)
+	dt := newPlotTable("Squares")
+	plot.SetStyler(dt.Column("Y1"), func(s *plot.Style) { s.On = true })
+	plot.SetStyler(dt.Column("Label"), func(s *plot.Style) { s.Role = plot.Title })
+	pl.SetTable(dt)
+	core.RenderImage(b, core.Locked(b, func() {
+		assert.Equal(t, "", pl.PlotStyle.Title)
+		require.NotNil(t, pl.plot)
+		pl.plot.RenderImage()
+		assert.Equal(t, "e", pl.plot.Title.Text)
+		dt.Column("Label").SetStringRow("trial 2", 4, 0)
+		pl.UpdatePlot()
+		pl.plot.RenderImage()
+		assert.Equal(t, "trial 2", pl.plot.Title.Text)
+	}))
+
+	// without a Title role, the title is the name of the table
+	b = core.NewBody()
+	pl = NewEditor(b)
+	dt = newPlotTable("Squares")
+	plot.SetStyler(dt.Column("Y1"), func(s *plot.Style) { s.On = true })
+	pl.SetTable(dt)
+	core.RenderImage(b, core.Locked(b, func() {
+		assert.Equal(t, "Squares", pl.PlotStyle.Title)
+	}))
+}

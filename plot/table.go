@@ -48,6 +48,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 	csty := make([]*Style, nc)
 	gps := make(map[string][]int, nc)
 	xi := -1 // get the _last_ role = X column -- most specific counter
+	ti := -1 // the first column with the Title role
 	var errs []error
 	var pstySt Style // overall PlotStyle accumulator
 	pstySt.Defaults()
@@ -63,6 +64,9 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		gps[st.Group] = append(gps[st.Group], ci)
 		if st.Role == X {
 			xi = ci
+		}
+		if st.Role == Title && ti < 0 {
+			ti = ci
 		}
 	}
 	psty := pstySt.Plot
@@ -104,7 +108,7 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 		cl := dt.ColumnByIndex(ci)
 		cnm := dt.Columns.Keys[ci]
 		st := csty[ci]
-		if !st.On || st.Role == X {
+		if !st.On || st.Role == X || st.Role == Title {
 			continue
 		}
 		if st.Role == Split {
@@ -223,6 +227,9 @@ func NewTablePlot(dt *table.Table) (*Plot, error) {
 	}
 
 	plt := New()
+	if ti >= 0 && dt.NumRows() > 0 { // a Plot.Title style overrides it
+		plt.Title.Text = dt.ColumnByIndex(ti).StringRow(dt.NumRows()-1, 0)
+	}
 
 	// do splits here, make a new list of ptrs
 	if split != nil {
