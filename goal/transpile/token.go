@@ -401,23 +401,29 @@ func (tk Tokens) ModeEnd() int {
 	return -1
 }
 
-// IsAssignExpr checks if there are any Go assignment or define tokens
-// outside of { } Go code.
+// IsAssignExpr checks if the tokens are a Go assignment or definition:
+// a list of operands (names, selectors, index expressions and derefs),
+// followed by an assignment or define token. An = in a word of a command,
+// as in --for=condition, has other tokens before it, such as the --.
 func (tk Tokens) IsAssignExpr() bool {
 	n := len(tk)
 	if n == 0 {
 		return false
 	}
-	for i := 1; i < n; i++ {
+	for i := 0; i < n; i++ {
 		tok := tk[i].Tok
-		if tok == token.ASSIGN || tok == token.DEFINE || (tok >= token.ADD_ASSIGN && tok <= token.AND_NOT_ASSIGN) {
-			return true
-		}
-		if tok == token.LBRACE { // skip Go mode
+		switch {
+		case tok == token.ASSIGN || tok == token.DEFINE || (tok >= token.ADD_ASSIGN && tok <= token.AND_NOT_ASSIGN):
+			return i > 0
+		case tok == token.IDENT || tok == token.PERIOD || tok == token.COMMA || tok == token.MUL:
+		case tok == token.LBRACK || tok == token.LPAREN:
 			rp := tk[i:n].RightMatching()
-			if rp > 0 {
-				i += rp
+			if rp < 0 {
+				return false
 			}
+			i += rp
+		default:
+			return false
 		}
 	}
 	return false

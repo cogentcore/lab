@@ -156,6 +156,10 @@ func TestTranspile(t *testing.T) {
 		{"cd cogent/", `goalrun.Run("cd", "cogent/")`},
 		{"echo $PATH", `goalrun.Run("echo", goalrun.Expand("$PATH"))`},
 		// only the words are expanded, not the values of Go expressions
+		// an = in a word of a command is not an assignment
+		{`kubectl wait --for=condition=Ready {"pod/"+pod} --timeout=180s`, `goalrun.Run("kubectl", "wait", "--for=condition=Ready", "pod/" + pod, "--timeout=180s")`},
+		{"go build -ldflags=-s", `goalrun.Run("go", "build", "-ldflags=-s")`},
+		{"x[i-1], *p = 1, 2", `x[i-1],  *p = 1, 2`},
 		{"sh -c {script} $HOME/x", `goalrun.Run("sh", "-c", script, goalrun.Expand("$HOME/x"))`},
 		{`echo "$HOME" '$HOME'`, `goalrun.Run("echo", goalrun.Expand("$HOME"), "$HOME")`},
 		{`ls My\ Documents`, `goalrun.Run("ls", "My Documents")`},
