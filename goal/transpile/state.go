@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"cogentcore.org/core/base/logx"
@@ -104,12 +105,24 @@ func (st *State) TranspileCode(code string) {
 		ln := lns[i]
 		// a top-level declaration is a chunk (not one in a function)
 		hasDecl := st.DeclDepth > 0 && st.declBrace == 0 && st.declParen == 0
-		// a raw string over lines is in one statement with its lines
+		// a raw string or block comment over lines is in one statement with
+		// its lines
 		nsrc := 1
 		if !st.MathMode {
-			for i+nsrc < n && openRawString(ln) {
-				ln += "\n" + lns[i+nsrc]
-				nsrc++
+			if openBlockComment(ln) {
+				for i+nsrc < n {
+					next := lns[i+nsrc]
+					ln += "\n" + next
+					nsrc++
+					if strings.Contains(next, "*/") {
+						break
+					}
+				}
+			} else {
+				for i+nsrc < n && openRawString(ln) {
+					ln += "\n" + lns[i+nsrc]
+					nsrc++
+				}
 			}
 		}
 		st.curSrc = ln
@@ -273,12 +286,18 @@ func (st *State) addLines(code string, src []string) {
 	}
 }
 
+// openBlockComment returns whether the given line starts a /* block
+// comment that it does not close.
+func openBlockComment(ln string) bool {
+	ln = strings.TrimSpace(ln)
+	return strings.HasPrefix(ln, "/*") && !strings.Contains(ln[2:], "*/")
+}
+
 // openRawString returns whether the given line has a ` raw string that is
-// not closed on it, outside of other strings and comments.
+// not closed on it, outside of other strings, runes and comments, as Go
+// scans it.
 func openRawString(ln string) bool {
-	_, err := ExecWords(ln)
-	we, ok := errors.AsType[*WordsError](err)
-	return ok && we.Msg == "unterminated ` string"
+	return slices.Contains(goScanErrors(ln), "raw string literal not terminated")
 }
 
 // AddLine adds line on the stack

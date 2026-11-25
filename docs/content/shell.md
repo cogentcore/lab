@@ -9,6 +9,7 @@ The following documentation describes specific use-cases.
 ## Environment variables
 
 * `set <var> <value>` (space delimited as in all shell mode, no equals)
+* `VAR=value command args` sets the variable only for that command, as in bash: `KUBECONFIG=~/.kube/other.yaml kubectl get pods`. A `~/` at the start of the value is the home directory, and its `$VAR`s are expanded (not in `'` quotes), before the variable is set, as are those of the args. A value with any of `( [ { ,` in it must be quoted, as such a word is Go code (`x=f(a, b)`).
 * `$VAR` and `${VAR}` in the words of a command are expanded when it runs, with the environment of the host it runs on, as in bash: `echo $HOME/data`. They are expanded in `"` quoted words too, but not in `'` quoted ones, and not in the values of Go expressions: `sh -c {script}` passes the `script` as is, even if it has `$#` or `$@` in it.
 
 ## Quoting

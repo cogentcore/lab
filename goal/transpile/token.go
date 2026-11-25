@@ -215,6 +215,9 @@ func (tk Tokens) code(starts *[]int) string {
 			case token.MUL:
 				str += " " + tok.String()
 			case token.SUB:
+				if strings.HasSuffix(str, "-") { // not --
+					str += " "
+				}
 				str += tok.String()
 			default:
 				str += " " + tok.String() + " "

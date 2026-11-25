@@ -156,6 +156,14 @@ func TestTranspile(t *testing.T) {
 		{"cd cogent/", `goalrun.Run("cd", "cogent/")`},
 		{"echo $PATH", `goalrun.Run("echo", goalrun.Expand("$PATH"))`},
 		// only the words are expanded, not the values of Go expressions
+		// NAME=value before a command sets the variable for it, as in bash
+		{"KUBECONFIG=~/.kube/a.yaml kubectl get pods", `goalrun.Run(goalrun.EnvVar("KUBECONFIG", "~/.kube/a.yaml"), "kubectl", "get", "pods")`},
+		{`A=1 B="x y" C='$z' D=$HOME/d env`, `goalrun.Run(goalrun.EnvVar("A", "1"), goalrun.EnvVar("B", "x y"), goalrun.EnvVar("C", "$z"), goalrun.EnvVar("D", goalrun.Expand("$HOME/d")), "env")`},
+		{"x := $GOOS=linux go env GOOS$", `x := goalrun.Output(goalrun.EnvVar("GOOS", "linux"), "go", "env", "GOOS")`},
+		{"ls; A=1 env", `goalrun.Run("ls"); goalrun.Run(goalrun.EnvVar("A", "1"), "env")`},
+		// but not Go code
+		{"x=1; y=2", `x = 1; y = 2`},
+		{"x=f(a, b)", `x = f(a, b)`},
 		// an = in a word of a command is not an assignment
 		{`kubectl wait --for=condition=Ready {"pod/"+pod} --timeout=180s`, `goalrun.Run("kubectl", "wait", "--for=condition=Ready", "pod/" + pod, "--timeout=180s")`},
 		{"go build -ldflags=-s", `goalrun.Run("go", "build", "-ldflags=-s")`},

@@ -7,7 +7,9 @@ package transpile
 import (
 	"errors"
 	"fmt"
+	"go/scanner"
 	"go/token"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -28,19 +30,42 @@ func (st *State) TranspileLine(code string) string {
 	}
 	toks := st.TranspileLineTokens(code)
 	paren, brace, brack := toks.BracketDepths()
+	preBrace := st.BraceDepth
 	st.ParenDepth += paren
 	st.BraceDepth += brace
 	st.BrackDepth += brack
-	// logx.PrintlnDebug("depths: ", st.ParenDepth, st.BraceDepth, st.BrackDepth, st.TypeDepth, st.DeclDepth)
 	// a type or var, const, import declaration ends at the depths at which
 	// it started, which are not 0 inside a function
 	if st.TypeDepth > 0 && st.BraceDepth <= st.typeBrace {
 		st.TypeDepth = 0
 	}
+	// the fields of a struct or the methods of an interface type literal
+	// over lines, as of a variable, are Go, as for a type declaration
+	if st.TypeDepth == 0 && st.BraceDepth > preBrace-1 && opensTypeLiteral(toks) {
+		st.TypeDepth = 1
+		st.typeBrace = st.BraceDepth - 1
+	}
 	if st.DeclDepth > 0 && st.ParenDepth <= st.declParen && st.BraceDepth <= st.declBrace {
 		st.DeclDepth = 0
 	}
-	// logx.PrintlnDebug("depths: ", st.ParenDepth, st.BraceDepth, st.BrackDepth, st.TypeDepth, st.DeclDepth)
+	return st.finishLine(toks)
+}
+
+// opensTypeLiteral returns whether the given tokens of a line have a struct
+// or interface type literal that is not closed on the line.
+func opensTypeLiteral(toks Tokens) bool {
+	for i := len(toks) - 2; i >= 0; i-- {
+		if (toks[i].Tok == token.STRUCT || toks[i].Tok == token.INTERFACE) && toks[i+1].Tok == token.LBRACE {
+			return toks[i+1:].RightMatching() < 0
+		}
+	}
+	return false
+}
+
+// finishLine returns the code of the given transpiled tokens of a line,
+// recording their column map.
+func (st *State) finishLine(toks Tokens) string {
+	logx.PrintlnDebug("depths: ", st.ParenDepth, st.BraceDepth, st.BrackDepth, st.TypeDepth, st.DeclDepth)
 	code, cols := toks.CodeMap()
 	st.lastCols = cols
 	return code
@@ -77,6 +102,11 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 	}
 	ewords, err := ExecWords(code)
 	if err != nil {
+		if goScans(code) { // valid Go, as with a rune '\'' or a [ closed on another line
+			st.forgetDefines(toks)
+			logx.PrintlnDebug("go:   not shell words")
+			return st.goLine(st.TranspileGo(toks, code), toks)
+		}
 		st.addWordsError(err, 0)
 		return nil
 	}
@@ -101,12 +131,23 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 		return st.goLine(st.TranspileGo(toks, code), toks)
 	}
 
+	if envPrefixed(ewords) {
+		logx.PrintlnDebug("exec: NAME=value command")
+		return st.TranspileExec(ewords, exec.NoCapture)
+	}
+
 	t0 := toks[0]
 	_, t0pn := toks.Path(true) // true = first position
 	en := len(ewords)
 
 	f0exec := (t0.Tok == token.IDENT && ExecWordIsCommand(ewords[0]))
 	if f0exec && n > 1 && toks[1].Tok == token.COLON { // go Ident: static initializer
+		f0exec = false
+	}
+	if f0exec && sendStmt(toks) { // go send: ch <- x
+		f0exec = false
+	}
+	if f0exec && n > 1 && (toks[1].Tok == token.DEFINE || toks[1].Tok == token.ASSIGN) { // set := x
 		f0exec = false
 	}
 
@@ -121,6 +162,9 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 			return st.TranspileMath(toks[1:], code, true)
 		}
 		return st.TranspileExec(ewords, exec.NoCapture)
+	case t0.Tok == token.LBRACE && (n == 1 || lastTok(toks) == token.COMMA):
+		logx.PrintlnDebug("go:   { block or composite literal element")
+		return st.goLine(st.TranspileGo(toks, code), toks)
 	case t0.Tok == token.LBRACE:
 		logx.PrintlnDebug("go:   { } line")
 		return st.TranspileGoRange(toks, code, 1, n-1)
@@ -150,7 +194,7 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 		}
 		logx.PrintlnDebug("go    keyword")
 		return st.goLine(st.TranspileGo(toks, code), toks)
-	case toks[n-1].Tok == token.INC || toks[n-1].Tok == token.DEC:
+	case lastTok(toks) == token.INC || lastTok(toks) == token.DEC:
 		logx.PrintlnDebug("go    ++ / --")
 		return st.goLine(st.TranspileGo(toks, code), toks)
 	case t0pn > 0: // path expr
@@ -193,6 +237,8 @@ func (st *State) goLine(code, toks Tokens) Tokens {
 // a binary operator, assignment, comma, ( or [.
 func continues(toks Tokens) bool {
 	switch t := lastTok(toks); {
+	case t == token.CASE: // a list of cases over lines
+		return true
 	case t.IsOperator() && t != token.RPAREN && t != token.RBRACK && t != token.RBRACE && t != token.LBRACE &&
 		t != token.SEMICOLON && t != token.COLON && t != token.INC && t != token.DEC && t != token.ELLIPSIS:
 		return true
@@ -401,8 +447,22 @@ func (st *State) transpileExec(ewords []string, output exec.OutputMode) Tokens {
 
 	startExec()
 
+	cmdStart := true // before the command, for NAME=value words
 	for i := 0; i < n; i++ {
 		f := ewords[i]
+		if cmdStart {
+			if name, value, ok := envAssignWord(f); ok && i < n-1 {
+				etoks.Add(token.IDENT, "goalrun.EnvVar")
+				etoks.Add(token.LPAREN)
+				etoks.Add(token.STRING, strconv.Quote(name))
+				etoks.Add(token.COMMA)
+				etoks.AddTokens(execWordTokens(value)...)
+				etoks.Add(token.RPAREN)
+				etoks.Add(token.COMMA)
+				continue
+			}
+			cmdStart = f == "["
+		}
 		switch {
 		case f == "{": // embedded go
 			if n < i+3 {
@@ -434,30 +494,150 @@ func (st *State) transpileExec(ewords []string, output exec.OutputMode) Tokens {
 			etoks.AddTokens(st.transpileExec(ewords[i+1:], output)...)
 			return etoks
 		default:
-			// words with a $ outside of single quotes have their environment
-			// variables expanded when they run, but not the values of Go
-			// expressions, which are passed as is
-			expand := strings.Contains(f, "$") && f[0] != '\''
-			if expand {
-				etoks.Add(token.IDENT, "goalrun.Expand")
-				etoks.Add(token.LPAREN)
-			}
-			switch {
-			case f[0] == '"' || f[0] == '`':
-				etoks.Add(token.STRING, f)
-			case len(f) > 1 && f[0] == '\'' && f[len(f)-1] == '\'': // literal, as in bash
-				etoks.Add(token.STRING, strconv.Quote(f[1:len(f)-1]))
-			default:
-				etoks.Add(token.IDENT, AddQuotes(f)) // mark as an IDENT but add quotes!
-			}
-			if expand {
-				etoks.Add(token.RPAREN)
-			}
+			etoks.AddTokens(execWordTokens(f)...)
 			etoks.Add(token.COMMA)
 		}
 	}
 	endExec()
 	return etoks
+}
+
+// execWordTokens returns the tokens of the Go expression of the given
+// word of a command. Words with a $ outside of single quotes have their
+// environment variables expanded when they run (see goal.Goal.Expand), but
+// not the values of Go expressions, which are passed as is.
+func execWordTokens(f string) Tokens {
+	var etoks Tokens
+	if f == "" {
+		etoks.Add(token.STRING, `""`)
+		return etoks
+	}
+	expand := strings.Contains(f, "$") && f[0] != '\''
+	if expand {
+		etoks.Add(token.IDENT, "goalrun.Expand")
+		etoks.Add(token.LPAREN)
+	}
+	switch {
+	case f[0] == '"' || f[0] == '`':
+		etoks.Add(token.STRING, f)
+	case len(f) > 1 && f[0] == '\'' && f[len(f)-1] == '\'': // literal, as in bash
+		etoks.Add(token.STRING, strconv.Quote(f[1:len(f)-1]))
+	default:
+		etoks.Add(token.IDENT, AddQuotes(f)) // mark as an IDENT but add quotes!
+	}
+	if expand {
+		etoks.Add(token.RPAREN)
+	}
+	return etoks
+}
+
+// envAssignRE matches a NAME=value word of a command.
+var envAssignRE = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*=`)
+
+// envAssignWord returns the name and value of the given word of a command
+// if it is a NAME=value assignment of an environment variable, as in
+// bash: FOO=bar cmd. Its value must be quoted if it has any of ( [ { , in
+// it, which are those of Go code, as in x=f(a, b).
+func envAssignWord(f string) (name, value string, ok bool) {
+	loc := envAssignRE.FindStringIndex(f)
+	if loc == nil {
+		return "", "", false
+	}
+	name, value = f[:loc[1]-1], f[loc[1]:]
+	if value != "" && value[0] != '"' && value[0] != '\'' && value[0] != '`' && strings.ContainsAny(value, "([{,") {
+		return "", "", false
+	}
+	return name, value, true
+}
+
+// envPrefixed returns whether the given words of a line are a command with
+// NAME=value assignments of environment variables before it, as in bash:
+// FOO=bar cmd args.
+func envPrefixed(ewords []string) bool {
+	i := 0
+	for i < len(ewords) {
+		if _, _, ok := envAssignWord(ewords[i]); !ok {
+			break
+		}
+		i++
+	}
+	if i == 0 || i >= len(ewords) {
+		return false
+	}
+	w := ewords[i]
+	return !strings.ContainsAny(w[:1], "{;|&<>") && ExecWordIsCommand(w)
+}
+
+// sendStmt returns whether the given tokens of a line start with a Go send
+// statement: an operand of names and selectors, followed by <-.
+func sendStmt(toks Tokens) bool {
+	for i, t := range toks {
+		switch t.Tok {
+		case token.IDENT, token.PERIOD:
+		case token.ARROW:
+			return i > 0
+		default:
+			return false
+		}
+	}
+	return false
+}
+
+// goScans returns whether the given code has only valid Go tokens.
+func goScans(code string) bool {
+	return goScanErrors(code) == nil
+}
+
+// goScanErrors returns the messages of the errors of scanning the given
+// code as Go tokens.
+func goScanErrors(code string) []string {
+	src := []byte(code)
+	fset := token.NewFileSet()
+	file := fset.AddFile("", fset.Base(), len(src))
+	var s scanner.Scanner
+	var errs []string
+	s.Init(file, src, func(_ token.Position, msg string) { errs = append(errs, msg) }, scanner.ScanComments)
+	for {
+		if _, tok, _ := s.Scan(); tok == token.EOF {
+			return errs
+		}
+	}
+}
+
+// isGenericInstance returns whether the given tokens from the [ at lb to
+// the ] at rb, with the given commas between the args, are the type args
+// of a generic function or type, not the indexes of a tensor: when it is
+// called or has a composite literal ( or { after it, or any of its args
+// is a type, as a predeclared type (int) or a pointer, slice, map, func,
+// chan, struct or interface type.
+func isGenericInstance(toks Tokens, lb, rb int, commas []int) bool {
+	if rb+1 < len(toks) && (toks[rb+1].Tok == token.LPAREN || toks[rb+1].Tok == token.LBRACE) {
+		return true
+	}
+	starts := append([]int{lb}, commas...)
+	for _, c := range starts {
+		if c+1 >= rb {
+			continue
+		}
+		t := toks[c+1]
+		switch t.Tok {
+		case token.MUL, token.LBRACK, token.MAP, token.FUNC, token.CHAN, token.STRUCT, token.INTERFACE:
+			return true
+		case token.IDENT:
+			if predeclaredTypes[t.Str] && (c+2 >= rb || toks[c+2].Tok == token.COMMA || toks[c+2].Tok == token.RBRACK) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// predeclaredTypes are the names of the predeclared types of Go.
+var predeclaredTypes = map[string]bool{
+	"any": true, "bool": true, "byte": true, "comparable": true, "complex64": true, "complex128": true,
+	"error": true, "float32": true, "float64": true, "int": true, "int8": true, "int16": true,
+	"int32": true, "int64": true, "rune": true, "string": true, "uint": true, "uint8": true,
+	"uint16": true, "uint32": true, "uint64": true, "uintptr": true,
 }
 
 // TranspileGoNDimIndex processes an ident[*] sequence of tokens,
@@ -492,6 +672,9 @@ func (st *State) TranspileGoNDimIndex(toks Tokens, code string, gtoks *Tokens, i
 		}
 	}
 	if len(commas) == 0 { // not multidim
+		return -1
+	}
+	if isGenericInstance(toks, idIdx+1, rbIdx, commas) {
 		return -1
 	}
 

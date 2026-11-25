@@ -149,7 +149,7 @@ func ExecWords(ln string) ([]string, error) {
 			esc = false
 		case r == '\\' && !quote && brace == 0 && !Escapes(nextRune(ln[i+1:])):
 			word += string(r) // literal (see BackslashLiteral)
-		case r == '\\':
+		case r == '\\' && !bQuote: // literal in a raw string
 			esc = true
 			word += string(r)
 		case r == '"':

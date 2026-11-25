@@ -21,6 +21,8 @@ func run() {
 	sh -c {script}
 	set SHELLGO env
 	echo $SHELLGO '$SHELLGO'
+	SHELLGO=pre sh -c 'echo $SHELLGO'
+	echo $SHELLGO
 }
 
 run()

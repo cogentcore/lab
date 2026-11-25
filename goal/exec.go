@@ -35,6 +35,7 @@ func (gl *Goal) Exec(errOk exec.ErrorMode, start exec.StartMode, output exec.Out
 	if !errOk && len(gl.Errors) > 0 {
 		return out
 	}
+	cmd, args, env := splitEnvAssigns(cmd, args)
 	cmdIO := exec.NewCmdIO(&gl.Config)
 	cmdIO.StackStart()
 	if start {
@@ -44,6 +45,9 @@ func (gl *Goal) Exec(errOk exec.ErrorMode, start exec.StartMode, output exec.Out
 	if scmd == "" {
 		cmdIO.PopToStart()
 		return out
+	}
+	if len(env) > 0 { // after the args, which are expanded before, as in bash
+		defer gl.setCommandEnv(cl, env)()
 	}
 	// The read end of the pipe of the output of this command (cmd |) goes
 	// to the next command, which closes it: this command does not, as it
@@ -290,6 +294,87 @@ type ExpandWord string
 // a $ in them, outside of single quotes.
 func (gl *Goal) Expand(word string) ExpandWord {
 	return ExpandWord(word)
+}
+
+// EnvAssign is a NAME=value assignment of an environment variable before a
+// command, as in bash: FOO=bar cmd args. The variable has the value only
+// for that command (see [Goal.EnvVar]).
+type EnvAssign struct {
+	// Name is the name of the variable.
+	Name string
+
+	// Value is the value, a string, or an [ExpandWord] whose environment
+	// variables are expanded when the command runs.
+	Value any
+}
+
+// EnvVar returns an [EnvAssign] of the environment variable of the given
+// name to the given value, a string or [ExpandWord], for a command: the
+// transpiled Go code of a command uses it for its NAME=value words before
+// the command, which are before it in the args of [Goal.Exec].
+func (gl *Goal) EnvVar(name string, value any) EnvAssign {
+	return EnvAssign{Name: name, Value: value}
+}
+
+// splitEnvAssigns returns the given command and args without the
+// [EnvAssign]s before the command, and those.
+func splitEnvAssigns(cmd any, args []any) (any, []any, []EnvAssign) {
+	var env []EnvAssign
+	for {
+		ea, ok := cmd.(EnvAssign)
+		if !ok || len(args) == 0 {
+			return cmd, args, env
+		}
+		env = append(env, ea)
+		cmd, args = args[0], args[1:]
+	}
+}
+
+// setCommandEnv sets the given environment variables for a command on the
+// given ssh client, or locally if it is nil, returning a function that
+// restores them. A value that starts with ~/ has it expanded to the home
+// directory, locally, as in bash.
+func (gl *Goal) setCommandEnv(cl *sshclient.Client, env []EnvAssign) func() {
+	envp := &gl.Config.Env
+	if cl != nil {
+		envp = &cl.Env
+	}
+	if *envp == nil {
+		*envp = map[string]string{}
+	}
+	m := *envp
+	type old struct {
+		value string
+		has   bool
+	}
+	olds := map[string]old{}
+	for _, ea := range env {
+		var v string
+		if ew, ok := ea.Value.(ExpandWord); ok {
+			v = gl.expandEnv(cl, string(ew))
+		} else {
+			v = reflectx.ToString(ea.Value)
+		}
+		if cl == nil && (v == "~" || strings.HasPrefix(v, "~/")) {
+			if hv, err := homedir.Expand(v); err == nil {
+				v = hv
+			}
+		}
+		if _, done := olds[ea.Name]; !done {
+			ov, has := m[ea.Name]
+			olds[ea.Name] = old{ov, has}
+		}
+		m[ea.Name] = v
+	}
+	return func() {
+		for name, o := range olds {
+			if o.has {
+				m[name] = o.value
+			} else {
+				delete(m, name)
+			}
+		}
+	}
 }
 
 // expandEnv expands the $FOO references to environment variables of the
