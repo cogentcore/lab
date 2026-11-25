@@ -32,10 +32,12 @@ func (st *State) TranspileLine(code string) string {
 	st.BraceDepth += brace
 	st.BrackDepth += brack
 	// logx.PrintlnDebug("depths: ", st.ParenDepth, st.BraceDepth, st.BrackDepth, st.TypeDepth, st.DeclDepth)
-	if st.TypeDepth > 0 && st.BraceDepth == 0 {
+	// a type or var, const, import declaration ends at the depths at which
+	// it started, which are not 0 inside a function
+	if st.TypeDepth > 0 && st.BraceDepth <= st.typeBrace {
 		st.TypeDepth = 0
 	}
-	if st.DeclDepth > 0 && (st.ParenDepth == 0 && st.BraceDepth == 0) {
+	if st.DeclDepth > 0 && st.ParenDepth <= st.declParen && st.BraceDepth <= st.declBrace {
 		st.DeclDepth = 0
 	}
 	// logx.PrintlnDebug("depths: ", st.ParenDepth, st.BraceDepth, st.BrackDepth, st.TypeDepth, st.DeclDepth)
@@ -63,6 +65,16 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 		}
 		return st.TranspileMath(toks, code, true)
 	}
+	if toks[0].Tok == token.COMMENT && n == 1 {
+		return toks // a comment line does not change goContinues
+	}
+	cont := st.goContinues
+	st.goContinues = false
+	if cont || goElement(toks) {
+		st.forgetDefines(toks)
+		logx.PrintlnDebug("go:   continued expression or list element")
+		return st.goLine(st.TranspileGo(toks, code), toks)
+	}
 	ewords, err := ExecWords(code)
 	if err != nil {
 		st.addWordsError(err, 0)
@@ -72,15 +84,21 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 	logx.PrintlnDebug("\n########## line:\n", code, "\nTokens:", len(toks), "\n", toks.String(), "\nWords:", len(ewords), "\n", ewords)
 
 	if toks[0].Tok == token.TYPE {
+		if st.TypeDepth == 0 {
+			st.typeBrace = st.BraceDepth
+		}
 		st.TypeDepth++
 	}
 	if toks[0].Tok == token.IMPORT || toks[0].Tok == token.VAR || toks[0].Tok == token.CONST {
+		if st.DeclDepth == 0 {
+			st.declParen, st.declBrace = st.ParenDepth, st.BraceDepth
+		}
 		st.DeclDepth++
 	}
 	// logx.PrintlnDebug("depths: ", st.ParenDepth, st.BraceDepth, st.BrackDepth, st.TypeDepth, st.DeclDepth)
 	if st.TypeDepth > 0 || st.DeclDepth > 0 {
 		logx.PrintlnDebug("go:   type / decl defn")
-		return st.TranspileGo(toks, code)
+		return st.goLine(st.TranspileGo(toks, code), toks)
 	}
 
 	t0 := toks[0]
@@ -131,10 +149,10 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 			}
 		}
 		logx.PrintlnDebug("go    keyword")
-		return st.TranspileGo(toks, code)
+		return st.goLine(st.TranspileGo(toks, code), toks)
 	case toks[n-1].Tok == token.INC || toks[n-1].Tok == token.DEC:
 		logx.PrintlnDebug("go    ++ / --")
-		return st.TranspileGo(toks, code)
+		return st.goLine(st.TranspileGo(toks, code), toks)
 	case t0pn > 0: // path expr
 		logx.PrintlnDebug("exec: path...")
 		return st.TranspileExec(ewords, exec.NoCapture)
@@ -146,21 +164,66 @@ func (st *State) TranspileLineTokens(code string) Tokens {
 		return st.TranspileExec(ewords, exec.NoCapture)
 	case !f0exec: // exec must be IDENT
 		logx.PrintlnDebug("go:   not ident")
-		return st.TranspileGo(toks, code)
+		return st.goLine(st.TranspileGo(toks, code), toks)
 	case f0exec && en > 1 && ewords[0] != "set" && toks.IsAssignExpr():
 		logx.PrintlnDebug("go:   assignment or defn")
-		return st.TranspileGo(toks, code)
+		return st.goLine(st.TranspileGo(toks, code), toks)
 	case f0exec && en > 1 && ewords[0] != "set" && toks.IsAssignExpr():
 		logx.PrintlnDebug("go:   assignment or defn")
-		return st.TranspileGo(toks, code)
+		return st.goLine(st.TranspileGo(toks, code), toks)
 	case f0exec: // now any ident
 		logx.PrintlnDebug("exec: ident..")
 		return st.TranspileExec(ewords, exec.NoCapture)
 	default:
 		logx.PrintlnDebug("go:   default")
-		return st.TranspileGo(toks, code)
+		return st.goLine(st.TranspileGo(toks, code), toks)
 	}
 	return toks
+}
+
+// goLine records whether the given tokens of a line of Go code continue
+// on the next line (see [State.goContinues]), returning the given code.
+func (st *State) goLine(code, toks Tokens) Tokens {
+	st.goContinues = continues(toks)
+	return code
+}
+
+// continues returns whether the given tokens of a line of Go code end in
+// a token after which the expression or list continues on the next line:
+// a binary operator, assignment, comma, ( or [.
+func continues(toks Tokens) bool {
+	switch t := lastTok(toks); {
+	case t.IsOperator() && t != token.RPAREN && t != token.RBRACK && t != token.RBRACE && t != token.LBRACE &&
+		t != token.SEMICOLON && t != token.COLON && t != token.INC && t != token.DEC && t != token.ELLIPSIS:
+		return true
+	}
+	return false
+}
+
+// lastTok returns the last token of the given tokens that is not a comment,
+// or [token.ILLEGAL] if there is none.
+func lastTok(toks Tokens) token.Token {
+	for i := len(toks) - 1; i >= 0; i-- {
+		if toks[i].Tok != token.COMMENT {
+			return toks[i].Tok
+		}
+	}
+	return token.ILLEGAL
+}
+
+// goElement returns whether the given tokens of a line are elements of a
+// Go list over lines, as of a composite literal: they start with a string
+// that is followed by a comma, : or closer, or end with a comma, which a
+// command that starts with a string does not.
+func goElement(toks Tokens) bool {
+	if len(toks) < 2 || toks[0].Tok != token.STRING {
+		return false
+	}
+	switch toks[1].Tok {
+	case token.COMMA, token.COLON, token.RPAREN, token.RBRACK, token.RBRACE:
+		return true
+	}
+	return lastTok(toks) == token.COMMA
 }
 
 // TranspileGoRange returns transpiled tokens assuming Go code,
@@ -371,6 +434,14 @@ func (st *State) transpileExec(ewords []string, output exec.OutputMode) Tokens {
 			etoks.AddTokens(st.transpileExec(ewords[i+1:], output)...)
 			return etoks
 		default:
+			// words with a $ outside of single quotes have their environment
+			// variables expanded when they run, but not the values of Go
+			// expressions, which are passed as is
+			expand := strings.Contains(f, "$") && f[0] != '\''
+			if expand {
+				etoks.Add(token.IDENT, "goalrun.Expand")
+				etoks.Add(token.LPAREN)
+			}
 			switch {
 			case f[0] == '"' || f[0] == '`':
 				etoks.Add(token.STRING, f)
@@ -378,6 +449,9 @@ func (st *State) transpileExec(ewords []string, output exec.OutputMode) Tokens {
 				etoks.Add(token.STRING, strconv.Quote(f[1:len(f)-1]))
 			default:
 				etoks.Add(token.IDENT, AddQuotes(f)) // mark as an IDENT but add quotes!
+			}
+			if expand {
+				etoks.Add(token.RPAREN)
 			}
 			etoks.Add(token.COMMA)
 		}

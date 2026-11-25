@@ -277,9 +277,45 @@ func (gl *Goal) HandleArgErr(errok exec.ErrorMode, err error) error {
 	return err
 }
 
+// ExpandWord is a word of a command, in the Go code of a goal command, that
+// has references to environment variables in $FOO format, which
+// [Goal.ExecArgs] expands, with the environment of the host that the command
+// runs on. The other args of a command, which include the values of the Go
+// expressions in it, are not expanded, such that they can have a $ in them.
+type ExpandWord string
+
+// Expand returns the given word of a command as an [ExpandWord], whose
+// $FOO references to environment variables are expanded when the command
+// runs. The transpiled Go code of a command uses it for the words that have
+// a $ in them, outside of single quotes.
+func (gl *Goal) Expand(word string) ExpandWord {
+	return ExpandWord(word)
+}
+
+// expandEnv expands the $FOO references to environment variables of the
+// given word, with the environment of the given ssh client, if it is not
+// nil, or the local one: its Env, then that of the process.
+func (gl *Goal) expandEnv(cl *sshclient.Client, s string) string {
+	env := gl.Config.Env
+	if cl != nil {
+		env = cl.Env
+	}
+	return os.Expand(s, func(v string) string {
+		if e, ok := env[v]; ok {
+			return e
+		}
+		if cl != nil && (v == "!" || v == "?") {
+			return "$" + v // for the remote shell
+		}
+		return os.Getenv(v)
+	})
+}
+
 // ExecArgs processes the args to given exec command,
 // handling all of the input / output redirection and
-// file globbing, homedir expansion, etc.
+// file globbing, homedir and environment variable expansion, etc.
+// Only the [ExpandWord] args (and command) have their environment
+// variables expanded (see [Goal.Expand]).
 func (gl *Goal) ExecArgs(cmdIO *exec.CmdIO, errOk exec.ErrorMode, cmd any, args ...any) (*sshclient.Client, string, []string) {
 	// the output of the previous command, if piped, is the input
 	if r := gl.takePipeIn(); r != nil {
@@ -287,6 +323,18 @@ func (gl *Goal) ExecArgs(cmdIO *exec.CmdIO, errOk exec.ErrorMode, cmd any, args 
 	}
 	scmd := reflectx.ToString(cmd)
 	cl := gl.ActiveSSH()
+	// the host of the command, for the expansion of its args
+	ecl := cl
+	if len(scmd) > 1 && scmd[0] == '@' {
+		if scmd == "@0" {
+			ecl = nil
+		} else if scl, ok := gl.SSHClients[scmd[1:]]; ok {
+			ecl = scl
+		}
+	}
+	if ew, ok := cmd.(ExpandWord); ok {
+		scmd = gl.expandEnv(ecl, string(ew))
+	}
 	// isCmd := gl.isCommand.Peek()
 	sargs := make([]string, 0, len(args))
 	var err error
@@ -326,7 +374,12 @@ func (gl *Goal) ExecArgs(cmdIO *exec.CmdIO, errOk exec.ErrorMode, cmd any, args 
 			}
 			continue
 		}
-		s := reflectx.ToString(a)
+		var s string
+		if ew, ok := a.(ExpandWord); ok {
+			s = gl.expandEnv(ecl, string(ew))
+		} else {
+			s = reflectx.ToString(a)
+		}
 		if s == "" {
 			continue
 		}

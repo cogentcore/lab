@@ -5,6 +5,7 @@
 package transpile
 
 import (
+	"strings"
 	"testing"
 
 	_ "cogentcore.org/lab/stats/metric"
@@ -153,7 +154,10 @@ func TestTranspile(t *testing.T) {
 		{"cat main.go", `goalrun.Run("cat", "main.go")`},
 		{"cd cogent", `goalrun.Run("cd", "cogent")`},
 		{"cd cogent/", `goalrun.Run("cd", "cogent/")`},
-		{"echo $PATH", `goalrun.Run("echo", "$PATH")`},
+		{"echo $PATH", `goalrun.Run("echo", goalrun.Expand("$PATH"))`},
+		// only the words are expanded, not the values of Go expressions
+		{"sh -c {script} $HOME/x", `goalrun.Run("sh", "-c", script, goalrun.Expand("$HOME/x"))`},
+		{`echo "$HOME" '$HOME'`, `goalrun.Run("echo", goalrun.Expand("$HOME"), "$HOME")`},
 		{`ls My\ Documents`, `goalrun.Run("ls", "My Documents")`},
 		{`ls a\{b\}\\c`, `goalrun.Run("ls", "a{b}\\c")`},
 		{`ls 'My Documents'`, `goalrun.Run("ls", "My Documents")`},
@@ -486,4 +490,46 @@ func TestBackslashLiteral(t *testing.T) {
 	}
 	st := NewState()
 	assert.Equal(t, `goalrun.Run("cd", "cmd\\goal")`, st.TranspileLine(`cd cmd\goal`))
+}
+
+// TestGoVsExec tests the lines that are Go code, not commands, in
+// contexts that made them commands before.
+func TestGoVsExec(t *testing.T) {
+	tests := []exIn{
+		// a var or type declaration in a function ends on its line, so the
+		// commands after it are commands
+		{"func f() {\n\tvar b bytes.Buffer\n\tkubectl -n {ns} apply -f {mf}\n}",
+			"func f() {\nvar b bytes.Buffer\ngoalrun.Run(\"kubectl\", \"-n\", ns, \"apply\", \"-f\", mf)\n}"},
+		{"func f() {\n\ttype T struct {\n\t\tA int\n\t}\n\tls\n}",
+			"func f() {\ntype T struct {\nA int\n}\ngoalrun.Run(\"ls\")\n}"},
+		{"func f() {\n\tvar (\n\t\ta = 1\n\t)\n\tls\n}",
+			"func f() {\nvar (\na = 1\n)\ngoalrun.Run(\"ls\")\n}"},
+		// a line that continues a Go expression is Go, even if it starts
+		// with a string
+		{"func f() {\n\ts := \"a\" +\n\t\t\"b\"\n\tg(x, // c\n\t\t\"c\")\n\tls\n}",
+			"func f() {\ns := \"a\" +\n\"b\"\ng(x,  // c\n\"c\")\ngoalrun.Run(\"ls\")\n}"},
+		// as are string elements of a composite literal
+		{"func f() {\n\tl := []string{\n\t\t\"a\",\n\t\t\"b: \" + x,\n\t}\n\tm := map[string]int{\n\t\t\"a\": 1,\n\t}\n}",
+			"func f() {\nl := []string {\n\"a\",\n\"b: \" + x,\n}\nm := map[string]int {\n\"a\": 1,\n}\n}"},
+		// but a line that starts with a string is a command after a block
+		{"func f() {\n\tif x {\n\t\t\"./my cmd\" -v\n\t}\n}",
+			"func f() {\nif x {\ngoalrun.Run(\"./my cmd\", \"-v\")\n}\n}"},
+		// a raw string over lines is one string, in the lines of the source
+		{"func f() {\n\ts := `a: b\n  - {c: d}\n` + x\n\tls\n}",
+			"func f() {\ns := `a: b\n  - {c: d}\n` + x\ngoalrun.Run(\"ls\")\n}"},
+		{"const m = `a\n\"b\" c\n`\nls",
+			"const m = `a\n\"b\" c\n`\ngoalrun.Run(\"ls\")"},
+		{"x := $echo `a\nb`$\nls",
+			"x := goalrun.Output(\"echo\", `a\nb`)\ngoalrun.Run(\"ls\")"},
+	}
+	for _, test := range tests {
+		st := NewState()
+		st.MathRecord = false
+		st.FuncToVar = false
+		st.TranspileCode(test.i)
+		o := st.Code()
+		assert.Equal(t, test.e, o, test.i)
+		// the Go code has the lines of the source
+		assert.Equal(t, strings.Count(test.i, "\n"), strings.Count(o, "\n"), test.i)
+	}
 }

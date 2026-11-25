@@ -115,6 +115,8 @@ func NewGoal() *Goal {
 			Dir:    errors.Log1(os.Getwd()),
 			Env:    map[string]string{},
 			Buffer: false,
+			// it expands the words of its commands (see [Goal.Expand])
+			NoExpand: true,
 		},
 	}
 	gl.TrState.FuncToVar = true

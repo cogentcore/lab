@@ -19,6 +19,7 @@ func (in *Interpreter) goalrunValues() map[string]map[string]reflect.Value {
 			"Output":      reflect.ValueOf(in.Goal.Output),
 			"OutputErrOK": reflect.ValueOf(in.Goal.OutputErrOK),
 			"Start":       reflect.ValueOf(in.Goal.Start),
+			"Expand":      reflect.ValueOf(in.Goal.Expand),
 			"AddCommand":  reflect.ValueOf(in.Goal.AddCommand),
 			"RunCommands": reflect.ValueOf(in.Goal.RunCommands),
 			"Args":        reflect.ValueOf(in.Goal.Args),
