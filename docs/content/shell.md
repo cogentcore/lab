@@ -9,6 +9,8 @@ The following documentation describes specific use-cases.
 ## Environment variables
 
 * `set <var> <value>` (space delimited as in all shell mode, no equals)
+* `VAR=value command args` sets the variable only for that command, as in bash: `KUBECONFIG=~/.kube/other.yaml kubectl get pods`. A `~/` at the start of the value is the home directory, and its `$VAR`s are expanded (not in `'` quotes), before the variable is set, as are those of the args. A value with any of `( [ { ,` in it must be quoted, as such a word is Go code (`x=f(a, b)`).
+* `$VAR` and `${VAR}` in the words of a command are expanded when it runs, with the environment of the host it runs on, as in bash: `echo $HOME/data`. They are expanded in `"` quoted words too, but not in `'` quoted ones, and not in the values of Go expressions: `sh -c {script}` passes the `script` as is, even if it has `$#` or `$@` in it.
 
 ## Quoting
 
@@ -192,7 +194,10 @@ These are the rules used to determine whether a line is Go vs. Shell (word = IDE
 * Line starts with `go` keyword: if no `( )` then Shell, else Go
 * Line is one word: Shell
 * Line starts with `path` expression (e.g., `./myexec`) : Shell
-* Line starts with `"string"`: Shell
+* Line starts with `"string"`: Shell, except as an element of a list over lines, where the string is followed by `,`, `:` or a closer, or the line ends with `,`: Go
+* Line after a line of Go that ends with an operator, `,`, `(` or `[`, which continues on the next line: Go
+* Lines in a `var`, `const`, `import` or `type` declaration: Go (until its closing `)` or `}`, also inside a function)
+* A `` ` `` raw string over lines is one string in the statement of its first line
 * Line starts with `word word`: Shell
 * Line starts with `word {`: Shell
 * Otherwise: Go

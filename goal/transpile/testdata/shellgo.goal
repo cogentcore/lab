@@ -1,0 +1,28 @@
+// Go code and commands mixed in a function: a var declaration in it, a
+// raw string over lines, expressions and lists over lines that start with
+// strings, and a script with $ in a Go value, passed as is to sh.
+
+func run() {
+	var b strings.Builder
+	b.WriteString("x")
+	echo var {b.String()}
+	manifest := `kind: Pod
+  - {key: a, operator: Exists}
+` + "end"
+	fmt.Print(manifest, "\n")
+	s := "a" +
+		"b"
+	lines := []string{
+		"c",
+		"d: " + s,
+	}
+	echo {lines}
+	script := `set -- x y; echo "$#: $@"`
+	sh -c {script}
+	set SHELLGO env
+	echo $SHELLGO '$SHELLGO'
+	SHELLGO=pre sh -c 'echo $SHELLGO'
+	echo $SHELLGO
+}
+
+run()

@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"cogentcore.org/core/base/logx"
@@ -38,6 +39,18 @@ type State struct {
 
 	// depth of delim at the end of the current line. if 0, was complete.
 	ParenDepth, BraceDepth, BrackDepth, TypeDepth, DeclDepth int
+
+	// typeBrace is the brace depth at which the current type declaration
+	// started, and declParen, declBrace the depths at which the current
+	// var, const or import declaration started: they end at these depths,
+	// which are not 0 inside of a function.
+	typeBrace, declParen, declBrace int
+
+	// goContinues is whether the last line of Go code ends in a token after
+	// which its expression or list continues on the next line (see
+	// [continues]), which is then Go code too, even if it starts with a
+	// string, as a command can.
+	goContinues bool
 
 	// Chunks of code lines that are accumulated during Transpile,
 	// each of which should be evaluated separately, to avoid
@@ -88,8 +101,30 @@ func (st *State) TranspileCode(code string) {
 	if n == 0 {
 		return
 	}
-	for _, ln := range lns {
-		hasDecl := st.DeclDepth > 0
+	for i := 0; i < n; i++ {
+		ln := lns[i]
+		// a top-level declaration is a chunk (not one in a function)
+		hasDecl := st.DeclDepth > 0 && st.declBrace == 0 && st.declParen == 0
+		// a raw string or block comment over lines is in one statement with
+		// its lines
+		nsrc := 1
+		if !st.MathMode {
+			if openBlockComment(ln) {
+				for i+nsrc < n {
+					next := lns[i+nsrc]
+					ln += "\n" + next
+					nsrc++
+					if strings.Contains(next, "*/") {
+						break
+					}
+				}
+			} else {
+				for i+nsrc < n && openRawString(ln) {
+					ln += "\n" + lns[i+nsrc]
+					nsrc++
+				}
+			}
+		}
 		st.curSrc = ln
 		st.lastCols = nil
 		line, paren, brace, brack := st.lineNumber(), st.ParenDepth, st.BraceDepth, st.BrackDepth
@@ -99,8 +134,13 @@ func (st *State) TranspileCode(code string) {
 				st.ParenDepth, st.BraceDepth, st.BrackDepth = max(st.ParenDepth, 0), max(st.BraceDepth, 0), max(st.BrackDepth, 0)
 			}
 		}
-		st.AddLine(tl)
-		st.SourceLines[len(st.SourceLines)-1] = SourceLine{Src: ln, Cols: st.lastCols}
+		if nsrc == 1 {
+			st.AddLine(tl)
+			st.SourceLines[len(st.SourceLines)-1] = SourceLine{Src: ln, Cols: st.lastCols}
+		} else {
+			st.addLines(tl, lns[i:i+nsrc])
+			i += nsrc - 1
+		}
 		if st.BraceDepth == 0 && st.BrackDepth == 0 && st.ParenDepth == 1 && st.lastCommand != "" {
 			st.lastCommand = ""
 			nl := len(st.Lines)
@@ -200,6 +240,7 @@ func (st *State) ResetCode() {
 // ResetDepth resets the current depths to 0
 func (st *State) ResetDepth() {
 	st.ParenDepth, st.BraceDepth, st.BrackDepth, st.TypeDepth, st.DeclDepth = 0, 0, 0, 0, 0
+	st.goContinues = false
 }
 
 // DepthError reports an error if any of the parsing depths are not zero,
@@ -223,6 +264,40 @@ func (st *State) DepthError() error {
 		return errors.New(str)
 	}
 	return nil
+}
+
+// addLines adds the Go code of the given source lines, of one statement
+// with a raw string over them, as one line for each, so that the lines of
+// the Go code are those of the source: the newlines of the code are those
+// of its raw strings, but any others are joined.
+func (st *State) addLines(code string, src []string) {
+	lns := strings.Split(code, "\n")
+	for len(lns) > len(src) {
+		lns[len(lns)-2] += " " + lns[len(lns)-1]
+		lns = lns[:len(lns)-1]
+	}
+	for i, s := range src {
+		ln := ""
+		if i < len(lns) {
+			ln = lns[i]
+		}
+		st.AddLine(ln)
+		st.SourceLines[len(st.SourceLines)-1] = SourceLine{Src: s}
+	}
+}
+
+// openBlockComment returns whether the given line starts a /* block
+// comment that it does not close.
+func openBlockComment(ln string) bool {
+	ln = strings.TrimSpace(ln)
+	return strings.HasPrefix(ln, "/*") && !strings.Contains(ln[2:], "*/")
+}
+
+// openRawString returns whether the given line has a ` raw string that is
+// not closed on it, outside of other strings, runes and comments, as Go
+// scans it.
+func openRawString(ln string) bool {
+	return slices.Contains(goScanErrors(ln), "raw string literal not terminated")
 }
 
 // AddLine adds line on the stack
