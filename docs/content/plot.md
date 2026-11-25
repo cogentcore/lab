@@ -65,6 +65,12 @@ plt := lab.NewPlot(b)
 plots.NewLine(plt, plot.Data{plot.X: tx, plot.Y: ty})
 ```
 
+In a table plot, a string column with the `Title` role sets the title of the plot from the data: its value in the last row of the table, unless a `Plot.Title` style sets the title. For example, a table with the activity of a simulation over the cycles of a trial can show the name of the trial as its title, which is updated with the data:
+
+```go
+plot.SetStyler(dt.Column("TrialName"), func(s *plot.Style) { s.Role = plot.Title })
+```
+
 ### Colors
 
 The `Color` data role maps values onto colors, using the color axis of the plot, which is shown in a color bar at the right of the plot. The `ColorAxis` plot style sets the color map (`ColdHot` by default), the range of values mapped onto it (the range of the data by default, where either end can be fixed), and a label for the color bar, which can also be turned off:

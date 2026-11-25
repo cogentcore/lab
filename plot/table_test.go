@@ -321,3 +321,40 @@ func TestPlotStylePlotter(t *testing.T) {
 		assert.True(t, ok)
 	}
 }
+
+// TestTablePlotTitleRole tests a column with the Title role: its value in
+// the last row is the title of the plot, and it is not plotted, unless a
+// Plot.Title style sets the title.
+func TestTablePlotTitleRole(t *testing.T) {
+	dt := testTable()
+	styleCol(dt, "X", func(s *Style) { s.Role = X })
+	styleCol(dt, "Y1", func(s *Style) {
+		s.On = true
+		s.Role = Y
+	})
+	styleCol(dt, "Name", func(s *Style) {
+		s.On = true // even if On, it is not plotted
+		s.Role = Title
+	})
+	plt, err := NewTablePlot(dt)
+	require.NoError(t, err)
+	require.Len(t, plt.Plotters, 1)
+	plt.RenderImage()
+	assert.Equal(t, "B", plt.Title.Text)
+
+	dt.Column("Name").SetStringRow("C", 5, 0)
+	plt, err = NewTablePlot(dt)
+	require.NoError(t, err)
+	plt.RenderImage()
+	assert.Equal(t, "C", plt.Title.Text)
+
+	styleCol(dt, "Y1", func(s *Style) {
+		s.On = true
+		s.Role = Y
+		s.Plot.Title = "Explicit"
+	})
+	plt, err = NewTablePlot(dt)
+	require.NoError(t, err)
+	plt.RenderImage()
+	assert.Equal(t, "Explicit", plt.Title.Text)
+}

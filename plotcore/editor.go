@@ -756,19 +756,26 @@ func (pl *Editor) plotStyleFromTable() {
 	tst := &plot.Style{}
 	tst.Defaults()
 	tst.Plot.Defaults()
+	titleRole := false // a column with the Title role sets the title
 	for _, cl := range pl.table.Columns.Values {
 		stl := plot.GetStylers(cl)
 		if stl == nil {
 			continue
 		}
 		stl.Run(tst)
+		cst := &plot.Style{}
+		cst.Defaults()
+		stl.Run(cst)
+		if cst.Role == plot.Title {
+			titleRole = true
+		}
 	}
 	*pst = tst.Plot
 	if pst.PointsOn == plot.Default {
 		pst.PointsOn = plot.Off
 		mods["PointsOn"] = true
 	}
-	if pst.Title == "" {
+	if pst.Title == "" && !titleRole {
 		pst.Title = metadata.Name(pl.table)
 		if pst.Title != "" {
 			mods["Title"] = true

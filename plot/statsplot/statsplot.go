@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"strings"
 
+	"cogentcore.org/core/base/errors"
 	"cogentcore.org/core/colors"
 	"cogentcore.org/lab/plot"
 	"cogentcore.org/lab/table"
@@ -219,26 +220,38 @@ func newBuilder(dir *tensorfs.Node, name string, rows int) *builder {
 
 // floats adds a column of numbers, all NaN, with the given stylers.
 func (b *builder) floats(name string, st ...func(s *plot.Style)) *tensor.Float64 {
-	tsr := tensorfs.Value[float64](b.dir, name, b.rows)
-	tsr.SetShapeSizes(b.rows) // if it exists already
+	tsr := builderValue[float64, *tensor.Float64](b.dir, name, b.rows)
 	for i := range b.rows {
 		tsr.SetFloat1D(nan, i)
 	}
 	plot.SetStyler(tsr, st...)
 	b.dt.AddColumn(name, tsr)
-	return tsr.(*tensor.Float64)
+	return tsr
 }
 
 // strings adds a column of strings, with the given stylers.
 func (b *builder) strings(name string, st ...func(s *plot.Style)) *tensor.String {
-	tsr := tensorfs.Value[string](b.dir, name, b.rows)
-	tsr.SetShapeSizes(b.rows)
+	tsr := builderValue[string, *tensor.String](b.dir, name, b.rows)
 	for i := range b.rows {
 		tsr.SetString1D("", i)
 	}
 	plot.SetStyler(tsr, st...)
 	b.dt.AddColumn(name, tsr)
-	return tsr.(*tensor.String)
+	return tsr
+}
+
+// builderValue returns the value of the given name in dir, of type V with
+// values of type T and the given number of rows: an existing one of that
+// type is reused, and one of another type (e.g., the strings of a category
+// column of an earlier plot, where this plot has numbers) is replaced.
+func builderValue[T tensor.DataTypes, V tensor.Values](dir *tensorfs.Node, name string, rows int) V {
+	tsr, ok := tensorfs.Value[T](dir, name, rows).(V)
+	if !ok {
+		errors.Log(dir.Delete(name))
+		tsr = tensorfs.Value[T](dir, name, rows).(V)
+	}
+	tsr.SetShapeSizes(rows) // if it exists already
+	return tsr
 }
 
 // categoryColumn adds the column of the category labels,
